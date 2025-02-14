@@ -1,0 +1,33 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <!-- Aggiungi un ion-menu-button per aprire il menu -->
+      <ion-menu-button (click)="toggleMenu()"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Il tuo diario</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<!-- Definizione del menu laterale -->
+<ion-menu side="start" menuId="first" contentId="main-content">
+  <ion-header>
+    <ion-toolbar>
+      <ion-title>Menu</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content class="menu-content">
+    <ion-list>
+      <ion-item routerLink="/home">Home</ion-item>
+      <ion-item routerLink="/episodes">Episodi</ion-item>
+      <ion-item routerLink="/gallery">Galleria</ion-item>
+      <ion-item routerLink="/settings">Impostazioni</ion-item>
+    </ion-list>
+  </ion-content>
+</ion-menu>
+
+<!-- Aggiungi il contenuto principale con contentId -->
+<ion-content id="main-content">
+  <!-- Contenuto principale della tua pagina -->
+  <h1>Benvenuto nel gioco Life is Strange</h1>
+  <p>Esplora il mondo del gioco e scegli le tue azioni.</p>
+</ion-content>
