@@ -1,5 +1,58 @@
-/* task.component.scss */
+.task-card {
+  background: 	#cf6120;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.titoloTask{
+  font-weight: bold;
+  font-size: 2vw;
+  margin-bottom: 2vh;
+  font-family: "Indie Flower", serif;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: wheat;
+}
+
+button {
+  background-color: #4a2c2a;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.task-list {
+  margin-top: 20px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
 .completed {
   text-decoration: line-through;
   color: gray;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
 }

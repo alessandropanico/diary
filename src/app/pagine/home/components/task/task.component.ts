@@ -2,12 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { IonicModule } from '@ionic/angular'; // Importa IonicModule
 import { FormsModule } from '@angular/forms';
 import { Task } from 'src/app/interfaces/task';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-task',
   templateUrl: './task.component.html',
   styleUrls: ['./task.component.scss'],
-  imports: [IonicModule, FormsModule],
+  imports: [IonicModule, FormsModule, CommonModule],
   standalone: true // Importante se usiamo Standalone Component
 })
 export class TaskComponent implements OnInit {
