@@ -1,6 +1,7 @@
 <!-- Form per aggiungere una nuova task -->
 <div class="task-card">
   <div class="titoloTask">Aggiungi una Task</div>
+
   <div class="form-group">
     <label for="taskName">Nome Task</label>
     <input id="taskName" type="text" [(ngModel)]="newTask.name" />
@@ -22,12 +23,14 @@
 <!-- Lista delle task -->
 <div class="task-list">
   <div *ngFor="let task of tasks; let i = index" class="task-item">
-    <input type="checkbox" [(ngModel)]="task.completed" (change)="toggleCompletion(i)" />
+    <input type="checkbox" [checked]="task.completed" (click)="toggleCompletion(i)" />
+
     <div class="task-content">
       <h4 [class.completed]="task.completed">{{ task.name }}</h4>
       <p>{{ task.description }}</p>
       <p><strong>Scadenza:</strong> {{ task.dueDate }}</p>
     </div>
+
     <button class="delete-btn" (click)="deleteTask(i)">❌</button>
   </div>
 </div>

@@ -1,20 +1,27 @@
 import { Component, OnInit } from '@angular/core';
-import { IonicModule } from '@ionic/angular'; // Importa IonicModule
+import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
-import { Task } from 'src/app/interfaces/task';
 import { CommonModule } from '@angular/common';
+
+interface Task {
+  name: string;
+  description: string;
+  createdAt: string;
+  dueDate: string;
+  completed: boolean;
+}
 
 @Component({
   selector: 'app-task',
   templateUrl: './task.component.html',
   styleUrls: ['./task.component.scss'],
   imports: [IonicModule, FormsModule, CommonModule],
-  standalone: true // Importante se usiamo Standalone Component
+  standalone: true
 })
 export class TaskComponent implements OnInit {
-  tasks: Task[] = []; // Array delle task
+  tasks: Task[] = [];
 
-  newTask: Task = {  // Task vuota per il form
+  newTask: Task = {
     name: '',
     description: '',
     createdAt: new Date().toISOString(),
@@ -25,36 +32,44 @@ export class TaskComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {
-    this.loadTasks(); // Carica le task salvate all'avvio
+    this.loadTasks();
   }
 
+  // ✅ Carica le task dal localStorage all'avvio
   loadTasks() {
-    const savedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    this.tasks = savedTasks;
-  }
-
-  addTask() {
-    if (this.newTask.name && this.newTask.dueDate) {
-      this.tasks.push({ ...this.newTask }); // Aggiunge la task all'array
-      this.saveTasks(); // Salva nel localStorage
-      this.resetForm(); // Resetta il form
+    const savedTasks = localStorage.getItem('tasks');
+    if (savedTasks) {
+      this.tasks = JSON.parse(savedTasks);
     }
   }
 
+  // ✅ Aggiunge una nuova task e la salva subito nel localStorage
+  addTask() {
+    if (this.newTask.name.trim() && this.newTask.dueDate) {
+      this.tasks.push({ ...this.newTask });
+      this.saveTasks();
+      this.resetForm();
+    }
+  }
+
+  // ✅ Cambia stato "completato" e aggiorna il localStorage
   toggleCompletion(index: number) {
     this.tasks[index].completed = !this.tasks[index].completed;
     this.saveTasks();
   }
 
+  // ✅ Elimina la task e salva nel localStorage
   deleteTask(index: number) {
     this.tasks.splice(index, 1);
     this.saveTasks();
   }
 
+  // ✅ Salva le task nel localStorage
   saveTasks() {
     localStorage.setItem('tasks', JSON.stringify(this.tasks));
   }
 
+  // ✅ Resetta il form dopo aver aggiunto una task
   resetForm() {
     this.newTask = {
       name: '',
