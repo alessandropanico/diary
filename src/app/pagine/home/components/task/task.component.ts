@@ -1,53 +1,66 @@
-// task.component.ts
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { IonicModule } from '@ionic/angular'; // Importa IonicModule
 import { FormsModule } from '@angular/forms';
+import { Task } from 'src/app/interfaces/task';
 
 @Component({
   selector: 'app-task',
   templateUrl: './task.component.html',
   styleUrls: ['./task.component.scss'],
-  imports: [
-    IonicModule,
-    FormsModule
-  ]
-
+  imports: [IonicModule, FormsModule],
+  standalone: true // Importante se usiamo Standalone Component
 })
-export class TaskComponent {
+export class TaskComponent implements OnInit {
+  tasks: Task[] = []; // Array delle task
 
-  @Input() task: { name: string, completed: boolean } = { name: '', completed: false };
-  @Output() taskCompleted = new EventEmitter<boolean>();  // Per notificare la HomePage
+  newTask: Task = {  // Task vuota per il form
+    name: '',
+    description: '',
+    createdAt: new Date().toISOString(),
+    dueDate: '',
+    completed: false
+  };
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit() {
-    this.loadTasks();
-  }
-
-  toggleCompletion() {
-    this.task.completed = !this.task.completed;
-    this.saveTasks();
-    this.taskCompleted.emit(this.task.completed);
-  }
-
-  saveTasks() {
-    let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    const index = tasks.findIndex((task: any) => task.name === this.task.name);
-    if (index !== -1) {
-      tasks[index] = this.task;
-    } else {
-      tasks.push(this.task);
-    }
-
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    this.loadTasks(); // Carica le task salvate all'avvio
   }
 
   loadTasks() {
     const savedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    this.tasks = savedTasks;
+  }
 
-    const savedTask = savedTasks.find((task: any) => task.name === this.task.name);
-    if (savedTask) {
-      this.task = savedTask;
+  addTask() {
+    if (this.newTask.name && this.newTask.dueDate) {
+      this.tasks.push({ ...this.newTask }); // Aggiunge la task all'array
+      this.saveTasks(); // Salva nel localStorage
+      this.resetForm(); // Resetta il form
     }
+  }
+
+  toggleCompletion(index: number) {
+    this.tasks[index].completed = !this.tasks[index].completed;
+    this.saveTasks();
+  }
+
+  deleteTask(index: number) {
+    this.tasks.splice(index, 1);
+    this.saveTasks();
+  }
+
+  saveTasks() {
+    localStorage.setItem('tasks', JSON.stringify(this.tasks));
+  }
+
+  resetForm() {
+    this.newTask = {
+      name: '',
+      description: '',
+      createdAt: new Date().toISOString(),
+      dueDate: '',
+      completed: false
+    };
   }
 }

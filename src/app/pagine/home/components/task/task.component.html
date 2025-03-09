@@ -1,5 +1,38 @@
-<ion-item>
-  <ion-label [class.completed]="task.completed">{{ task.name }}</ion-label>
-  <!-- Rimuovi il binding a ionChange, ngModel si occuperà di aggiornare il valore -->
-  <ion-checkbox slot="start" [(ngModel)]="task.completed"></ion-checkbox>
-</ion-item>
+<ion-card>
+  <ion-card-header>
+    <ion-card-title>Aggiungi una Task</ion-card-title>
+  </ion-card-header>
+  <ion-card-content>
+    <ion-item>
+      <ion-label position="floating">Nome Task</ion-label>
+      <ion-input [(ngModel)]="newTask.name"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Descrizione</ion-label>
+      <ion-textarea [(ngModel)]="newTask.description"></ion-textarea>
+    </ion-item>
+
+    <ion-item>
+      <ion-label>Data Scadenza</ion-label>
+      <ion-datetime display-format="DD/MM/YYYY" [(ngModel)]="newTask.dueDate"></ion-datetime>
+    </ion-item>
+
+    <ion-button expand="full" (click)="addTask()">Aggiungi</ion-button>
+  </ion-card-content>
+</ion-card>
+
+<!-- Lista delle task -->
+<ion-list>
+  <ion-item *ngFor="let task of tasks; let i = index">
+    <ion-checkbox slot="start" [(ngModel)]="task.completed" (ionChange)="toggleCompletion(i)"></ion-checkbox>
+    <ion-label [class.completed]="task.completed">
+      <h2>{{ task.name }}</h2>
+      <p>{{ task.description }}</p>
+      <p>Scadenza: {{ task.dueDate }}</p>
+    </ion-label>
+    <ion-button color="danger" (click)="deleteTask(i)">
+      <ion-icon name="trash"></ion-icon>
+    </ion-button>
+  </ion-item>
+</ion-list>
