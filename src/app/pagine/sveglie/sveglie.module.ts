@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { SvegliePageRoutingModule } from './sveglie-routing.module';
 import { SvegliePage } from './sveglie.page';
-import { HeaderComponent } from '../../shared/header/header.component';  // ✅ Importa HeaderComponent
 import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
@@ -13,7 +12,6 @@ import { SharedModule } from '../../shared/shared.module';
     FormsModule,
     IonicModule,
     SvegliePageRoutingModule,
-    HeaderComponent,
     SharedModule,
     SvegliePage
 

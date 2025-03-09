@@ -48,10 +48,13 @@ body {
 .titolo {
   font-family: kiddosy;
   color: black;
+  font-size: 5vw;
 }
 
 .testo {
   font-family: "Indie Flower", serif;
+  font-size: 2vw;
+  color: black;
 }
 
 .spazio {
@@ -69,6 +72,8 @@ body {
 .cursor {
   cursor: pointer;
 }
+
+
 
 @media screen and (max-width:600px) {
 

@@ -7,10 +7,10 @@ import { Component, OnInit } from '@angular/core';
   standalone: false,
 })
 export class HomePage implements OnInit {
-  
-  greetingMessage: string ='';
 
-  constructor() {}
+  greetingMessage: string = '';
+
+  constructor() { }
 
   ngOnInit() {
     this.greetingMessage = this.getGreetingMessage();
