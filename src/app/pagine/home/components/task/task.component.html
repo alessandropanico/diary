@@ -1,23 +1,29 @@
 <!-- Form per aggiungere una nuova task -->
 <div class="task-card">
-  <div class="titoloTask">Aggiungi una Task</div>
-
-  <div class="form-group">
-    <label for="taskName">Nome Task</label>
-    <input id="taskName" type="text" [(ngModel)]="newTask.name" />
+  <div class="contTaskHeader">
+    <div class="titoloTask">Aggiungi una Task</div>
+    <div class="arrow" (click)="openTask()">▼</div>
   </div>
 
-  <div class="form-group">
-    <label for="taskDescription">Descrizione</label>
-    <textarea id="taskDescription" [(ngModel)]="newTask.description"></textarea>
-  </div>
+  <form [ngClass]="{'open': taskOpen}" class="task-form">
+    <div class="form-group">
+      <label for="taskName">Nome Task</label>
+      <input id="taskName" type="text" [(ngModel)]="newTask.name" />
+    </div>
 
-  <div class="form-group">
-    <label for="taskDueDate">Data Scadenza</label>
-    <input id="taskDueDate" type="date" [(ngModel)]="newTask.dueDate" />
-  </div>
+    <div class="form-group">
+      <label for="taskDescription">Descrizione</label>
+      <textarea id="taskDescription" [(ngModel)]="newTask.description"></textarea>
+    </div>
 
-  <button (click)="addTask()">Aggiungi</button>
+    <div class="form-group">
+      <label for="taskDueDate">Data Scadenza</label>
+      <input id="taskDueDate" type="date" [(ngModel)]="newTask.dueDate" />
+    </div>
+
+    <button (click)="addTask()">Aggiungi</button>
+  </form>
+
 </div>
 
 <!-- Lista delle task -->

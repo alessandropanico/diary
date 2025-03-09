@@ -3,6 +3,8 @@
   padding: 15px;
   border-radius: 8px;
   margin-bottom: 20px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+
 }
 
 .titoloTask{
@@ -56,3 +58,36 @@ button {
   cursor: pointer;
   font-size: 18px;
 }
+
+//---------------
+
+.arrow {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+}
+
+.contTaskHeader{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.task-form {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.5s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
+  padding: 0 15px;
+}
+
+.task-form.open {
+  max-height: 500px; /* Imposta un valore sufficientemente grande */
+  opacity: 1;
+  padding: 15px;
+}
+

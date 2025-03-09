@@ -35,6 +35,8 @@ export class TaskComponent implements OnInit {
     this.loadTasks();
   }
 
+
+
   // ✅ Carica le task dal localStorage all'avvio
   loadTasks() {
     const savedTasks = localStorage.getItem('tasks');
@@ -79,4 +81,13 @@ export class TaskComponent implements OnInit {
       completed: false
     };
   }
+
+  taskOpen:boolean=false;
+
+
+  openTask(){
+    this.taskOpen=!this.taskOpen;
+  }
+
+
 }
