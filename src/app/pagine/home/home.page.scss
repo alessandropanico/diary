@@ -1,3 +1,7 @@
+ion-content {
+  --background: #EEE5DE;  /* Imposta lo sfondo chiaro per ion-content */
+}
+
 .welcome-message{
   color: black;
   font-family: kiddosy;
@@ -5,6 +9,13 @@
   font-size: 8vw;
 }
 
-ion-content {
-  --background: #EEE5DE;  /* Imposta lo sfondo chiaro per ion-content */
+.sfondo {
+  background-image: url('/assets/immaginiGenerali/sfondo.jpg');
+  background-size: cover; /* Copre tutto lo schermo senza distorsioni */
+  background-position: center; /* Centra l'immagine */
+  background-repeat: no-repeat; /* Evita ripetizioni */
+  height: 100vh;
+  width: 100%;
 }
+
+
