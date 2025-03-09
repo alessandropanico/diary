@@ -1,8 +1,9 @@
 ion-content {
-  --background: #EEE5DE;  /* Imposta lo sfondo chiaro per ion-content */
+  --background: #EEE5DE;
+  /* Imposta lo sfondo chiaro per ion-content */
 }
 
-.welcome-message{
+.welcome-message {
   color: black;
   font-family: kiddosy;
   color: black;
@@ -11,14 +12,15 @@ ion-content {
 
 .sfondo {
   background-image: url('/assets/immaginiGenerali/sfondo.jpg');
-  background-size: cover; /* Copre tutto lo schermo senza distorsioni */
+  background-size: cover;
+  /* Copre tutto lo schermo senza distorsioni */
   background-position: center;
   background-repeat: no-repeat;
-  min-height: 100vh; /* Altezza minima, ma permette di crescere */
+  height: 100vh;
   width: 100%;
 }
 
 
-.sectinonTask{
+.sectinonTask {
   padding: 1vw;
 }

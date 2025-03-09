@@ -86,6 +86,59 @@ html, body {
 }
 
 
+//-----------------------------------------
+
+/* Per i browser WebKit come Chrome, Safari, Edge */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #2e3a59;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #b2b8c3;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #8f99b0;
+}
+
+/* Per Firefox */
+scrollbar {
+  width: 12px;
+  background-color: #2e3a59;
+}
+
+scrollbar-thumb {
+  background-color: #b2b8c3;
+  border-radius: 10px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @media screen and (max-width:600px) {
 
   .titolo {

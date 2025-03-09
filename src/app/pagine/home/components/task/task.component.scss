@@ -38,7 +38,7 @@ input, textarea {
 }
 
 button {
-  background-color: #4a2c2a;
+  background-color: #84474b;
   color: white;
   padding: 10px;
   border: none;
@@ -48,6 +48,11 @@ button {
 
 .task-list {
   margin-top: 20px;
+  color: #84474b;
+}
+
+.task-content{
+  color: #84474b;
 }
 
 .task-item {
@@ -87,6 +92,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  cursor: pointer;
 }
 
 .task-form {
