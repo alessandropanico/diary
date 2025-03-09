@@ -47,12 +47,19 @@ export class TaskComponent implements OnInit {
 
   // ✅ Aggiunge una nuova task e la salva subito nel localStorage
   addTask() {
+    console.log('🔍 Stato attuale di newTask:', this.newTask); // 🔥 Debug
+
     if (this.newTask.name.trim() && this.newTask.dueDate) {
+      console.log('✅ Task valida, aggiungo:', this.newTask);
       this.tasks.push({ ...this.newTask });
       this.saveTasks();
       this.resetForm();
+    } else {
+      console.error('❌ Errore: Nome o data scadenza mancanti!');
     }
   }
+
+
 
   // ✅ Cambia stato "completato" e aggiorna il localStorage
   toggleCompletion(index: number) {

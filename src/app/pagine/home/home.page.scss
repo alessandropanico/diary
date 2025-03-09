@@ -12,11 +12,12 @@ ion-content {
 .sfondo {
   background-image: url('/assets/immaginiGenerali/sfondo.jpg');
   background-size: cover; /* Copre tutto lo schermo senza distorsioni */
-  background-position: center; /* Centra l'immagine */
-  background-repeat: no-repeat; /* Evita ripetizioni */
-  height: 100vh;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh; /* Altezza minima, ma permette di crescere */
   width: 100%;
 }
+
 
 .sectinonTask{
   padding: 1vw;

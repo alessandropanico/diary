@@ -45,6 +45,18 @@ body {
   background-color: #EEE5DE;
 }
 
+ion-content {
+  --overflow: auto !important;
+  overflow-y: auto !important;
+  height: 100vh !important;
+}
+
+
+html, body {
+  height: 100%;
+  overflow: auto !important;
+}
+
 .titolo {
   font-family: kiddosy;
   color: black;
@@ -71,10 +83,6 @@ body {
 
 .cursor {
   cursor: pointer;
-}
-
-body{
-  overflow: auto;
 }
 
 
