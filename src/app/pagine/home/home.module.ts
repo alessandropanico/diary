@@ -6,12 +6,16 @@ import { HomePage } from './home.page';
 
 import { HomePageRoutingModule } from './home-routing.module';
 
+//componenti
+import { TaskComponent } from './components/task/task.component';
+
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    HomePageRoutingModule
+    HomePageRoutingModule,
+    TaskComponent
   ],
   declarations: [HomePage]  // ✅ Aggiungi HeaderComponent alle dichiarazioni
 })

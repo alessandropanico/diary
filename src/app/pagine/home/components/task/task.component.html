@@ -1,0 +1,5 @@
+<ion-item>
+  <ion-label [class.completed]="task.completed">{{ task.name }}</ion-label>
+  <!-- Rimuovi il binding a ionChange, ngModel si occuperà di aggiornare il valore -->
+  <ion-checkbox slot="start" [(ngModel)]="task.completed"></ion-checkbox>
+</ion-item>
