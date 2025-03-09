@@ -36,7 +36,49 @@
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import "@ionic/angular/css/palettes/dark.system.css";
 
+@font-face {
+  font-family: kiddosy;
+  src: url(assets/FONT/KiddosyOutline.ttf);
+}
 
-body{
+body {
   background-color: #EEE5DE;
+}
+
+.titolo {
+  font-family: kiddosy;
+  color: black;
+}
+
+.testo {
+  font-family: "Indie Flower", serif;
+}
+
+.spazio {
+  margin-top: 5vh;
+}
+
+.spazio2 {
+  margin-top: 10vh;
+
+}
+
+.spazio3 {
+  margin-top: 15vh;
+
+}
+
+@media screen and (max-width:600px) {
+
+  .titolo {
+    font-family: kiddosy;
+    color: black;
+    font-size: 10vw;
+  }
+
+  .testo {
+    font-family: "Indie Flower", serif;
+    font-size: 5vw;
+  }
+
 }
