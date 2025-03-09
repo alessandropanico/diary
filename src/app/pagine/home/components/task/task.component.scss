@@ -1,10 +1,21 @@
+ion-content {
+  --overflow: auto !important;
+  overflow-y: auto !important;
+  height: 100vh !important;
+}
+
+html, body {
+  height: 100%;
+  overflow: auto !important;
+}
+
+
 .task-card {
   background: 	#cf6120;
   padding: 15px;
   border-radius: 8px;
   margin-bottom: 20px;
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-
 }
 
 .titoloTask{
