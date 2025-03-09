@@ -10,7 +10,11 @@ const routes: Routes = [
     path: '',
     redirectTo: 'home',
     pathMatch: 'full'
+  },  {
+    path: 'sveglie',
+    loadChildren: () => import('./sveglie/sveglie.module').then( m => m.SvegliePageModule)
   },
+
 ];
 
 @NgModule({
