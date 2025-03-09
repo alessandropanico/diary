@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { HeaderComponent } from '../shared/header/header.component'; // ✅ Importa HeaderComponent
+import { HeaderComponent } from '../../shared/header/header.component'; // ✅ Importa HeaderComponent
 import { IonicModule } from '@ionic/angular';
 @Component({
   selector: 'app-sveglie',

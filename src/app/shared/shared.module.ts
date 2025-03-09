@@ -8,11 +8,11 @@ import { HeaderComponent } from './header/header.component';
     CommonModule,
     IonicModule,
     HeaderComponent,
-    // Esporta solo IonicModule, se necessario
+   
   ],
   exports: [
     IonicModule,
-    HeaderComponent 
+    HeaderComponent
   ]
 })
 export class SharedModule {}
