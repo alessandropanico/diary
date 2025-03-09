@@ -8,7 +8,8 @@ import { MenuController } from '@ionic/angular';
   standalone: false,
 })
 export class AppComponent {
-  constructor(private menu: MenuController) {}
+
+  constructor(private menu: MenuController) { }
 
   toggleMenu() {
     this.menu.toggle();
