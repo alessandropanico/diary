@@ -1,5 +1,15 @@
 <section class="sfondo">
+  <div class="task-list">
+    <div *ngFor="let task of tasks; let i = index" class="task-item">
+      <input type="checkbox" [checked]="task.completed" (click)="toggleCompletion(i)" />
 
+      <div class="task-content">
+        <div class="titolo" [class.completed]="task.completed">{{ task.name }}</div>
+        <p>{{ task.description }}</p>
+        <p><strong>Scadenza:</strong> {{ task.dueDate }}</p>
+      </div>
 
-
+      <button class="delete-btn" (click)="deleteTask(i)">❌</button>
+    </div>
+  </div>
 </section>

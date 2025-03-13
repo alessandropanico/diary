@@ -3,5 +3,5 @@ export interface Task {
   description: string;
   createdAt: string;  // Data di creazione della task
   dueDate: string;    // Data di scadenza della task
-  completed: boolean;
+  completed:boolean;
 }

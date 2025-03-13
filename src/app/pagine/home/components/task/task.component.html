@@ -1,11 +1,11 @@
-<!-- Form per aggiungere una nuova task -->
+<!-- task.component.html -->
 <div class="task-card">
   <div class="contTaskHeader" (click)="openTask()">
     <div class="titoloTask">Aggiungi una Task</div>
-    <div class="arrow" [ngClass]="{'open': taskOpen}" >▼</div>
+    <div class="arrow" [ngClass]="{'open': taskOpen}">▼</div>
   </div>
 
-  <form [ngClass]="{'open': taskOpen}" class="task-form">
+  <form [ngClass]="{'open': taskOpen}" class="task-form" (ngSubmit)="addTask()">
     <div class="form-group">
       <label for="taskName">Nome Task</label>
       <input id="taskName" type="text" name="taskName" [(ngModel)]="newTask.name" />
@@ -21,23 +21,6 @@
       <input id="taskDueDate" type="date" name="taskDueDate" [(ngModel)]="newTask.dueDate" />
     </div>
 
-    <button type="button" (click)="addTask()">Aggiungi</button>
+    <button type="submit">Aggiungi</button>
   </form>
-
-
-</div>
-
-<!-- Lista delle task -->
-<div class="task-list">
-  <div *ngFor="let task of tasks; let i = index" class="task-item">
-    <input type="checkbox" [checked]="task.completed" (click)="toggleCompletion(i)" />
-
-    <div class="task-content">
-      <div class="titolo" [class.completed]="task.completed">{{ task.name }}</div>
-      <p>{{ task.description }}</p>
-      <p><strong>Scadenza:</strong> {{ task.dueDate }}</p>
-    </div>
-
-    <button class="delete-btn" (click)="deleteTask(i)">❌</button>
-  </div>
 </div>
