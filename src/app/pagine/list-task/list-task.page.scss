@@ -1,0 +1,9 @@
+.sfondo {
+  background-image: url('/assets/immaginiGenerali/sfondo.jpg');
+  background-size: cover;
+  /* Copre tutto lo schermo senza distorsioni */
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+  width: 100%;
+}

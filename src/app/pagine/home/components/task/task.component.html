@@ -2,7 +2,7 @@
 <div class="task-card">
   <div class="contTaskHeader" (click)="openTask()">
     <div class="titoloTask">Aggiungi una Task</div>
-    <div class="arrow" [ngClass]="{'open': taskOpen}" (click)="openTask()">▼</div>
+    <div class="arrow" [ngClass]="{'open': taskOpen}" >▼</div>
   </div>
 
   <form [ngClass]="{'open': taskOpen}" class="task-form">
@@ -33,7 +33,7 @@
     <input type="checkbox" [checked]="task.completed" (click)="toggleCompletion(i)" />
 
     <div class="task-content">
-      <h4 [class.completed]="task.completed">{{ task.name }}</h4>
+      <div class="titolo" [class.completed]="task.completed">{{ task.name }}</div>
       <p>{{ task.description }}</p>
       <p><strong>Scadenza:</strong> {{ task.dueDate }}</p>
     </div>

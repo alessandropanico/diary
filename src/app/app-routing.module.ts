@@ -14,7 +14,11 @@ const routes: Routes = [
   {
     path: 'sveglie',
     loadChildren: () => import('./pagine/sveglie/sveglie.module').then( m => m.SvegliePageModule)
+  },  {
+    path: 'list-task',
+    loadChildren: () => import('./pagine/list-task/list-task.module').then( m => m.ListTaskPageModule)
   },
+
 
 ];
 
