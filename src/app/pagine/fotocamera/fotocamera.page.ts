@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Geolocation } from '@capacitor/geolocation';
-import { AuthService } from 'src/app/services/auth.service';
 
 
 @Component({
@@ -17,8 +16,7 @@ export class FotocameraPage {
   itemsPerPage = 15;
   zoomedPhoto: string | null = null;
 
-  constructor(private authService: AuthService) {
-    this.loadPhotos();
+  constructor() {
   }
 
   async takePhoto() {
@@ -43,7 +41,6 @@ export class FotocameraPage {
         lng: position.coords.longitude
       });
 
-      this.savePhotos();
 
     } catch (error) {
       console.error('Error taking photo or getting location', error);
@@ -56,7 +53,6 @@ export class FotocameraPage {
 
   deletePhoto(photo: { src: string, lat?: number, lng?: number }) {
     this.photos = this.photos.filter(p => p !== photo);
-    this.savePhotos();
   }
 
   totalPages(): number {
@@ -107,11 +103,4 @@ export class FotocameraPage {
     this.zoomedPhoto = null;
   }
 
-  private loadPhotos() {
-    this.photos = this.authService.getUserPhotos();
-  }
-
-  private savePhotos() {
-    this.authService.saveUserPhotos(this.photos);
-  }
 }
