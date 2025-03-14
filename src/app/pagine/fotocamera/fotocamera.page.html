@@ -1,0 +1,14 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Fotocamera</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-button expand="full" (click)="capturePhoto()">📸 Scatta Foto</ion-button>
+
+  <div *ngIf="photo">
+    <h3>Anteprima:</h3>
+    <img [src]="photo" alt="Foto scattata" />
+  </div>
+</ion-content>

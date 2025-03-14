@@ -18,6 +18,10 @@ const routes: Routes = [
     path: 'list-task',
     loadChildren: () => import('./pagine/list-task/list-task.module').then( m => m.ListTaskPageModule)
   },
+  {
+    path: 'fotocamera',
+    loadChildren: () => import('./pagine/fotocamera/fotocamera.module').then( m => m.FotocameraPageModule)
+  },
 
 
 ];
