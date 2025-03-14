@@ -30,7 +30,8 @@
     <!-- Pagination -->
     <div class="pagination">
       <ion-button expand="block" (click)="previousPage()" [disabled]="currentPage === 1">Previous</ion-button>
-      <ion-button expand="block" *ngFor="let page of paginationRange()" [class.active]="page === currentPage" (click)="changePage(page)">
+      <ion-button expand="block" *ngFor="let page of paginationRange()" [class.active]="page === currentPage"
+        (click)="changePage(page)">
         {{ page }}
       </ion-button>
       <ion-button expand="block" (click)="nextPage()" [disabled]="currentPage === totalPages()">Next</ion-button>
