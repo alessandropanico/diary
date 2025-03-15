@@ -20,8 +20,9 @@ export class FotocameraPage {
   }
 
   async takePhoto() {
-    console.log('Taking photo...');
     try {
+      console.log('Trying to take a photo...');
+
       const image = await Camera.getPhoto({
         quality: 100,
         allowEditing: false,
@@ -30,26 +31,33 @@ export class FotocameraPage {
         saveToGallery: true,
       });
 
+      if (!image.dataUrl) {
+        throw new Error("No image data received");
+      }
+
       console.log('Photo taken:', image);
 
       const position = await Geolocation.getCurrentPosition();
       console.log('Current position:', position);
 
       this.photos.push({
-        src: image.dataUrl ?? '',
+        src: image.dataUrl,
         lat: position.coords.latitude,
         lng: position.coords.longitude
       });
 
+    } catch (error: unknown) {
+      console.error('Error taking photo:', error);
 
-    } catch (error) {
-      console.error('Error taking photo or getting location', error);
-
-      if (error === 'Permission denied') {
-        console.error('Permission denied by user');
+      if (error instanceof Error) {
+        alert('Errore nella fotocamera: ' + error.message);
+      } else {
+        alert('Errore sconosciuto durante lo scatto della foto.');
       }
     }
+
   }
+
 
   deletePhoto(photo: { src: string, lat?: number, lng?: number }) {
     this.photos = this.photos.filter(p => p !== photo);
