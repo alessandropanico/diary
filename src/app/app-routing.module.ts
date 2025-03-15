@@ -22,6 +22,10 @@ const routes: Routes = [
     path: 'fotocamera',
     loadChildren: () => import('./pagine/fotocamera/fotocamera.module').then( m => m.FotocameraPageModule)
   },
+  {
+    path: 'galleria',
+    loadChildren: () => import('./pagine/galleria/galleria.module').then( m => m.GalleriaPageModule)
+  },
 
 
 ];
