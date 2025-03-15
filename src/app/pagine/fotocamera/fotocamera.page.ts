@@ -1,6 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
 
 @Component({
@@ -9,49 +8,55 @@ import { Capacitor } from '@capacitor/core';
   styleUrls: ['./fotocamera.page.scss'],
   standalone: false,
 })
-export class FotocameraPage {
+export class FotocameraPage implements AfterViewInit {
+  @ViewChild('video', { static: false }) videoElement!: ElementRef;
   photos: { src: string; lat?: number; lng?: number }[] = [];
+  photo: string | null = null; // Per la foto scattata
   currentPage = 1;
   itemsPerPage = 15;
   zoomedPhoto: string | null = null;
+  stream: MediaStream | null = null;
 
-  constructor() {}
+  constructor() { }
 
-  async takePhoto() {
+  ngAfterViewInit() {
+    this.startCamera();
+  }
+
+  // Avvia la fotocamera per l'anteprima
+  async startCamera() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const video = document.createElement("video");
-      video.srcObject = stream;
-      video.play();
-
-      // Creazione di un canvas per catturare l'immagine
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
-
-      if (!context) {
-        console.error("Errore: impossibile ottenere il contesto del canvas.");
-        return;
-      }
-
-      video.addEventListener("loadeddata", () => {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // Converti l'immagine in base64 e salvala nella lista delle foto
-        const photo = canvas.toDataURL("image/png");
-        this.photos.push({ src: photo });
-
-        // Ferma lo stream video
-        stream.getTracks().forEach(track => track.stop());
-      });
+      this.stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      this.videoElement.nativeElement.srcObject = this.stream;
     } catch (error) {
-      console.error("Errore nell'acquisizione della fotocamera:", error);
+      console.error("Errore nell'aprire la fotocamera:", error);
     }
   }
 
+  // Scatta la foto
+  async takePhoto() {
+    const video = this.videoElement.nativeElement;
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
 
+    if (!context) {
+      console.error("Errore: impossibile ottenere il contesto del canvas.");
+      return;
+    }
 
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    this.photo = canvas.toDataURL('image/png');
+
+    // Ferma il flusso video dopo lo scatto
+    if (this.stream) {
+      this.stream.getTracks().forEach(track => track.stop());
+    }
+  }
+
+  // Funzione per scattare foto dal browser (se non è un'app nativa)
   takePhotoBrowser() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -71,14 +76,12 @@ export class FotocameraPage {
     };
   }
 
-  isBrowser(): boolean {
-    return !Capacitor.isNativePlatform();
-  }
-
+  // Funzione per cancellare una foto
   deletePhoto(photo: { src: string; lat?: number; lng?: number }) {
     this.photos = this.photos.filter((p) => p !== photo);
   }
 
+  // Funzione per navigare tra le pagine delle foto
   totalPages(): number {
     return Math.ceil(this.photos.length / this.itemsPerPage);
   }
