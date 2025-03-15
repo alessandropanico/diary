@@ -1,35 +1,35 @@
-<ion-content>
-  <div class="d-flex justify-content-center">
-    <h1>Fotocamera</h1>
-  </div>
+<section class="sfondo">
+<div class="container">
+  <div class="titolo">Fotocamera</div>
 
   <!-- Bottone per avviare la fotocamera -->
-  <div class="d-flex justify-content-center">
-    <ion-button *ngIf="!previewActive" (click)="startCamera()">Apri Fotocamera</ion-button>
-  </div>
+  <button *ngIf="!previewActive" class="btn btn-primary" (click)="startCamera()">Apri Fotocamera</button>
 
   <!-- Area della fotocamera (anteprima) -->
-  <div class="camera-preview" *ngIf="previewActive">
-    <video #video autoplay></video>
-    <ion-button (click)="takePhoto()">Scatta Foto</ion-button>
-    <ion-button color="danger" (click)="stopCamera()">Chiudi Fotocamera</ion-button>
+  <div class="camera-preview mt-3" *ngIf="previewActive">
+    <video #video autoplay class="border rounded"></video>
+    <div class="mt-2">
+      <button class="btn btn-success" (click)="takePhoto()">Scatta Foto</button>
+      <button class="btn btn-danger" (click)="stopCamera()">Chiudi Fotocamera</button>
+    </div>
   </div>
 
   <!-- Mostra tutte le foto salvate -->
-  <div *ngIf="photos.length > 0">
+  <div *ngIf="photos.length > 0" class="mt-4">
     <h3>Galleria</h3>
-    <div class="photo-grid">
-      <ion-card *ngFor="let photo of photos" class="photo-container">
-        <img class="foto" [src]="photo.src" alt="Photo" />
-        <button class="delete-button" (click)="deletePhoto(photo)">
-          <span class="delete-icon">&times;</span>
-        </button>
-      </ion-card>
+    <div class="row">
+      <div class="col-md-3 mb-3" *ngFor="let photo of photos">
+        <div class="card">
+          <img [src]="photo.src" class="card-img-top" alt="Foto">
+          <button class="btn btn-danger mt-2" (click)="deletePhoto(photo)">Elimina</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- Opzione per caricare una foto dal browser -->
-  <div class="d-flex justify-content-center">
-    <ion-button (click)="takePhotoBrowser()">Carica Foto</ion-button>
+  <div class="mt-3">
+    <button class="btn btn-secondary" (click)="takePhotoBrowser()">Carica Foto</button>
   </div>
-</ion-content>
+</div>
+</section>
