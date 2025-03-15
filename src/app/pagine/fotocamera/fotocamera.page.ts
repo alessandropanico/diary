@@ -1,6 +1,4 @@
-import { Component, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Capacitor } from '@capacitor/core';
+import { Component, ViewChild, ElementRef, AfterViewInit, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-fotocamera',
@@ -8,39 +6,44 @@ import { Capacitor } from '@capacitor/core';
   styleUrls: ['./fotocamera.page.scss'],
   standalone: false,
 })
-export class FotocameraPage implements AfterViewInit {
+export class FotocameraPage implements AfterViewInit, OnInit {
   @ViewChild('video', { static: false }) videoElement!: ElementRef;
-  photos: { src: string; lat?: number; lng?: number }[] = [];
-  photo: string | null = null; // Per la foto scattata
-  currentPage = 1;
-  itemsPerPage = 15;
-  zoomedPhoto: string | null = null;
+  photos: { src: string }[] = [];
+  photo: string | null = null;
   stream: MediaStream | null = null;
+  previewActive = false; // Controlla se l'anteprima è attiva
 
-  constructor() { }
+  constructor() {}
 
-  ngAfterViewInit() {
-    this.startCamera();
+  ngOnInit() {
+    this.loadPhotos();
   }
 
-  // Avvia la fotocamera per l'anteprima
+  ngAfterViewInit() {}
+
+  // Avvia l'anteprima della fotocamera
   async startCamera() {
     try {
+      this.previewActive = true; // Mostra l'anteprima
       this.stream = await navigator.mediaDevices.getUserMedia({ video: true });
       this.videoElement.nativeElement.srcObject = this.stream;
     } catch (error) {
-      console.error("Errore nell'aprire la fotocamera:", error);
+      console.error('Errore nell’aprire la fotocamera:', error);
+      alert('Impossibile accedere alla fotocamera.');
+      this.previewActive = false;
     }
   }
 
   // Scatta la foto
   async takePhoto() {
+    if (!this.videoElement || !this.videoElement.nativeElement) return;
+
     const video = this.videoElement.nativeElement;
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
 
     if (!context) {
-      console.error("Errore: impossibile ottenere il contesto del canvas.");
+      console.error('Errore: impossibile ottenere il contesto del canvas.');
       return;
     }
 
@@ -48,20 +51,50 @@ export class FotocameraPage implements AfterViewInit {
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    this.photo = canvas.toDataURL('image/png');
+    const imageData = canvas.toDataURL('image/png');
+    this.photo = imageData;
 
-    // Ferma il flusso video dopo lo scatto
+    // Salva la foto in localStorage
+    this.photos.push({ src: imageData });
+    this.savePhotos();
+
+    // Ferma l'anteprima dopo lo scatto
+    this.stopCamera();
+  }
+
+  // Ferma la fotocamera
+  stopCamera() {
     if (this.stream) {
       this.stream.getTracks().forEach(track => track.stop());
     }
+    this.previewActive = false;
   }
 
-  // Funzione per scattare foto dal browser (se non è un'app nativa)
+  // Carica le foto salvate in localStorage
+  loadPhotos() {
+    const savedPhotos = localStorage.getItem('savedPhotos');
+    if (savedPhotos) {
+      this.photos = JSON.parse(savedPhotos);
+    }
+  }
+
+  // Salva le foto in localStorage
+  savePhotos() {
+    localStorage.setItem('savedPhotos', JSON.stringify(this.photos));
+  }
+
+  // Elimina una foto
+  deletePhoto(photo: { src: string }) {
+    this.photos = this.photos.filter(p => p !== photo);
+    this.savePhotos();
+  }
+
+  // Per caricare una foto dal file system su browser
   takePhotoBrowser() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.capture = 'environment'; // Suggerisce la fotocamera posteriore su mobile
+    input.capture = 'environment';
     input.click();
 
     input.onchange = async (event: Event) => {
@@ -71,62 +104,9 @@ export class FotocameraPage implements AfterViewInit {
       const reader = new FileReader();
       reader.onload = () => {
         this.photos.push({ src: reader.result as string });
+        this.savePhotos();
       };
       reader.readAsDataURL(file);
     };
-  }
-
-  // Funzione per cancellare una foto
-  deletePhoto(photo: { src: string; lat?: number; lng?: number }) {
-    this.photos = this.photos.filter((p) => p !== photo);
-  }
-
-  // Funzione per navigare tra le pagine delle foto
-  totalPages(): number {
-    return Math.ceil(this.photos.length / this.itemsPerPage);
-  }
-
-  getCurrentPagePhotos(): { src: string; lat?: number; lng?: number }[] {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    return this.photos.slice(startIndex, startIndex + this.itemsPerPage);
-  }
-
-  paginationRange(): number[] {
-    const total = this.totalPages();
-    return Array.from({ length: total }, (_, index) => index + 1);
-  }
-
-  changePage(page: number) {
-    this.currentPage = page;
-  }
-
-  nextPage() {
-    if (this.currentPage < this.totalPages()) {
-      this.currentPage++;
-    }
-  }
-
-  previousPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-    }
-  }
-
-  getCurrentPageRows(): { src: string; lat?: number; lng?: number }[][] {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const pagePhotos = this.photos.slice(startIndex, startIndex + this.itemsPerPage);
-    const rows: { src: string; lat?: number; lng?: number }[][] = [];
-    for (let i = 0; i < pagePhotos.length; i += 5) {
-      rows.push(pagePhotos.slice(i, i + 5));
-    }
-    return rows;
-  }
-
-  zoomPhoto(photo: string) {
-    this.zoomedPhoto = photo;
-  }
-
-  closeZoom() {
-    this.zoomedPhoto = null;
   }
 }
