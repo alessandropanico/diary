@@ -19,43 +19,38 @@ export class FotocameraPage {
 
   async takePhoto() {
     try {
-      console.log('Trying to take a photo...');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      video.play();
 
-      if (this.isBrowser()) {
-        // Se siamo su browser, usa un input file
-        this.takePhotoBrowser();
+      // Creazione di un canvas per catturare l'immagine
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        console.error("Errore: impossibile ottenere il contesto del canvas.");
         return;
       }
 
-      // Se siamo su un dispositivo mobile, usa Capacitor Camera
-      const image = await Camera.getPhoto({
-        quality: 100,
-        allowEditing: false,
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Camera,
-        saveToGallery: true,
+      video.addEventListener("loadeddata", () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Converti l'immagine in base64 e salvala nella lista delle foto
+        const photo = canvas.toDataURL("image/png");
+        this.photos.push({ src: photo });
+
+        // Ferma lo stream video
+        stream.getTracks().forEach(track => track.stop());
       });
-
-      if (!image.dataUrl) {
-        throw new Error('No image data received');
-      }
-
-      console.log('Photo taken:', image);
-
-      const position = await Geolocation.getCurrentPosition();
-      console.log('Current position:', position);
-
-      this.photos.push({
-        src: image.dataUrl,
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      });
-
-    } catch (error: unknown) {
-      console.error('Error taking photo:', error);
-      alert('Errore nella fotocamera.');
+    } catch (error) {
+      console.error("Errore nell'acquisizione della fotocamera:", error);
     }
   }
+
+
 
   takePhotoBrowser() {
     const input = document.createElement('input');
