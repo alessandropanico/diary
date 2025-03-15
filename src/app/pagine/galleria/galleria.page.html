@@ -1,13 +1,18 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>galleria</ion-title>
-  </ion-toolbar>
-</ion-header>
+<section class="sfondo">
+  <div class="container">
+    <h2>Galleria Fotografica</h2>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">galleria</ion-title>
-    </ion-toolbar>
-  </ion-header>
-</ion-content>
+    <div *ngIf="photos.length === 0" class="alert alert-info">
+      Nessuna foto salvata.
+    </div>
+
+    <div class="row">
+      <div class="col-md-3 mb-3" *ngFor="let photo of photos">
+        <div class="card">
+          <img [src]="photo.src" class="card-img-top" alt="Foto">
+          <button class="btn btn-danger mt-2" (click)="deletePhoto(photo)">Elimina</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

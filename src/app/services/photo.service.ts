@@ -1,42 +1,30 @@
 import { Injectable } from '@angular/core';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class PhotoService {
-  private photos: { src: string }[] = [];
+  private PHOTO_STORAGE_KEY = 'savedPhotos';
 
-  constructor() {
-    this.loadPhotos();
-  }
+  constructor() {}
 
-  // Carica le foto dal localStorage
-  private loadPhotos() {
-    const savedPhotos = localStorage.getItem('savedPhotos');
-    if (savedPhotos) {
-      this.photos = JSON.parse(savedPhotos);
-    }
-  }
-
-  // Salva le foto nel localStorage
-  private savePhotos() {
-    localStorage.setItem('savedPhotos', JSON.stringify(this.photos));
-  }
-
-  // Ottiene tutte le foto
+  // Recupera le foto dal localStorage
   getPhotos(): { src: string }[] {
-    return this.photos;
+    const savedPhotos = localStorage.getItem(this.PHOTO_STORAGE_KEY);
+    return savedPhotos ? JSON.parse(savedPhotos) : [];
   }
 
-  // Aggiunge una nuova foto
-  addPhoto(photo: string) {
-    this.photos.push({ src: photo });
-    this.savePhotos();
+  // Salva una nuova foto
+  addPhoto(photoSrc: string) {
+    const photos = this.getPhotos();
+    photos.push({ src: photoSrc });
+    localStorage.setItem(this.PHOTO_STORAGE_KEY, JSON.stringify(photos));
   }
 
-  // Elimina una foto
+  // Elimina una foto specifica
   deletePhoto(photo: { src: string }) {
-    this.photos = this.photos.filter(p => p !== photo);
-    this.savePhotos();
+    let photos = this.getPhotos();
+    photos = photos.filter(p => p.src !== photo.src);
+    localStorage.setItem(this.PHOTO_STORAGE_KEY, JSON.stringify(photos));
   }
 }

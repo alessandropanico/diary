@@ -1,35 +1,22 @@
 <section class="sfondo">
-<div class="container">
-  <div class="titolo">Fotocamera</div>
+  <div class="container">
+    <div class="titolo">Fotocamera</div>
 
-  <!-- Bottone per avviare la fotocamera -->
-  <button *ngIf="!previewActive" class="btn btn-primary" (click)="startCamera()">Apri Fotocamera</button>
+    <!-- Bottone per avviare la fotocamera -->
+    <button *ngIf="!previewActive" class="btn btn-primary" (click)="startCamera()">Apri Fotocamera</button>
 
-  <!-- Area della fotocamera (anteprima) -->
-  <div class="camera-preview mt-3" *ngIf="previewActive">
-    <video #video autoplay class="border rounded"></video>
-    <div class="mt-2">
-      <button class="btn btn-success" (click)="takePhoto()">Scatta Foto</button>
-      <button class="btn btn-danger" (click)="stopCamera()">Chiudi Fotocamera</button>
-    </div>
-  </div>
-
-  <!-- Mostra tutte le foto salvate -->
-  <div *ngIf="photos.length > 0" class="mt-4">
-    <h3>Galleria</h3>
-    <div class="row">
-      <div class="col-md-3 mb-3" *ngFor="let photo of photos">
-        <div class="card">
-          <img [src]="photo.src" class="card-img-top" alt="Foto">
-          <button class="btn btn-danger mt-2" (click)="deletePhoto(photo)">Elimina</button>
-        </div>
+    <!-- Area della fotocamera (anteprima) -->
+    <div class="camera-preview mt-3" *ngIf="previewActive">
+      <video #video autoplay class="border rounded"></video>
+      <div class="mt-2">
+        <button class="btn btn-success" (click)="takePhoto()">Scatta Foto</button>
+        <button class="btn btn-danger" (click)="stopCamera()">Chiudi Fotocamera</button>
       </div>
     </div>
-  </div>
 
-  <!-- Opzione per caricare una foto dal browser -->
-  <div class="mt-3">
-    <button class="btn btn-secondary" (click)="takePhotoBrowser()">Carica Foto</button>
+    <!-- Bottone per andare alla galleria -->
+    <div class="mt-3">
+      <a routerLink="/galleria" class="btn btn-info">Vai alla Galleria</a>
+    </div>
   </div>
-</div>
 </section>
