@@ -15,7 +15,10 @@ interface Alarm {
   standalone: false,
 })
 export class SvegliePage {
-  alarms: Alarm[] = [];
+  alarms: Alarm[] = [
+    { time: '07:30', label: 'Buongiorno!', enabled: true },
+    { time: '10:00', label: 'Pausa caffè', enabled: true }
+  ];
 
   constructor(private alertCtrl: AlertController) {
     this.loadAlarms(); // Carica le sveglie salvate
@@ -25,6 +28,8 @@ export class SvegliePage {
     const storedAlarms = localStorage.getItem('alarms');
     if (storedAlarms) {
       this.alarms = JSON.parse(storedAlarms);
+    } else {
+      this.saveAlarms(); // Salva le sveglie predefinite se non esistono
     }
   }
 
