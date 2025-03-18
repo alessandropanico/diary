@@ -11,8 +11,8 @@
 
 <ion-content class="lis-background">
   <ion-list>
-    <ion-item *ngFor="let alarm of alarms; let i = index">
-      <ion-label>
+    <ion-item *ngFor="let alarm of alarms; let i = index" >
+      <ion-label (click)="editAlarmDays(i)">
         <h2>{{ alarm.time }}</h2>
         <p *ngIf="alarm.label">{{ alarm.label }}</p>
         <p>
@@ -21,9 +21,9 @@
             <span *ngIf="alarm.days?.[idx]">{{ day }} </span>
           </span>
         </p>
-
       </ion-label>
 
+      <!-- Toggle per attivare/disattivare la sveglia -->
       <ion-toggle [(ngModel)]="alarm.enabled" (ionChange)="toggleAlarm(alarm)"></ion-toggle>
 
       <ion-button fill="clear" color="danger" (click)="deleteAlarm(i)">

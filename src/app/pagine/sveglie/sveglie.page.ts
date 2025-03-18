@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { AlertController, AlertInput, ModalController } from '@ionic/angular';
+import { AlertController, ModalController } from '@ionic/angular';
 
 interface Alarm {
   time: string;
   label?: string;
   enabled: boolean;
-  days: boolean[]; // Array che rappresenta i giorni della settimana (0=Dom, 6=Sab)
+  days: boolean[]; // Array per i giorni della settimana (0=Dom, 6=Sab)
 }
 
 @Component({
@@ -19,7 +19,7 @@ export class SvegliePage implements OnInit {
   alarms: Alarm[] = [];
   daysOfWeek: string[] = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
 
-  constructor(private alertCtrl: AlertController, private modalCtrl: ModalController) { }
+  constructor(private alertCtrl: AlertController, private modalCtrl: ModalController) {}
 
   async ngOnInit() {
     this.loadAlarms();
@@ -43,15 +43,13 @@ export class SvegliePage implements OnInit {
     const storedAlarms = localStorage.getItem('alarms');
     this.alarms = storedAlarms ? JSON.parse(storedAlarms) : [];
 
-    // Correggi eventuali sveglie con `days` non definito
+    // Assicuriamoci che ogni sveglia abbia l'array `days` corretto
     this.alarms.forEach(alarm => {
       if (!Array.isArray(alarm.days) || alarm.days.length !== 7) {
         alarm.days = [false, false, false, false, false, false, false];
       }
     });
   }
-
-
 
   saveAlarms() {
     localStorage.setItem('alarms', JSON.stringify(this.alarms));
@@ -63,12 +61,6 @@ export class SvegliePage implements OnInit {
       inputs: [
         { name: 'time', type: 'time', label: 'Orario' },
         { name: 'label', type: 'text', placeholder: 'Nome sveglia' },
-        ...this.daysOfWeek.map<AlertInput>((day, index) => ({
-          type: 'checkbox', // Ora TypeScript accetta il valore
-          label: day,
-          value: index,
-          checked: false
-        }))
       ],
       buttons: [
         { text: 'Annulla', role: 'cancel' },
@@ -76,12 +68,12 @@ export class SvegliePage implements OnInit {
           text: 'Salva',
           handler: (data) => {
             if (data.time) {
-              const selectedDays = this.daysOfWeek.map((_, i) => data.includes(i));
+              const todayIndex = new Date().getDay(); // Giorno attuale (0=Dom, 6=Sab)
               const newAlarm: Alarm = {
                 time: data.time,
                 label: data.label || '',
                 enabled: true,
-                days: selectedDays
+                days: this.daysOfWeek.map((_, i) => i === todayIndex) // Suona oggi per default
               };
               this.alarms.push(newAlarm);
               this.saveAlarms();
@@ -94,41 +86,32 @@ export class SvegliePage implements OnInit {
     await alert.present();
   }
 
+  async editAlarmDays(index: number) {
+    const alarm = this.alarms[index];
 
-
-  async selectDays(time: string, label: string, selectedDays: boolean[]) {
     const alert = await this.alertCtrl.create({
-      header: 'Seleziona i giorni',
-      inputs: this.daysOfWeek.map((day, index) => ({
+      header: 'Modifica giorni sveglia',
+      inputs: this.daysOfWeek.map((day, i) => ({
         type: 'checkbox',
         label: day,
-        value: index,
-        checked: selectedDays[index]
+        value: i,
+        checked: alarm.days[i]
       })),
       buttons: [
         { text: 'Annulla', role: 'cancel' },
         {
           text: 'Salva',
           handler: (selectedIndices) => {
-            const days = this.daysOfWeek.map((_, i) => selectedIndices.includes(i));
-
-            const newAlarm: Alarm = {
-              time,
-              label,
-              enabled: true,
-              days
-            };
-
-            this.alarms.push(newAlarm);
+            this.alarms[index].days = this.daysOfWeek.map((_, i) => selectedIndices.includes(i));
             this.saveAlarms();
-            this.scheduleNotification(newAlarm);
+            this.scheduleNotification(this.alarms[index]);
           }
         }
       ]
     });
+
     await alert.present();
   }
-
 
   toggleAlarm(alarm: Alarm) {
     this.saveAlarms();
