@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { AlertController, Platform } from '@ionic/angular';
+import { AlertController } from '@ionic/angular';
 
 interface Alarm {
   time: string;
@@ -17,11 +17,18 @@ interface Alarm {
 export class SvegliePage implements OnInit {
   alarms: Alarm[] = [];
 
-  constructor(private alertCtrl: AlertController, private platform: Platform) {}
+  constructor(private alertCtrl: AlertController) {}
 
   async ngOnInit() {
-    await this.requestPermissions();
     this.loadAlarms();
+    if (this.isNative()) {
+      await this.requestPermissions();  // Solo per nativo
+    }
+  }
+
+  isNative(): boolean {
+    // Controllo se Capacitor è disponibile solo in modalità nativa
+    return (window as any).Capacitor !== undefined;
   }
 
   async requestPermissions() {
@@ -83,7 +90,8 @@ export class SvegliePage implements OnInit {
       alarmTime.setDate(alarmTime.getDate() + 1); // Imposta per il giorno successivo
     }
 
-    try {
+    if (this.isNative()) {
+      // Notifiche locali per dispositivi nativi (mobile)
       await LocalNotifications.schedule({
         notifications: [
           {
@@ -92,14 +100,26 @@ export class SvegliePage implements OnInit {
             id: new Date().getTime(),
             schedule: { at: alarmTime },
             sound: 'assets/sounds/lofiAlarm.mp3', // Controlla che il file esista
-            smallIcon: 'res://ic_launcher',
-            largeIcon: 'res://ic_launcher'
           }
         ]
       });
       console.log('Sveglia impostata per:', alarmTime);
-    } catch (error) {
-      console.error('Errore nella programmazione della sveglia:', error);
+    } else {
+      // Web Push Notifications per il browser
+      this.scheduleWebPushNotification(alarm, alarmTime);
+    }
+  }
+
+  async scheduleWebPushNotification(alarm: Alarm, alarmTime: Date) {
+    // Aggiungi qui la logica per inviare una web push notification
+    console.log('Notifica push web per:', alarmTime);
+
+    // Invia la notifica al browser (se supportato)
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('⏰ Sveglia!', {
+        body: alarm.label || 'È ora di alzarsi!',
+        icon: 'assets/sounds/lofiAlarm.mp3',
+      });
     }
   }
 
