@@ -13,10 +13,10 @@ import { SharedModule } from '../../shared/shared.module';
     IonicModule,
     SvegliePageRoutingModule,
     SharedModule,
-    SvegliePage
 
   ],
   declarations: [
+    SvegliePage
   ]
 })
 export class SvegliePageModule { }

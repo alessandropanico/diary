@@ -1,3 +1,34 @@
 ion-content {
   --background: #EEE5DE;  /* Imposta lo sfondo chiaro per ion-content */
 }
+
+.lis-background {
+  background: linear-gradient(135deg, #6a0572, #2a2a72);
+  color: white;
+}
+
+.lis-header {
+  background: rgba(42, 42, 114, 0.8);
+  font-family: 'Shadows Into Light', cursive;
+}
+
+ion-item {
+  --background: rgba(255, 255, 255, 0.1);
+  --color: white;
+  border-radius: 10px;
+  margin: 5px;
+  font-family: 'Indie Flower', cursive;
+}
+
+ion-button {
+  color: #ff79c6;
+}
+
+h2 {
+  font-size: 1.4em;
+}
+
+p {
+  opacity: 0.8;
+  font-style: italic;
+}

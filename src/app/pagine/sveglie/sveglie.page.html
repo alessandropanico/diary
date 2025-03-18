@@ -1,4 +1,22 @@
-<!-- Messaggio di benvenuto -->
-<div class="titolo">
-  Sveglie
-</div>
+<ion-header>
+  <ion-toolbar class="lis-header">
+    <ion-title>Le mie sveglie</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="addAlarm()">
+        <ion-icon name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="lis-background">
+  <ion-list>
+    <ion-item *ngFor="let alarm of alarms">
+      <ion-label>
+        <h2>{{ alarm.time }}</h2>
+        <p *ngIf="alarm.label">{{ alarm.label }}</p>
+      </ion-label>
+      <ion-toggle [(ngModel)]="alarm.enabled" (ionChange)="toggleAlarm(alarm)"></ion-toggle>
+    </ion-item>
+  </ion-list>
+</ion-content>
