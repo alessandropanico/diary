@@ -11,12 +11,17 @@
 
 <ion-content class="lis-background">
   <ion-list>
-    <ion-item *ngFor="let alarm of alarms">
+    <ion-item *ngFor="let alarm of alarms; let i = index">
       <ion-label>
         <h2>{{ alarm.time }}</h2>
         <p *ngIf="alarm.label">{{ alarm.label }}</p>
       </ion-label>
+
       <ion-toggle [(ngModel)]="alarm.enabled" (ionChange)="toggleAlarm(alarm)"></ion-toggle>
+
+      <ion-button fill="clear" color="danger" (click)="deleteAlarm(i)">
+        <ion-icon name="trash-outline"></ion-icon>
+      </ion-button>
     </ion-item>
   </ion-list>
 </ion-content>
