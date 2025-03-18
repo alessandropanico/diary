@@ -15,6 +15,13 @@
       <ion-label>
         <h2>{{ alarm.time }}</h2>
         <p *ngIf="alarm.label">{{ alarm.label }}</p>
+        <p>
+          <strong>Giorni:</strong>
+          <span *ngFor="let day of daysOfWeek; let idx = index">
+            <span *ngIf="alarm.days?.[idx]">{{ day }} </span>
+          </span>
+        </p>
+
       </ion-label>
 
       <ion-toggle [(ngModel)]="alarm.enabled" (ionChange)="toggleAlarm(alarm)"></ion-toggle>

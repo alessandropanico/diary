@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { AlertController } from '@ionic/angular';
+import { AlertController, AlertInput, ModalController } from '@ionic/angular';
 
 interface Alarm {
   time: string;
   label?: string;
   enabled: boolean;
+  days: boolean[]; // Array che rappresenta i giorni della settimana (0=Dom, 6=Sab)
 }
 
 @Component({
@@ -16,18 +17,18 @@ interface Alarm {
 })
 export class SvegliePage implements OnInit {
   alarms: Alarm[] = [];
+  daysOfWeek: string[] = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
 
-  constructor(private alertCtrl: AlertController) {}
+  constructor(private alertCtrl: AlertController, private modalCtrl: ModalController) { }
 
   async ngOnInit() {
     this.loadAlarms();
     if (this.isNative()) {
-      await this.requestPermissions();  // Solo per nativo
+      await this.requestPermissions();
     }
   }
 
   isNative(): boolean {
-    // Controllo se Capacitor è disponibile solo in modalità nativa
     return (window as any).Capacitor !== undefined;
   }
 
@@ -41,7 +42,16 @@ export class SvegliePage implements OnInit {
   loadAlarms() {
     const storedAlarms = localStorage.getItem('alarms');
     this.alarms = storedAlarms ? JSON.parse(storedAlarms) : [];
+
+    // Correggi eventuali sveglie con `days` non definito
+    this.alarms.forEach(alarm => {
+      if (!Array.isArray(alarm.days) || alarm.days.length !== 7) {
+        alarm.days = [false, false, false, false, false, false, false];
+      }
+    });
   }
+
+
 
   saveAlarms() {
     localStorage.setItem('alarms', JSON.stringify(this.alarms));
@@ -52,7 +62,13 @@ export class SvegliePage implements OnInit {
       header: 'Nuova Sveglia',
       inputs: [
         { name: 'time', type: 'time', label: 'Orario' },
-        { name: 'label', type: 'text', placeholder: 'Nome sveglia' }
+        { name: 'label', type: 'text', placeholder: 'Nome sveglia' },
+        ...this.daysOfWeek.map<AlertInput>((day, index) => ({
+          type: 'checkbox', // Ora TypeScript accetta il valore
+          label: day,
+          value: index,
+          checked: false
+        }))
       ],
       buttons: [
         { text: 'Annulla', role: 'cancel' },
@@ -60,7 +76,13 @@ export class SvegliePage implements OnInit {
           text: 'Salva',
           handler: (data) => {
             if (data.time) {
-              const newAlarm: Alarm = { time: data.time, label: data.label, enabled: true };
+              const selectedDays = this.daysOfWeek.map((_, i) => data.includes(i));
+              const newAlarm: Alarm = {
+                time: data.time,
+                label: data.label || '',
+                enabled: true,
+                days: selectedDays
+              };
               this.alarms.push(newAlarm);
               this.saveAlarms();
               this.scheduleNotification(newAlarm);
@@ -72,6 +94,42 @@ export class SvegliePage implements OnInit {
     await alert.present();
   }
 
+
+
+  async selectDays(time: string, label: string, selectedDays: boolean[]) {
+    const alert = await this.alertCtrl.create({
+      header: 'Seleziona i giorni',
+      inputs: this.daysOfWeek.map((day, index) => ({
+        type: 'checkbox',
+        label: day,
+        value: index,
+        checked: selectedDays[index]
+      })),
+      buttons: [
+        { text: 'Annulla', role: 'cancel' },
+        {
+          text: 'Salva',
+          handler: (selectedIndices) => {
+            const days = this.daysOfWeek.map((_, i) => selectedIndices.includes(i));
+
+            const newAlarm: Alarm = {
+              time,
+              label,
+              enabled: true,
+              days
+            };
+
+            this.alarms.push(newAlarm);
+            this.saveAlarms();
+            this.scheduleNotification(newAlarm);
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+
   toggleAlarm(alarm: Alarm) {
     this.saveAlarms();
     if (alarm.enabled) {
@@ -81,45 +139,34 @@ export class SvegliePage implements OnInit {
 
   async scheduleNotification(alarm: Alarm) {
     const [hour, minute] = alarm.time.split(':').map(Number);
-
     const now = new Date();
-    let alarmTime = new Date();
+    const alarmTime = new Date();
     alarmTime.setHours(hour, minute, 0, 0);
 
     if (alarmTime < now) {
-      alarmTime.setDate(alarmTime.getDate() + 1); // Imposta per il giorno successivo
+      alarmTime.setDate(alarmTime.getDate() + 1);
     }
 
-    if (this.isNative()) {
-      // Notifiche locali per dispositivi nativi (mobile)
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            title: '⏰ Sveglia!',
-            body: alarm.label || 'È ora di alzarsi!',
-            id: new Date().getTime(),
-            schedule: { at: alarmTime },
-            sound: 'assets/sounds/lofiAlarm.mp3', // Controlla che il file esista
-          }
-        ]
-      });
-      console.log('Sveglia impostata per:', alarmTime);
-    } else {
-      // Web Push Notifications per il browser
-      this.scheduleWebPushNotification(alarm, alarmTime);
-    }
-  }
+    for (let i = 0; i < 7; i++) {
+      if (alarm.days[i]) {
+        const scheduledTime = new Date(alarmTime);
+        scheduledTime.setDate(scheduledTime.getDate() + ((i - now.getDay() + 7) % 7));
 
-  async scheduleWebPushNotification(alarm: Alarm, alarmTime: Date) {
-    // Aggiungi qui la logica per inviare una web push notification
-    console.log('Notifica push web per:', alarmTime);
-
-    // Invia la notifica al browser (se supportato)
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('⏰ Sveglia!', {
-        body: alarm.label || 'È ora di alzarsi!',
-        icon: 'assets/sounds/lofiAlarm.mp3',
-      });
+        if (this.isNative()) {
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                title: '⏰ Sveglia!',
+                body: alarm.label || 'È ora di alzarsi!',
+                id: new Date().getTime(),
+                schedule: { at: scheduledTime },
+                sound: 'assets/sounds/lofiAlarm.mp3',
+              }
+            ]
+          });
+          console.log('Sveglia impostata per:', scheduledTime);
+        }
+      }
     }
   }
 
