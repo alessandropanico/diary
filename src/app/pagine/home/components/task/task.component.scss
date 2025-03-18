@@ -110,3 +110,18 @@ button {
   padding: 15px;
 }
 
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1); /* Rende l'icona nera */
+}
+
+
+@media screen and (max-width:600px){
+
+  .titoloTask{
+    font-weight: bold;
+    font-size: 5vw;
+    margin-bottom: 2vh;
+    font-family: "Indie Flower", serif;
+}
+
+}
