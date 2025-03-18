@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { AlertController } from '@ionic/angular';
+import { AlertController, Platform } from '@ionic/angular';
 
 interface Alarm {
   time: string;
@@ -14,23 +14,26 @@ interface Alarm {
   styleUrls: ['./sveglie.page.scss'],
   standalone: false,
 })
-export class SvegliePage {
-  alarms: Alarm[] = [
-    { time: '07:30', label: 'Buongiorno!', enabled: true },
-    { time: '10:00', label: 'Pausa caffè', enabled: true }
-  ];
+export class SvegliePage implements OnInit {
+  alarms: Alarm[] = [];
 
-  constructor(private alertCtrl: AlertController) {
-    this.loadAlarms(); // Carica le sveglie salvate
+  constructor(private alertCtrl: AlertController, private platform: Platform) {}
+
+  async ngOnInit() {
+    await this.requestPermissions();
+    this.loadAlarms();
+  }
+
+  async requestPermissions() {
+    const perm = await LocalNotifications.requestPermissions();
+    if (perm.display !== 'granted') {
+      console.log('Permesso per le notifiche negato');
+    }
   }
 
   loadAlarms() {
     const storedAlarms = localStorage.getItem('alarms');
-    if (storedAlarms) {
-      this.alarms = JSON.parse(storedAlarms);
-    } else {
-      this.saveAlarms(); // Salva le sveglie predefinite se non esistono
-    }
+    this.alarms = storedAlarms ? JSON.parse(storedAlarms) : [];
   }
 
   saveAlarms() {
@@ -52,7 +55,8 @@ export class SvegliePage {
             if (data.time) {
               const newAlarm: Alarm = { time: data.time, label: data.label, enabled: true };
               this.alarms.push(newAlarm);
-              this.saveAlarms(); // Salva le sveglie aggiornate
+              this.saveAlarms();
+              this.scheduleNotification(newAlarm);
             }
           }
         }
@@ -62,7 +66,7 @@ export class SvegliePage {
   }
 
   toggleAlarm(alarm: Alarm) {
-    this.saveAlarms(); // Salva lo stato aggiornato
+    this.saveAlarms();
     if (alarm.enabled) {
       this.scheduleNotification(alarm);
     }
@@ -70,17 +74,33 @@ export class SvegliePage {
 
   async scheduleNotification(alarm: Alarm) {
     const [hour, minute] = alarm.time.split(':').map(Number);
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          title: '⏰ Sveglia!',
-          body: alarm.label || 'È ora di alzarsi!',
-          id: new Date().getTime(),
-          schedule: { on: { hour, minute } },
-          sound: 'assets/sounds/lofiAlarm.mp3',
-        }
-      ]
-    });
+
+    const now = new Date();
+    let alarmTime = new Date();
+    alarmTime.setHours(hour, minute, 0, 0);
+
+    if (alarmTime < now) {
+      alarmTime.setDate(alarmTime.getDate() + 1); // Imposta per il giorno successivo
+    }
+
+    try {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            title: '⏰ Sveglia!',
+            body: alarm.label || 'È ora di alzarsi!',
+            id: new Date().getTime(),
+            schedule: { at: alarmTime },
+            sound: 'assets/sounds/lofiAlarm.mp3', // Controlla che il file esista
+            smallIcon: 'res://ic_launcher',
+            largeIcon: 'res://ic_launcher'
+          }
+        ]
+      });
+      console.log('Sveglia impostata per:', alarmTime);
+    } catch (error) {
+      console.error('Errore nella programmazione della sveglia:', error);
+    }
   }
 
   async deleteAlarm(index: number) {
@@ -92,8 +112,8 @@ export class SvegliePage {
         {
           text: 'Elimina',
           handler: () => {
-            this.alarms.splice(index, 1); // Rimuove la sveglia dall'array
-            this.saveAlarms(); // Salva le modifiche in localStorage
+            this.alarms.splice(index, 1);
+            this.saveAlarms();
           }
         }
       ]
