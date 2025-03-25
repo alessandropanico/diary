@@ -1,24 +1,28 @@
 ion-content {
-  --background: #EEE5DE;  /* Imposta lo sfondo chiaro per ion-content */
+  --background: #EEE5DE;
 }
 
 .lis-background {
   background: linear-gradient(135deg, #6a0572, #2a2a72);
   color: white;
+  padding: 15px;
 }
 
 .lis-header {
-  background: rgba(42, 42, 114, 0.8);
+  background: rgba(42, 42, 114, 0.9);
   font-family: 'Shadows Into Light', cursive;
+  font-size: 1.5em;
 }
 
 ion-item {
-  --background: rgba(255, 255, 255, 0.1);
+  --background: rgba(255, 255, 255, 0.2);
   --color: white;
-  border-radius: 10px;
-  margin: 5px;
-  font-family: 'Indie Flower', cursive;
+  border-radius: 12px;
+  margin: 8px 0;
+  padding: 10px;
+  transition: all 0.3s ease-in-out;
 }
+
 
 ion-button {
   color: #ff79c6;
@@ -26,9 +30,18 @@ ion-button {
 
 h2 {
   font-size: 1.4em;
+  font-weight: bold;
 }
 
 p {
-  opacity: 0.8;
+  opacity: 0.85;
   font-style: italic;
+}
+
+ion-toggle {
+  margin-left: 10px;
+}
+
+ion-icon {
+  font-size: 1.4em;
 }

@@ -1,25 +1,26 @@
 import { Component, OnInit } from '@angular/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { AlertController, ModalController } from '@ionic/angular';
+import { AlertController } from '@ionic/angular';
 
 interface Alarm {
+  id: number;
   time: string;
   label?: string;
   enabled: boolean;
-  days: boolean[]; // Array per i giorni della settimana (0=Dom, 6=Sab)
+  days: boolean[];
 }
 
 @Component({
   selector: 'app-sveglie',
   templateUrl: './sveglie.page.html',
   styleUrls: ['./sveglie.page.scss'],
-  standalone: false,
+  standalone:false,
 })
 export class SvegliePage implements OnInit {
   alarms: Alarm[] = [];
   daysOfWeek: string[] = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
 
-  constructor(private alertCtrl: AlertController, private modalCtrl: ModalController) {}
+  constructor(private alertCtrl: AlertController) {}
 
   async ngOnInit() {
     this.loadAlarms();
@@ -42,13 +43,6 @@ export class SvegliePage implements OnInit {
   loadAlarms() {
     const storedAlarms = localStorage.getItem('alarms');
     this.alarms = storedAlarms ? JSON.parse(storedAlarms) : [];
-
-    // Assicuriamoci che ogni sveglia abbia l'array `days` corretto
-    this.alarms.forEach(alarm => {
-      if (!Array.isArray(alarm.days) || alarm.days.length !== 7) {
-        alarm.days = [false, false, false, false, false, false, false];
-      }
-    });
   }
 
   saveAlarms() {
@@ -68,12 +62,12 @@ export class SvegliePage implements OnInit {
           text: 'Salva',
           handler: (data) => {
             if (data.time) {
-              const todayIndex = new Date().getDay(); // Giorno attuale (0=Dom, 6=Sab)
               const newAlarm: Alarm = {
+                id: Date.now(),
                 time: data.time,
                 label: data.label || '',
                 enabled: true,
-                days: this.daysOfWeek.map((_, i) => i === todayIndex) // Suona oggi per default
+                days: Array(7).fill(false),
               };
               this.alarms.push(newAlarm);
               this.saveAlarms();
@@ -102,7 +96,10 @@ export class SvegliePage implements OnInit {
         {
           text: 'Salva',
           handler: (selectedIndices) => {
-            this.alarms[index].days = this.daysOfWeek.map((_, i) => selectedIndices.includes(i));
+            this.alarms[index].days = Array(7).fill(false);
+            selectedIndices.forEach((i: number) => {
+              this.alarms[index].days[i] = true;
+            });
             this.saveAlarms();
             this.scheduleNotification(this.alarms[index]);
           }
@@ -113,43 +110,43 @@ export class SvegliePage implements OnInit {
     await alert.present();
   }
 
-  toggleAlarm(alarm: Alarm) {
-    this.saveAlarms();
-    if (alarm.enabled) {
-      this.scheduleNotification(alarm);
-    }
-  }
-
   async scheduleNotification(alarm: Alarm) {
     const [hour, minute] = alarm.time.split(':').map(Number);
     const now = new Date();
-    const alarmTime = new Date();
-    alarmTime.setHours(hour, minute, 0, 0);
 
-    if (alarmTime < now) {
-      alarmTime.setDate(alarmTime.getDate() + 1);
-    }
+    await LocalNotifications.cancel({ notifications: [{ id: alarm.id }] });
 
-    for (let i = 0; i < 7; i++) {
-      if (alarm.days[i]) {
-        const scheduledTime = new Date(alarmTime);
-        scheduledTime.setDate(scheduledTime.getDate() + ((i - now.getDay() + 7) % 7));
+    alarm.days.forEach(async (isActive, i) => {
+      if (isActive) {
+        const scheduledTime = new Date();
+        scheduledTime.setHours(hour, minute, 0, 0);
+
+        if (scheduledTime < now) {
+          scheduledTime.setDate(scheduledTime.getDate() + ((i - now.getDay() + 7) % 7));
+        }
 
         if (this.isNative()) {
           await LocalNotifications.schedule({
             notifications: [
               {
+                id: alarm.id,
                 title: '⏰ Sveglia!',
                 body: alarm.label || 'È ora di alzarsi!',
-                id: new Date().getTime(),
                 schedule: { at: scheduledTime },
                 sound: 'assets/sounds/lofiAlarm.mp3',
-              }
-            ]
+              },
+            ],
           });
           console.log('Sveglia impostata per:', scheduledTime);
         }
       }
+    });
+  }
+
+  toggleAlarm(index: number) {
+    this.saveAlarms();
+    if (this.alarms[index].enabled) {
+      this.scheduleNotification(this.alarms[index]);
     }
   }
 
@@ -162,6 +159,7 @@ export class SvegliePage implements OnInit {
         {
           text: 'Elimina',
           handler: () => {
+            LocalNotifications.cancel({ notifications: [{ id: this.alarms[index].id }] });
             this.alarms.splice(index, 1);
             this.saveAlarms();
           }
