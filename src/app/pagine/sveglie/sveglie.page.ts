@@ -21,7 +21,7 @@ export class SvegliePage implements OnInit {
   daysOfWeek: string[] = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
   alarmAudio = new Audio('assets/sounds/lofiAlarm.mp3');
 
-  constructor(private alertCtrl: AlertController) {}
+  constructor(private alertCtrl: AlertController) { }
 
   async ngOnInit() {
     this.loadAlarms();
@@ -34,8 +34,9 @@ export class SvegliePage implements OnInit {
   }
 
   isNative(): boolean {
-    return (window as any).Capacitor !== undefined;
+    return !!(window as any).Capacitor?.isNativePlatform();
   }
+
 
   async requestPermissions() {
     const perm = await LocalNotifications.requestPermissions();
@@ -173,8 +174,18 @@ export class SvegliePage implements OnInit {
           });
         }
       });
+
+    } else {
+      // Web Notifications
+      if ('Notification' in window && Notification.permission === 'granted') {
+        setTimeout(() => {
+          new Notification('⏰ Sveglia!', { body: alarm.label || 'È ora di alzarsi!' });
+          this.alarmAudio.play().catch((e) => console.log('Errore audio:', e));
+        }, 1000); // Aspetta 1 secondo per non sovraccaricare il browser
+      }
     }
   }
+
 
   startWebAlarmCheck() {
     setInterval(() => {
