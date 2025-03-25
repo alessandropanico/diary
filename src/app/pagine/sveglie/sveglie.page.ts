@@ -14,11 +14,12 @@ interface Alarm {
   selector: 'app-sveglie',
   templateUrl: './sveglie.page.html',
   styleUrls: ['./sveglie.page.scss'],
-  standalone:false,
+  standalone: false,
 })
 export class SvegliePage implements OnInit {
   alarms: Alarm[] = [];
   daysOfWeek: string[] = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+  alarmAudio = new Audio('assets/sounds/lofiAlarm.mp3');
 
   constructor(private alertCtrl: AlertController) {}
 
@@ -26,6 +27,9 @@ export class SvegliePage implements OnInit {
     this.loadAlarms();
     if (this.isNative()) {
       await this.requestPermissions();
+    } else {
+      this.requestWebNotificationPermission();
+      this.startWebAlarmCheck();
     }
   }
 
@@ -37,6 +41,16 @@ export class SvegliePage implements OnInit {
     const perm = await LocalNotifications.requestPermissions();
     if (perm.display !== 'granted') {
       console.log('Permesso per le notifiche negato');
+    }
+  }
+
+  requestWebNotificationPermission() {
+    if ('Notification' in window) {
+      Notification.requestPermission().then((permission) => {
+        if (permission !== 'granted') {
+          console.log('Notifiche web disabilitate');
+        }
+      });
     }
   }
 
@@ -80,9 +94,30 @@ export class SvegliePage implements OnInit {
     await alert.present();
   }
 
+  async editAlarmTime(index: number) {
+    const alarm = this.alarms[index];
+    const alert = await this.alertCtrl.create({
+      header: 'Modifica orario',
+      inputs: [{ name: 'time', type: 'time', value: alarm.time }],
+      buttons: [
+        { text: 'Annulla', role: 'cancel' },
+        {
+          text: 'Salva',
+          handler: (data) => {
+            if (data.time) {
+              this.alarms[index].time = data.time;
+              this.saveAlarms();
+              this.scheduleNotification(this.alarms[index]);
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
   async editAlarmDays(index: number) {
     const alarm = this.alarms[index];
-
     const alert = await this.alertCtrl.create({
       header: 'Modifica giorni sveglia',
       inputs: this.daysOfWeek.map((day, i) => ({
@@ -114,18 +149,17 @@ export class SvegliePage implements OnInit {
     const [hour, minute] = alarm.time.split(':').map(Number);
     const now = new Date();
 
-    await LocalNotifications.cancel({ notifications: [{ id: alarm.id }] });
+    if (this.isNative()) {
+      await LocalNotifications.cancel({ notifications: [{ id: alarm.id }] });
 
-    alarm.days.forEach(async (isActive, i) => {
-      if (isActive) {
-        const scheduledTime = new Date();
-        scheduledTime.setHours(hour, minute, 0, 0);
+      alarm.days.forEach(async (isActive, i) => {
+        if (isActive) {
+          const scheduledTime = new Date();
+          scheduledTime.setHours(hour, minute, 0, 0);
+          if (scheduledTime < now) {
+            scheduledTime.setDate(scheduledTime.getDate() + ((i - now.getDay() + 7) % 7));
+          }
 
-        if (scheduledTime < now) {
-          scheduledTime.setDate(scheduledTime.getDate() + ((i - now.getDay() + 7) % 7));
-        }
-
-        if (this.isNative()) {
           await LocalNotifications.schedule({
             notifications: [
               {
@@ -137,9 +171,32 @@ export class SvegliePage implements OnInit {
               },
             ],
           });
-          console.log('Sveglia impostata per:', scheduledTime);
         }
-      }
+      });
+    }
+  }
+
+  startWebAlarmCheck() {
+    setInterval(() => {
+      const now = new Date();
+      const currentTime = now.toTimeString().slice(0, 5);
+      const currentDay = now.getDay();
+
+      this.alarms.forEach((alarm) => {
+        if (alarm.enabled && alarm.time === currentTime && alarm.days[currentDay]) {
+          this.triggerWebAlarm(alarm);
+        }
+      });
+    }, 60000);
+  }
+
+  triggerWebAlarm(alarm: Alarm) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('⏰ Sveglia!', { body: alarm.label || 'È ora di alzarsi!' });
+    }
+
+    this.alarmAudio.play().catch((e) => {
+      console.log('Errore nella riproduzione audio:', e);
     });
   }
 
@@ -159,7 +216,9 @@ export class SvegliePage implements OnInit {
         {
           text: 'Elimina',
           handler: () => {
-            LocalNotifications.cancel({ notifications: [{ id: this.alarms[index].id }] });
+            if (this.isNative()) {
+              LocalNotifications.cancel({ notifications: [{ id: this.alarms[index].id }] });
+            }
             this.alarms.splice(index, 1);
             this.saveAlarms();
           }

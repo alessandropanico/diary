@@ -2,16 +2,17 @@ ion-content {
   --background: #EEE5DE;
 }
 
+.lis-header {
+  background: #2a2a72;
+  color: white;
+  font-family: 'Shadows Into Light', cursive;
+  font-size: 1.5em;
+}
+
 .lis-background {
   background: linear-gradient(135deg, #6a0572, #2a2a72);
   color: white;
   padding: 15px;
-}
-
-.lis-header {
-  background: rgba(42, 42, 114, 0.9);
-  font-family: 'Shadows Into Light', cursive;
-  font-size: 1.5em;
 }
 
 ion-item {
@@ -19,23 +20,32 @@ ion-item {
   --color: white;
   border-radius: 12px;
   margin: 8px 0;
-  padding: 10px;
+  padding: 12px;
   transition: all 0.3s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-
-ion-button {
-  color: #ff79c6;
-}
-
-h2 {
+ion-label h2 {
   font-size: 1.4em;
   font-weight: bold;
+  cursor: pointer;
 }
 
 p {
   opacity: 0.85;
   font-style: italic;
+}
+
+.days-text {
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.active-day {
+  font-weight: bold;
+  color: #ffdd57;
 }
 
 ion-toggle {
