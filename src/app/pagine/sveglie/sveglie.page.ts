@@ -21,12 +21,12 @@ export class SvegliePage implements OnInit {
   daysOfWeek: string[] = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
   alarmAudio = new Audio('assets/sounds/lofiAlarm.mp3');
 
-  constructor(private alertCtrl: AlertController) { }
+  constructor(private alertCtrl: AlertController) {}
 
   async ngOnInit() {
     this.loadAlarms();
     if (this.isNative()) {
-      await this.requestPermissions();
+      await this.requestNativePermissions();
     } else {
       this.requestWebNotificationPermission();
       this.startWebAlarmCheck();
@@ -37,11 +37,10 @@ export class SvegliePage implements OnInit {
     return !!(window as any).Capacitor?.isNativePlatform();
   }
 
-
-  async requestPermissions() {
+  async requestNativePermissions() {
     const perm = await LocalNotifications.requestPermissions();
     if (perm.display !== 'granted') {
-      console.log('Permesso per le notifiche negato');
+      console.log('Permesso per le notifiche native negato');
     }
   }
 
@@ -88,9 +87,9 @@ export class SvegliePage implements OnInit {
               this.saveAlarms();
               this.scheduleNotification(newAlarm);
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
     await alert.present();
   }
@@ -110,9 +109,9 @@ export class SvegliePage implements OnInit {
               this.saveAlarms();
               this.scheduleNotification(this.alarms[index]);
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
     await alert.present();
   }
@@ -125,7 +124,7 @@ export class SvegliePage implements OnInit {
         type: 'checkbox',
         label: day,
         value: i,
-        checked: alarm.days[i]
+        checked: alarm.days[i],
       })),
       buttons: [
         { text: 'Annulla', role: 'cancel' },
@@ -138,9 +137,9 @@ export class SvegliePage implements OnInit {
             });
             this.saveAlarms();
             this.scheduleNotification(this.alarms[index]);
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
 
     await alert.present();
@@ -174,18 +173,15 @@ export class SvegliePage implements OnInit {
           });
         }
       });
-
     } else {
-      // Web Notifications
       if ('Notification' in window && Notification.permission === 'granted') {
         setTimeout(() => {
           new Notification('⏰ Sveglia!', { body: alarm.label || 'È ora di alzarsi!' });
           this.alarmAudio.play().catch((e) => console.log('Errore audio:', e));
-        }, 1000); // Aspetta 1 secondo per non sovraccaricare il browser
+        }, 1000);
       }
     }
   }
-
 
   startWebAlarmCheck() {
     setInterval(() => {
@@ -232,9 +228,9 @@ export class SvegliePage implements OnInit {
             }
             this.alarms.splice(index, 1);
             this.saveAlarms();
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
     await alert.present();
   }
