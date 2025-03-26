@@ -14,24 +14,40 @@ interface Alarm {
   selector: 'app-sveglie',
   templateUrl: './sveglie.page.html',
   styleUrls: ['./sveglie.page.scss'],
-  standalone: false,
+  standalone:false,
 })
 export class SvegliePage implements OnInit {
   alarms: Alarm[] = [];
   daysOfWeek: string[] = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
-  alarmAudio = new Audio('assets/sounds/lofiAlarm.mp3');
+  alarmAudio: HTMLAudioElement;
 
-  constructor(private alertCtrl: AlertController) {}
+  constructor(private alertCtrl: AlertController) {
+    this.alarmAudio = new Audio();
+  }
 
-  async ngOnInit() {
+  ngOnInit() {
     this.loadAlarms();
+    this.setupAudio();
+
     if (this.isNative()) {
-      await this.requestNativePermissions();
+      this.requestNativePermissions();
     } else {
       this.requestWebNotificationPermission();
       this.startWebAlarmCheck();
     }
   }
+
+  setupAudio() {
+    this.alarmAudio = new Audio();
+    this.alarmAudio.src = 'assets/sounds/lofiAlarm.mp3';
+
+    this.alarmAudio.addEventListener('error', () => {
+      console.error('Errore: file audio non trovato o formato non supportato.');
+    });
+
+    this.alarmAudio.load();
+  }
+
 
   isNative(): boolean {
     return !!(window as any).Capacitor?.isNativePlatform();
@@ -146,19 +162,14 @@ export class SvegliePage implements OnInit {
   }
 
   async scheduleNotification(alarm: Alarm) {
-    const [hour, minute] = alarm.time.split(':').map(Number);
-    const now = new Date();
-
     if (this.isNative()) {
       await LocalNotifications.cancel({ notifications: [{ id: alarm.id }] });
 
       alarm.days.forEach(async (isActive, i) => {
         if (isActive) {
           const scheduledTime = new Date();
+          const [hour, minute] = alarm.time.split(':').map(Number);
           scheduledTime.setHours(hour, minute, 0, 0);
-          if (scheduledTime < now) {
-            scheduledTime.setDate(scheduledTime.getDate() + ((i - now.getDay() + 7) % 7));
-          }
 
           await LocalNotifications.schedule({
             notifications: [
@@ -177,7 +188,7 @@ export class SvegliePage implements OnInit {
       if ('Notification' in window && Notification.permission === 'granted') {
         setTimeout(() => {
           new Notification('⏰ Sveglia!', { body: alarm.label || 'È ora di alzarsi!' });
-          this.alarmAudio.play().catch((e) => console.log('Errore audio:', e));
+          this.testAudio();
         }, 1000);
       }
     }
@@ -201,10 +212,7 @@ export class SvegliePage implements OnInit {
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification('⏰ Sveglia!', { body: alarm.label || 'È ora di alzarsi!' });
     }
-
-    this.alarmAudio.play().catch((e) => {
-      console.log('Errore nella riproduzione audio:', e);
-    });
+    this.testAudio();
   }
 
   toggleAlarm(index: number) {
@@ -236,8 +244,7 @@ export class SvegliePage implements OnInit {
   }
 
   testAudio() {
-    this.alarmAudio.play().catch(e => console.log('Errore audio:', e));
+    this.alarmAudio.currentTime = 0;
+    this.alarmAudio.play().catch(e => console.error('Errore audio:', e));
   }
-
-  
 }
