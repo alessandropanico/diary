@@ -19,24 +19,23 @@
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-           "assets": [
-  {
-    "glob": "**/*",
-    "input": "src/assets",
-    "output": "assets"
-  },
-  {
-    "glob": "**/*.mp3",
-    "input": "src/assets/sounds",
-    "output": "assets/sounds"
-  },
-  {
-    "glob": "**/*.svg",
-    "input": "node_modules/ionicons/dist/ionicons/svg",
-    "output": "./svg"
-  }
-],
-
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "assets"
+              },
+              {
+                "glob": "**/*.mp3",
+                "input": "src/assets/sounds",
+                "output": "assets/sounds"
+              },
+              {
+                "glob": "**/*.svg",
+                "input": "node_modules/ionicons/dist/ionicons/svg",
+                "output": "./svg"
+              }
+            ],
             "styles": [
               "src/global.scss",
               "src/theme/variables.scss"
@@ -112,24 +111,23 @@
             "tsConfig": "tsconfig.spec.json",
             "karmaConfig": "karma.conf.js",
             "inlineStyleLanguage": "scss",
-          "assets": [
-  {
-    "glob": "**/*",
-    "input": "src/assets",
-    "output": "assets"
-  },
-  {
-    "glob": "**/*.mp3",
-    "input": "src/assets/sounds",
-    "output": "assets/sounds"
-  },
-  {
-    "glob": "**/*.svg",
-    "input": "node_modules/ionicons/dist/ionicons/svg",
-    "output": "./svg"
-  }
-]
-,
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "assets"
+              },
+              {
+                "glob": "**/*.mp3",
+                "input": "src/assets/sounds",
+                "output": "assets/sounds"
+              },
+              {
+                "glob": "**/*.svg",
+                "input": "node_modules/ionicons/dist/ionicons/svg",
+                "output": "./svg"
+              }
+            ],
             "styles": [
               "src/global.scss",
               "src/theme/variables.scss"
