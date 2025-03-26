@@ -234,4 +234,10 @@ export class SvegliePage implements OnInit {
     });
     await alert.present();
   }
+
+  testAudio() {
+    this.alarmAudio.play().catch(e => console.log('Errore audio:', e));
+  }
+
+  
 }
