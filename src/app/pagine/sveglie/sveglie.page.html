@@ -1,43 +1,45 @@
 <ion-header>
-  <ion-toolbar class="lis-header">
-    <ion-title class="titolo">Le mie sveglie</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="addAlarm()">
-        <ion-icon name="add-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+  <ion-toolbar color="primary">
+    <ion-title>⏰ Sveglia</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="lis-background">
-  <ion-list>
-    <ion-item *ngFor="let alarm of alarms; let i = index" class="alarm-item">
-      <ion-label>
-        <h2 (click)="editAlarmTime(i)">{{ alarm.time }}</h2>
-        <p *ngIf="alarm.label">{{ alarm.label }}</p>
-        <p (click)="editAlarmDays(i)" class="days-text">
-          <strong>Giorni:</strong>
-          <span *ngFor="let day of daysOfWeek; let idx = index">
-            <span *ngIf="alarm.days?.[idx]" class="active-day">{{ day }} </span>
-          </span>
-        </p>
-      </ion-label>
+<ion-content class="ion-padding">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Nuova Sveglia</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-label>Orario</ion-label>
+        <ion-datetime display-format="HH:mm" [(ngModel)]="alarmTime"></ion-datetime>
+      </ion-item>
 
-      <ion-toggle [(ngModel)]="alarm.enabled" (ionChange)="toggleAlarm(i)"></ion-toggle>
+      <ion-item>
+        <ion-label>Nota</ion-label>
+        <ion-input type="text" placeholder="Inserisci una nota" [(ngModel)]="alarmNote"></ion-input>
+      </ion-item>
 
-      <ion-buttons slot="end">
-        <ion-button fill="clear" color="warning" (click)="editAlarmTime(i)">
-          <ion-icon name="time-outline"></ion-icon>
+      <ion-button expand="full" color="success" (click)="setAlarm()">Imposta Sveglia</ion-button>
+      <ion-button expand="full" color="warning" (click)="testAlarm()">🔊 Test Suono</ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card *ngIf="alarms.length > 0">
+    <ion-card-header>
+      <ion-card-title>Sveglie Attive</ion-card-title>
+    </ion-card-header>
+    <ion-list>
+      <ion-item *ngFor="let alarm of alarms; let i = index">
+        <ion-label>
+          <h2>⏱ {{ alarm.time }}</h2>
+          <p>{{ alarm.note || "Nessuna nota" }}</p>
+        </ion-label>
+        <ion-toggle [(ngModel)]="alarm.active" (ionChange)="toggleAlarm(alarm)"></ion-toggle>
+        <ion-button fill="clear" color="danger" (click)="removeAlarm(i)">
+          🗑 Elimina
         </ion-button>
-        <ion-button fill="clear" color="danger" (click)="deleteAlarm(i)">
-          <ion-icon name="trash-outline"></ion-icon>
-        </ion-button>
-      </ion-buttons>
-    </ion-item>
-  </ion-list>
-
-  <div class="container">
-    <button type="button" class="btn btn-primary" (click)="testAudio()">Test Suono</button>
-  </div>
-
+      </ion-item>
+    </ion-list>
+  </ion-card>
 </ion-content>
