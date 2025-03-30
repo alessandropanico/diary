@@ -24,6 +24,14 @@
         <label for="alarm-note">Nota:</label>
         <input id="alarm-note" type="text" placeholder="Inserisci una nota" [(ngModel)]="alarmNote" />
 
+        <!-- Selezione giorni della settimana -->
+        <label>Giorni della settimana:</label>
+        <div class="days-container">
+          <label *ngFor="let day of weekDays; let i = index">
+            <input type="checkbox" [(ngModel)]="selectedDays[i]" /> {{ day }}
+          </label>
+        </div>
+
         <button *ngIf="editingAlarmIndex === null" class="success-btn" (click)="setAlarm()">Imposta Sveglia</button>
         <button *ngIf="editingAlarmIndex !== null" class="success-btn" (click)="updateAlarm()">✏️ Aggiorna Sveglia</button>
 
@@ -37,7 +45,8 @@
     <h2>Sveglie Attive</h2>
     <ul>
       <li *ngFor="let alarm of alarms; let i = index">
-        <span>⏱ {{ alarm.time }} - {{ alarm.note || "Nessuna nota" }}</span>
+        <span>⏱ {{ alarm.time }} - {{ alarm.note || "Nessuna nota" }} </span>
+        <span>📆 Giorni: {{ alarm.days ? alarm.days.join(', ') : 'Nessun giorno selezionato' }}</span>
         <button class="edit-btn" (click)="openInfo(i)">✏️ Modifica</button>
         <button class="delete-btn" (click)="removeAlarm(i)">🗑 Elimina</button>
       </li>

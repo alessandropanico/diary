@@ -12,6 +12,8 @@ export class SvegliePage {
   alarmTime: string = '';
   alarmNote: string = '';
   alarms: any[] = [];
+  weekDays: string[] = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+  selectedDays: boolean[] = [true, true, true, true, true, true, true]; // Di default, tutti i giorni
 
   constructor(private storage: Storage) {
     this.storage.create();
@@ -25,44 +27,85 @@ export class SvegliePage {
     console.log("🔄 Allarmi caricati:", this.alarms);
   }
 
-  async setAlarm() {
-    if (!this.alarmTime) {
-      alert('⚠️ Seleziona un orario per la sveglia');
-      return;
-    }
+  isMobile(): boolean {
+    return /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+  }
+
+ async setAlarm() {
+  if (!this.alarmTime) {
+    alert('⚠️ Seleziona un orario per la sveglia');
+    return;
+  }
+
+  const now = new Date();
+  const [hours, minutes] = this.alarmTime.split(':').map(Number);
+
+  const selectedDaysNames = this.weekDays.filter((_, i) => this.selectedDays[i]); // Prendi solo i giorni attivi
+
+  if (selectedDaysNames.length === 0) {
+    alert('⚠️ Seleziona almeno un giorno per la sveglia!');
+    return;
+  }
+
+  console.log(`⏰ Sveglia impostata per: ${selectedDaysNames.join(', ')} alle ${this.alarmTime}`);
+
+  // Creiamo sveglie per ogni giorno selezionato
+  selectedDaysNames.forEach(async (dayName, index) => {
+    const alarmId = this.alarms.length + index + 1;
 
     const alarmTime = new Date();
-    const [hours, minutes] = this.alarmTime.split(':').map(Number);
     alarmTime.setHours(hours, minutes, 0, 0);
 
-    const alarmId = this.alarms.length + 1;
+    // Calcoliamo il giorno della settimana in cui deve partire la sveglia
+    const today = new Date().getDay(); // 0 = Domenica, 1 = Lunedì, ..., 6 = Sabato
+    const targetDay = this.weekDays.indexOf(dayName) + 1; // Mappa 1 = Lun, ..., 7 = Dom
 
-    console.log(`⏰ Impostando sveglia ID ${alarmId} per le ${this.alarmTime}`);
+    let daysUntilNextAlarm = targetDay - today;
+    if (daysUntilNextAlarm < 0) daysUntilNextAlarm += 7; // Se è passato, va alla settimana successiva
 
-    try {
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: alarmId,
-            title: "⏰ Sveglia",
-            body: this.alarmNote || 'È ora di svegliarsi!',
-            schedule: { at: alarmTime },
-            sound: 'assets/sound/lofiAlarm.mp3',
-          },
-        ],
-      });
+    alarmTime.setDate(now.getDate() + daysUntilNextAlarm);
 
-      this.alarms.push({ id: alarmId, time: this.alarmTime, note: this.alarmNote, active: true });
-      await this.storage.set('alarms', this.alarms);
-
-      console.log("✅ Sveglia impostata con successo!");
-    } catch (error) {
-      console.error("❌ Errore nell'impostare la sveglia:", error);
+    if (this.isMobile()) {
+      try {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              id: alarmId,
+              title: "⏰ Sveglia",
+              body: this.alarmNote || 'È ora di svegliarsi!',
+              schedule: { at: alarmTime, repeats: true },
+              sound: 'assets/sound/lofiAlarm.mp3',
+            },
+          ],
+        });
+      } catch (error) {
+        console.error("❌ Errore nell'impostare la sveglia:", error);
+      }
+    } else {
+      // Per il browser, usa setTimeout()
+      const timeDiff = alarmTime.getTime() - now.getTime();
+      setTimeout(() => {
+        const audio = new Audio('assets/sound/lofiAlarm.mp3');
+        audio.play();
+        alert(`⏰ Sveglia (${dayName})! È ora di svegliarsi!`);
+      }, timeDiff);
     }
 
-    this.alarmTime = '';
-    this.alarmNote = '';
-  }
+    this.alarms.push({
+      id: alarmId,
+      time: this.alarmTime,
+      note: this.alarmNote,
+      days: selectedDaysNames, // Salviamo i giorni
+    });
+  });
+
+  await this.storage.set('alarms', this.alarms);
+
+  this.alarmTime = '';
+  this.alarmNote = '';
+}
+
+
 
   async removeAlarm(index: number) {
     const alarm = this.alarms[index];
@@ -150,9 +193,10 @@ export class SvegliePage {
 
       this.alarms.push({
         id: 1,
-        time: `${defaultTime.getHours()}:${defaultTime.getMinutes()}`,
-        note: "Sveglia di default",
-        active: true,
+  time: `${defaultTime.getHours()}:${defaultTime.getMinutes()}`,
+  note: "Sveglia di default",
+  days: [],  // Assicurati che l'array sia inizializzato
+  active: true,
       });
 
       await this.storage.set('alarms', this.alarms);
@@ -169,7 +213,7 @@ export class SvegliePage {
     }
   }
 
-  
+
   //--------------------------------------------------
 
   alarmInfo: boolean = false;
