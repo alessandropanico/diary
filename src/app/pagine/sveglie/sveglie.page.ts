@@ -17,10 +17,7 @@ export class SvegliePage {
     this.storage.create();
     this.loadAlarms();
 
-    // Imposta una sveglia di default 1 minuto dopo l'apertura dell'app
-    setTimeout(() => {
-      this.setDefaultAlarm();
-    }, 3000);
+ 
   }
 
   async loadAlarms() {
@@ -168,11 +165,14 @@ export class SvegliePage {
 
   //--------------------------------------------------
 
-  alarmInfo:boolean=false;
+  alarmInfo: boolean = false;
 
-  openInfo(){
-    this.alarmInfo=!this.alarmInfo
+  openInfo() {
+    this.alarmInfo = true;
   }
 
+  closeInfo() {
+    this.alarmInfo = false;
+  }
 
 }

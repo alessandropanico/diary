@@ -1,57 +1,107 @@
-ion-content {
-  --background: #EEE5DE;
-}
-
-.lis-header {
-  background: #2a2a72;
-  color: white;
-  font-family: 'Shadows Into Light', cursive;
-  font-size: 1.5em;
-}
-
-.lis-background {
-  background: linear-gradient(135deg, #6a0572, #2a2a72);
-  color: white;
-  padding: 15px;
-}
-
-ion-item {
-  --background: rgba(255, 255, 255, 0.2);
-  --color: white;
-  border-radius: 12px;
-  margin: 8px 0;
-  padding: 12px;
-  transition: all 0.3s ease-in-out;
+/* Sfondo scuro quando il modale è aperto */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
+  justify-content: center;
   align-items: center;
+}
+
+/* Contenitore del modale */
+.custom-modal {
+  background: black;
+  width: 90%;
+  max-width: 400px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Header del modale */
+.modal-header {
+  display: flex;
   justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 10px;
 }
 
-ion-label h2 {
-  font-size: 1.4em;
-  font-weight: bold;
+/* Pulsante per chiudere */
+.close-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
   cursor: pointer;
 }
 
-p {
-  opacity: 0.85;
-  font-style: italic;
+/* Stili per il corpo del modale */
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
 }
 
-.days-text {
+.modal-body input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Stili per i pulsanti */
+.success-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
   cursor: pointer;
-  font-size: 0.9em;
 }
 
-.active-day {
-  font-weight: bold;
-  color: #ffdd57;
+.warning-btn {
+  background: #ffc107;
+  color: black;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-ion-toggle {
-  margin-left: 10px;
+.delete-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-ion-icon {
-  font-size: 1.4em;
+/* Bottone per aprire il modale */
+.open-modal-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
 }
+
+/* Lista delle sveglie */
+.alarms-container ul {
+  list-style: none;
+  padding: 0;
+}
+
+.alarms-container li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+
