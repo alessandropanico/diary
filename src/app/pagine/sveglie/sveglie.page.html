@@ -4,8 +4,11 @@
   </ion-toolbar>
 </ion-header>
 
+<ion-button (click)="openInfo()">Imposta Sveglia</ion-button>
+
 <ion-content class="ion-padding">
-  <ion-card>
+  
+  <ion-card  *ngIf="alarmInfo">
     <ion-card-header>
       <ion-card-title>Nuova Sveglia</ion-card-title>
     </ion-card-header>
