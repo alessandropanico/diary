@@ -16,8 +16,7 @@ export class SvegliePage {
   constructor(private storage: Storage) {
     this.storage.create();
     this.loadAlarms();
-
-
+    this.requestNotificationPermission(); // Richiede permessi all'avvio
   }
 
   async loadAlarms() {
@@ -163,6 +162,14 @@ export class SvegliePage {
     }
   }
 
+  async requestNotificationPermission() {
+    const permission = await LocalNotifications.requestPermissions();
+    if (permission.display !== 'granted') {
+      alert("⚠️ Devi abilitare le notifiche per far funzionare la sveglia!");
+    }
+  }
+
+  
   //--------------------------------------------------
 
   alarmInfo: boolean = false;
