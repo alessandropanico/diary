@@ -4,8 +4,8 @@
   </ion-toolbar>
 </ion-header>
 
-<!-- Bottone per aprire il modale -->
-<button class="open-modal-btn" (click)="openInfo()">Imposta Sveglia</button>
+<!-- Bottone per aggiungere una nuova sveglia -->
+<button class="open-modal-btn" (click)="openInfo(null)">➕ Aggiungi Sveglia</button>
 
 <ion-content class="ion-padding">
 
@@ -13,7 +13,8 @@
   <div class="custom-modal-overlay" *ngIf="alarmInfo">
     <div class="custom-modal">
       <div class="modal-header">
-        <h2>Imposta Sveglia</h2>
+        <h2 *ngIf="editingAlarmIndex === null">Imposta Sveglia</h2>
+        <h2 *ngIf="editingAlarmIndex !== null">Modifica Sveglia</h2>
         <button class="close-btn" (click)="closeInfo()">✖</button>
       </div>
       <div class="modal-body">
@@ -23,7 +24,9 @@
         <label for="alarm-note">Nota:</label>
         <input id="alarm-note" type="text" placeholder="Inserisci una nota" [(ngModel)]="alarmNote" />
 
-        <button class="success-btn" (click)="setAlarm()">Imposta Sveglia</button>
+        <button *ngIf="editingAlarmIndex === null" class="success-btn" (click)="setAlarm()">Imposta Sveglia</button>
+        <button *ngIf="editingAlarmIndex !== null" class="success-btn" (click)="updateAlarm()">✏️ Aggiorna Sveglia</button>
+
         <button class="warning-btn" (click)="testAlarm()">🔊 Test Suono</button>
       </div>
     </div>
@@ -35,8 +38,10 @@
     <ul>
       <li *ngFor="let alarm of alarms; let i = index">
         <span>⏱ {{ alarm.time }} - {{ alarm.note || "Nessuna nota" }}</span>
+        <button class="edit-btn" (click)="openInfo(i)">✏️ Modifica</button>
         <button class="delete-btn" (click)="removeAlarm(i)">🗑 Elimina</button>
       </li>
     </ul>
   </div>
+
 </ion-content>

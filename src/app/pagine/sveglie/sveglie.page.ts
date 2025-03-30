@@ -17,7 +17,7 @@ export class SvegliePage {
     this.storage.create();
     this.loadAlarms();
 
- 
+
   }
 
   async loadAlarms() {
@@ -167,12 +167,77 @@ export class SvegliePage {
 
   alarmInfo: boolean = false;
 
-  openInfo() {
-    this.alarmInfo = true;
-  }
+
 
   closeInfo() {
     this.alarmInfo = false;
   }
+
+  editingAlarmIndex: number | null = null;
+
+  openInfo(alarmIndex: number | null = null) {
+    if (alarmIndex !== null) {
+      const alarm = this.alarms[alarmIndex];
+      this.alarmTime = alarm.time;
+      this.alarmNote = alarm.note;
+      this.editingAlarmIndex = alarmIndex;
+    } else {
+      this.alarmTime = '';
+      this.alarmNote = '';
+      this.editingAlarmIndex = null;
+    }
+    this.alarmInfo = true;
+  }
+
+  async updateAlarm() {
+    if (this.editingAlarmIndex === null || !this.alarmTime) {
+      alert('⚠️ Seleziona un orario per aggiornare la sveglia');
+      return;
+    }
+
+    const alarm = this.alarms[this.editingAlarmIndex];
+    const [hours, minutes] = this.alarmTime.split(':').map(Number);
+    const newAlarmTime = new Date();
+    newAlarmTime.setHours(hours, minutes, 0, 0);
+
+    console.log(`✏️ Modificando sveglia ID ${alarm.id} a ${this.alarmTime}`);
+
+    try {
+      // Cancella la vecchia notifica
+      await LocalNotifications.cancel({ notifications: [{ id: alarm.id }] });
+
+      // Programma la nuova notifica aggiornata
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: alarm.id,
+            title: "⏰ Sveglia Aggiornata",
+            body: this.alarmNote || 'È ora di svegliarsi!',
+            schedule: { at: newAlarmTime },
+            sound: 'assets/sound/lofiAlarm.mp3',
+          },
+        ],
+      });
+
+      // Aggiorna l'array delle sveglie
+      this.alarms[this.editingAlarmIndex] = {
+        id: alarm.id,
+        time: this.alarmTime,
+        note: this.alarmNote,
+        active: true,
+      };
+
+      // Salva nel LocalStorage
+      await this.storage.set('alarms', this.alarms);
+
+      console.log("✅ Sveglia aggiornata con successo!");
+    } catch (error) {
+      console.error("❌ Errore nell'aggiornare la sveglia:", error);
+    }
+
+    this.closeInfo();
+  }
+
+
 
 }
