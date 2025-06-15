@@ -83,6 +83,7 @@ export class SvegliePage {
 
     await this.saveAlarms();
     this.resetForm();
+    this.alarmInfo=false;
   }
 
   async updateAlarm() {
