@@ -10,7 +10,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-    "vercel-build": "npm install --legacy-peer-deps && npx ionic build --prod"
+     "vercel-build": "npm install --legacy-peer-deps && npx ionic build --prod"
   },
   "private": true,
   "dependencies": {
