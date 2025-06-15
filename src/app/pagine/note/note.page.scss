@@ -1,0 +1,12 @@
+.playlist-scroll {
+  display: flex;
+  overflow-x: auto;
+  padding: 10px 0;
+  gap: 8px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE 10+ */
+}
+
+.playlist-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}

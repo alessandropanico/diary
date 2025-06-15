@@ -1,6 +1,7 @@
 export interface Note {
   id: string;
-  playlistId: string;
+  title: string;
   content: string;
-  createdAt: string;
+  playlistId: string;
+  createdAt: number;
 }
