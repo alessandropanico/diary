@@ -14,13 +14,14 @@ import { NoteEditorComponent } from './components/note-editor/note-editor.compon
 export class NotePage implements OnInit {
 
   playlists: Playlist[] = [];
-  selectedPlaylistId = 'all';
+  selectedPlaylistId: string = 'all';
   notes: Note[] = [];
   filteredNotes: Note[] = [];
 
-  constructor(private noteService: NoteService,
-  private modalCtrl: ModalController // aggiungi questo parametro
-  ) { }
+  constructor(
+    private noteService: NoteService,
+    private modalCtrl: ModalController
+  ) {}
 
   ngOnInit() {
     this.loadPlaylists();
@@ -32,12 +33,21 @@ export class NotePage implements OnInit {
   }
 
   loadNotes() {
-    this.notes = this.noteService.getNotesByPlaylist(this.selectedPlaylistId);
+    this.notes = this.noteService.getNotes();
+    this.filterNotes();
+  }
+
+  filterNotes() {
+    if (this.selectedPlaylistId === 'all') {
+      this.filteredNotes = this.notes;
+    } else {
+      this.filteredNotes = this.notes.filter(n => n.playlistId === this.selectedPlaylistId);
+    }
   }
 
   selectPlaylist(id: string) {
     this.selectedPlaylistId = id;
-    this.loadNotes();
+    this.filterNotes();
   }
 
   openCreatePlaylist() {
@@ -49,22 +59,19 @@ export class NotePage implements OnInit {
   }
 
   async openNewNoteModal() {
-  const modal = await this.modalCtrl.create({
-    component: NoteEditorComponent,
-    componentProps: {
-      playlistId: this.selectedPlaylistId
-    },
-    breakpoints: [0, 1],
-    initialBreakpoint: 1
-  });
+    const modal = await this.modalCtrl.create({
+      component: NoteEditorComponent,
+      componentProps: { playlistId: this.selectedPlaylistId },
+      breakpoints: [0, 1],
+      initialBreakpoint: 1
+    });
 
-  modal.onDidDismiss().then(result => {
-    if (result.role === 'save') {
-      this.loadNotes(); // aggiorna la lista
-    }
-  });
+    modal.onDidDismiss().then(result => {
+      if (result.role === 'save') {
+        this.loadNotes();
+      }
+    });
 
-  await modal.present();
-}
-
+    await modal.present();
+  }
 }

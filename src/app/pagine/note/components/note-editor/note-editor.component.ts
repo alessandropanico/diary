@@ -12,20 +12,18 @@ import { Note } from 'src/app/interfaces/note';
 export class NoteEditorComponent {
   @Input() playlistId: string = 'all';
 
-  title = '';
-  content = '';
+  title: string = '';
+  content: string = '';
 
   constructor(
     private modalCtrl: ModalController,
     private noteService: NoteService
   ) {}
 
-  dismiss() {
-    this.modalCtrl.dismiss(null, 'cancel');
-  }
-
-  saveNote() {
-    if (!this.title.trim() || !this.content.trim()) return;
+  save() {
+    if (!this.title.trim() || !this.content.trim()) {
+      return;
+    }
 
     const newNote: Note = {
       id: Date.now().toString(),
@@ -36,6 +34,10 @@ export class NoteEditorComponent {
     };
 
     this.noteService.addNote(newNote);
-    this.modalCtrl.dismiss(newNote, 'save');
+    this.modalCtrl.dismiss({ note: newNote }, 'save');
+  }
+
+  close() {
+    this.modalCtrl.dismiss(null, 'cancel');
   }
 }

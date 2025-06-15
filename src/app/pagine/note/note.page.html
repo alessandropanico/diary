@@ -24,7 +24,7 @@
     <ion-item *ngFor="let note of filteredNotes">
       <ion-label>
         <h2>{{ note.title }}</h2>
-        <p>{{ note.content  | slice:0:80 }}{{ note.content .length > 80 ? '...' : '' }}</p>
+        <p>{{ note.content | slice:0:80 }}{{ note.content.length > 80 ? '...' : '' }}</p>
       </ion-label>
     </ion-item>
   </ion-list>
@@ -33,7 +33,7 @@
     Nessuna nota in questa playlist.
   </ion-text>
 
-  <!-- Pulsante Flottante per aggiungere nuova nota -->
+  <!-- FAB -->
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
     <ion-fab-button (click)="openNewNoteModal()">
       <ion-icon name="add"></ion-icon>

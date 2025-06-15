@@ -10,7 +10,6 @@ export class NoteService {
   private PLAYLIST_KEY = 'playlists';
 
   constructor() {
-    // Crea playlist di default "Tutti"
     if (!localStorage.getItem(this.PLAYLIST_KEY)) {
       this.savePlaylists([{ id: 'all', name: 'Tutti' }]);
     }
@@ -32,11 +31,6 @@ export class NoteService {
 
   getNotes(): Note[] {
     return JSON.parse(localStorage.getItem(this.NOTE_KEY) || '[]');
-  }
-
-  getNotesByPlaylist(playlistId: string): Note[] {
-    if (playlistId === 'all') return this.getNotes();
-    return this.getNotes().filter(n => n.playlistId === playlistId || n.playlistId === 'all');
   }
 
   addNote(note: Note) {
