@@ -6,7 +6,6 @@ import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
-import { IonHeader } from '@ionic/angular';
 import { IonicStorageModule } from '@ionic/storage-angular';
 
 @NgModule({
