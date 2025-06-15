@@ -17,6 +17,8 @@ export class SvegliePage {
   alarmInfo = false;
   editingAlarmIndex: number | null = null;
 
+  ringingAudio: HTMLAudioElement | null = null; // AUDIO ATTIVO
+
   constructor(private storage: Storage) {
     this.init();
   }
@@ -188,10 +190,30 @@ export class SvegliePage {
     } else {
       const diff = date.getTime() - Date.now();
       setTimeout(() => {
-        const audio = new Audio('assets/sound/lofiAlarm.mp3');
-        audio.play();
-        alert(`⏰ Sveglia (${dayLabel})!`);
+        this.startRinging(dayLabel, message);
       }, diff);
+    }
+  }
+
+  startRinging(dayLabel: string, message: string) {
+    // Ferma audio precedente se presente
+    this.stopRingingAudio();
+
+    this.ringingAudio = new Audio('assets/sound/lofiAlarm.mp3');
+    this.ringingAudio.loop = true;
+    this.ringingAudio.play();
+
+    const stop = confirm(`⏰ Sveglia (${dayLabel})!\n\nPremi OK per fermare la sveglia.`);
+    if (stop) {
+      this.stopRingingAudio();
+    }
+  }
+
+  stopRingingAudio() {
+    if (this.ringingAudio) {
+      this.ringingAudio.pause();
+      this.ringingAudio.currentTime = 0;
+      this.ringingAudio = null;
     }
   }
 
@@ -225,8 +247,6 @@ export class SvegliePage {
   }
 
   async testAlarm() {
-    const audio = new Audio('assets/sound/lofiAlarm.mp3');
-
     if (this.isMobile()) {
       try {
         await LocalNotifications.schedule({
@@ -255,6 +275,7 @@ export class SvegliePage {
           body: "Questa è una sveglia di prova!",
           icon: 'assets/icon/icon.png',
         });
+        const audio = new Audio('assets/sound/lofiAlarm.mp3');
         audio.play();
       }, 3000);
     }
