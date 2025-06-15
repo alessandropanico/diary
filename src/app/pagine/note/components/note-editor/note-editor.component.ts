@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { NoteService } from 'src/app/services/note.service';
 import { Note } from 'src/app/interfaces/note';
+import { ActionSheetController } from '@ionic/angular';
 
 @Component({
   selector: 'app-note-editor',
@@ -18,8 +19,10 @@ export class NoteEditorComponent implements OnInit {
 
   constructor(
     private modalCtrl: ModalController,
-    private noteService: NoteService
-  ) {}
+    private noteService: NoteService,
+    private actionSheetCtrl: ActionSheetController
+  ) { }
+
 
   ngOnInit() {
     if (this.note) {
@@ -58,4 +61,49 @@ export class NoteEditorComponent implements OnInit {
   close() {
     this.modalCtrl.dismiss(null, 'cancel');
   }
+
+  async presentOptions() {
+    const actionSheet = await this.actionSheetCtrl.create({
+      header: 'Opzioni nota',
+      buttons: [
+        {
+          text: 'Elimina',
+          role: 'destructive',
+          icon: 'trash',
+          handler: () => {
+            if (this.note) {
+              this.noteService.deleteNote(this.note.id);
+              this.modalCtrl.dismiss({ note: this.note }, 'delete');
+            }
+          }
+        },
+        {
+          text: 'Sposta in un\'altra playlist',
+          icon: 'swap-horizontal',
+          handler: () => {
+            this.presentMovePrompt();
+          }
+        },
+        {
+          text: 'Annulla',
+          role: 'cancel'
+        }
+      ]
+    });
+
+    await actionSheet.present();
+  }
+
+  async presentMovePrompt() {
+    const name = prompt('Inserisci ID della nuova playlist:');
+    if (name && this.note) {
+      const updatedNote: Note = {
+        ...this.note,
+        playlistId: name.trim()
+      };
+      this.noteService.updateNote(updatedNote);
+      this.modalCtrl.dismiss({ note: updatedNote }, 'move');
+    }
+  }
+
 }

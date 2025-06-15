@@ -2,11 +2,15 @@
   <ion-toolbar>
     <ion-title>Nuova Nota</ion-title>
     <ion-buttons slot="end">
+      <ion-button *ngIf="note" (click)="presentOptions()">
+        <ion-icon name="ellipsis-vertical"></ion-icon>
+      </ion-button>
       <ion-button (click)="close()">Annulla</ion-button>
       <ion-button (click)="save()" [disabled]="!title.trim() || !content.trim()">Salva</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
+
 
 <ion-content class="ion-padding">
   <ion-item>
