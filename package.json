@@ -9,8 +9,11 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "vercel-build": "npm install --legacy-peer-deps && ionic build --prod"
   },
+
+
   "private": true,
   "dependencies": {
     "@angular/animations": "^19.0.0",
