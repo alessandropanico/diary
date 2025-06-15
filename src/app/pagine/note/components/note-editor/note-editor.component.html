@@ -1,0 +1,28 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Nuova Nota</ion-title>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Annulla</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-input
+    label="Titolo"
+    [(ngModel)]="title"
+    placeholder="Inserisci il titolo">
+  </ion-input>
+
+  <ion-textarea
+    label="Contenuto"
+    autoGrow="true"
+    rows="10"
+    [(ngModel)]="content"
+    placeholder="Scrivi la nota...">
+  </ion-textarea>
+
+  <ion-button expand="block" (click)="saveNote()" color="primary">
+    Salva Nota
+  </ion-button>
+</ion-content>

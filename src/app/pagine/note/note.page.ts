@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { NoteService } from 'src/app/services/note.service';
 import { Note } from 'src/app/interfaces/note';
 import { Playlist } from 'src/app/interfaces/playlist';
+import { ModalController } from '@ionic/angular';
+import { NoteEditorComponent } from './components/note-editor/note-editor.component';
 
 @Component({
   selector: 'app-note',
@@ -16,7 +18,9 @@ export class NotePage implements OnInit {
   notes: Note[] = [];
   filteredNotes: Note[] = [];
 
-  constructor(private noteService: NoteService) { }
+  constructor(private noteService: NoteService,
+  private modalCtrl: ModalController // aggiungi questo parametro
+  ) { }
 
   ngOnInit() {
     this.loadPlaylists();
@@ -44,19 +48,23 @@ export class NotePage implements OnInit {
     }
   }
 
-  openNewNoteModal() {
-    const title = prompt('Titolo nota');
-    const content = prompt('Contenuto nota');
-    if (title?.trim() && content?.trim()) {
-      const newNote: Note = {
-        id: Date.now().toString(),
-        title: title.trim(),
-        content: content.trim(),
-        playlistId: this.selectedPlaylistId,
-        createdAt: Date.now() // <--- numero, non stringa
-      };
-      this.noteService.addNote(newNote);
-      this.loadNotes();
+  async openNewNoteModal() {
+  const modal = await this.modalCtrl.create({
+    component: NoteEditorComponent,
+    componentProps: {
+      playlistId: this.selectedPlaylistId
+    },
+    breakpoints: [0, 1],
+    initialBreakpoint: 1
+  });
+
+  modal.onDidDismiss().then(result => {
+    if (result.role === 'save') {
+      this.loadNotes(); // aggiorna la lista
     }
-  }
+  });
+
+  await modal.present();
+}
+
 }
