@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { NoteService } from 'src/app/services/note.service';
 import { Note } from 'src/app/interfaces/note';
 import { Playlist } from 'src/app/interfaces/playlist';
 import { ModalController } from '@ionic/angular';
 import { NoteEditorComponent } from './components/note-editor/note-editor.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-note',
@@ -11,12 +12,14 @@ import { NoteEditorComponent } from './components/note-editor/note-editor.compon
   styleUrls: ['./note.page.scss'],
   standalone: false,
 })
-export class NotePage implements OnInit {
+export class NotePage implements OnInit, OnDestroy {
 
   playlists: Playlist[] = [];
   selectedPlaylistId: string = 'all';
   notes: Note[] = [];
   filteredNotes: Note[] = [];
+
+  private subs: Subscription[] = [];
 
   constructor(
     private noteService: NoteService,
@@ -24,17 +27,23 @@ export class NotePage implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.loadPlaylists();
-    this.loadNotes();
+    // Sottoscrizione reattiva
+    this.subs.push(
+      this.noteService.playlists$.subscribe(playlists => {
+        this.playlists = playlists;
+      })
+    );
+
+    this.subs.push(
+      this.noteService.notes$.subscribe(notes => {
+        this.notes = notes;
+        this.filterNotes();
+      })
+    );
   }
 
-  loadPlaylists() {
-    this.playlists = this.noteService.getPlaylists();
-  }
-
-  loadNotes() {
-    this.notes = this.noteService.getNotes();
-    this.filterNotes();
+  ngOnDestroy() {
+    this.subs.forEach(s => s.unsubscribe());
   }
 
   filterNotes() {
@@ -54,7 +63,7 @@ export class NotePage implements OnInit {
     const name = prompt('Nome nuova playlist');
     if (name?.trim()) {
       this.noteService.addPlaylist(name.trim());
-      this.loadPlaylists();
+      // Non serve più loadPlaylists perché sottoscritto
     }
   }
 
@@ -66,28 +75,16 @@ export class NotePage implements OnInit {
       initialBreakpoint: 1
     });
 
-    modal.onDidDismiss().then(result => {
-      if (result.role === 'save') {
-        this.loadNotes();
-      }
-    });
-
+    // Non serve più chiamare loadNotes, si aggiorna automaticamente
     await modal.present();
   }
 
   async openEditNoteModal(note: Note) {
     const modal = await this.modalCtrl.create({
       component: NoteEditorComponent,
-      componentProps: { note: { ...note } },  // passiamo la nota clonata
+      componentProps: { note: { ...note } },
       breakpoints: [0, 1],
       initialBreakpoint: 1
-    });
-
-    modal.onDidDismiss().then(result => {
-      if (result.role === 'save') {
-        this.noteService.updateNote(result.data.note);
-        this.loadNotes();
-      }
     });
 
     await modal.present();
@@ -104,18 +101,6 @@ export class NotePage implements OnInit {
       initialBreakpoint: 1
     });
 
-    modal.onDidDismiss().then(result => {
-      if (result.role === 'save') {
-        this.noteService.updateNote(result.data.note);
-        this.loadNotes();
-      } else if (result.role === 'delete') {
-        this.noteService.deleteNote(note.id);
-        this.loadNotes();
-      }
-    });
-
     await modal.present();
   }
-
-
 }
