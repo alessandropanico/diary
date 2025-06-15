@@ -9,7 +9,6 @@
 
 <ion-content class="ion-padding">
 
-  <!-- Scroll orizzontale per le playlist -->
   <div class="playlist-scroll">
     <ion-chip
       *ngFor="let playlist of playlists"
@@ -19,21 +18,21 @@
     </ion-chip>
   </div>
 
-  <!-- Lista delle note -->
-  <ion-list *ngIf="filteredNotes.length > 0">
-    <ion-item *ngFor="let note of filteredNotes">
-      <ion-label>
-        <h2>{{ note.title }}</h2>
-        <p>{{ note.content | slice:0:80 }}{{ note.content.length > 80 ? '...' : '' }}</p>
-      </ion-label>
-    </ion-item>
-  </ion-list>
+  <!-- Griglia di thumbnail -->
+  <div class="grid">
+    <div
+      class="card"
+      *ngFor="let note of filteredNotes"
+      (click)="openEditNoteModal(note)">
+      <h3>{{ note.title }}</h3>
+      <p>{{ note.content | slice:0:80 }}{{ note.content.length > 80 ? '...' : '' }}</p>
+    </div>
+  </div>
 
   <ion-text color="medium" *ngIf="filteredNotes.length === 0">
     Nessuna nota in questa playlist.
   </ion-text>
 
-  <!-- FAB -->
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
     <ion-fab-button (click)="openNewNoteModal()">
       <ion-icon name="add"></ion-icon>

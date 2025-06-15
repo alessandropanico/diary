@@ -74,4 +74,23 @@ export class NotePage implements OnInit {
 
     await modal.present();
   }
+  
+  async openEditNoteModal(note: Note) {
+  const modal = await this.modalCtrl.create({
+    component: NoteEditorComponent,
+    componentProps: { note: { ...note } },  // passiamo la nota clonata
+    breakpoints: [0, 1],
+    initialBreakpoint: 1
+  });
+
+  modal.onDidDismiss().then(result => {
+    if (result.role === 'save') {
+      this.noteService.updateNote(result.data.note);
+      this.loadNotes();
+    }
+  });
+
+  await modal.present();
+}
+
 }

@@ -38,4 +38,15 @@ export class NoteService {
     notes.push(note);
     localStorage.setItem(this.NOTE_KEY, JSON.stringify(notes));
   }
+
+  updateNote(note: Note) {
+    const notes = this.getNotes();
+    const index = notes.findIndex(n => n.id === note.id);
+    if (index > -1) {
+      notes[index] = note;
+      localStorage.setItem(this.NOTE_KEY, JSON.stringify(notes));
+    }
+  }
+
+
 }

@@ -10,3 +10,33 @@
 .playlist-scroll::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  background: var(--ion-color-light);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: scale(1.03);
+}
+
+.card h3 {
+  font-size: 1rem;
+  margin: 0 0 5px 0;
+  font-weight: bold;
+}
+
+.card p {
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+}
