@@ -1,0 +1,58 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Note</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+
+  <!-- Selezione playlist -->
+  <ion-list>
+    <ion-list-header>
+      Playlist
+      <ion-button size="small" fill="clear" slot="end" (click)="addPlaylist()"
+        [disabled]="!newPlaylistName.trim()">➕</ion-button>
+    </ion-list-header>
+
+    <ion-item *ngFor="let playlist of playlists" [color]="playlist.id === selectedPlaylistId ? 'primary' : ''"
+      (click)="selectPlaylist(playlist.id)">
+      {{ playlist.name }}
+      <ion-button *ngIf="playlist.id !== 'all'" fill="clear" color="danger" slot="end"
+        (click)="deletePlaylist(playlist.id); $event.stopPropagation()">
+        🗑
+      </ion-button>
+    </ion-item>
+
+    <ion-item>
+      <ion-input placeholder="Nuova playlist" [(ngModel)]="newPlaylistName"></ion-input>
+    </ion-item>
+  </ion-list>
+
+  <!-- Note della playlist selezionata -->
+  <ion-list>
+    <ion-list-header>
+      Note in "{{ selectedPlaylistName }}"
+    </ion-list-header>
+
+
+    <ion-item *ngFor="let note of notes">
+      <div *ngIf="editingNoteId !== note.id" (click)="editNote(note)" style="flex:1; cursor:pointer;">
+        {{ note.content }}
+      </div>
+      <div *ngIf="editingNoteId === note.id" style="flex:1;">
+        <ion-textarea [(ngModel)]="editingNoteContent"></ion-textarea>
+        <ion-button size="small" color="primary" (click)="saveNote()">💾</ion-button>
+        <ion-button size="small" color="medium" (click)="cancelEdit()">❌</ion-button>
+      </div>
+      <ion-button color="danger" fill="clear" slot="end" (click)="deleteNote(note.id)">
+        🗑
+      </ion-button>
+    </ion-item>
+
+    <ion-item>
+      <ion-textarea placeholder="Nuova nota" [(ngModel)]="newNoteContent"></ion-textarea>
+      <ion-button slot="end" (click)="addNote()" [disabled]="!newNoteContent.trim()">➕</ion-button>
+    </ion-item>
+  </ion-list>
+
+</ion-content>

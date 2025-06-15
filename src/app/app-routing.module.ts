@@ -26,6 +26,10 @@ const routes: Routes = [
     path: 'galleria',
     loadChildren: () => import('./pagine/galleria/galleria.module').then( m => m.GalleriaPageModule)
   },
+  {
+    path: 'note',
+    loadChildren: () => import('./pagine/note/note.module').then( m => m.NotePageModule)
+  },
 
 
 ];
