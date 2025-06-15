@@ -36,12 +36,13 @@ export class NoteEditorComponent implements OnInit {
     }
 
     if (this.note) {
-      // Modifica nota
+      // Modifica nota (aggiorna anche nel servizio)
       const updatedNote: Note = {
         ...this.note,
         title: this.title.trim(),
         content: this.content.trim(),
       };
+      this.noteService.updateNote(updatedNote);  // <-- Aggiornamento nel servizio
       this.modalCtrl.dismiss({ note: updatedNote }, 'save');
     } else {
       // Nuova nota
@@ -84,7 +85,7 @@ export class NoteEditorComponent implements OnInit {
         },
         {
           text: 'Annulla',
-          // NON mettere role: 'cancel' se dà errore
+          // qui evita di mettere role: 'cancel' se dà errore
         }
       ]
     });
@@ -107,7 +108,7 @@ export class NoteEditorComponent implements OnInit {
       buttons: [
         {
           text: 'Annulla',
-          role: 'cancel' // qui role va bene, perché AlertController supporta 'cancel'
+          role: 'cancel' // Ok qui perché è AlertController
         },
         {
           text: 'Sposta',
