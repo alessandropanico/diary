@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ModalController, ActionSheetController, AlertController } from '@ionic/angular';
 import { NoteService } from 'src/app/services/note.service';
 import { Note } from 'src/app/interfaces/note';
@@ -20,7 +20,8 @@ export class NoteEditorComponent implements OnInit {
     private modalCtrl: ModalController,
     private noteService: NoteService,
     private actionSheetCtrl: ActionSheetController,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -36,16 +37,15 @@ export class NoteEditorComponent implements OnInit {
     }
 
     if (this.note) {
-      // Modifica nota (aggiorna anche nel servizio)
       const updatedNote: Note = {
         ...this.note,
         title: this.title.trim(),
         content: this.content.trim(),
       };
-      this.noteService.updateNote(updatedNote);  // <-- Aggiornamento nel servizio
+      this.noteService.updateNote(updatedNote);
+      this.cdr.detectChanges();  // Forza il refresh della vista
       this.modalCtrl.dismiss({ note: updatedNote }, 'save');
     } else {
-      // Nuova nota
       const newNote: Note = {
         id: Date.now().toString(),
         title: this.title.trim(),
@@ -54,6 +54,7 @@ export class NoteEditorComponent implements OnInit {
         createdAt: Date.now(),
       };
       this.noteService.addNote(newNote);
+      this.cdr.detectChanges();  // Forza il refresh della vista
       this.modalCtrl.dismiss({ note: newNote }, 'save');
     }
   }
@@ -85,7 +86,7 @@ export class NoteEditorComponent implements OnInit {
         },
         {
           text: 'Annulla',
-          // qui evita di mettere role: 'cancel' se dà errore
+          // role: 'cancel' non necessario qui se dava errore
         }
       ]
     });
@@ -108,7 +109,7 @@ export class NoteEditorComponent implements OnInit {
       buttons: [
         {
           text: 'Annulla',
-          role: 'cancel' // Ok qui perché è AlertController
+          role: 'cancel'
         },
         {
           text: 'Sposta',
@@ -119,6 +120,7 @@ export class NoteEditorComponent implements OnInit {
                 playlistId: selectedPlaylistId
               };
               this.noteService.updateNote(updatedNote);
+              this.cdr.detectChanges();  // Forza il refresh
               this.modalCtrl.dismiss({ note: updatedNote }, 'move');
             }
           }
