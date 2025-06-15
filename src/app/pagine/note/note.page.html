@@ -8,7 +8,7 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-
+  <!-- Scroll orizzontale per le playlist -->
   <div class="playlist-scroll">
     <ion-chip
       *ngFor="let playlist of playlists"
@@ -18,14 +18,11 @@
     </ion-chip>
   </div>
 
-  <!-- Griglia di thumbnail -->
-  <div class="grid">
-    <div
-      class="card"
-      *ngFor="let note of filteredNotes"
-      (click)="openEditNoteModal(note)">
+  <!-- Griglia 3x3 delle note -->
+  <div class="note-grid">
+    <div class="note-thumbnail" *ngFor="let note of filteredNotes" (click)="openNoteModal(note)">
       <h3>{{ note.title }}</h3>
-      <p>{{ note.content | slice:0:80 }}{{ note.content.length > 80 ? '...' : '' }}</p>
+      <p>{{ note.content | slice:0:50 }}{{ note.content.length > 50 ? '...' : '' }}</p>
     </div>
   </div>
 
@@ -38,5 +35,4 @@
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>
-
 </ion-content>

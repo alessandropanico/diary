@@ -40,3 +40,32 @@
   font-size: 0.8rem;
   color: var(--ion-color-medium);
 }
+
+.note-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 10px;
+}
+
+.note-thumbnail {
+  background: var(--ion-color-light);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  cursor: pointer;
+}
+
+.note-thumbnail h3 {
+  font-size: 1rem;
+  margin: 0 0 5px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-thumbnail p {
+  font-size: 0.85rem;
+  color: var(--ion-color-medium);
+  max-height: 3em;
+  overflow: hidden;
+}

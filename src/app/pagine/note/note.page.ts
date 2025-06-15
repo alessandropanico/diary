@@ -21,7 +21,7 @@ export class NotePage implements OnInit {
   constructor(
     private noteService: NoteService,
     private modalCtrl: ModalController
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.loadPlaylists();
@@ -74,23 +74,48 @@ export class NotePage implements OnInit {
 
     await modal.present();
   }
-  
+
   async openEditNoteModal(note: Note) {
-  const modal = await this.modalCtrl.create({
-    component: NoteEditorComponent,
-    componentProps: { note: { ...note } },  // passiamo la nota clonata
-    breakpoints: [0, 1],
-    initialBreakpoint: 1
-  });
+    const modal = await this.modalCtrl.create({
+      component: NoteEditorComponent,
+      componentProps: { note: { ...note } },  // passiamo la nota clonata
+      breakpoints: [0, 1],
+      initialBreakpoint: 1
+    });
 
-  modal.onDidDismiss().then(result => {
-    if (result.role === 'save') {
-      this.noteService.updateNote(result.data.note);
-      this.loadNotes();
-    }
-  });
+    modal.onDidDismiss().then(result => {
+      if (result.role === 'save') {
+        this.noteService.updateNote(result.data.note);
+        this.loadNotes();
+      }
+    });
 
-  await modal.present();
-}
+    await modal.present();
+  }
+
+  async openNoteModal(note: Note) {
+    const modal = await this.modalCtrl.create({
+      component: NoteEditorComponent,
+      componentProps: {
+        playlistId: note.playlistId,
+        note: note
+      },
+      breakpoints: [0, 1],
+      initialBreakpoint: 1
+    });
+
+    modal.onDidDismiss().then(result => {
+      if (result.role === 'save') {
+        this.noteService.updateNote(result.data.note);
+        this.loadNotes();
+      } else if (result.role === 'delete') {
+        this.noteService.deleteNote(note.id);
+        this.loadNotes();
+      }
+    });
+
+    await modal.present();
+  }
+
 
 }

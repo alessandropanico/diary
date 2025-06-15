@@ -39,14 +39,17 @@ export class NoteService {
     localStorage.setItem(this.NOTE_KEY, JSON.stringify(notes));
   }
 
-  updateNote(note: Note) {
-    const notes = this.getNotes();
-    const index = notes.findIndex(n => n.id === note.id);
-    if (index > -1) {
-      notes[index] = note;
-      localStorage.setItem(this.NOTE_KEY, JSON.stringify(notes));
-    }
+  updateNote(updatedNote: Note) {
+    const notes = this.getNotes().map(n => n.id === updatedNote.id ? updatedNote : n);
+    localStorage.setItem(this.NOTE_KEY, JSON.stringify(notes));
   }
+
+  deleteNote(id: string) {
+    let notes = this.getNotes();
+    notes = notes.filter(note => note.id !== id);
+    localStorage.setItem(this.NOTE_KEY, JSON.stringify(notes));
+  }
+
 
 
 }
