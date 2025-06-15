@@ -32,7 +32,7 @@
           </label>
         </div>
 
-        <button *ngIf="editingAlarmIndex === null" class="success-btn" (click)="setAlarm()">Imposta Sveglia</button>
+        <button *ngIf="editingAlarmIndex === null" class="success-btn" (click)="setAlarm()">💾 Salva Sveglia</button>
         <button *ngIf="editingAlarmIndex !== null" class="success-btn" (click)="updateAlarm()">✏️ Aggiorna Sveglia</button>
 
         <button class="warning-btn" (click)="testAlarm()">🔊 Test Suono</button>
@@ -45,10 +45,21 @@
     <h2>Sveglie Attive</h2>
     <ul>
       <li *ngFor="let alarm of alarms; let i = index">
-        <span>⏱ {{ alarm.time }} - {{ alarm.note || "Nessuna nota" }} </span>
-        <span>📆 Giorni: {{ alarm.days ? alarm.days.join(', ') : 'Nessun giorno selezionato' }}</span>
-        <button class="edit-btn" (click)="openInfo(i)">✏️ Modifica</button>
-        <button class="delete-btn" (click)="removeAlarm(i)">🗑 Elimina</button>
+        <div class="alarm-item">
+          <div class="alarm-details">
+            <strong>⏱ {{ alarm.time }}</strong> - {{ alarm.note || "Nessuna nota" }}
+            <div>📆 Giorni: {{ alarm.days?.length ? alarm.days.join(', ') : 'Nessun giorno selezionato' }}</div>
+          </div>
+
+          <div class="alarm-actions">
+            <label>
+              <input type="checkbox" [(ngModel)]="alarm.active" (change)="toggleAlarm(alarm)" />
+              {{ alarm.active ? '🟢 Attiva' : '🔴 Disattiva' }}
+            </label>
+            <button class="edit-btn" (click)="openInfo(i)">✏️</button>
+            <button class="delete-btn" (click)="removeAlarm(i)">🗑</button>
+          </div>
+        </div>
       </li>
     </ul>
   </div>
