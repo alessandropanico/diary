@@ -1,8 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { ModalController } from '@ionic/angular';
+import { ModalController, ActionSheetController, AlertController } from '@ionic/angular';
 import { NoteService } from 'src/app/services/note.service';
 import { Note } from 'src/app/interfaces/note';
-import { ActionSheetController } from '@ionic/angular';
 
 @Component({
   selector: 'app-note-editor',
@@ -20,9 +19,9 @@ export class NoteEditorComponent implements OnInit {
   constructor(
     private modalCtrl: ModalController,
     private noteService: NoteService,
-    private actionSheetCtrl: ActionSheetController
-  ) { }
-
+    private actionSheetCtrl: ActionSheetController,
+    private alertCtrl: AlertController
+  ) {}
 
   ngOnInit() {
     if (this.note) {
@@ -68,7 +67,6 @@ export class NoteEditorComponent implements OnInit {
       buttons: [
         {
           text: 'Elimina',
-          role: 'destructive',
           icon: 'trash',
           handler: () => {
             if (this.note) {
@@ -86,7 +84,7 @@ export class NoteEditorComponent implements OnInit {
         },
         {
           text: 'Annulla',
-          role: 'cancel'
+          // NON mettere role: 'cancel' se dà errore
         }
       ]
     });
@@ -95,15 +93,38 @@ export class NoteEditorComponent implements OnInit {
   }
 
   async presentMovePrompt() {
-    const name = prompt('Inserisci ID della nuova playlist:');
-    if (name && this.note) {
-      const updatedNote: Note = {
-        ...this.note,
-        playlistId: name.trim()
-      };
-      this.noteService.updateNote(updatedNote);
-      this.modalCtrl.dismiss({ note: updatedNote }, 'move');
-    }
-  }
+    const playlists = this.noteService.getPlaylists().filter(p => p.id !== 'all');
 
+    const alert = await this.alertCtrl.create({
+      header: 'Sposta in playlist',
+      inputs: playlists.map(p => ({
+        name: 'playlist',
+        type: 'radio',
+        label: p.name,
+        value: p.id,
+        checked: false
+      })),
+      buttons: [
+        {
+          text: 'Annulla',
+          role: 'cancel' // qui role va bene, perché AlertController supporta 'cancel'
+        },
+        {
+          text: 'Sposta',
+          handler: (selectedPlaylistId: string) => {
+            if (this.note && selectedPlaylistId) {
+              const updatedNote: Note = {
+                ...this.note,
+                playlistId: selectedPlaylistId
+              };
+              this.noteService.updateNote(updatedNote);
+              this.modalCtrl.dismiss({ note: updatedNote }, 'move');
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
 }
