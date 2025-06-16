@@ -10,7 +10,7 @@ export class ClockComponent implements OnInit, OnDestroy {
   date: string = '';
   private timer: any;
 
-  weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  weekDays = ['DOM', 'LUN', 'MAR', 'MER', 'GIO', 'VEN', 'SAB'];
 
   ngOnInit() {
     this.updateTime();
@@ -28,13 +28,13 @@ export class ClockComponent implements OnInit, OnDestroy {
     this.time = this.zeroPadding(cd.getHours(), 2) + ':' +
                 this.zeroPadding(cd.getMinutes(), 2) + ':' +
                 this.zeroPadding(cd.getSeconds(), 2);
-    this.date = this.zeroPadding(cd.getFullYear(), 4) + '-' +
-                this.zeroPadding(cd.getMonth() + 1, 2) + '-' +
-                this.zeroPadding(cd.getDate(), 2) + ' ' +
-                this.weekDays[cd.getDay()];
+    this.date = this.weekDays[cd.getDay()] + ' ' +
+                this.zeroPadding(cd.getDate(), 2) + '/' +
+                this.zeroPadding(cd.getMonth() + 1, 2) + '/' +
+                this.zeroPadding(cd.getFullYear(), 4);
   }
 
   zeroPadding(num: number, digit: number): string {
-    return (Array(digit).fill('0').join('') + num).slice(-digit);
+    return num.toString().padStart(digit, '0');
   }
 }
