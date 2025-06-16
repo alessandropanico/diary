@@ -110,7 +110,7 @@ export class NotePage implements OnInit, OnDestroy {
     return; // Non dovrebbe mai entrare qui perché il bottone è disabilitato
   }
 
-  const confirmed = confirm(`Sei sicuro di voler eliminare la playlist "${selected.name}"?\nLe note verranno spostate su "Tutti".`);
+  const confirmed = confirm(`Sei sicuro di voler eliminare la playlist "${selected.name}"?`);
   if (confirmed) {
     this.noteService.deletePlaylist(selected.id);
     this.selectPlaylist('all');
