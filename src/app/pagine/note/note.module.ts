@@ -8,6 +8,7 @@ import { NotePageRoutingModule } from './note-routing.module';
 
 import { NotePage } from './note.page';
 import { NoteEditorComponent } from './components/note-editor/note-editor.component';
+import { DragScrollDirective } from 'src/app/drag-scroll.directive';
 
 @NgModule({
   imports: [
@@ -16,6 +17,6 @@ import { NoteEditorComponent } from './components/note-editor/note-editor.compon
     IonicModule,
     NotePageRoutingModule
   ],
-  declarations: [NotePage, NoteEditorComponent]
+  declarations: [NotePage, NoteEditorComponent, DragScrollDirective]
 })
 export class NotePageModule {}

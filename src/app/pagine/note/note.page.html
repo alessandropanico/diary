@@ -18,14 +18,15 @@
 
 <ion-content class="ion-padding">
   <!-- Scroll orizzontale per le playlist -->
-  <div class="playlist-scroll">
-    <ion-chip
-      *ngFor="let playlist of playlists"
-      [color]="playlist.id === selectedPlaylistId ? 'primary' : 'medium'"
-      (click)="selectPlaylist(playlist.id)">
-      {{ playlist.name }}
-    </ion-chip>
-  </div>
+<div class="playlist-scroll">
+  <ion-chip
+    *ngFor="let playlist of playlists"
+    [color]="playlist.id === selectedPlaylistId ? 'primary' : 'medium'"
+    (click)="selectPlaylist(playlist.id)">
+    {{ playlist.name }}
+  </ion-chip>
+</div>
+
 
   <!-- Griglia note con checkbox se selezione attiva -->
   <div class="note-grid">
