@@ -18,27 +18,22 @@
 
 <ion-content class="ion-padding">
   <!-- Scroll orizzontale per le playlist -->
-<div class="playlist-scroll">
-  <ion-chip
-    *ngFor="let playlist of playlists"
-    [color]="playlist.id === selectedPlaylistId ? 'primary' : 'medium'"
-    (click)="selectPlaylist(playlist.id)">
-    {{ playlist.name }}
-  </ion-chip>
-</div>
+  <div class="playlist-scroll" appDragScroll>
+    <div *ngFor="let playlist of playlists" (click)="selectPlaylist(playlist.id)"
+      [class.selected]="playlist.id === selectedPlaylistId">
+      {{ playlist.name }}
+    </div>
+  </div>
+
 
 
   <!-- Griglia note con checkbox se selezione attiva -->
   <div class="note-grid">
-    <div class="note-thumbnail"
-         *ngFor="let note of filteredNotes"
-         (click)="onNoteClick(note, $event)"
-         (contextmenu)="onNoteRightClick(note, $event)"
-         (press)="onNoteLongPress(note)">
+    <div class="note-thumbnail" *ngFor="let note of filteredNotes" (click)="onNoteClick(note, $event)"
+      (contextmenu)="onNoteRightClick(note, $event)" (press)="onNoteLongPress(note)">
 
-      <ion-checkbox *ngIf="isSelectionMode"
-                    [checked]="selectedNoteIds.has(note.id)"
-                    (ionChange)="toggleNoteSelection(note)">
+      <ion-checkbox *ngIf="isSelectionMode" [checked]="selectedNoteIds.has(note.id)"
+        (ionChange)="toggleNoteSelection(note)">
       </ion-checkbox>
 
       <h3>{{ note.title }}</h3>

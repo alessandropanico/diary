@@ -17,6 +17,6 @@ import { DragScrollDirective } from 'src/app/drag-scroll.directive';
     IonicModule,
     NotePageRoutingModule
   ],
-  declarations: [NotePage, NoteEditorComponent, DragScrollDirective]
+  declarations: [NotePage, NoteEditorComponent, DragScrollDirective ]
 })
 export class NotePageModule {}
