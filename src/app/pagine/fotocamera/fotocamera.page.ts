@@ -11,6 +11,7 @@ export class FotocameraPage implements AfterViewInit, OnInit {
   @ViewChild('video', { static: false }) videoElement!: ElementRef;
   previewActive = false;
   stream: MediaStream | null = null;
+  text = ''
 
   constructor(private photoService: PhotoService) {}
 
@@ -46,6 +47,7 @@ export class FotocameraPage implements AfterViewInit, OnInit {
     const imageData = canvas.toDataURL('image/png');
     this.photoService.addPhoto(imageData); // Usa il servizio per salvare la foto
 
+    this.text = 'Hai scattato una foto!'
     this.stopCamera();
   }
 
