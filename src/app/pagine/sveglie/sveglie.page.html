@@ -10,8 +10,8 @@
 <ion-content class="ion-padding">
 
   <!-- Modale personalizzato -->
-  <div class="custom-modal-overlay" *ngIf="alarmInfo">
-    <div class="custom-modal">
+  <div class="custom-modal-overlay" *ngIf="alarmInfo" (click)="onOverlayClick($event)">
+    <div class="custom-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2 *ngIf="editingAlarmIndex === null">Imposta Sveglia</h2>
         <h2 *ngIf="editingAlarmIndex !== null">Modifica Sveglia</h2>
@@ -33,7 +33,8 @@
         </div>
 
         <button *ngIf="editingAlarmIndex === null" class="success-btn" (click)="setAlarm()">💾 Salva Sveglia</button>
-        <button *ngIf="editingAlarmIndex !== null" class="success-btn" (click)="updateAlarm()">✏️ Aggiorna Sveglia</button>
+        <button *ngIf="editingAlarmIndex !== null" class="success-btn" (click)="updateAlarm()">✏️ Aggiorna
+          Sveglia</button>
 
         <button class="warning-btn" (click)="testAlarm()">🔊 Test Suono</button>
       </div>

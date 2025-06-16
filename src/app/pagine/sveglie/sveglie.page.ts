@@ -23,6 +23,11 @@ export class SvegliePage {
     this.init();
   }
 
+  onOverlayClick(event: MouseEvent) {
+    this.closeInfo();
+  }
+
+
   async init() {
     await this.storage.create();
     await this.loadAlarms();
@@ -83,7 +88,7 @@ export class SvegliePage {
 
     await this.saveAlarms();
     this.resetForm();
-    this.alarmInfo=false;
+    this.alarmInfo = false;
   }
 
   async updateAlarm() {
