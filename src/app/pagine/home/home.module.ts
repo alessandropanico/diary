@@ -8,6 +8,7 @@ import { HomePageRoutingModule } from './home-routing.module';
 
 //componenti
 import { TaskComponent } from './components/task/task.component';
+import { ClockComponent } from './clock/clock.component';
 
 @NgModule({
   imports: [
@@ -15,7 +16,8 @@ import { TaskComponent } from './components/task/task.component';
     FormsModule,
     IonicModule,
     HomePageRoutingModule,
-    TaskComponent
+    TaskComponent,
+    ClockComponent
   ],
   declarations: [HomePage]  // ✅ Aggiungi HeaderComponent alle dichiarazioni
 })
