@@ -140,4 +140,20 @@ export class NotePage implements OnInit, OnDestroy {
     this.isSelectionMode = false;
   }
 
+  onContentClick(event: MouseEvent) {
+  if (!this.isSelectionMode) return;
+
+  // Controlla che il click non sia su un elemento interattivo (checkbox, note, bottoni)
+  const target = event.target as HTMLElement;
+
+  // Se il click è dentro un checkbox o una nota, non annullare la selezione
+  if (target.closest('ion-checkbox, .note-thumbnail, ion-button, ion-fab-button')) {
+    return;
+  }
+
+  // Altrimenti annulla la modalità selezione
+  this.cancelSelectionMode();
+}
+
+
 }

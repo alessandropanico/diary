@@ -16,7 +16,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
+<ion-content class="ion-padding" (click)="onContentClick($event)">
   <!-- Scroll orizzontale per le playlist -->
   <div class="playlist-scroll" appDragScroll>
     <div *ngFor="let playlist of playlists" (click)="selectPlaylist(playlist.id)"
