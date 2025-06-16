@@ -105,16 +105,16 @@ export class NotePage implements OnInit, OnDestroy {
   }
 
   deleteSelectedPlaylist() {
-  const selected = this.playlists.find(p => p.id === this.selectedPlaylistId);
-  if (!selected || selected.id === 'all') {
-    return; // Non dovrebbe mai entrare qui perché il bottone è disabilitato
-  }
+    const selected = this.playlists.find(p => p.id === this.selectedPlaylistId);
+    if (!selected || selected.id === 'all') {
+      return; // Non dovrebbe mai entrare qui perché il bottone è disabilitato
+    }
 
-  const confirmed = confirm(`Sei sicuro di voler eliminare la playlist "${selected.name}"?`);
-  if (confirmed) {
-    this.noteService.deletePlaylist(selected.id);
-    this.selectPlaylist('all');
+    const confirmed = confirm(`Sei sicuro di voler eliminare la playlist "${selected.name}"?`);
+    if (confirmed) {
+      this.noteService.deletePlaylist(selected.id);
+      this.selectPlaylist('all');
+    }
   }
-}
 
 }
