@@ -103,4 +103,18 @@ export class NotePage implements OnInit, OnDestroy {
 
     await modal.present();
   }
+
+  deleteSelectedPlaylist() {
+  const selected = this.playlists.find(p => p.id === this.selectedPlaylistId);
+  if (!selected || selected.id === 'all') {
+    return; // Non dovrebbe mai entrare qui perché il bottone è disabilitato
+  }
+
+  const confirmed = confirm(`Sei sicuro di voler eliminare la playlist "${selected.name}"?\nLe note verranno spostate su "Tutti".`);
+  if (confirmed) {
+    this.noteService.deletePlaylist(selected.id);
+    this.selectPlaylist('all');
+  }
+}
+
 }

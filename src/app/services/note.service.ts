@@ -67,4 +67,22 @@ export class NoteService {
     localStorage.setItem(this.NOTE_KEY, JSON.stringify(notes));
     this.notesSubject.next(notes);
   }
+
+  deletePlaylist(playlistId: string) {
+    // Rimuovi la playlist
+    let playlists = this.getPlaylists().filter(p => p.id !== playlistId);
+    this.savePlaylists(playlists);  // Salva e aggiorna il subject
+
+    // Sposta le note sulla playlist 'all'
+    let notes = this.getNotes().map(note => {
+      if (note.playlistId === playlistId) {
+        return { ...note, playlistId: 'all' };
+      }
+      return note;
+    });
+    localStorage.setItem(this.NOTE_KEY, JSON.stringify(notes));
+    this.notesSubject.next(notes);
+  }
+
+
 }
