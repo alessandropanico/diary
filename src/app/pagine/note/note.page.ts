@@ -19,6 +19,9 @@ export class NotePage implements OnInit, OnDestroy {
   notes: Note[] = [];
   filteredNotes: Note[] = [];
 
+  isSelectionMode = false;
+  selectedNoteIds: Set<string> = new Set();
+
   private subs: Subscription[] = [];
 
   constructor(
@@ -27,7 +30,6 @@ export class NotePage implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    // Sottoscrizione reattiva
     this.subs.push(
       this.noteService.playlists$.subscribe(playlists => {
         this.playlists = playlists;
@@ -57,13 +59,14 @@ export class NotePage implements OnInit, OnDestroy {
   selectPlaylist(id: string) {
     this.selectedPlaylistId = id;
     this.filterNotes();
+    this.cancelSelectionMode();
   }
 
   openCreatePlaylist() {
     const name = prompt('Nome nuova playlist');
     if (name?.trim()) {
       this.noteService.addPlaylist(name.trim());
-      // Non serve più loadPlaylists perché sottoscritto
+      // Aggiornamento automatico via sottoscrizione
     }
   }
 
@@ -74,23 +77,15 @@ export class NotePage implements OnInit, OnDestroy {
       breakpoints: [0, 1],
       initialBreakpoint: 1
     });
-
-    // Non serve più chiamare loadNotes, si aggiorna automaticamente
-    await modal.present();
-  }
-
-  async openEditNoteModal(note: Note) {
-    const modal = await this.modalCtrl.create({
-      component: NoteEditorComponent,
-      componentProps: { note: { ...note } },
-      breakpoints: [0, 1],
-      initialBreakpoint: 1
-    });
-
     await modal.present();
   }
 
   async openNoteModal(note: Note) {
+    if (this.isSelectionMode) {
+      this.toggleNoteSelection(note);
+      return;
+    }
+
     const modal = await this.modalCtrl.create({
       component: NoteEditorComponent,
       componentProps: {
@@ -104,17 +99,45 @@ export class NotePage implements OnInit, OnDestroy {
     await modal.present();
   }
 
-  deleteSelectedPlaylist() {
-    const selected = this.playlists.find(p => p.id === this.selectedPlaylistId);
-    if (!selected || selected.id === 'all') {
-      return; // Non dovrebbe mai entrare qui perché il bottone è disabilitato
+  onNoteClick(note: Note, event: MouseEvent) {
+    if (this.isSelectionMode) {
+      this.toggleNoteSelection(note);
+    } else {
+      this.openNoteModal(note);
+    }
+  }
+
+  onNoteLongPress(note: Note) {
+    this.isSelectionMode = true;
+    this.selectedNoteIds.add(note.id);
+  }
+
+  onNoteRightClick(note: Note, event: MouseEvent) {
+    event.preventDefault(); // evita il menu contestuale
+    this.isSelectionMode = true;
+    this.selectedNoteIds.add(note.id);
+  }
+
+  toggleNoteSelection(note: Note) {
+    if (this.selectedNoteIds.has(note.id)) {
+      this.selectedNoteIds.delete(note.id);
+    } else {
+      this.selectedNoteIds.add(note.id);
     }
 
-    const confirmed = confirm(`Sei sicuro di voler eliminare la playlist "${selected.name}"?`);
-    if (confirmed) {
-      this.noteService.deletePlaylist(selected.id);
-      this.selectPlaylist('all');
+    if (this.selectedNoteIds.size === 0) {
+      this.cancelSelectionMode();
     }
+  }
+
+  deleteSelectedNotes() {
+    this.selectedNoteIds.forEach(id => this.noteService.deleteNote(id));
+    this.cancelSelectionMode();
+  }
+
+  cancelSelectionMode() {
+    this.selectedNoteIds.clear();
+    this.isSelectionMode = false;
   }
 
 }
