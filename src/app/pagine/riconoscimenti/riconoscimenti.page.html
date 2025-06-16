@@ -1,0 +1,38 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Riconoscimenti</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Autore</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p>Questa app è stata sviluppata da <strong>Alessandro "Nakama" Panico</strong>.</p>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Seguimi</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item button detail="false" (click)="openLink('https://github.com/tuoaccount')">
+          <ion-icon name="logo-github" slot="start"></ion-icon>
+          GitHub
+        </ion-item>
+        <ion-item button detail="false" (click)="openLink('https://linkedin.com/in/tuoprofilo')">
+          <ion-icon name="logo-linkedin" slot="start"></ion-icon>
+          LinkedIn
+        </ion-item>
+        <ion-item button detail="false" (click)="openLink('https://www.youtube.com/@tuocanale')">
+          <ion-icon name="logo-youtube" slot="start"></ion-icon>
+          YouTube
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

@@ -30,6 +30,10 @@ const routes: Routes = [
     path: 'note',
     loadChildren: () => import('./pagine/note/note.module').then( m => m.NotePageModule)
   },
+  {
+    path: 'riconoscimenti',
+    loadChildren: () => import('./pagine/riconoscimenti/riconoscimenti.module').then( m => m.RiconoscimentiPageModule)
+  },
 
 
 ];
