@@ -6,7 +6,7 @@ import { Storage } from '@ionic/storage-angular';
   selector: 'app-sveglie',
   templateUrl: './sveglie.page.html',
   styleUrls: ['./sveglie.page.scss'],
-  standalone: false,
+  standalone: false
 })
 export class SvegliePage {
   alarmTime = '';
