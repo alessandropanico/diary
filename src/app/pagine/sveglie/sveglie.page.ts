@@ -44,12 +44,23 @@ export class SvegliePage {
 
   async requestNotificationPermission(): Promise<boolean> {
     const { display } = await LocalNotifications.requestPermissions();
+
     if (display !== 'granted') {
+      // Prova anche la Notification API se siamo su browser
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          alert("⚠️ Abilita le notifiche per usare la sveglia.");
+          return false;
+        }
+        return true;
+      }
       alert("⚠️ Abilita le notifiche per usare la sveglia.");
       return false;
     }
     return true;
   }
+
 
   async setAlarm() {
     if (!this.alarmTime) return alert('⚠️ Inserisci un orario.');
@@ -179,6 +190,11 @@ export class SvegliePage {
   }
 
   async scheduleNotification(id: number, date: Date, message: string, dayLabel: string) {
+    // Se l'orario calcolato è già passato, sposta alla settimana successiva
+    if (date.getTime() <= Date.now()) {
+      date.setDate(date.getDate() + 7);
+    }
+
     if (this.isMobile()) {
       try {
         await LocalNotifications.schedule({
@@ -195,25 +211,37 @@ export class SvegliePage {
       }
     } else {
       const diff = date.getTime() - Date.now();
-      setTimeout(() => {
+      if (diff <= 0) {
+        // Se troppo vicino o passato, suona subito
         this.startRinging(dayLabel, message);
-      }, diff);
+      } else {
+        setTimeout(() => {
+          this.startRinging(dayLabel, message);
+        }, diff);
+      }
     }
   }
 
-  startRinging(dayLabel: string, message: string) {
-    // Ferma audio precedente se presente
-    this.stopRingingAudio();
+  async startRinging(dayLabel: string, message: string) {
+    this.playRingingAudio();
 
-    this.ringingAudio = new Audio('assets/sound/lofiAlarm.mp3');
-    this.ringingAudio.loop = true;
-    this.ringingAudio.play();
+    // Mostra un alert non bloccante con un pulsante per fermare
+    const alert = document.createElement('ion-alert');
+    alert.header = '⏰ Sveglia!';
+    alert.subHeader = dayLabel;
+    alert.message = message || 'È ora di svegliarsi!';
+    alert.buttons = [{
+      text: 'Ferma',
+      role: 'cancel',
+      handler: () => {
+        this.stopRingingAudio();
+      }
+    }];
 
-    const stop = confirm(`⏰ Sveglia (${dayLabel})!\n\nPremi OK per fermare la sveglia.`);
-    if (stop) {
-      this.stopRingingAudio();
-    }
+    document.body.appendChild(alert);
+    await alert.present();
   }
+
 
   stopRingingAudio() {
     if (this.ringingAudio) {
@@ -286,4 +314,15 @@ export class SvegliePage {
       }, 3000);
     }
   }
+
+  playRingingAudio() {
+    this.stopRingingAudio(); // Ferma eventuale audio precedente
+    this.ringingAudio = new Audio('assets/sound/lofiAlarm.mp3');
+    this.ringingAudio.loop = true;
+    this.ringingAudio.play().catch(err => {
+      console.warn("⚠️ Audio bloccato dal browser o altro errore:", err);
+    });
+  }
+
+
 }
