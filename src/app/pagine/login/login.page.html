@@ -1,0 +1,19 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Login</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding" class="ion-text-center">
+  <div style="margin-top: 40px;">
+    <h2>Accedi con Google</h2>
+
+    <div id="googleSignInDiv" style="margin-top: 20px;"></div>
+  </div>
+
+  <div *ngIf="user" style="margin-top: 40px;">
+    <h2>Ciao, {{ user.name }}</h2>
+    <p>{{ user.email }}</p>
+    <ion-button expand="block" color="danger" (click)="logout()">Logout</ion-button>
+  </div>
+</ion-content>

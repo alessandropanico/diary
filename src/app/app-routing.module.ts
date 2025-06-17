@@ -38,6 +38,10 @@ const routes: Routes = [
     path: 'backup',
     loadChildren: () => import('./pagine/backup/backup.module').then( m => m.BackupPageModule)
   },
+  {
+    path: 'login',
+    loadChildren: () => import('./pagine/login/login.module').then( m => m.LoginPageModule)
+  },
 
 
 ];
