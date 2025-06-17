@@ -24,6 +24,8 @@
     android:theme="@style/AppTheme">
 
     <receiver android:name="com.mycompany.plugins.example.AlarmReceiver" />
+    <service android:name="com.mycompany.plugins.example.AlarmService" android:enabled="true"
+      android:exported="false" />
 
 
     <service
