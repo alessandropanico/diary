@@ -10,7 +10,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-     "vercel-build": "npm install --legacy-peer-deps && npx ionic build --prod"
+    "vercel-build": "npm install --legacy-peer-deps && npx ionic build --prod"
   },
   "private": true,
   "dependencies": {
@@ -34,6 +34,7 @@
     "@capacitor/status-bar": "7.0.0",
     "@ionic/angular": "^8.0.0",
     "@ionic/storage-angular": "^4.0.0",
+    "capacitor-alarm-plugin": "file:capacitor-alarm-plugin",
     "ionicons": "^7.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
