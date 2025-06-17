@@ -1,0 +1,16 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Backup Dati</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-button expand="block" (click)="exportBackup()">
+    Esporta Backup
+  </ion-button>
+
+  <ion-item>
+    <ion-label>Importa Backup</ion-label>
+    <input type="file" (change)="onFileSelected($event)" accept=".json" />
+  </ion-item>
+</ion-content>

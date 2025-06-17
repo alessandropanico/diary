@@ -34,6 +34,10 @@ const routes: Routes = [
     path: 'riconoscimenti',
     loadChildren: () => import('./pagine/riconoscimenti/riconoscimenti.module').then( m => m.RiconoscimentiPageModule)
   },
+  {
+    path: 'backup',
+    loadChildren: () => import('./pagine/backup/backup.module').then( m => m.BackupPageModule)
+  },
 
 
 ];
