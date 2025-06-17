@@ -43,37 +43,36 @@ export class SvegliePage {
     return /android|iphone|ipad|ipod/i.test(navigator.userAgent);
   }
 
-  async requestNotificationPermission(): Promise<boolean> {
-    const { display } = await LocalNotifications.requestPermissions();
+  private async requestNotificationPermission(): Promise<boolean> {
+    const status = await LocalNotifications.requestPermissions();
+    if (status.display === 'granted') return true;
 
-    if (display !== 'granted') {
-      // Prova anche la Notification API se siamo su browser
-      if ('Notification' in window) {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-          alert("⚠️ Abilita le notifiche per usare la sveglia.");
-          return false;
-        }
-        return true;
-      }
-      alert("⚠️ Abilita le notifiche per usare la sveglia.");
-      return false;
+    if ('Notification' in window) {
+      const browserPerm = await Notification.requestPermission();
+      if (browserPerm === 'granted') return true;
     }
-    return true;
+
+    alert("⚠️ Per favore abilita le notifiche per usare la sveglia.");
+    return false;
   }
 
 
+
   async setAlarm() {
-    if (!this.alarmTime) return alert('⚠️ Inserisci un orario.');
-    const granted = await this.requestNotificationPermission();
-    if (!granted) return;
+    if (!this.alarmTime) {
+      alert('⚠️ Inserisci un orario.');
+      return;
+    }
+    if (!this.selectedDays.some(v => v)) {
+      alert('⚠️ Seleziona almeno un giorno.');
+      return;
+    }
+
+    if (!(await this.requestNotificationPermission())) return;
 
     const [hours, minutes] = this.alarmTime.split(':').map(Number);
-    const selectedDaysNames = this.weekDays.filter((_, i) => this.selectedDays[i]);
-    if (!selectedDaysNames.length) return alert('⚠️ Seleziona almeno un giorno.');
-
-    const baseId = Date.now();
     const now = new Date();
+    const baseId = Date.now();
     const generatedIds: number[] = [];
 
     for (let i = 0; i < 7; i++) {
@@ -88,20 +87,18 @@ export class SvegliePage {
       alarmDate.setHours(hours, minutes, 0, 0);
 
       if (this.isMobile() && /android/i.test(navigator.userAgent)) {
-        // Usa plugin nativo per Android
         try {
           await AlarmPlugin.setAlarm({
             time: this.alarmTime,
             note: this.alarmNote || 'Sveglia!',
           });
-          console.log('Sveglia nativa impostata');
-        } catch (e) {
-          console.warn('Errore impostando sveglia nativa, uso notifiche locali', e);
-          await this.scheduleNotification(id, alarmDate, this.alarmNote, this.weekDays[i]);
+          console.log('Sveglia nativa Android impostata');
+        } catch (error) {
+          console.warn('Errore sveglia nativa, uso notifiche locali', error);
+          await this.scheduleNotification(id, alarmDate, this.alarmNote || 'Sveglia!', this.weekDays[i]);
         }
       } else {
-        // Usa notifiche locali (iOS, browser, ecc)
-        await this.scheduleNotification(id, alarmDate, this.alarmNote, this.weekDays[i]);
+        await this.scheduleNotification(id, alarmDate, this.alarmNote || 'Sveglia!', this.weekDays[i]);
       }
     }
 
@@ -109,7 +106,7 @@ export class SvegliePage {
       ids: generatedIds,
       time: this.alarmTime,
       note: this.alarmNote,
-      days: selectedDaysNames,
+      days: this.weekDays.filter((_, i) => this.selectedDays[i]),
       active: true,
     });
 
@@ -118,25 +115,23 @@ export class SvegliePage {
     this.alarmInfo = false;
   }
 
+
   async updateAlarm() {
     if (this.editingAlarmIndex === null || !this.alarmTime) {
-      return alert('⚠️ Seleziona un orario valido.');
+      alert('⚠️ Seleziona un orario valido.');
+      return;
     }
 
-    const granted = await this.requestNotificationPermission();
-    if (!granted) return;
+    if (!(await this.requestNotificationPermission())) return;
 
     const alarm = this.alarms[this.editingAlarmIndex];
     if (alarm?.ids?.length) {
-      await LocalNotifications.cancel({
-        notifications: alarm.ids.map((id: number) => ({ id })),
-      });
+      await LocalNotifications.cancel({ notifications: alarm.ids.map((id: number) => ({ id })) });
     }
 
     const [hours, minutes] = this.alarmTime.split(':').map(Number);
     const now = new Date();
     const newIds: number[] = [];
-    const newDays = this.weekDays.filter((_, i) => this.selectedDays[i]);
 
     for (let i = 0; i < 7; i++) {
       if (!this.selectedDays[i]) continue;
@@ -149,20 +144,21 @@ export class SvegliePage {
       alarmDate.setDate(now.getDate() + dayOffset);
       alarmDate.setHours(hours, minutes, 0, 0);
 
-      await this.scheduleNotification(newId, alarmDate, this.alarmNote, this.weekDays[i]);
+      await this.scheduleNotification(newId, alarmDate, this.alarmNote || 'Sveglia!', this.weekDays[i]);
     }
 
     this.alarms[this.editingAlarmIndex] = {
       ids: newIds,
       time: this.alarmTime,
       note: this.alarmNote,
-      days: newDays,
+      days: this.weekDays.filter((_, i) => this.selectedDays[i]),
       active: true,
     };
 
     await this.saveAlarms();
     this.closeInfo();
   }
+
 
   async toggleAlarm(alarm: any) {
     if (!alarm.ids || !Array.isArray(alarm.ids)) return;
@@ -205,8 +201,8 @@ export class SvegliePage {
     await this.saveAlarms();
   }
 
-  async scheduleNotification(id: number, date: Date, message: string, dayLabel: string) {
-    // Se l'orario calcolato è già passato, sposta alla settimana successiva
+  private async scheduleNotification(id: number, date: Date, message: string, dayLabel: string) {
+    // Se la data è già passata, sposta all settimana successiva
     if (date.getTime() <= Date.now()) {
       date.setDate(date.getDate() + 7);
     }
@@ -220,28 +216,26 @@ export class SvegliePage {
             body: message || "È ora di svegliarsi!",
             schedule: { at: date },
             sound: 'assets/sound/lofiAlarm.mp3',
-          }],
+          }]
         });
-      } catch (err) {
-        console.error("❌ Errore notifica:", err);
+      } catch (error) {
+        console.error("Errore durante la programmazione notifica:", error);
       }
     } else {
+      // Per desktop/browser fallback con setTimeout e audio
       const diff = date.getTime() - Date.now();
       if (diff <= 0) {
-        // Se troppo vicino o passato, suona subito
         this.startRinging(dayLabel, message);
       } else {
-        setTimeout(() => {
-          this.startRinging(dayLabel, message);
-        }, diff);
+        setTimeout(() => this.startRinging(dayLabel, message), diff);
       }
     }
   }
 
+
   async startRinging(dayLabel: string, message: string) {
     this.playRingingAudio();
 
-    // Mostra un alert non bloccante con un pulsante per fermare
     const alert = document.createElement('ion-alert');
     alert.header = '⏰ Sveglia!';
     alert.subHeader = dayLabel;
@@ -249,14 +243,13 @@ export class SvegliePage {
     alert.buttons = [{
       text: 'Ferma',
       role: 'cancel',
-      handler: () => {
-        this.stopRingingAudio();
-      }
+      handler: () => this.stopRingingAudio()
     }];
 
     document.body.appendChild(alert);
     await alert.present();
   }
+
 
 
   stopRingingAudio() {
@@ -266,6 +259,7 @@ export class SvegliePage {
       this.ringingAudio = null;
     }
   }
+
 
   openInfo(index: number | null = null) {
     if (index !== null) {
@@ -296,49 +290,18 @@ export class SvegliePage {
     this.editingAlarmIndex = null;
   }
 
-  async testAlarm() {
-    if (this.isMobile()) {
-      try {
-        await LocalNotifications.schedule({
-          notifications: [{
-            id: 9999,
-            title: "🔊 Test Sveglia",
-            body: "Questa è una sveglia di prova!",
-            schedule: { at: new Date(Date.now() + 3000) },
-            sound: 'assets/sound/lofiAlarm.mp3',
-          }],
-        });
-      } catch (err) {
-        console.error("❌ Errore LocalNotifications:", err);
-      }
-    } else {
-      if (Notification.permission !== 'granted') {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-          alert("⚠️ Permesso notifiche negato.");
-          return;
-        }
-      }
 
-      setTimeout(() => {
-        new Notification("🔊 Test Sveglia", {
-          body: "Questa è una sveglia di prova!",
-          icon: 'assets/icon/icon.png',
-        });
-        const audio = new Audio('assets/sound/lofiAlarm.mp3');
-        audio.play();
-      }, 3000);
-    }
-  }
 
   playRingingAudio() {
-    this.stopRingingAudio(); // Ferma eventuale audio precedente
+    this.stopRingingAudio();
+
     this.ringingAudio = new Audio('assets/sound/lofiAlarm.mp3');
     this.ringingAudio.loop = true;
     this.ringingAudio.play().catch(err => {
-      console.warn("⚠️ Audio bloccato dal browser o altro errore:", err);
+      console.warn("Audio bloccato o errore:", err);
     });
   }
+
 
 
 }
