@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Storage } from '@ionic/storage-angular';
+import { AlarmPlugin } from 'src/app/plugin/alarm-plugin';
 
 @Component({
   selector: 'app-sveglie',
@@ -86,7 +87,22 @@ export class SvegliePage {
       alarmDate.setDate(now.getDate() + dayOffset);
       alarmDate.setHours(hours, minutes, 0, 0);
 
-      await this.scheduleNotification(id, alarmDate, this.alarmNote, this.weekDays[i]);
+      if (this.isMobile() && /android/i.test(navigator.userAgent)) {
+        // Usa plugin nativo per Android
+        try {
+          await AlarmPlugin.setAlarm({
+            time: this.alarmTime,
+            note: this.alarmNote || 'Sveglia!',
+          });
+          console.log('Sveglia nativa impostata');
+        } catch (e) {
+          console.warn('Errore impostando sveglia nativa, uso notifiche locali', e);
+          await this.scheduleNotification(id, alarmDate, this.alarmNote, this.weekDays[i]);
+        }
+      } else {
+        // Usa notifiche locali (iOS, browser, ecc)
+        await this.scheduleNotification(id, alarmDate, this.alarmNote, this.weekDays[i]);
+      }
     }
 
     this.alarms.push({
