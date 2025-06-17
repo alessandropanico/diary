@@ -141,19 +141,38 @@ export class NotePage implements OnInit, OnDestroy {
   }
 
   onContentClick(event: MouseEvent) {
-  if (!this.isSelectionMode) return;
+    if (!this.isSelectionMode) return;
 
-  // Controlla che il click non sia su un elemento interattivo (checkbox, note, bottoni)
-  const target = event.target as HTMLElement;
+    // Controlla che il click non sia su un elemento interattivo (checkbox, note, bottoni)
+    const target = event.target as HTMLElement;
 
-  // Se il click è dentro un checkbox o una nota, non annullare la selezione
-  if (target.closest('ion-checkbox, .note-thumbnail, ion-button, ion-fab-button')) {
-    return;
+    // Se il click è dentro un checkbox o una nota, non annullare la selezione
+    if (target.closest('ion-checkbox, .note-thumbnail, ion-button, ion-fab-button')) {
+      return;
+    }
+
+    // Altrimenti annulla la modalità selezione
+    this.cancelSelectionMode();
   }
 
-  // Altrimenti annulla la modalità selezione
-  this.cancelSelectionMode();
-}
+  confirmDeleteCurrentPlaylist() {
+    const playlist = this.playlists.find(p => p.id === this.selectedPlaylistId);
+    if (!playlist) return;
+
+    const confirmed = confirm(`Eliminare la playlist "${playlist.name}"? Tutte le note associate saranno eliminate.`);
+    if (confirmed) {
+      this.deletePlaylist(playlist.id);
+    }
+  }
+
+  deletePlaylist(playlistId: string) {
+    this.noteService.deletePlaylist(playlistId);
+    if (this.selectedPlaylistId === playlistId) {
+      this.selectedPlaylistId = 'all';
+      this.filterNotes();
+    }
+  }
+
 
 
 }

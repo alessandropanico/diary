@@ -3,16 +3,18 @@
     <ion-title *ngIf="!isSelectionMode">Note</ion-title>
     <ion-title *ngIf="isSelectionMode">{{ selectedNoteIds.size }} selezionate</ion-title>
 
-    <ion-buttons slot="end">
-      <ion-button *ngIf="!isSelectionMode" (click)="openCreatePlaylist()">➕ Crea Playlist</ion-button>
+  <ion-buttons slot="end">
+  <ion-button *ngIf="!isSelectionMode" (click)="openCreatePlaylist()">➕ Crea Playlist</ion-button>
+  <ion-button *ngIf="!isSelectionMode && selectedPlaylistId !== 'all'" (click)="confirmDeleteCurrentPlaylist()">🗑️ Elimina Playlist</ion-button>
 
-      <ion-button *ngIf="isSelectionMode" (click)="deleteSelectedNotes()">
-        <ion-icon name="trash"></ion-icon>
-      </ion-button>
-      <ion-button *ngIf="isSelectionMode" (click)="cancelSelectionMode()">
-        <ion-icon name="close"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+  <ion-button *ngIf="isSelectionMode" (click)="deleteSelectedNotes()">
+    <ion-icon name="trash"></ion-icon>
+  </ion-button>
+  <ion-button *ngIf="isSelectionMode" (click)="cancelSelectionMode()">
+    <ion-icon name="close"></ion-icon>
+  </ion-button>
+</ion-buttons>
+
   </ion-toolbar>
 </ion-header>
 
