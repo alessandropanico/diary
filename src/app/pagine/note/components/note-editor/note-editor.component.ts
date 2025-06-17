@@ -15,6 +15,11 @@ export class NoteEditorComponent implements OnInit {
 
   title: string = '';
   content: string = '';
+  recording = false;
+  mediaRecorder?: MediaRecorder;
+  audioChunks: Blob[] = [];
+  audioUrl?: string;
+  audioPlayer?: HTMLAudioElement;
 
   constructor(
     private modalCtrl: ModalController,
@@ -22,41 +27,38 @@ export class NoteEditorComponent implements OnInit {
     private actionSheetCtrl: ActionSheetController,
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit() {
     if (this.note) {
       this.title = this.note.title;
       this.content = this.note.content;
+      this.audioUrl = this.note.audioUrl;
     }
   }
 
   save() {
-    if (!this.title.trim() || !this.content.trim()) {
+    if (!this.title.trim() || (!this.content.trim() && !this.audioUrl)) {
       return;
     }
 
+    const noteData: Note = {
+      id: this.note?.id || Date.now().toString(),
+      title: this.title.trim(),
+      content: this.content.trim(),
+      playlistId: this.note?.playlistId || this.playlistId,
+      createdAt: this.note?.createdAt || Date.now(),
+      audioUrl: this.audioUrl,
+    };
+
     if (this.note) {
-      const updatedNote: Note = {
-        ...this.note,
-        title: this.title.trim(),
-        content: this.content.trim(),
-      };
-      this.noteService.updateNote(updatedNote);
-      this.cdr.detectChanges();  // Forza il refresh della vista
-      this.modalCtrl.dismiss({ note: updatedNote }, 'save');
+      this.noteService.updateNote(noteData);
     } else {
-      const newNote: Note = {
-        id: Date.now().toString(),
-        title: this.title.trim(),
-        content: this.content.trim(),
-        playlistId: this.playlistId,
-        createdAt: Date.now(),
-      };
-      this.noteService.addNote(newNote);
-      this.cdr.detectChanges();  // Forza il refresh della vista
-      this.modalCtrl.dismiss({ note: newNote }, 'save');
+      this.noteService.addNote(noteData);
     }
+
+    this.cdr.detectChanges();
+    this.modalCtrl.dismiss({ note: noteData }, 'save');
   }
 
   close() {
@@ -85,8 +87,7 @@ export class NoteEditorComponent implements OnInit {
           }
         },
         {
-          text: 'Annulla',
-          // role: 'cancel' non necessario qui se dava errore
+          text: 'Annulla'
         }
       ]
     });
@@ -120,7 +121,7 @@ export class NoteEditorComponent implements OnInit {
                 playlistId: selectedPlaylistId
               };
               this.noteService.updateNote(updatedNote);
-              this.cdr.detectChanges();  // Forza il refresh
+              this.cdr.detectChanges();
               this.modalCtrl.dismiss({ note: updatedNote }, 'move');
             }
           }
@@ -129,5 +130,39 @@ export class NoteEditorComponent implements OnInit {
     });
 
     await alert.present();
+  }
+
+  startRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      this.mediaRecorder = new MediaRecorder(stream);
+      this.audioChunks = [];
+
+      this.mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) this.audioChunks.push(e.data);
+      };
+
+      this.mediaRecorder.onstop = () => {
+        const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        this.audioUrl = URL.createObjectURL(blob);
+        this.cdr.detectChanges();
+      };
+
+      this.mediaRecorder.start();
+      this.recording = true;
+    }).catch(err => {
+      alert('Errore accesso microfono: ' + err);
+    });
+  }
+
+  stopRecording() {
+    this.mediaRecorder?.stop();
+    this.recording = false;
+  }
+
+  playAudio() {
+    if (this.audioUrl) {
+      this.audioPlayer = new Audio(this.audioUrl);
+      this.audioPlayer.play();
+    }
   }
 }

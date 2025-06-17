@@ -4,4 +4,5 @@ export interface Note {
   content: string;
   playlistId: string;
   createdAt: number;
+  audioUrl?: string; // ⬅️ Aggiunta qui
 }
