@@ -14,7 +14,7 @@ import { AuthService } from './services/auth.service';
 })
 export class AppComponent implements OnInit {
 
-profile: any = null;
+  profile: any = null;
 
   constructor(
     private menu: MenuController,
@@ -26,13 +26,13 @@ profile: any = null;
     });
 
   }
-  
-ngOnInit() {
-  const storedProfile = localStorage.getItem('profile');
-  if (storedProfile) {
-    this.profile = JSON.parse(storedProfile);
+
+  ngOnInit() {
+    const storedProfile = localStorage.getItem('profile');
+    if (storedProfile) {
+      this.profile = JSON.parse(storedProfile);
+    }
   }
-}
 
 
   deferredPrompt: any;
@@ -60,14 +60,18 @@ ngOnInit() {
     this.showInstallButton = false;
   }
 
-    isLoggedIn(): boolean {
+  isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
   }
 
   getProfilePhoto(): string {
-  return this.profile?.photo || 'assets/immaginiGenerali/default-avatar.jpg';
-}
+    return this.profile?.photo || 'assets/immaginiGenerali/default-avatar.jpg';
+  }
 
+  loadProfile() {
+    const storedProfile = localStorage.getItem('profile');
+    this.profile = storedProfile ? JSON.parse(storedProfile) : null;
+  }
 
 
 }
