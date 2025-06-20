@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.mycompany.plugins.example">
 
   <!-- Permissions -->
   <uses-permission android:name="android.permission.INTERNET" />
@@ -8,12 +9,14 @@
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
-  <uses-feature android:name="android.hardware.camera" />
-  <uses-feature android:name="android.hardware.camera.autofocus" />
-
   <uses-permission android:name="android.permission.WAKE_LOCK" />
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+  <!-- Optional camera features -->
+  <uses-feature android:name="android.hardware.camera" />
+  <uses-feature android:name="android.hardware.camera.autofocus" />
 
   <application
     android:allowBackup="true"
@@ -23,31 +26,40 @@
     android:supportsRtl="true"
     android:theme="@style/AppTheme">
 
+    <!-- AlarmReceiver -->
     <receiver android:name="com.mycompany.plugins.example.AlarmReceiver" />
-    <service android:name="com.mycompany.plugins.example.AlarmService" android:enabled="true"
-      android:exported="false" />
 
+    <!-- BootReceiver (for re-setting alarms after reboot, if needed) -->
+    <receiver
+      android:name="com.mycompany.plugins.example.BootReceiver"
+      android:enabled="true"
+      android:exported="false">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+      </intent-filter>
+    </receiver>
 
+    <!-- AlarmService (foreground service to play alarm) -->
     <service
-      android:name=".AlarmService"
+      android:name="com.mycompany.plugins.example.AlarmService"
       android:enabled="true"
       android:exported="false" />
 
+    <!-- Main activity -->
     <activity
-      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
       android:name=".MainActivity"
       android:label="@string/title_activity_main"
       android:theme="@style/AppTheme.NoActionBarLaunch"
       android:launchMode="singleTask"
-      android:exported="true">
-
+      android:exported="true"
+      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
-
     </activity>
 
+    <!-- File provider for sharing files -->
     <provider
       android:name="androidx.core.content.FileProvider"
       android:authorities="${applicationId}.fileprovider"
@@ -55,8 +67,8 @@
       android:grantUriPermissions="true">
       <meta-data
         android:name="android.support.FILE_PROVIDER_PATHS"
-        android:resource="@xml/file_paths"></meta-data>
+        android:resource="@xml/file_paths" />
     </provider>
-  </application>
 
+  </application>
 </manifest>
