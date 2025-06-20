@@ -1,8 +1,86 @@
-.sfondo {
-  // background-image: url('/assets/immaginiGenerali/sfondo.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 100vh;
+.camera-overlay {
+  position: fixed;
+  top: 60px; // sotto l’header se presente
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 500px;
+  z-index: 1000;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.camera-preview {
   width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.camera-bar {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.circle-button {
+  background: white;
+  border: 4px solid black;
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.inner-circle {
+  background: black;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+}
+
+.close-button {
+  font-size: 24px;
+  background: transparent;
+  border: none;
+  color: red;
+}
+
+.camera-launcher {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+}
+
+.circle-launcher {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 4px solid black;
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.circle-launcher .inner-circle {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background-color: black;
+}
+
+
+.blur {
+  filter: blur(2px);
+  pointer-events: none;
 }
