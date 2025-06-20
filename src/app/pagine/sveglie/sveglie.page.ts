@@ -161,34 +161,46 @@ export class SvegliePage {
 
 
   async toggleAlarm(alarm: any) {
-    if (!alarm.ids || !Array.isArray(alarm.ids)) return;
+    const shouldActivate = !alarm.active;
 
-    if (!alarm.active) {
-      await LocalNotifications.cancel({
-        notifications: alarm.ids.map((id: number) => ({ id })),
-      });
+    if (!shouldActivate) {
+      if (alarm.ids?.length) {
+        await LocalNotifications.cancel({
+          notifications: alarm.ids.map((id: number) => ({ id })),
+        });
+      } else {
+        console.warn("⛔ Nessun ID da cancellare per questa sveglia");
+      }
     } else {
       const granted = await this.requestNotificationPermission();
       if (!granted) return;
 
       const [hours, minutes] = alarm.time.split(':').map(Number);
       const now = new Date();
+      const newIds: number[] = [];
 
-      for (let i = 0; i < alarm.days.length; i++) {
-        const dayIndex = this.weekDays.indexOf(alarm.days[i]);
+      for (const day of alarm.days) {
+        const dayIndex = this.weekDays.indexOf(day);
+        if (dayIndex === -1) continue;
+
         const alarmDate = new Date(now);
         const dayOffset = ((dayIndex + 1) - (now.getDay() || 7) + 7) % 7;
-
         alarmDate.setDate(now.getDate() + dayOffset);
         alarmDate.setHours(hours, minutes, 0, 0);
 
-        await this.scheduleNotification(alarm.ids[i], alarmDate, alarm.note, alarm.days[i]);
+        const newId = Date.now() + dayIndex;
+        newIds.push(newId);
+
+        await this.scheduleNotification(newId, alarmDate, alarm.note, day);
       }
+
+      alarm.ids = newIds;
     }
 
-    alarm.active = !alarm.active;
+    alarm.active = shouldActivate;
     await this.saveAlarms();
   }
+
 
   async removeAlarm(index: number) {
     const alarm = this.alarms[index];

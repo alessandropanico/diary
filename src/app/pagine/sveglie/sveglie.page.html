@@ -53,9 +53,11 @@
 
           <div class="alarm-actions">
             <label>
-              <input type="checkbox" [(ngModel)]="alarm.active" (change)="toggleAlarm(alarm)" />
+              <input type="checkbox" [checked]="alarm.active" (change)="toggleAlarm(alarm)" />
               {{ alarm.active ? '🟢 Attiva' : '🔴 Disattiva' }}
+
             </label>
+
             <button class="edit-btn" (click)="openInfo(i)">✏️</button>
             <button class="delete-btn" (click)="removeAlarm(i)">🗑</button>
           </div>
