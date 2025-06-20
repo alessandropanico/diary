@@ -38,32 +38,40 @@ export class TaskModalComponent {
         document.activeElement.blur();
       }
 
-      await this.showGamingAlert();
-      this.modalCtrl.dismiss();
+      // Mostra l'alert e attendi che venga chiuso prima di chiudere il modale
+      await this.showGamingAlert(); // ⚠️ aspetta che l'utente prema "Avanti!"
+      await this.modalCtrl.dismiss(); // chiudi il modale solo dopo
     }
   }
 
 
-  async showGamingAlert() {
-    const alert = await this.alertController.create({
-      header: '🎯 Missione Aggiunta!',
-      message: `
-        Obiettivo impostato con successo.</strong><br>Preparati alla battaglia! ⚔️
-      `,
-      cssClass: ['gaming-alert', 'alert-dark-force'],
-      buttons: [
-        {
-          text: 'Avanti!',
-          role: 'cancel',
-          cssClass: 'alert-continue',
-        },
-      ],
-      backdropDismiss: false,
-      mode: 'ios', // per uno stile più stabile cross-device
-    });
 
-    await alert.present();
+  async showGamingAlert(): Promise<void> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: '🎯 TASK AGGIUNTA!',
+        message: `
+        Obiettivo impostato con successo!
+      `,
+        cssClass: ['gaming-alert', 'alert-dark-force'],
+        buttons: [
+          {
+            text: 'Avanti!',
+            role: 'cancel',
+            cssClass: 'alert-continue',
+            handler: () => {
+              resolve(); // solo quando l’utente preme “Avanti”
+            }
+          },
+        ],
+        backdropDismiss: false,
+        mode: 'ios',
+      });
+
+      await alert.present();
+    });
   }
+
 
   close() {
     this.modalCtrl.dismiss();
