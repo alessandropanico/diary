@@ -1,0 +1,48 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Profilo</ion-title>
+    <ion-buttons slot="end">
+      <ion-button *ngIf="!editing" (click)="startEdit()">Modifica</ion-button>
+      <ion-button *ngIf="editing" color="danger" (click)="cancelEdit()">Annulla</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content fullscreen class="ion-padding ion-text-center">
+  <ion-avatar class="profile-avatar" [class.editable]="editing" (click)="editing && changePhoto()">
+    <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/default-avatar.png'" alt="Foto profilo" />
+  </ion-avatar>
+
+  <div *ngIf="!editing" class="profile-view">
+    <h2>{{ profile.nickname || 'nickname' }}</h2>
+    <h3>{{ profile.name || 'Nome e Cognome' }}</h3>
+    <p><strong>Email:</strong> {{ profile.email || '-' }}</p>
+    <p>{{ profile.bio || 'Descrizione assente' }}</p>
+  </div>
+
+  <form *ngIf="editing" (ngSubmit)="saveProfile()">
+    <ion-list lines="none">
+      <ion-item>
+        <ion-label position="stacked">Nickname</ion-label>
+        <ion-input [(ngModel)]="profileEdit.nickname" name="nickname" required></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Nome e Cognome</ion-label>
+        <ion-input [(ngModel)]="profileEdit.name" name="name" required></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Email</ion-label>
+        <ion-input [(ngModel)]="profileEdit.email" name="email" type="email" required></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Descrizione</ion-label>
+        <ion-textarea [(ngModel)]="profileEdit.bio" name="bio"></ion-textarea>
+      </ion-item>
+    </ion-list>
+
+    <ion-button expand="block" type="submit">Salva</ion-button>
+  </form>
+</ion-content>
