@@ -45,7 +45,10 @@ public class AlarmService extends Service {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .addAction(android.R.drawable.ic_media_pause, "Ferma", stopPendingIntent)
-            .setOngoing(true);
+            .setOngoing(true)
+            .setVibrate(new long[]{0, 1000, 500, 1000})  // vibrazione: pausa-1s-vibra-0.5s-vibra
+            .setSound(null);  // Metti null perché usi MediaPlayer per suono
+
 
         Notification notification = builder.build();
 
