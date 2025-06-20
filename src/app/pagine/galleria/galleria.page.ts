@@ -13,7 +13,42 @@ export class GalleriaPage implements OnInit {
   previewActive = false;
   stream: MediaStream | null = null;
 
-  constructor(private photoService: PhotoService) {}
+  lightboxOpen = false;
+  selectedPhotoIndex = 0;
+
+  get selectedPhoto(): string {
+    return this.photos[this.selectedPhotoIndex]?.src || '';
+  }
+
+  openLightbox(photoSrc: string) {
+    const index = this.photos.findIndex(p => p.src === photoSrc);
+    if (index >= 0) {
+      this.selectedPhotoIndex = index;
+      this.lightboxOpen = true;
+    }
+  }
+
+  closeLightbox() {
+    this.lightboxOpen = false;
+  }
+
+  prevPhoto(event: Event) {
+    event.stopPropagation();
+    if (this.selectedPhotoIndex > 0) {
+      this.selectedPhotoIndex--;
+    }
+  }
+
+  nextPhoto(event: Event) {
+    event.stopPropagation();
+    if (this.selectedPhotoIndex < this.photos.length - 1) {
+      this.selectedPhotoIndex++;
+    }
+  }
+
+
+
+  constructor(private photoService: PhotoService) { }
 
   ngOnInit() {
     this.loadPhotos();

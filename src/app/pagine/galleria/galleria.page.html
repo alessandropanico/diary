@@ -3,7 +3,7 @@
 
     <!-- Galleria -->
     <div class="container" [class.blur]="previewActive">
-      <div class="titolo">Galleria Fotografica</div>
+      <div class="titolo">Galleria</div>
 
       <div *ngIf="photos.length === 0" class="alert alert-info">
         Nessuna foto salvata.
@@ -12,11 +12,23 @@
       <div class="row">
         <div class="col-md-3 mb-3" *ngFor="let photo of photos">
           <div class="card">
-            <img [src]="photo.src" class="card-img-top" alt="Foto">
+            <img [src]="photo.src" class="card-img-top" alt="Foto" (click)="openLightbox(photo.src)" />
             <button class="btn btn-danger mt-2" (click)="deletePhoto(photo)">Elimina</button>
           </div>
         </div>
       </div>
+
+      <!-- Lightbox -->
+      <div class="lightbox" *ngIf="lightboxOpen" (click)="closeLightbox()">
+        <div class="lightbox-content" (click)="$event.stopPropagation()">
+          <button class="arrow left" (click)="prevPhoto($event)">❮</button>
+          <img [src]="selectedPhoto" class="lightbox-img" />
+          <button class="arrow right" (click)="nextPhoto($event)">❯</button>
+          <!-- <button class="close-lightbox" (click)="closeLightbox()">✖</button> -->
+        </div>
+      </div>
+
+
     </div>
 
     <!-- Camera Preview centrale -->
