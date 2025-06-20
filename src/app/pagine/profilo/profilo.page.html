@@ -10,7 +10,7 @@
 
 <ion-content fullscreen class="ion-padding ion-text-center">
   <ion-avatar class="profile-avatar" [class.editable]="editing" (click)="editing && changePhoto()">
-    <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/default-avatar.png'" alt="Foto profilo" />
+    <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
   </ion-avatar>
 
   <ion-button *ngIf="editing" expand="block" fill="outline" color="medium" (click)="removePhoto()">
