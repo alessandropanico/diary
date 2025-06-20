@@ -49,7 +49,7 @@ export class TaskModalComponent {
   async showGamingAlert(): Promise<void> {
     return new Promise(async (resolve) => {
       const alert = await this.alertController.create({
-        header: '🎯 TASK AGGIUNTA!',
+        header: 'TASK AGGIUNTA!',
         message: `
         Obiettivo impostato con successo!
       `,
