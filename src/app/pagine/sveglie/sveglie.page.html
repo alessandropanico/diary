@@ -1,11 +1,11 @@
 <ion-header>
-  <ion-toolbar color="primary">
-    <ion-title class="titolo">⏰ Sveglia</ion-title>
+  <ion-toolbar>
+    <ion-title>Sveglia</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="openInfo(null)">➕ Aggiungi Sveglia</ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
-
-<!-- Bottone per aggiungere una nuova sveglia -->
-<button class="open-modal-btn" (click)="openInfo(null)">➕ Aggiungi Sveglia</button>
 
 <ion-content class="ion-padding">
 
