@@ -8,7 +8,6 @@ import { HomePageRoutingModule } from './home-routing.module';
 import { RouterModule } from '@angular/router';
 
 //componenti
-import { TaskComponent } from './components/task/task.component';
 import { ClockComponent } from './clock/clock.component';
 
 @NgModule({
@@ -17,7 +16,6 @@ import { ClockComponent } from './clock/clock.component';
     FormsModule,
     IonicModule,
     HomePageRoutingModule,
-    TaskComponent,
     ClockComponent,
     RouterModule
   ],

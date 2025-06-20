@@ -1,0 +1,30 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Nuova Task</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="close()">Chiudi</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form (ngSubmit)="addTask()">
+    <ion-item>
+      <ion-label position="floating">Nome Task</ion-label>
+      <ion-input [(ngModel)]="newTask.name" name="taskName" required></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Descrizione</ion-label>
+      <ion-textarea [(ngModel)]="newTask.description" name="taskDescription"></ion-textarea>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Data Scadenza</ion-label>
+      <ion-datetime [(ngModel)]="newTask.dueDate" name="taskDueDate"></ion-datetime>
+    </ion-item>
+
+    <ion-button expand="block" type="submit" class="ion-margin-top">Aggiungi</ion-button>
+    <ion-text color="success" *ngIf="messageSuccess">{{ messageSuccess }}</ion-text>
+  </form>
+</ion-content>

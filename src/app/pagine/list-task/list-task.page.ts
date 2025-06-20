@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { TaskService } from 'src/app/services/task.service';
 import { Task } from 'src/app/interfaces/task';
+import { ModalController } from '@ionic/angular';
+import { TaskModalComponent } from './components/task-modal/task-modal.component';
 
 @Component({
   selector: 'app-list-task',
@@ -11,7 +13,9 @@ import { Task } from 'src/app/interfaces/task';
 export class ListTaskPage implements OnInit {
   tasks: Task[] = [];
 
-  constructor(private taskService: TaskService) {}
+  constructor(private taskService: TaskService,
+    private modalCtrl: ModalController
+  ) { }
 
   ngOnInit() {
     // Abbonati al flusso delle task per ottenere gli aggiornamenti
@@ -28,5 +32,12 @@ export class ListTaskPage implements OnInit {
   // Funzione per eliminare una task
   deleteTask(index: number) {
     this.taskService.deleteTask(index);  // Chiamata al servizio per eliminare la task
+  }
+
+  async openTaskModal() {
+    const modal = await this.modalCtrl.create({
+      component: TaskModalComponent,
+    });
+    await modal.present();
   }
 }
