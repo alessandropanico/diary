@@ -7,7 +7,6 @@ ion-header {
 ion-title {
   font-size: 24px;
   font-weight: bold;
-
 }
 
 .menu-content {
@@ -18,7 +17,8 @@ ion-title {
 ion-item {
   --inner-border-width: 0;
   font-size: 20px;
-  border-bottom: 2px dashed #84474b;
+  // border-bottom: 2px dashed #84474b;
+  border-bottom: 2px dashed #1b2f9e;
   cursor: pointer;
 }
 
