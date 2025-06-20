@@ -21,6 +21,12 @@
       <input id="taskDueDate" type="date" name="taskDueDate" [(ngModel)]="newTask.dueDate" />
     </div>
 
+    <div class="contButton">
     <button type="submit">Aggiungi</button>
+    <a class="buttonTask" [routerLink]="['/list-task']">Visualizza Task</a>
+    </div>
+
+    <div class="mess" [innerHTML]="messageSuccess"></div>
+
   </form>
 </div>

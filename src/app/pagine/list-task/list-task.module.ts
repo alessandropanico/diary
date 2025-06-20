@@ -7,13 +7,15 @@ import { IonicModule } from '@ionic/angular';
 import { ListTaskPageRoutingModule } from './list-task-routing.module';
 
 import { ListTaskPage } from './list-task.page';
+import { RouterModule } from '@angular/router';
 
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    ListTaskPageRoutingModule
+    ListTaskPageRoutingModule,
+    RouterModule
   ],
   declarations: [ListTaskPage]
 })

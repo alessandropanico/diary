@@ -11,7 +11,7 @@ html, body {
 
 
 .task-card {
-  background: 	#cf6120;
+  background:	gray;
   padding: 15px;
   border-radius: 8px;
   margin-bottom: 20px;
@@ -23,7 +23,6 @@ html, body {
   font-weight: bold;
   font-size: 2vw;
   margin-bottom: 2vh;
-  font-family: "Indie Flower", serif;
 }
 
 .form-group {
@@ -35,7 +34,7 @@ input, textarea {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background: wheat;
+  background: white;
 }
 
 button {
@@ -114,6 +113,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1); /* Rende l'icona nera */
 }
 
+.mess{
+  font-size: 1vw;
+  color: white;
+  margin-top: 2vh;
+}
+
+.contButton{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2%;
+}
+
+.buttonTask{
+  background-color: rgb(20, 14, 141);
+  text-decoration: none;
+  width: 8vw;
+  height: 5vh;
+  border-radius: 1vw;
+  font-size: 1vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+
+}
 
 @media screen and (max-width:600px){
 
@@ -121,7 +147,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-weight: bold;
     font-size: 5vw;
     margin-bottom: 2vh;
-    font-family: "Indie Flower", serif;
 }
 
 }

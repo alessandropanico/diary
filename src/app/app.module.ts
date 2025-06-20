@@ -8,11 +8,13 @@ import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { IonicStorageModule } from '@ionic/storage-angular';
 import { ServiceWorkerModule } from '@angular/service-worker';
+import { RouterModule } from '@angular/router';
 
 @NgModule({
   declarations: [AppComponent, ],
   imports:
   [BrowserModule,
+  RouterModule,
   IonicModule.forRoot(), AppRoutingModule,
   IonicStorageModule.forRoot(),
   ServiceWorkerModule.register('ngsw-worker.js', {

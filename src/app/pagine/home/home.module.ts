@@ -5,6 +5,7 @@ import { IonicModule } from '@ionic/angular';
 import { HomePage } from './home.page';
 
 import { HomePageRoutingModule } from './home-routing.module';
+import { RouterModule } from '@angular/router';
 
 //componenti
 import { TaskComponent } from './components/task/task.component';
@@ -17,7 +18,8 @@ import { ClockComponent } from './clock/clock.component';
     IonicModule,
     HomePageRoutingModule,
     TaskComponent,
-    ClockComponent
+    ClockComponent,
+    RouterModule
   ],
   declarations: [HomePage]  // ✅ Aggiungi HeaderComponent alle dichiarazioni
 })

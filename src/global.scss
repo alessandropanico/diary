@@ -52,19 +52,18 @@ ion-content {
 }
 
 
-html, body {
+html,
+body {
   height: 100%;
   overflow: auto !important;
 }
 
 .titolo {
-  font-family: kiddosy;
   color: white;
   font-size: 5vw;
 }
 
 .testo {
-  font-family: "Indie Flower", serif;
   font-size: 3vw;
   color: white;
 }
@@ -119,38 +118,23 @@ scrollbar-thumb {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @media screen and (max-width:600px) {
 
   .titolo {
-    font-family: kiddosy;
     color: black;
     font-size: 10vw;
   }
 
   .testo {
-    font-family: "Indie Flower", serif;
     font-size: 5vw;
   }
 
+}
+
+//-----------------------------------------------------
+
+@font-face {
+  font-family: optima;
+  src: url(/assets/fonts/Optima/OPTIMA.woff);
 }
 
