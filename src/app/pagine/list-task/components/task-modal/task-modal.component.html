@@ -21,10 +21,20 @@
 
     <ion-item>
       <ion-label position="floating">Data Scadenza</ion-label>
-      <ion-datetime [(ngModel)]="newTask.dueDate" name="taskDueDate"></ion-datetime>
+      <ion-datetime
+        presentation="date"
+        [(ngModel)]="newTask.dueDate"
+        name="taskDueDate"
+        preferWheel="false">
+      </ion-datetime>
     </ion-item>
 
-    <ion-button expand="block" type="submit" class="ion-margin-top">Aggiungi</ion-button>
-    <ion-text color="success" *ngIf="messageSuccess">{{ messageSuccess }}</ion-text>
+    <div class="contButton">
+      <button class="buttonTask" type="submit">Aggiungi</button>
+    </div>
+
+    <ion-text color="success" *ngIf="messageSuccess">
+      <p class="mess">{{ messageSuccess }}</p>
+    </ion-text>
   </form>
 </ion-content>

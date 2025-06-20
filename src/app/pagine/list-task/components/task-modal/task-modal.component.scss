@@ -1,152 +1,64 @@
+:host {
+  --width: 90%;
+  --max-width: 400px;
+  --height: auto;
+  --border-radius: 16px;
+}
+
 ion-content {
-  --overflow: auto !important;
-  overflow-y: auto !important;
-  height: 100vh !important;
+  --background: var(--ion-color-light);
+  border-radius: 0 0 16px 16px;
+  padding: 16px;
 }
 
-html, body {
-  height: 100%;
-  overflow: auto !important;
+ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --min-height: 50px;
 }
 
-
-.task-card {
-  background:	gray;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-  color: black;
+ion-input,
+ion-textarea,
+ion-datetime {
+  font-size: 14px;
 }
 
-.titoloTask{
-  font-weight: bold;
-  font-size: 2vw;
-  margin-bottom: 2vh;
-}
-
-.form-group {
-  margin-bottom: 10px;
-}
-
-input, textarea {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: white;
-}
-
-button {
-  background-color: #84474b;
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.task-list {
-  margin-top: 20px;
-  color: #84474b;
-}
-
-.task-content{
-  color: #84474b;
-}
-
-.task-item {
+.contButton {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border-bottom: 1px solid #ccc;
-}
-
-.completed {
-  text-decoration: line-through;
-  color: gray;
-}
-
-.delete-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-}
-
-//---------------
-
-.arrow {
-  font-size: 20px;
-  transition: transform 0.3s ease;
-  cursor: pointer;
-}
-
-.arrow.open {
-  transform: rotate(360deg);
-}
-
-
-.contTaskHeader{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-}
-
-.task-form {
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: max-height 0.5s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
-  padding: 0 15px;
-}
-
-.task-form.open {
-  max-height: 500px; /* Imposta un valore sufficientemente grande */
-  opacity: 1;
-  padding: 15px;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1); /* Rende l'icona nera */
-}
-
-.mess{
-  font-size: 1vw;
-  color: white;
+  justify-content: center;
   margin-top: 2vh;
 }
 
-.contButton{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2%;
-}
-
-.buttonTask{
+.buttonTask {
   background-color: rgb(20, 14, 141);
-  text-decoration: none;
-  width: 8vw;
-  height: 5vh;
-  border-radius: 1vw;
-  font-size: 1vw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
   cursor: pointer;
-
+  transition: background 0.3s ease;
 }
 
-@media screen and (max-width:600px){
-
-  .titoloTask{
-    font-weight: bold;
-    font-size: 5vw;
-    margin-bottom: 2vh;
+.buttonTask:hover {
+  background-color: rgb(30, 20, 180);
 }
 
+.mess {
+  font-size: 13px;
+  color: var(--ion-color-success);
+  margin-top: 10px;
+  text-align: center;
+}
+
+@media screen and (max-width: 600px) {
+  .buttonTask {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .mess {
+    font-size: 14px;
+  }
 }
