@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MenuController } from '@ionic/angular';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -11,16 +12,27 @@ import { MenuController } from '@ionic/angular';
     <router-outlet></router-outlet>
   `
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
 
+profile: any = null;
 
-  constructor(private menu: MenuController) {
+  constructor(
+    private menu: MenuController,
+    private authService: AuthService) {
     window.addEventListener('beforeinstallprompt', (e: any) => {
       e.preventDefault();
       this.deferredPrompt = e;
       this.showInstallButton = true;
     });
+
   }
+  
+ngOnInit() {
+  const storedProfile = localStorage.getItem('profile');
+  if (storedProfile) {
+    this.profile = JSON.parse(storedProfile);
+  }
+}
 
 
   deferredPrompt: any;
@@ -48,8 +60,14 @@ export class AppComponent {
     this.showInstallButton = false;
   }
 
-  isLoggedIn() {
-    return !!localStorage.getItem('user');
+    isLoggedIn(): boolean {
+    return this.authService.isLoggedIn();
   }
+
+  getProfilePhoto(): string {
+  return this.profile?.photo || 'assets/immaginiGenerali/default-avatar.jpg';
+}
+
+
 
 }
