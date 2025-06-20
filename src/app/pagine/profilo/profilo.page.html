@@ -13,6 +13,10 @@
     <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/default-avatar.png'" alt="Foto profilo" />
   </ion-avatar>
 
+  <ion-button *ngIf="editing" expand="block" fill="outline" color="medium" (click)="removePhoto()">
+    Rimuovi foto profilo
+  </ion-button>
+
   <div *ngIf="!editing" class="profile-view">
     <h2>{{ profile.nickname || 'nickname' }}</h2>
     <h3>{{ profile.name || 'Nome e Cognome' }}</h3>

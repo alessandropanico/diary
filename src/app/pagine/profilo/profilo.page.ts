@@ -63,29 +63,29 @@ export class ProfiloPage implements OnInit {
   }
 
   saveProfile() {
-    // Aggiorna solo i campi compilati
-    this.profile = {
-      photo: this.profileEdit.photo || this.profile.photo,
-      nickname: this.profileEdit.nickname || '',
-      name: this.profileEdit.name || '',
-      email: this.profileEdit.email || '',
-      bio: this.profileEdit.bio || ''
-    };
+  this.profile = {
+    photo: this.profileEdit.photo, // accetta '' per rimuovere
+    nickname: this.profileEdit.nickname || '',
+    name: this.profileEdit.name || '',
+    email: this.profileEdit.email || '',
+    bio: this.profileEdit.bio || ''
+  };
 
-    localStorage.setItem('profile', JSON.stringify(this.profile));
-    this.editing = false;
+  localStorage.setItem('profile', JSON.stringify(this.profile));
+  this.editing = false;
 
-    // Svuota il form dopo il salvataggio
-    this.profileEdit = {
-      photo: '',
-      nickname: '',
-      name: '',
-      email: '',
-      bio: ''
-    };
+  // Svuota il form dopo salvataggio, ma tieni la foto sincronizzata
+  this.profileEdit = {
+    photo: this.profile.photo,
+    nickname: '',
+    name: '',
+    email: '',
+    bio: ''
+  };
 
-    alert('Profilo aggiornato!');
-  }
+  alert('Profilo aggiornato!');
+}
+
 
   changePhoto() {
     const input = document.createElement('input');
@@ -106,6 +106,10 @@ export class ProfiloPage implements OnInit {
     };
 
     input.click();
+  }
+
+  removePhoto() {
+    this.profileEdit.photo = '';
   }
 
 }
