@@ -1,3 +1,4 @@
+/* ===== Modale dimensioni e layout ===== */
 :host {
   --width: 90%;
   --max-width: 400px;
@@ -5,24 +6,28 @@
   --border-radius: 16px;
 }
 
+/* ===== Ion Content ===== */
 ion-content {
   --background: var(--ion-color-light);
   border-radius: 0 0 16px 16px;
   padding: 16px;
 }
 
+/* ===== Ion Item ===== */
 ion-item {
   --padding-start: 0;
   --inner-padding-end: 0;
   --min-height: 50px;
 }
 
+/* ===== Input, Textarea, Datetime ===== */
 ion-input,
 ion-textarea,
 ion-datetime {
   font-size: 14px;
 }
 
+/* ===== Pulsanti contenitore ===== */
 .contButton {
   display: flex;
   align-items: center;
@@ -30,6 +35,7 @@ ion-datetime {
   margin-top: 2vh;
 }
 
+/* ===== Bottone Task ===== */
 .buttonTask {
   background-color: rgb(20, 14, 141);
   color: white;
@@ -45,6 +51,7 @@ ion-datetime {
   background-color: rgb(30, 20, 180);
 }
 
+/* ===== Messaggi di successo ===== */
 .mess {
   font-size: 13px;
   color: var(--ion-color-success);
@@ -52,6 +59,44 @@ ion-datetime {
   text-align: center;
 }
 
+/* ===== Stile alert gaming personalizzato ===== */
+::ng-deep .alert-dark-force.gaming-alert {
+  --background: #0f0f1a !important;
+  --color: #00ffcc !important;
+  --backdrop-opacity: 0.9 !important;
+
+  border: 2px solid #00ffcc !important;
+  box-shadow: 0 0 20px #00ffcc !important;
+  border-radius: 12px !important;
+
+  .alert-head {
+    font-family: 'Orbitron', sans-serif !important;
+    color: #00ffcc !important;
+    text-transform: uppercase;
+    font-size: 20px !important;
+  }
+
+  .alert-message {
+    font-family: 'Roboto Mono', monospace !important;
+    color: #eeeeee !important;
+    font-size: 14px !important;
+  }
+
+  .alert-button.alert-continue {
+    background: #00ff99 !important;
+    color: black !important;
+    font-weight: bold;
+    border-radius: 8px;
+    font-family: 'Orbitron', sans-serif;
+    box-shadow: 0 0 10px #00ff99;
+  }
+
+  .alert-button.alert-continue:hover {
+    background: #00e68a !important;
+  }
+}
+
+/* ===== Media Queries ===== */
 @media screen and (max-width: 600px) {
   .buttonTask {
     width: 100%;

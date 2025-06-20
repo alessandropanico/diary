@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular';
+import { IonicModule, ModalController, AlertController } from '@ionic/angular';
 import { TaskService } from 'src/app/services/task.service';
 
 @Component({
@@ -17,22 +17,52 @@ export class TaskModalComponent {
     description: '',
     createdAt: new Date().toISOString(),
     dueDate: '',
-    completed: false
+    completed: false,
   };
 
   messageSuccess = '';
 
   constructor(
     private taskService: TaskService,
-    private modalCtrl: ModalController
-  ) {}
+    private modalCtrl: ModalController,
+    private alertController: AlertController
+  ) { }
 
-  addTask() {
+  async addTask() {
     if (this.newTask.name.trim() && this.newTask.dueDate) {
       this.taskService.addTask(this.newTask);
       this.messageSuccess = 'Task aggiunta!';
-      setTimeout(() => this.modalCtrl.dismiss(), 800);
+
+      // Rimuovi il focus dall'elemento attivo prima di aprire l'alert
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+
+      await this.showGamingAlert();
+      this.modalCtrl.dismiss();
     }
+  }
+
+
+  async showGamingAlert() {
+    const alert = await this.alertController.create({
+      header: '🎯 Missione Aggiunta!',
+      message: `
+        Obiettivo impostato con successo.</strong><br>Preparati alla battaglia! ⚔️
+      `,
+      cssClass: ['gaming-alert', 'alert-dark-force'],
+      buttons: [
+        {
+          text: 'Avanti!',
+          role: 'cancel',
+          cssClass: 'alert-continue',
+        },
+      ],
+      backdropDismiss: false,
+      mode: 'ios', // per uno stile più stabile cross-device
+    });
+
+    await alert.present();
   }
 
   close() {

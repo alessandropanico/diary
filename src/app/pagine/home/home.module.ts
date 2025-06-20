@@ -8,7 +8,7 @@ import { HomePageRoutingModule } from './home-routing.module';
 import { RouterModule } from '@angular/router';
 
 //componenti
-import { ClockComponent } from './clock/clock.component';
+import { ClockComponent } from './components/clock/clock.component';
 
 @NgModule({
   imports: [

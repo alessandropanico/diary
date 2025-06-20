@@ -11,7 +11,7 @@
   <form (ngSubmit)="addTask()">
     <ion-item>
       <ion-label position="floating">Nome Task</ion-label>
-      <ion-input [(ngModel)]="newTask.name" name="taskName" required></ion-input>
+      <ion-input [(ngModel)]="newTask.name" name="taskName" required autocomplete="off"></ion-input>
     </ion-item>
 
     <ion-item>
@@ -21,20 +21,17 @@
 
     <ion-item>
       <ion-label position="floating">Data Scadenza</ion-label>
-      <ion-datetime
-        presentation="date"
-        [(ngModel)]="newTask.dueDate"
-        name="taskDueDate"
-        preferWheel="false">
-      </ion-datetime>
+      <ion-datetime presentation="date" [(ngModel)]="newTask.dueDate" name="taskDueDate"
+        preferWheel="false"></ion-datetime>
     </ion-item>
 
     <div class="contButton">
-      <button class="buttonTask" type="submit">Aggiungi</button>
+      <button expand="block" type="submit" class="buttonTask" [disabled]="!newTask.name.trim() || !newTask.dueDate">
+        Aggiungi
+      </button>
     </div>
 
-    <ion-text color="success" *ngIf="messageSuccess">
-      <p class="mess">{{ messageSuccess }}</p>
-    </ion-text>
+    <ion-text color="success" class="mess" *ngIf="messageSuccess" [innerHTML]="messageSuccess"></ion-text>
+
   </form>
 </ion-content>
