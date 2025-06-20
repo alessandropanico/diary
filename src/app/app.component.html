@@ -7,6 +7,10 @@
     </ion-header>
     <ion-content class="menu-content">
       <ion-list class="cursor">
+        <ion-item [routerLink]="isLoggedIn() ? '/profilo' : '/login'">
+          <ion-icon name="person-circle-outline" slot="start"></ion-icon>
+          <ion-label>Profilo</ion-label>
+        </ion-item>
         <ion-item routerLink="/home" (click)="closeMenu()">Home</ion-item>
         <ion-item routerLink="/sveglie" (click)="closeMenu()">Sveglie</ion-item>
         <ion-item routerLink="/fotocamera" (click)="closeMenu()">Fotocamera</ion-item>
@@ -16,7 +20,6 @@
         <!-- <ion-item routerLink="/impostazioni" (click)="closeMenu()">Impostazioni</ion-item> -->
         <ion-item routerLink="/backup" (click)="closeMenu()">Backup</ion-item>
         <ion-item routerLink="/login" (click)="closeMenu()">Login</ion-item>
-        <ion-item routerLink="/profilo" (click)="closeMenu()">Profilo</ion-item>
         <ion-item routerLink="/riconoscimenti" (click)="closeMenu()">Riconoscimenti</ion-item>
       </ion-list>
     </ion-content>

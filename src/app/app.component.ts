@@ -48,4 +48,8 @@ export class AppComponent {
     this.showInstallButton = false;
   }
 
+  isLoggedIn() {
+    return !!localStorage.getItem('user');
+  }
+
 }

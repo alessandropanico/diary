@@ -12,10 +12,14 @@ export class LoginPage implements OnInit {
 
   user: any = null;
 
-  constructor(private ngZone: NgZone) {}
+  constructor(private ngZone: NgZone) { }
 
   ngOnInit() {
-    // Carica script Google Identity Services
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      this.user = JSON.parse(storedUser);
+    }
+
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
@@ -24,28 +28,23 @@ export class LoginPage implements OnInit {
 
     script.onload = () => {
       google.accounts.id.initialize({
-      client_id: '930951054259-bkspivmuu379s6mg0m7d7ndc2ehfaite.apps.googleusercontent.com',
+        client_id: '930951054259-bkspivmuu379s6mg0m7d7ndc2ehfaite.apps.googleusercontent.com',
         callback: (response: any) => this.ngZone.run(() => this.handleCredentialResponse(response))
       });
 
       google.accounts.id.renderButton(
         document.getElementById('googleSignInDiv'),
-        { theme: 'outline', size: 'large' }  // personalizza come vuoi
+        { theme: 'outline', size: 'large' }
       );
 
-      // Facoltativo: mostra prompt automatico login se possibile
       google.accounts.id.prompt();
     };
   }
 
   handleCredentialResponse(response: any) {
-    console.log('ID Token:', response.credential);
-
-    // Decodifica JWT per estrarre dati utente (puoi usare jwt-decode oppure fai lato server)
     const userObject = this.parseJwt(response.credential);
-    console.log('Utente:', userObject);
-
     this.user = userObject;
+    localStorage.setItem('user', JSON.stringify(userObject));
     alert(`Login effettuato con successo!\nBenvenuto ${userObject.name}`);
   }
 
@@ -65,6 +64,7 @@ export class LoginPage implements OnInit {
 
   logout() {
     this.user = null;
+    localStorage.removeItem('user');
     alert('Logout effettuato');
   }
 }

@@ -4,10 +4,9 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding" class="ion-text-center">
-  <div style="margin-top: 40px;">
+<ion-content class="ion-padding ion-text-center">
+  <div *ngIf="!user" style="margin-top: 40px;">
     <h2>Accedi con Google</h2>
-
     <div id="googleSignInDiv" style="margin-top: 20px;"></div>
   </div>
 
