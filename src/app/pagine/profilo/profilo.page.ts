@@ -29,21 +29,20 @@ export class ProfiloPage implements OnInit {
 
   constructor(private ngZone: NgZone) { }
 
- ngOnInit() {
-  const storedProfile = localStorage.getItem('profile') || localStorage.getItem('user');
-  if (storedProfile) {
-    const user = JSON.parse(storedProfile);
+  ngOnInit() {
+    const storedProfile = localStorage.getItem('profile') || localStorage.getItem('user');
+    if (storedProfile) {
+      const user = JSON.parse(storedProfile);
 
-    this.profile = {
-      photo: user.photo || user.picture || '',
-      nickname: user.nickname || '',
-      name: user.name || '',
-      email: user.email || '',
-      bio: user.bio || ''
-    };
+      this.profile = {
+        photo: user.photo || user.picture || '',
+        nickname: user.nickname || '',
+        name: user.name || '',
+        email: user.email || '',
+        bio: user.bio || ''
+      };
+    }
   }
-}
-
 
 
   startEdit() {
