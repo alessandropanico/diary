@@ -7,8 +7,8 @@
   </ion-toolbar>
 </ion-header>
 
-  <!-- Modale personalizzato -->
-  <div class="custom-modal-overlay" *ngIf="alarmInfo" (click)="onOverlayClick($event)">
+<!-- Modale personalizzato -->
+<div class="custom-modal-overlay" *ngIf="alarmInfo" (click)="onOverlayClick($event)">
   <div class="custom-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2 *ngIf="editingAlarmIndex === null">Imposta Sveglia</h2>
@@ -31,44 +31,44 @@
         </label>
       </div>
 
-      <button *ngIf="editingAlarmIndex === null" class="success-btn neon-btn" (click)="setAlarm()">💾 Salva Sveglia</button>
-      <button *ngIf="editingAlarmIndex !== null" class="success-btn neon-btn" (click)="updateAlarm()">✏️ Aggiorna Sveglia</button>
+      <button *ngIf="editingAlarmIndex === null" class="success-btn neon-btn" (click)="setAlarm()">💾 Salva
+        Sveglia</button>
+      <button *ngIf="editingAlarmIndex !== null" class="success-btn neon-btn" (click)="updateAlarm()">✏️ Aggiorna
+        Sveglia</button>
     </div>
   </div>
 </div>
 
 <ion-content class="ion-padding">
 
-
-
-
   <!-- Lista delle sveglie attive -->
   <div *ngIf="alarms.length > 0" class="alarms-container">
-  <h2 class="titolo-dark">Sveglie Attive</h2>
+    <h2 class="titolo-dark">Sveglie Attive</h2>
 
-  <div class="row">
-    <div class="col-md-4 mb-3" *ngFor="let alarm of alarms; let i = index">
-      <div class="alarm-card">
-        <div class="alarm-time">{{ alarm.time }}</div>
-        <div class="alarm-note">{{ alarm.note || 'Nessuna nota' }}</div>
-        <div class="alarm-days">📆 {{ alarm.days?.length ? alarm.days.join(', ') : 'Nessun giorno selezionato' }}</div>
+    <div class="row">
+      <div class="col-md-4 mb-3" *ngFor="let alarm of alarms; let i = index">
+        <div class="alarm-card">
+          <div class="alarm-time">{{ alarm.time }}</div>
+          <div class="alarm-note">{{ alarm.note || 'Nessuna nota' }}</div>
+          <div class="alarm-days">📆 {{ alarm.days?.length ? alarm.days.join(', ') : 'Nessun giorno selezionato' }}
+          </div>
 
-        <div class="alarm-controls">
-          <label class="switch">
-            <input type="checkbox" [checked]="alarm.active" (change)="toggleAlarm(alarm)" />
-            <span class="slider"></span>
-          </label>
-          <span>{{ alarm.active ? '🟢 Attiva' : '🔴 Disattiva' }}</span>
+          <div class="alarm-controls">
+            <label class="switch">
+              <input type="checkbox" [checked]="alarm.active" (change)="toggleAlarm(alarm)" />
+              <span class="slider"></span>
+            </label>
+            <span>{{ alarm.active ? '🟢 Attiva' : '🔴 Disattiva' }}</span>
 
-          <div class="buttons">
-            <button class="edit-btn" (click)="openInfo(i)">✏️</button>
-            <button class="delete-btn" (click)="removeAlarm(i)">🗑</button>
+            <div class="buttons">
+              <button class="edit-btn" (click)="openInfo(i)">✏️</button>
+              <button class="delete-btn" (click)="removeAlarm(i)">🗑</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
 
 </ion-content>

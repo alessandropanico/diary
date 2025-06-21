@@ -245,22 +245,48 @@ export class SvegliePage {
   }
 
 
-  async startRinging(dayLabel: string, message: string) {
-    this.playRingingAudio();
+ async startRinging(dayLabel: string, message: string) {
+  this.playRingingAudio();
 
-    const alert = document.createElement('ion-alert');
-    alert.header = '⏰ Sveglia!';
-    alert.subHeader = dayLabel;
-    alert.message = message || 'È ora di svegliarsi!';
-    alert.buttons = [{
-      text: 'Ferma',
-      role: 'cancel',
-      handler: () => this.stopRingingAudio()
-    }];
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100vw';
+  overlay.style.height = '100vh';
+  overlay.style.background = 'rgba(0,0,0,0.7)';
+  overlay.style.display = 'flex';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.zIndex = '9999';
 
-    document.body.appendChild(alert);
-    await alert.present();
-  }
+  const modal = document.createElement('div');
+  modal.style.background = '#222';
+  modal.style.color = '#0ff';
+  modal.style.padding = '20px';
+  modal.style.borderRadius = '10px';
+  modal.style.textAlign = 'start';
+  modal.style.fontFamily = "'Courier New', Courier, monospace";
+  modal.style.width = '300px';
+
+  modal.innerHTML = `
+    <h2>⏰ Sveglia!</h2>
+    <h3>${dayLabel}</h3>
+    <p>${message || 'È ora di svegliarsi!'}</p>
+    <button class="ff7-btn">Ferma</button>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  modal.querySelector('button')?.addEventListener('click', () => {
+    this.stopRingingAudio();
+    overlay.remove();
+  });
+
+  console.log('Modal mostrato');
+}
+
 
 
 
