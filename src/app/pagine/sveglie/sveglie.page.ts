@@ -245,47 +245,67 @@ export class SvegliePage {
   }
 
 
- async startRinging(dayLabel: string, message: string) {
-  this.playRingingAudio();
+  async startRinging(dayLabel: string, message: string) {
+    this.playRingingAudio();
 
-  const overlay = document.createElement('div');
-  overlay.style.position = 'fixed';
-  overlay.style.top = '0';
-  overlay.style.left = '0';
-  overlay.style.width = '100vw';
-  overlay.style.height = '100vh';
-  overlay.style.background = 'rgba(0,0,0,0.7)';
-  overlay.style.display = 'flex';
-  overlay.style.alignItems = 'center';
-  overlay.style.justifyContent = 'center';
-  overlay.style.zIndex = '9999';
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.background = 'rgba(0,0,0,0.7)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '9999';
 
-  const modal = document.createElement('div');
-  modal.style.background = '#222';
-  modal.style.color = '#0ff';
-  modal.style.padding = '20px';
-  modal.style.borderRadius = '10px';
-  modal.style.textAlign = 'start';
-  modal.style.fontFamily = "'Courier New', Courier, monospace";
-  modal.style.width = '300px';
+    const modal = document.createElement('div');
+    modal.style.background = '#222';
+    modal.style.color = '#0ff';
+    modal.style.padding = '20px';
+    modal.style.borderRadius = '10px';
+    modal.style.textAlign = 'start';
+    modal.style.fontFamily = "'Courier New', Courier, monospace";
+    modal.style.width = '300px';
 
-  modal.innerHTML = `
+    modal.innerHTML = `
     <h2>⏰ Sveglia!</h2>
     <h3>${dayLabel}</h3>
     <p>${message || 'È ora di svegliarsi!'}</p>
-    <button class="ff7-btn">Ferma</button>
+    <button>Ferma</button>
   `;
 
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
 
-  modal.querySelector('button')?.addEventListener('click', () => {
-    this.stopRingingAudio();
-    overlay.remove();
-  });
+    const btn = modal.querySelector('button');
+    if (btn) {
+      // Stili inline al bottone
+      btn.style.background = '#3cf';
+      btn.style.color = '#000';
+      btn.style.fontWeight = 'bold';
+      btn.style.border = 'none';
+      btn.style.padding = '0.8rem 1.5rem';
+      btn.style.borderRadius = '8px';
+      btn.style.cursor = 'pointer';
+      btn.style.transition = 'background 0.2s';
+      btn.style.fontFamily = "'Orbitron', sans-serif";
 
-  console.log('Modal mostrato');
-}
+      // Effetto hover manuale via JS
+      btn.addEventListener('mouseenter', () => btn.style.background = '#60e0ff');
+      btn.addEventListener('mouseleave', () => btn.style.background = '#3cf');
+
+      btn.addEventListener('click', () => {
+        this.stopRingingAudio();
+        overlay.remove();
+      });
+    }
+
+    console.log('Modal mostrato');
+  }
+
+
 
 
 
