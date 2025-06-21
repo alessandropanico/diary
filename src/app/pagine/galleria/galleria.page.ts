@@ -8,6 +8,10 @@ import { PhotoService } from 'src/app/services/photo.service';
   standalone: false,
 })
 export class GalleriaPage implements OnInit {
+
+  constructor(private photoService: PhotoService) { }
+
+
   @ViewChild('video', { static: false }) videoElement!: ElementRef;
   photos: { src: string }[] = [];
   previewActive = false;
@@ -47,8 +51,23 @@ export class GalleriaPage implements OnInit {
   }
 
 
+  confirmDeletePhoto: { src: string } | null = null;
 
-  constructor(private photoService: PhotoService) { }
+  askDelete(photo: { src: string }) {
+    this.confirmDeletePhoto = photo;
+  }
+
+  confirmDelete() {
+    if (this.confirmDeletePhoto) {
+      this.photoService.deletePhoto(this.confirmDeletePhoto);
+      this.loadPhotos();
+      this.confirmDeletePhoto = null;
+    }
+  }
+
+  cancelDelete() {
+    this.confirmDeletePhoto = null;
+  }
 
   ngOnInit() {
     this.loadPhotos();

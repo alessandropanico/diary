@@ -93,7 +93,8 @@
 }
 
 /* Mantieni le dimensioni e stili attuali */
-.circle-button, .circle-launcher {
+.circle-button,
+.circle-launcher {
   background: #111;
   border: 4px solid #272727;
   border-radius: 50%;
@@ -203,8 +204,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 
@@ -270,4 +276,105 @@
   border-color: #7a2a2a;
 }
 
-/* Rimuovi ombre e transizioni troppo aggressive */
+//--------------------------------
+
+.ff7r-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 10, 15, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.ff7r-modal {
+  background: #11161d;
+  border: 2px solid #0ff;
+  border-radius: 12px;
+  box-shadow: 0 0 20px #0ff;
+  padding: 20px 30px;
+  width: 500px;
+  text-align: center;
+  font-family: 'Orbitron', sans-serif;
+  color: #eee;
+  animation: zoomIn 0.3s ease-out;
+}
+
+.ff7r-modal h3 {
+  margin-bottom: 15px;
+  font-weight: 600;
+  text-shadow: 0 0 5px #0ff;
+}
+
+.preview-img {
+  width: 100%;
+  height: auto;
+  border: 1px solid #0ff;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 10px #0ff inset;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: space-around;
+}
+
+.btn {
+  cursor: pointer;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-family: 'Orbitron', sans-serif;
+  transition: all 0.3s ease;
+}
+
+.neon-btn {
+  background: #0ff;
+  color: #000;
+  box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+}
+
+.neon-btn:hover {
+  background: #0dd;
+  box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
+}
+
+.confirm-btn {
+  background-color: #f44336;
+  color: white;
+  box-shadow: 0 0 10px #f44336, 0 0 20px #f44336;
+}
+
+.confirm-btn:hover {
+  background-color: #d32f2f;
+  box-shadow: 0 0 20px #d32f2f, 0 0 40px #d32f2f;
+}
+
+.cancel-btn {
+  background-color: #555;
+  color: #ccc;
+  box-shadow: 0 0 10px #555, 0 0 20px #555;
+}
+
+.cancel-btn:hover {
+  background-color: #777;
+  box-shadow: 0 0 20px #777, 0 0 40px #777;
+}
+
+@keyframes zoomIn {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
