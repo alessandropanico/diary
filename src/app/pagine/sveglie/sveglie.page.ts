@@ -281,10 +281,16 @@ export class SvegliePage {
 
 
   async startRinging(dayLabel: string, message: string) {
-    const alarm = this.alarms.find(a => a.days.includes(dayLabel));
-    const fileName = alarm?.soundFile || 'lofiAlarm.mp3';
+  const alarm = this.alarms.find(a => a.days.includes(dayLabel) && a.active);
 
-    this.playRingingAudio(fileName);
+  if (!alarm) {
+    console.warn('⏹ Sveglia non attiva, non suono nulla.');
+    return;
+  }
+
+  const fileName = alarm?.soundFile || 'lofiAlarm.mp3';
+
+  this.playRingingAudio(fileName);
 
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';
