@@ -347,8 +347,24 @@ input:checked+.slider:before {
     transform: scale(0.8);
     opacity: 0;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.file-name {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #0ff;
+  font-style: italic;
+}
+
+.remove-file-btn {
+  margin-left: 10px;
+  background: transparent;
+  border: none;
+  color: red;
+  cursor: pointer;
 }

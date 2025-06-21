@@ -7,22 +7,29 @@
   </ion-toolbar>
 </ion-header>
 
-<!-- Modale personalizzato -->
+<!-- MODALE PERSONALIZZATO -->
 <div class="custom-modal-overlay" *ngIf="alarmInfo" (click)="onOverlayClick($event)">
   <div class="custom-modal" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
     <div class="modal-header">
-      <h2 *ngIf="editingAlarmIndex === null">Imposta Sveglia</h2>
-      <h2 *ngIf="editingAlarmIndex !== null">✏️ Modifica Sveglia</h2>
+      <h2>{{ editingAlarmIndex === null ? 'Imposta Sveglia' : '✏️ Modifica Sveglia' }}</h2>
       <button class="close-btn" (click)="closeInfo()">✖</button>
     </div>
 
+    <!-- Body -->
     <div class="modal-body">
-      <label for="alarm-time">🕐 Orario:</label>
+
+      <!-- Orario -->
+      <label for="alarm-time">🕒 Orario:</label>
       <input id="alarm-time" type="time" [(ngModel)]="alarmTime" class="modal-input" />
 
+      <!-- Nota -->
       <label for="alarm-note">📝 Nota:</label>
-      <input id="alarm-note" type="text" placeholder="Inserisci una nota" [(ngModel)]="alarmNote" class="modal-input" />
+      <input id="alarm-note" type="text" [(ngModel)]="alarmNote" placeholder="Es. Allenamento, Lavoro..."
+        class="modal-input" />
 
+      <!-- Giorni -->
       <label>📅 Giorni della settimana:</label>
       <div class="days-container">
         <label *ngFor="let day of weekDays; let i = index" class="day-checkbox">
@@ -31,28 +38,54 @@
         </label>
       </div>
 
-      <button *ngIf="editingAlarmIndex === null" class="success-btn neon-btn" (click)="setAlarm()">💾 Salva
-        Sveglia</button>
-      <button *ngIf="editingAlarmIndex !== null" class="success-btn neon-btn" (click)="updateAlarm()">✏️ Aggiorna
-        Sveglia</button>
+      <!-- File Audio -->
+      <label for="alarm-sound">🎵 Suono personalizzato (.mp3):</label>
+      <input  #fileInput id="alarm-sound" type="file" accept=".mp3" (change)="onSoundFileSelected($event)" class="modal-input" />
+
+      <!-- Nome del file selezionato -->
+      <div *ngIf="selectedSoundFileName" class="file-name">
+        File selezionato: {{ selectedSoundFileName }}
+        <button type="button" class="remove-file-btn" (click)="clearSelectedSound()">❌</button>
+      </div>
+
+
+      <!-- Azione -->
+      <button *ngIf="editingAlarmIndex === null" class="success-btn neon-btn" (click)="setAlarm()">
+        💾 Salva Sveglia
+      </button>
+
+      <button *ngIf="editingAlarmIndex !== null" class="success-btn neon-btn" (click)="updateAlarm()">
+        ✏️ Aggiorna Sveglia
+      </button>
     </div>
   </div>
 </div>
 
 <ion-content class="ion-padding">
 
-  <!-- Lista delle sveglie attive -->
+  <!-- Lista sveglie -->
   <div *ngIf="alarms.length > 0" class="alarms-container">
     <h2 class="titolo-dark">Sveglie Attive</h2>
 
     <div class="row">
       <div class="col-md-4 mb-3" *ngFor="let alarm of alarms; let i = index">
         <div class="alarm-card">
+
+          <!-- Orario & Nota -->
           <div class="alarm-time">{{ alarm.time }}</div>
           <div class="alarm-note">{{ alarm.note || 'Nessuna nota' }}</div>
-          <div class="alarm-days">📆 {{ alarm.days?.length ? alarm.days.join(', ') : 'Nessun giorno selezionato' }}
+
+          <!-- Giorni -->
+          <div class="alarm-days">
+            📆 {{ alarm.days?.length ? alarm.days.join(', ') : 'Nessun giorno selezionato' }}
           </div>
 
+          <!-- File audio -->
+          <div *ngIf="alarm.soundFile" class="alarm-sound-file">
+            🎵 Suono: {{ alarm.soundFile }}
+          </div>
+
+          <!-- Controlli -->
           <div class="alarm-controls">
             <label class="switch">
               <input type="checkbox" [checked]="alarm.active" (change)="toggleAlarm(alarm)" />
@@ -60,15 +93,16 @@
             </label>
             <span>{{ alarm.active ? '🟢 Attiva' : '🔴 Disattiva' }}</span>
 
+            <!-- Azioni -->
             <div class="buttons">
               <button class="edit-btn" (click)="openInfo(i)">✏️</button>
               <button class="delete-btn" (click)="removeAlarm(i)">🗑</button>
             </div>
           </div>
+
         </div>
       </div>
     </div>
   </div>
-
 
 </ion-content>
