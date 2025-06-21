@@ -40,13 +40,16 @@
 
       <!-- File Audio -->
       <label for="alarm-sound">🎵 Suono personalizzato (.mp3):</label>
-      <input  #fileInput id="alarm-sound" type="file" accept=".mp3" (change)="onSoundFileSelected($event)" class="modal-input" />
+      <input #fileInput id="alarm-sound" type="file" accept=".mp3" (change)="onSoundFileSelected($event)"
+        class="modal-input" />
 
       <!-- Nome del file selezionato -->
-      <div *ngIf="selectedSoundFileName" class="file-name">
-        File selezionato: {{ selectedSoundFileName }}
+      <div *ngIf="selectedSoundFileName" class="file-name" [title]="selectedSoundFileName">
+        File selezionato: {{ selectedSoundFileName.length > 20 ? (selectedSoundFileName | slice:0:20) + '...' :
+        selectedSoundFileName }}
         <button type="button" class="remove-file-btn" (click)="clearSelectedSound()">❌</button>
       </div>
+
 
 
       <!-- Azione -->
@@ -81,8 +84,13 @@
           </div>
 
           <!-- File audio -->
-          <div *ngIf="alarm.soundFile" class="alarm-sound-file">
-            🎵 Suono: {{ alarm.soundFile }}
+          <div class="alarm-sound-file" [title]="alarm.soundFile ? alarm.soundFile : 'Suono di default'">
+            🎵 Suono:
+            {{
+            alarm.soundFile
+            ? (alarm.soundFile.length > 20 ? (alarm.soundFile | slice:0:20) + '...' : alarm.soundFile)
+            : 'Default App'
+            }}
           </div>
 
           <!-- Controlli -->
