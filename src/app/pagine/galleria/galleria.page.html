@@ -1,9 +1,15 @@
-<ion-content>
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Galleria</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+
+<ion-content class="ion-padding">
   <section class="sfondo">
 
     <!-- Galleria -->
     <div class="container" [class.blur]="previewActive">
-      <div class="titolo">Galleria</div>
 
       <div *ngIf="photos.length === 0" class="alert alert-info">
         Nessuna foto salvata.
@@ -31,25 +37,26 @@
 
     </div>
 
-    <!-- Camera Preview centrale -->
-    <div class="camera-overlay" *ngIf="previewActive">
-      <video #video autoplay muted class="camera-preview"></video>
-    </div>
+  <!-- Camera Preview centrale -->
+<div class="camera-overlay" *ngIf="previewActive">
+  <video #video autoplay muted class="camera-preview"></video>
+</div>
 
-    <!-- Barra con pulsante scatto -->
-    <div class="camera-bar" *ngIf="previewActive">
-      <button class="circle-button" (click)="takePhoto()">
-        <div class="inner-circle"></div>
-      </button>
-      <button class="close-button" (click)="stopCamera()">✖</button>
-    </div>
+<!-- Barra con pulsante scatto -->
+<div class="camera-bar" *ngIf="previewActive">
+  <button class="circle-button neon-border" (click)="takePhoto()">
+    <div class="inner-circle"></div>
+  </button>
+  <button class="close-button neon-text" (click)="stopCamera()">✖</button>
+</div>
 
-    <!-- Pulsante apri fotocamera se non attiva -->
-    <div class="camera-launcher" *ngIf="!previewActive">
-      <button class="circle-launcher" (click)="startCamera()">
-        <div class="inner-circle"></div>
-      </button>
-    </div>
+<!-- Pulsante apri fotocamera se non attiva -->
+<div class="camera-launcher" *ngIf="!previewActive">
+  <button class="circle-launcher neon-border" (click)="startCamera()">
+    <div class="inner-circle"></div>
+  </button>
+</div>
+
 
 
   </section>

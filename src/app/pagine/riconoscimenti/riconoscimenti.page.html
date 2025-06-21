@@ -1,5 +1,5 @@
 <ion-header>
-  <ion-toolbar color="primary">
+  <ion-toolbar>
     <ion-title>Riconoscimenti</ion-title>
   </ion-toolbar>
 </ion-header>
@@ -20,15 +20,19 @@
     </ion-card-header>
     <ion-card-content>
       <ion-list>
-        <ion-item button detail="false" (click)="openLink('https://github.com/tuoaccount')">
+        <ion-item button detail="false" (click)="openLink('https://alessandropanico.github.io/Sito-Portfolio/')">
+        <ion-icon name="globe-outline" slot="start"></ion-icon>
+          Web Site
+        </ion-item>
+        <ion-item button detail="false" (click)="openLink('https://github.com/alessandropanico')">
           <ion-icon name="logo-github" slot="start"></ion-icon>
           GitHub
         </ion-item>
-        <ion-item button detail="false" (click)="openLink('https://linkedin.com/in/tuoprofilo')">
+        <ion-item button detail="false" (click)="openLink('https://www.linkedin.com/in/alessandro-panico-4b974b272/')">
           <ion-icon name="logo-linkedin" slot="start"></ion-icon>
           LinkedIn
         </ion-item>
-        <ion-item button detail="false" (click)="openLink('https://www.youtube.com/@tuocanale')">
+        <ion-item button detail="false" (click)="openLink('https://www.youtube.com/channel/UC8rQxh_mjGtKiBQJkixhYGQ')">
           <ion-icon name="logo-youtube" slot="start"></ion-icon>
           YouTube
         </ion-item>

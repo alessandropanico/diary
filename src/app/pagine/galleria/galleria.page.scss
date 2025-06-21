@@ -61,23 +61,80 @@
   z-index: 1001;
 }
 
-.circle-launcher {
+/* Bordo neon per pulsanti */
+.neon-border {
+  border-color: #00e5ff !important;
+  box-shadow:
+    0 0 10px #00e5ffaa,
+    inset 0 0 10px #00bcd488;
+  transition: box-shadow 0.3s ease;
+}
+
+.neon-border:hover {
+  box-shadow:
+    0 0 20px #00e5ffff,
+    inset 0 0 20px #00bcd4ff;
+}
+
+/* Testo neon per pulsanti come close */
+.neon-text {
+  color: #00e5ff;
+  text-shadow:
+    0 0 8px #00e5ff,
+    0 0 16px #00bcd4;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.neon-text:hover {
+  color: #00bcd4;
+  text-shadow:
+    0 0 12px #00bcd4,
+    0 0 24px #00e5ff;
+}
+
+/* Mantieni le dimensioni e stili attuali */
+.circle-button, .circle-launcher {
+  background: #111;
+  border: 4px solid #272727;
+  border-radius: 50%;
   width: 70px;
   height: 70px;
-  border-radius: 50%;
-  border: 4px solid black;
-  background-color: white;
   display: flex;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.circle-launcher .inner-circle {
+.inner-circle {
+  background: #00e5ff;
+  border-radius: 50%;
   width: 35px;
   height: 35px;
-  border-radius: 50%;
-  background-color: black;
+  transition: background-color 0.3s ease;
 }
+
+.circle-button:hover .inner-circle,
+.circle-launcher:hover .inner-circle {
+  background-color: #00bcd4;
+}
+
+.close-button {
+  font-size: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 12px;
+  margin-left: 12px;
+  transition: color 0.3s ease;
+  color: #2f8b95;
+}
+
+.close-button:hover {
+  color: #00e5ff;
+  text-shadow: 0 0 8px #00e5ff;
+}
+
 
 .blur {
   filter: blur(2px);
