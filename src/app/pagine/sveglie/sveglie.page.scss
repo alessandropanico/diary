@@ -1,66 +1,115 @@
-/* Sfondo scuro quando il modale è aperto */
+.custom-modal {
+  background: linear-gradient(145deg, #0a0f1a, #101a2e);
+  border: 2px solid #00ffe0;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 25px;
+  color: #c0e8ff;
+  font-family: 'Orbitron', sans-serif;
+  text-shadow: 0 0 2px #00ffe0;
+}
+
 .custom-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 9999;
+  /* 🔥 molto importante */
 }
 
-/* Contenitore del modale */
-.custom-modal {
-  background: black;
-  width: 90%;
-  max-width: 400px;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+
+.modal-header h2 {
+  color: #00ffe0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.05rem;
 }
 
-/* Header del modale */
 .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 2px solid #ddd;
+  border-bottom: 2px solid rgba(0, 255, 255, 0.2);
   padding-bottom: 10px;
-}
-
-/* Pulsante per chiudere */
-.close-btn {
-  background: transparent;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-/* Stili per il corpo del modale */
-.modal-body {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 15px;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.modal-body input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-/* Stili per i pulsanti */
-.success-btn {
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 5px;
-  height: 7vh;
+.close-btn {
+  background: none;
+  border: 1px solid #00ffe0;
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  color: #00ffe0;
   cursor: pointer;
+  transition: background 0.2s;
+}
+
+.close-btn:hover {
+  background-color: rgba(0, 255, 255, 0.1);
+}
+
+.modal-body label {
+  font-size: 0.95rem;
+  color: #b0f0ff;
+  margin-top: 10px;
+  display: block;
+}
+
+.modal-input {
+  background-color: #1b1d2a;
+  border: 1px solid #00ffe0;
+  border-radius: 8px;
+  color: #00ffe0;
+  padding: 0.5rem;
+  width: 100%;
+  font-family: 'Orbitron', sans-serif;
+  box-shadow: inset 0 0 5px rgba(0, 255, 255, 0.2);
+}
+
+.days-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.day-checkbox {
+  background-color: #101a2e;
+  border: 1px solid #00ffe0;
+  border-radius: 8px;
+  padding: 0.3rem 0.6rem;
+  color: #00ffe0;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.day-checkbox:hover {
+  background-color: rgba(0, 255, 255, 0.1);
+}
+
+.success-btn {
+  background: linear-gradient(90deg, #00ffe0, #007a85);
+  border: none;
+  color: #000;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-family: 'Orbitron', sans-serif;
+  border-radius: 12px;
+  padding: 0.75rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.success-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px #00ffe0;
 }
 
 .warning-btn {
@@ -114,4 +163,119 @@
 
 .days-container label {
   font-size: 14px;
+}
+
+.alarms-container {
+  padding: 1rem;
+}
+
+.titolo-dark {
+  color: #b0f0ff;
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  font-weight: bold;
+}
+
+.alarm-card {
+  background: #1b1d2a;
+  border: 1px solid #2c3e50;
+  border-radius: 16px;
+  padding: 1rem;
+  color: #c0e8ff;
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.alarm-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 16px rgba(0, 255, 255, 0.2);
+}
+
+.alarm-time {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #00ffe0;
+}
+
+.alarm-note,
+.alarm-days {
+  font-size: 0.95rem;
+  margin-top: 0.3rem;
+}
+
+.alarm-controls {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.edit-btn,
+.delete-btn {
+  background: transparent;
+  border: 1px solid #00ffe0;
+  border-radius: 12px;
+  padding: 0.4rem 0.6rem;
+  color: #00ffe0;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.edit-btn:hover,
+.delete-btn:hover {
+  background: rgba(0, 255, 255, 0.1);
+}
+
+/* Switch (per attiva/disattiva) */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  background-color: #ccc;
+  border-radius: 24px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transition: 0.3s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+input:checked+.slider {
+  background-color: #00ffe0;
+}
+
+input:checked+.slider:before {
+  transform: translateX(20px);
 }
