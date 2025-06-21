@@ -8,6 +8,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 
@@ -34,44 +35,57 @@ public class AlarmService extends Service {
         Intent stopIntent = new Intent(this, AlarmService.class);
         stopIntent.setAction("STOP_ALARM");
         PendingIntent stopPendingIntent = PendingIntent.getService(
-            this, 0, stopIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0)
+                this, 0, stopIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT |
+                        (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0)
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("⏰ Sveglia")
-            .setContentText(note != null ? note : "È ora di svegliarsi!")
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .addAction(android.R.drawable.ic_media_pause, "Ferma", stopPendingIntent)
-            .setOngoing(true)
-            .setVibrate(new long[]{0, 1000, 500, 1000})  // vibrazione: pausa-1s-vibra-0.5s-vibra
-            .setSound(null);  // Metti null perché usi MediaPlayer per suono
+                .setContentTitle("⏰ Sveglia")
+                .setContentText(note != null ? note : "È ora di svegliarsi!")
+                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .addAction(android.R.drawable.ic_media_pause, "Ferma", stopPendingIntent)
+                .setOngoing(true)
+                .setVibrate(new long[]{0, 1000, 500, 1000})
+                .setSound(null); // disattiva suono notifica, usiamo MediaPlayer
 
-
-        Notification notification = builder.build();
-
-        startForeground(NOTIFICATION_ID, notification);
+        startForeground(NOTIFICATION_ID, builder.build());
 
         if ("STOP_ALARM".equals(intent.getAction())) {
             stopSelf();
             return START_NOT_STICKY;
         }
 
-        // Setup MediaPlayer per loop audio sveglia
+        // Suona la sveglia
         if (mediaPlayer == null) {
-            mediaPlayer = MediaPlayer.create(this, R.raw.lofi_alarm); // Assicurati di mettere file in res/raw
-            mediaPlayer.setLooping(true);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                mediaPlayer.setAudioAttributes(
-                    new AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build()
-                );
+            String audioUriString = intent.getStringExtra("audioUri");
+            try {
+                if (audioUriString != null) {
+                    Uri audioUri = Uri.parse(audioUriString);
+                    mediaPlayer = new MediaPlayer();
+                    mediaPlayer.setDataSource(this, audioUri);
+                    mediaPlayer.setLooping(true);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        mediaPlayer.setAudioAttributes(
+                                new AudioAttributes.Builder()
+                                        .setUsage(AudioAttributes.USAGE_ALARM)
+                                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                        .build()
+                        );
+                    }
+                    mediaPlayer.prepare();
+                    mediaPlayer.start();
+                } else {
+                    mediaPlayer = MediaPlayer.create(this, R.raw.lofi_alarm);
+                    mediaPlayer.setLooping(true);
+                    mediaPlayer.start();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                stopSelf(); // ferma il servizio in caso di errore
             }
-            mediaPlayer.start();
         }
 
         return START_STICKY;
@@ -102,8 +116,7 @@ public class AlarmService extends Service {
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
 
-            NotificationManager notificationManager =
-                getSystemService(NotificationManager.class);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
     }
