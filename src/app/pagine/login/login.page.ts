@@ -62,9 +62,23 @@ export class LoginPage implements OnInit {
     }
   }
 
-  logout() {
-    this.user = null;
-    localStorage.removeItem('user');
-    alert('Logout effettuato');
+ logout() {
+  this.user = null;
+  localStorage.removeItem('user');
+  alert('Logout effettuato');
+  setTimeout(() => this.renderGoogleButton(), 0); // piccolo delay per aspettare il DOM
+}
+
+
+  renderGoogleButton() {
+  const container = document.getElementById('googleSignInDiv');
+  if (container && container.childElementCount === 0) {
+    google.accounts.id.renderButton(
+      container,
+      { theme: 'outline', size: 'large' }
+    );
+    google.accounts.id.prompt();
   }
+}
+
 }

@@ -29,12 +29,22 @@ export class ProfiloPage implements OnInit {
 
   constructor(private ngZone: NgZone) { }
 
-  ngOnInit() {
-    const stored = localStorage.getItem('profile');
-    if (stored) {
-      this.profile = JSON.parse(stored);
-    }
+ ngOnInit() {
+  const storedProfile = localStorage.getItem('profile') || localStorage.getItem('user');
+  if (storedProfile) {
+    const user = JSON.parse(storedProfile);
+
+    this.profile = {
+      photo: user.photo || user.picture || '',
+      nickname: user.nickname || '',
+      name: user.name || '',
+      email: user.email || '',
+      bio: user.bio || ''
+    };
   }
+}
+
+
 
   startEdit() {
     this.editing = true;
@@ -63,28 +73,28 @@ export class ProfiloPage implements OnInit {
   }
 
   saveProfile() {
-  this.profile = {
-    photo: this.profileEdit.photo, // accetta '' per rimuovere
-    nickname: this.profileEdit.nickname || '',
-    name: this.profileEdit.name || '',
-    email: this.profileEdit.email || '',
-    bio: this.profileEdit.bio || ''
-  };
+    this.profile = {
+      photo: this.profileEdit.photo, // accetta '' per rimuovere
+      nickname: this.profileEdit.nickname || '',
+      name: this.profileEdit.name || '',
+      email: this.profileEdit.email || '',
+      bio: this.profileEdit.bio || ''
+    };
 
-  localStorage.setItem('profile', JSON.stringify(this.profile));
-  this.editing = false;
+    localStorage.setItem('profile', JSON.stringify(this.profile));
+    this.editing = false;
 
-  // Svuota il form dopo salvataggio, ma tieni la foto sincronizzata
-  this.profileEdit = {
-    photo: this.profile.photo,
-    nickname: '',
-    name: '',
-    email: '',
-    bio: ''
-  };
+    // Svuota il form dopo salvataggio, ma tieni la foto sincronizzata
+    this.profileEdit = {
+      photo: this.profile.photo,
+      nickname: '',
+      name: '',
+      email: '',
+      bio: ''
+    };
 
-  alert('Profilo aggiornato!');
-}
+    alert('Profilo aggiornato!');
+  }
 
 
   changePhoto() {
