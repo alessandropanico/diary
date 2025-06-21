@@ -79,7 +79,6 @@
   background-color: black;
 }
 
-
 .blur {
   filter: blur(2px);
   pointer-events: none;
@@ -165,3 +164,53 @@
     opacity: 1;
   }
 }
+
+/* Card foto: stile più pulito e uniforme, bordi sottili e angoli smussati */
+.card {
+  background: #1c1c1c;
+  border: 1.5px solid #555;
+  border-radius: 8px;
+  box-shadow: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.card:hover {
+  border-color: #00e5ff;
+  box-shadow:
+    0 0 8px #00e5ff88,
+    inset 0 0 8px #00bcd488;
+}
+
+
+/* Immagine dentro card: arrotondata e con bordo sottile */
+.card-img-top {
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1.5px solid #555;
+  width: 100%;
+  display: block;
+  object-fit: cover;
+  height: 150px;
+}
+
+/* Bottone elimina: stile flat elegante, bordo sottile, colore di testo tenue */
+.btn-danger {
+  background: transparent;
+  border: 1.5px solid #a33e3e;
+  color: #a33e3e;
+  border-radius: 6px;
+  font-weight: 600;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.btn-danger:hover {
+  background-color: #a33e3e;
+  color: white;
+  border-color: #7a2a2a;
+}
+
+/* Rimuovi ombre e transizioni troppo aggressive */

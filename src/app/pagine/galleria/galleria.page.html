@@ -13,7 +13,7 @@
         <div class="col-md-3 mb-3" *ngFor="let photo of photos">
           <div class="card">
             <img [src]="photo.src" class="card-img-top" alt="Foto" (click)="openLightbox(photo.src)" />
-            <button class="btn btn-danger mt-2" (click)="deletePhoto(photo)">Elimina</button>
+            <button class="btn btn-danger" (click)="deletePhoto(photo)">Elimina</button>
           </div>
         </div>
       </div>
