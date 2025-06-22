@@ -65,46 +65,46 @@ export class NotePage implements OnInit, OnDestroy {
     this.cancelSelectionMode();
   }
 
- async openCreatePlaylist() {
-  const alert = await this.alertCtrl.create({
-    header: 'Nuova Playlist',
-    message: 'Inserisci il nome della tua nuova playlist:',
-    inputs: [
-      {
-        name: 'playlistName',
-        type: 'text',
-        placeholder: 'Nome playlist'
-      }
-    ],
-    buttons: [
-      {
-        text: 'Annulla',
-        role: 'cancel',
-        cssClass: 'ff7-alert-button'
-      },
-      {
-        text: 'Crea',
-        cssClass: 'ff7-alert-button primary',
-        handler: data => {
-          const name = data.playlistName?.trim();
-          if (name) {
-            this.noteService.addPlaylist(name);
+  async openCreatePlaylist() {
+    const alert = await this.alertCtrl.create({
+      header: 'Nuova Playlist',
+      message: 'Inserisci il nome della tua nuova playlist:',
+      inputs: [
+        {
+          name: 'playlistName',
+          type: 'text',
+          placeholder: 'Nome playlist'
+        }
+      ],
+      buttons: [
+        {
+          text: 'Annulla',
+          role: 'cancel',
+          cssClass: 'ff7-alert-button'
+        },
+        {
+          text: 'Crea',
+          cssClass: 'ff7-alert-button primary',
+          handler: data => {
+            const name = data.playlistName?.trim();
+            if (name) {
+              this.noteService.addPlaylist(name);
+            }
           }
         }
-      }
-    ],
-    cssClass: 'ff7-alert'
-  });
+      ],
+      cssClass: 'ff7-alert'
+    });
 
-  await alert.present();
-}
+    await alert.present();
+  }
 
   async openNewNoteModal() {
     const modal = await this.modalCtrl.create({
       component: NoteEditorComponent,
       componentProps: { playlistId: this.selectedPlaylistId },
-      breakpoints: [0, 1],
-      initialBreakpoint: 1
+      cssClass: 'fullscreen-modal',
+      showBackdrop: true
     });
     await modal.present();
   }
@@ -121,12 +121,13 @@ export class NotePage implements OnInit, OnDestroy {
         playlistId: note.playlistId,
         note: note
       },
-      breakpoints: [0, 1],
-      initialBreakpoint: 1
+      cssClass: 'fullscreen-modal',
+      showBackdrop: true
     });
 
     await modal.present();
   }
+
 
   onNoteClick(note: Note, event: MouseEvent) {
     if (this.isSelectionMode) {
@@ -184,32 +185,32 @@ export class NotePage implements OnInit, OnDestroy {
     this.cancelSelectionMode();
   }
 
-async confirmDeleteCurrentPlaylist() {
-  const playlist = this.playlists.find(p => p.id === this.selectedPlaylistId);
-  if (!playlist) return;
+  async confirmDeleteCurrentPlaylist() {
+    const playlist = this.playlists.find(p => p.id === this.selectedPlaylistId);
+    if (!playlist) return;
 
-  const alert = await this.alertCtrl.create({
-    header: 'Elimina Playlist',
-    message: `Vuoi eliminare la playlist "<strong>${playlist.name}</strong>"? Tutte le note associate saranno eliminate.`,
-    buttons: [
-      {
-        text: 'Annulla',
-        role: 'cancel',
-        cssClass: 'ff7-alert-button'
-      },
-      {
-        text: 'Elimina',
-        cssClass: 'ff7-alert-button danger',
-        handler: () => {
-          this.deletePlaylist(playlist.id);
+    const alert = await this.alertCtrl.create({
+      header: 'Elimina Playlist',
+      message: `Vuoi eliminare la playlist "<strong>${playlist.name}</strong>"? Tutte le note associate saranno eliminate.`,
+      buttons: [
+        {
+          text: 'Annulla',
+          role: 'cancel',
+          cssClass: 'ff7-alert-button'
+        },
+        {
+          text: 'Elimina',
+          cssClass: 'ff7-alert-button danger',
+          handler: () => {
+            this.deletePlaylist(playlist.id);
+          }
         }
-      }
-    ],
-    cssClass: 'ff7-alert'
-  });
+      ],
+      cssClass: 'ff7-alert'
+    });
 
-  await alert.present();
-}
+    await alert.present();
+  }
 
 
   deletePlaylist(playlistId: string) {
