@@ -184,15 +184,33 @@ export class NotePage implements OnInit, OnDestroy {
     this.cancelSelectionMode();
   }
 
-  confirmDeleteCurrentPlaylist() {
-    const playlist = this.playlists.find(p => p.id === this.selectedPlaylistId);
-    if (!playlist) return;
+async confirmDeleteCurrentPlaylist() {
+  const playlist = this.playlists.find(p => p.id === this.selectedPlaylistId);
+  if (!playlist) return;
 
-    const confirmed = confirm(`Eliminare la playlist "${playlist.name}"? Tutte le note associate saranno eliminate.`);
-    if (confirmed) {
-      this.deletePlaylist(playlist.id);
-    }
-  }
+  const alert = await this.alertCtrl.create({
+    header: 'Elimina Playlist',
+    message: `Vuoi eliminare la playlist "<strong>${playlist.name}</strong>"? Tutte le note associate saranno eliminate.`,
+    buttons: [
+      {
+        text: 'Annulla',
+        role: 'cancel',
+        cssClass: 'ff7-alert-button'
+      },
+      {
+        text: 'Elimina',
+        cssClass: 'ff7-alert-button danger',
+        handler: () => {
+          this.deletePlaylist(playlist.id);
+        }
+      }
+    ],
+    cssClass: 'ff7-alert'
+  });
+
+  await alert.present();
+}
+
 
   deletePlaylist(playlistId: string) {
     this.noteService.deletePlaylist(playlistId);

@@ -12,7 +12,7 @@
 }
 
 .ff7-content {
-  --background: #0a0a1a;
+  // --background: #0a0a1a;
   color: #ffffff;
   padding: 16px;
 }
@@ -77,30 +77,33 @@
 
 .note-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 12px;
   margin-top: 1rem;
+  justify-content: start;
+  padding: 10px;
 }
+
 
 .note-thumbnail {
   background: #111122;
   border: 1px solid #00ffee30;
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: 12px;
+  padding: 14px;
   box-shadow: 0 0 6px #00ffee20;
   transition: 0.2s;
   color: #ffffff;
   position: relative;
-}
-
-.note-thumbnail:hover {
-  box-shadow: 0 0 10px #00ffee80;
-  transform: scale(1.03);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 130px;
+  cursor: pointer;
 }
 
 .note-thumbnail h3 {
-  font-size: 0.95rem;
-  margin: 0 0 4px;
+  font-size: 1rem;
+  margin: 0 0 6px;
   color: #00ffee;
   white-space: nowrap;
   overflow: hidden;
@@ -108,11 +111,15 @@
 }
 
 .note-thumbnail p {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #cccccc;
-  max-height: 3.2em;
+  max-height: 3.5em;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.text{
+  padding-left: 10px;
 }
 
 ion-checkbox {
