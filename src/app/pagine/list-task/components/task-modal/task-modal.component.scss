@@ -1,109 +1,88 @@
-/* ===== Modale dimensioni e layout ===== */
 :host {
   --width: 90%;
-  --max-width: 400px;
+  --max-width: 420px;
   --height: auto;
   --border-radius: 16px;
+  font-family: 'Orbitron', sans-serif;
 }
 
-/* ===== Ion Content ===== */
-ion-content {
-  --background: var(--ion-color-light);
-  border-radius: 0 0 16px 16px;
-  padding: 16px;
+.ff7-content {
+  --background: #0a0a1a;
+  color: #00ffee;
+  padding: 24px;
 }
 
-/* ===== Ion Item ===== */
-ion-item {
-  --padding-start: 0;
-  --inner-padding-end: 0;
-  --min-height: 50px;
+/* Toolbar dark e traslucida */
+.ff7-toolbar {
+  --background: rgba(10, 10, 26, 0.9);
+  color: #00ffee;
+  font-family: 'Orbitron', sans-serif;
 }
 
-/* ===== Input, Textarea, Datetime ===== */
+/* Form compatta */
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Item leggero, solo linea e glow */
+.ff7-item {
+  --background: transparent;
+  --color: #ffffff;
+  --highlight-color-focused: #00ffee;
+  border-bottom: 1px solid #222;
+  padding-bottom: 4px;
+}
+
+ion-label {
+  color: #00ffee;
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+/* Input chiaro e pulito */
 ion-input,
 ion-textarea,
 ion-datetime {
+  color: #ffffff;
   font-size: 14px;
+  --padding-start: 0px;
+  --padding-end: 0px;
+  --border-radius: 0;
 }
 
-/* ===== Pulsanti contenitore ===== */
-.contButton {
+/* Pulsante compatto e neon */
+.ff7-button-container {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2vh;
+  justify-content: flex-end;
 }
 
-/* ===== Bottone Task ===== */
-.buttonTask {
-  background-color: rgb(20, 14, 141);
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.buttonTask:hover {
-  background-color: rgb(30, 20, 180);
-}
-
-/* ===== Messaggi di successo ===== */
-.mess {
+.ff7-button {
+  background: none;
+  border: 2px solid #00ffee;
+  color: #00ffee;
+  padding: 6px 18px;
+  border-radius: 8px;
   font-size: 13px;
-  color: var(--ion-color-success);
-  margin-top: 10px;
+  font-family: 'Orbitron', sans-serif;
+  transition: 0.3s ease;
+  box-shadow: 0 0 5px #00ffee50;
+}
+
+.ff7-button:hover {
+  background: #00ffee;
+  color: #000;
+  box-shadow: 0 0 10px #00ffee;
+}
+
+/* Messaggio di successo */
+.ff7-message {
+  color: #00ff99;
+  font-size: 13px;
+  margin-top: 16px;
   text-align: center;
+  font-family: 'Roboto Mono', monospace;
 }
 
-/* ===== Stile alert gaming personalizzato ===== */
-::ng-deep .alert-dark-force.gaming-alert {
-  --background: #0f0f1a !important;
-  --color: #00ffcc !important;
-  --backdrop-opacity: 0.9 !important;
-
-  border: 2px solid #00ffcc !important;
-  box-shadow: 0 0 20px #00ffcc !important;
-  border-radius: 12px !important;
-
-  .alert-head {
-    font-family: 'Orbitron', sans-serif !important;
-    color: #00ffcc !important;
-    text-transform: uppercase;
-    font-size: 20px !important;
-  }
-
-  .alert-message {
-    font-family: 'Roboto Mono', monospace !important;
-    color: #eeeeee !important;
-    font-size: 14px !important;
-  }
-
-  .alert-button.alert-continue {
-    background: #00ff99 !important;
-    color: black !important;
-    font-weight: bold;
-    border-radius: 8px;
-    font-family: 'Orbitron', sans-serif;
-    box-shadow: 0 0 10px #00ff99;
-  }
-
-  .alert-button.alert-continue:hover {
-    background: #00e68a !important;
-  }
-}
-
-/* ===== Media Queries ===== */
-@media screen and (max-width: 600px) {
-  .buttonTask {
-    width: 100%;
-    font-size: 16px;
-  }
-
-  .mess {
-    font-size: 14px;
-  }
-}
