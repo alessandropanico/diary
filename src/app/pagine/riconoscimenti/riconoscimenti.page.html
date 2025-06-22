@@ -1,11 +1,11 @@
-<ion-header>
+<ion-header class="ff7-header">
   <ion-toolbar>
     <ion-title>Riconoscimenti</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <ion-card>
+<ion-content class="ion-padding ff7-content">
+  <ion-card class="ff7-card">
     <ion-card-header>
       <ion-card-title>Autore</ion-card-title>
     </ion-card-header>
@@ -14,25 +14,25 @@
     </ion-card-content>
   </ion-card>
 
-  <ion-card>
+  <ion-card class="ff7-card">
     <ion-card-header>
       <ion-card-title>Seguimi</ion-card-title>
     </ion-card-header>
     <ion-card-content>
       <ion-list>
-        <ion-item button detail="false" (click)="openLink('https://alessandropanico.github.io/Sito-Portfolio/')">
-        <ion-icon name="globe-outline" slot="start"></ion-icon>
+        <ion-item class="ff7-item" button detail="false" (click)="openLink('https://alessandropanico.github.io/Sito-Portfolio/')">
+          <ion-icon name="globe-outline" slot="start"></ion-icon>
           Web Site
         </ion-item>
-        <ion-item button detail="false" (click)="openLink('https://github.com/alessandropanico')">
+        <ion-item class="ff7-item" button detail="false" (click)="openLink('https://github.com/alessandropanico')">
           <ion-icon name="logo-github" slot="start"></ion-icon>
           GitHub
         </ion-item>
-        <ion-item button detail="false" (click)="openLink('https://www.linkedin.com/in/alessandro-panico-4b974b272/')">
+        <ion-item class="ff7-item" button detail="false" (click)="openLink('https://www.linkedin.com/in/alessandro-panico-4b974b272/')">
           <ion-icon name="logo-linkedin" slot="start"></ion-icon>
           LinkedIn
         </ion-item>
-        <ion-item button detail="false" (click)="openLink('https://www.youtube.com/channel/UC8rQxh_mjGtKiBQJkixhYGQ')">
+        <ion-item class="ff7-item" button detail="false" (click)="openLink('https://www.youtube.com/channel/UC8rQxh_mjGtKiBQJkixhYGQ')">
           <ion-icon name="logo-youtube" slot="start"></ion-icon>
           YouTube
         </ion-item>

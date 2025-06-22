@@ -1,0 +1,52 @@
+.ff7-header {
+  --background: #0b0b1f;
+  --color: #00ffee;
+  font-family: 'Orbitron', sans-serif;
+  box-shadow: 0 0 10px #00ffee40;
+}
+
+.ff7-content {
+  background: linear-gradient(180deg, #000012 0%, #02051b 100%);
+  color: #00ffee;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.ff7-card {
+  background: #11182a;
+  border: 1px solid #00ffee55;
+  border-radius: 0;
+  box-shadow: 0 0 12px #00ffee22;
+  color: #00ffee;
+
+  ion-card-title {
+    color: #00ffee;
+    text-shadow: 0 0 6px #00ffee88;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+
+  ion-card-content p,
+  ion-item {
+    font-size: 0.95rem;
+  }
+}
+
+.ff7-item {
+  --background: transparent;
+  --color: #00ffee;
+  font-family: 'Orbitron', sans-serif;
+  border-bottom: 1px solid #00ffee33;
+  transition: background 0.3s ease;
+
+  ion-icon {
+    color: #00ffee;
+  }
+
+  &:hover {
+    background: #00ffee10;
+  }
+}
+
+ion-list{
+  background-color: transparent;
+}

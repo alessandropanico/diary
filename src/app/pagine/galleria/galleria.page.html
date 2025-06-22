@@ -37,10 +37,7 @@
 
     </div>
 
-    <!-- Camera Preview centrale -->
-    <div class="camera-overlay" *ngIf="previewActive">
-      <video #video autoplay muted class="camera-preview"></video>
-    </div>
+
 
     <!-- Barra con pulsante scatto -->
     <div class="camera-bar" *ngIf="previewActive">
@@ -58,6 +55,11 @@
     </div>
   </section>
 </ion-content>
+
+<!-- Camera Preview centrale -->
+<div class="camera-overlay" *ngIf="previewActive">
+  <video #video autoplay muted class="camera-preview"></video>
+</div>
 
 <!-- Modale conferma eliminazione -->
 <div class="ff7r-modal-overlay" *ngIf="confirmDeletePhoto" (click)="cancelDelete()">
