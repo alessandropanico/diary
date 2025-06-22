@@ -1,4 +1,5 @@
 import { Component, NgZone, OnInit } from '@angular/core';
+import { AlertController } from '@ionic/angular';
 
 declare const google: any;
 
@@ -12,7 +13,7 @@ export class LoginPage implements OnInit {
 
   user: any = null;
 
-  constructor(private ngZone: NgZone) { }
+  constructor(private ngZone: NgZone, private alertCtrl: AlertController) { }
 
   ngOnInit() {
     const storedUser = localStorage.getItem('user');
@@ -41,12 +42,21 @@ export class LoginPage implements OnInit {
     };
   }
 
-  handleCredentialResponse(response: any) {
+  async handleCredentialResponse(response: any) {
     const userObject = this.parseJwt(response.credential);
     this.user = userObject;
     localStorage.setItem('user', JSON.stringify(userObject));
-    alert(`Login effettuato con successo!\nBenvenuto ${userObject.name}`);
+
+    const alert = await this.alertCtrl.create({
+      header: 'Accesso riuscito',
+      message: `Benvenuto ${userObject.name}`,
+      buttons: ['OK'],
+      cssClass: 'ff7-alert',
+    });
+
+    await alert.present();
   }
+
 
   parseJwt(token: string) {
     try {
@@ -62,23 +72,33 @@ export class LoginPage implements OnInit {
     }
   }
 
- logout() {
-  this.user = null;
-  localStorage.removeItem('user');
-  alert('Logout effettuato');
-  setTimeout(() => this.renderGoogleButton(), 0); // piccolo delay per aspettare il DOM
-}
+  async logout() {
+    this.user = null;
+    localStorage.removeItem('user');
+
+    const alert = await this.alertCtrl.create({
+      header: 'Logout',
+      message: 'Logout effettuato con successo.',
+      buttons: ['OK'],
+      cssClass: 'ff7-alert',
+    });
+
+    await alert.present();
+
+    setTimeout(() => this.renderGoogleButton(), 0);
+  }
+
 
 
   renderGoogleButton() {
-  const container = document.getElementById('googleSignInDiv');
-  if (container && container.childElementCount === 0) {
-    google.accounts.id.renderButton(
-      container,
-      { theme: 'outline', size: 'large' }
-    );
-    google.accounts.id.prompt();
+    const container = document.getElementById('googleSignInDiv');
+    if (container && container.childElementCount === 0) {
+      google.accounts.id.renderButton(
+        container,
+        { theme: 'outline', size: 'large' }
+      );
+      google.accounts.id.prompt();
+    }
   }
-}
 
 }

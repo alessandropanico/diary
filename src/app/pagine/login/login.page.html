@@ -1,18 +1,20 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar class="ff7-toolbar">
     <ion-title>Login</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding ion-text-center">
-  <div *ngIf="!user" style="margin-top: 40px;">
-    <h2>Accedi con Google</h2>
-    <div id="googleSignInDiv" style="margin-top: 20px;"></div>
+<ion-content class="ff7-content ion-text-center">
+  <div *ngIf="!user" class="ff7-login-box">
+    <h2 class="ff7-login-title">Accedi con Google</h2>
+    <div id="googleSignInDiv" class="ff7-google-button"></div>
   </div>
 
-  <div *ngIf="user" style="margin-top: 40px;">
-    <h2>Ciao, {{ user.name }}</h2>
-    <p>{{ user.email }}</p>
-    <ion-button expand="block" color="danger" (click)="logout()">Logout</ion-button>
+  <div *ngIf="user" class="ff7-login-box">
+    <h2 class="ff7-login-title">Ciao, {{ user.name }}</h2>
+    <p class="ff7-login-email">{{ user.email }}</p>
+    <ion-button expand="block" color="danger" (click)="logout()" class="ff7-logout-button">
+      Logout
+    </ion-button>
   </div>
 </ion-content>

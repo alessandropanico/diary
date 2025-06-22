@@ -1,0 +1,76 @@
+.ff7-content {
+  color: #00ffee;
+  padding: 24px;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.ff7-toolbar {
+  --background: rgba(10, 10, 26, 0.9);
+  color: #00ffee;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.ff7-login-box {
+  margin-top: 60px;
+  padding: 20px;
+  border: 1px solid #00ffee30;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 12px #00ffee40;
+}
+
+.ff7-login-title {
+  font-size: 20px;
+  color: #00ffee;
+  margin-bottom: 20px;
+  text-shadow: 0 0 5px #00ffee80;
+}
+
+.ff7-login-email {
+  font-size: 14px;
+  color: #ffffffcc;
+  margin-bottom: 16px;
+}
+
+.ff7-google-button {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.ff7-logout-button {
+  --border-radius: 8px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  box-shadow: 0 0 6px #ff005550;
+}
+
+.ff7-alert .alert-wrapper {
+  background: #0a0a1a;
+  border: 1px solid #00ffee33;
+  box-shadow: 0 0 14px #00ffee44;
+  border-radius: 16px;
+  color: #00ffee;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.ff7-alert .alert-title {
+  font-size: 18px;
+  color: #00ffee;
+  text-shadow: 0 0 4px #00ffee99;
+}
+
+.ff7-alert .alert-message {
+  font-size: 14px;
+  color: #ffffffcc;
+  margin-top: 8px;
+}
+
+.ff7-alert button.alert-button {
+  color: #00ffee;
+  font-family: 'Orbitron', sans-serif;
+  text-transform: uppercase;
+}
+
+.ff7-alert button.alert-button:hover {
+  filter: brightness(120%);
+}

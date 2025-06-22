@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-import { MenuController } from '@ionic/angular';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AuthService } from './services/auth.service';
+import { MenuController, AlertController } from '@ionic/angular';
+import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -15,10 +17,15 @@ import { AuthService } from './services/auth.service';
 export class AppComponent implements OnInit {
 
   profile: any = null;
+  userSub!: Subscription;
 
   constructor(
     private menu: MenuController,
-    private authService: AuthService) {
+    private authService: AuthService,
+    private alertCtrl: AlertController,
+    private router: Router
+
+  ) {
     window.addEventListener('beforeinstallprompt', (e: any) => {
       e.preventDefault();
       this.deferredPrompt = e;
@@ -28,12 +35,14 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
-    const storedProfile = localStorage.getItem('profile');
-    if (storedProfile) {
-      this.profile = JSON.parse(storedProfile);
-    }
+    this.userSub = this.authService.getUserObservable().subscribe(user => {
+      this.profile = user;
+    });
   }
 
+  ngOnDestroy() {
+    this.userSub.unsubscribe();
+  }
 
   deferredPrompt: any;
   showInstallButton = false;
@@ -65,12 +74,28 @@ export class AppComponent implements OnInit {
   }
 
   getProfilePhoto(): string {
-    return this.profile?.photo || 'assets/immaginiGenerali/default-avatar.jpg';
+    return this.profile?.photo || this.profile?.picture || 'assets/immaginiGenerali/default-avatar.jpg';
   }
 
   loadProfile() {
     const storedProfile = localStorage.getItem('profile');
     this.profile = storedProfile ? JSON.parse(storedProfile) : null;
+  }
+
+  async logout() {
+    this.authService.logout();
+    this.closeMenu();
+
+    const alert = await this.alertCtrl.create({
+      header: 'Logout',
+      message: 'Logout effettuato con successo.',
+      buttons: ['OK'],
+      cssClass: 'ff7-alert',
+    });
+
+    await alert.present();
+
+    this.router.navigate(['/login']);
   }
 
 
