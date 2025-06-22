@@ -1,28 +1,31 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar class="ff7-toolbar">
     <ion-title>Le tue Task</ion-title>
 
     <ion-buttons slot="end">
-      <ion-button class="floating-header-btn" (click)="openTaskModal()">
-        ➕ Aggiungi Task
+      <ion-button fill="clear" class="ff7-add-btn" (click)="openTaskModal()">
+        ➕ Aggiungi
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <section class="sfondo">
+<ion-content class="ff7-content">
+  <section class="task-section">
     <div class="task-list">
       <div *ngFor="let task of tasks; let i = index" class="task-item">
-        <input type="checkbox" [checked]="task.completed" (click)="toggleCompletion(i)" />
+        <label class="task-checkbox">
+          <input type="checkbox" [checked]="task.completed" (click)="toggleCompletion(i)" />
+          <span class="checkmark"></span>
+        </label>
 
         <div class="task-content">
-          <div class="titolo" [class.completed]="task.completed">{{ task.name }}</div>
-          <p>{{ task.description }}</p>
-          <p><strong>Scadenza:</strong> {{ task.dueDate }}</p>
+          <div class="task-title" [class.completed]="task.completed">{{ task.name }}</div>
+          <p class="task-description">{{ task.description }}</p>
+          <p class="task-date"><strong>Scadenza:</strong> {{ task.dueDate }}</p>
         </div>
 
-        <button class="delete-btn" (click)="deleteTask(i)">❌</button>
+        <button class="ff7-delete-btn" (click)="deleteTask(i)">✖</button>
       </div>
     </div>
   </section>

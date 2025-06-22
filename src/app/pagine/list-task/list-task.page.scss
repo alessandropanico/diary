@@ -1,27 +1,129 @@
-.sfondo {
-  // background-image: url('/assets/immaginiGenerali/sfondo.jpg');
-  background-size: cover;
-  /* Copre tutto lo schermo senza distorsioni */
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 100vh;
-  width: 100%;
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+:host {
+  font-family: 'Orbitron', sans-serif;
 }
 
-.completed {
-  text-decoration: line-through;
-  color: gray;
+.ff7-toolbar {
+  --background: rgba(10, 10, 26, 0.95);
+  color: #00ffee;
+  font-family: 'Orbitron', sans-serif;
+  border-bottom: 1px solid #00ffee30;
 }
 
-.floating-header-btn {
-  bottom: 20px;
-  right: 20px;
-  z-index: 999;
-  width: auto;
-  padding: 0;
+.ff7-content {
+  // --background: #0a0a1a;
+  color: #ffffff;
+  padding: 16px;
+}
+
+.task-section {
+  margin-top: 16px;
+}
+
+.task-list {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  flex-direction: column;
+  gap: 16px;
+}
+
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  background: rgba(15, 15, 35, 0.8);
+  border: 1px solid #00ffee50;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 0 8px #00ffee20;
+  transition: 0.3s ease;
+}
+
+.task-item:hover {
+  box-shadow: 0 0 12px #00ffee60;
+}
+
+.task-checkbox {
+  margin-right: 12px;
+  position: relative;
+}
+
+.task-checkbox input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.task-checkbox .checkmark {
+  height: 18px;
+  width: 18px;
+  background-color: transparent;
+  border: 2px solid #00ffee;
+  border-radius: 3px;
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+}
+
+.task-checkbox input:checked + .checkmark::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0px;
+  width: 6px;
+  height: 12px;
+  border: solid #00ffee;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.task-content {
+  flex-grow: 1;
+}
+
+.task-title {
+  font-size: 16px;
+  color: #00ffee;
+  font-weight: bold;
+}
+
+.task-title.completed {
+  text-decoration: line-through;
+  color: #777;
+}
+
+.task-description,
+.task-date {
+  font-size: 13px;
+  color: #cccccc;
+  margin: 2px 0;
+}
+
+.ff7-delete-btn {
+  background: transparent;
+  border: 1px solid #ff0044;
+  color: #ff0044;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-left: 8px;
+}
+
+.ff7-delete-btn:hover {
+  background-color: #ff0044;
+  color: #fff;
+  box-shadow: 0 0 8px #ff0044;
+}
+
+.ff7-add-btn {
+  color: #00ffee;
+  font-size: 14px;
+  font-family: 'Orbitron', sans-serif;
+  transition: 0.3s ease;
+}
+
+.ff7-add-btn:hover {
+  color: #ffffff;
+  text-shadow: 0 0 6px #00ffee;
 }
