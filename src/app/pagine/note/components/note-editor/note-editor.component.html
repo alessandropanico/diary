@@ -5,14 +5,20 @@
         <ion-icon name="close"></ion-icon>
       </ion-button>
     </ion-buttons>
+
     <ion-title>{{ note ? 'Modifica Nota' : 'Nuova Nota' }}</ion-title>
+
     <ion-buttons slot="end">
+      <ion-button *ngIf="note" (click)="presentOptions()">
+        <ion-icon name="ellipsis-vertical"></ion-icon>
+      </ion-button>
       <ion-button (click)="save()" [disabled]="!title.trim() && !content.trim() && !audioUrl">
         Salva
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
+
 
 <ion-content fullscreen class="note-editor-content">
   <ion-input class="note-title" placeholder="Titolo" [(ngModel)]="title" autofocus spellcheck="false"></ion-input>
