@@ -5,6 +5,7 @@ import { Playlist } from 'src/app/interfaces/playlist';
 import { ModalController } from '@ionic/angular';
 import { NoteEditorComponent } from './components/note-editor/note-editor.component';
 import { Subscription } from 'rxjs';
+import { AlertController } from '@ionic/angular'; // importa questo
 
 @Component({
   selector: 'app-note',
@@ -26,7 +27,9 @@ export class NotePage implements OnInit, OnDestroy {
 
   constructor(
     private noteService: NoteService,
-    private modalCtrl: ModalController
+    private modalCtrl: ModalController,
+    private alertCtrl: AlertController
+
   ) { }
 
   ngOnInit() {
@@ -62,13 +65,39 @@ export class NotePage implements OnInit, OnDestroy {
     this.cancelSelectionMode();
   }
 
-  openCreatePlaylist() {
-    const name = prompt('Nome nuova playlist');
-    if (name?.trim()) {
-      this.noteService.addPlaylist(name.trim());
-      // Aggiornamento automatico via sottoscrizione
-    }
-  }
+ async openCreatePlaylist() {
+  const alert = await this.alertCtrl.create({
+    header: 'Nuova Playlist',
+    message: 'Inserisci il nome della tua nuova playlist:',
+    inputs: [
+      {
+        name: 'playlistName',
+        type: 'text',
+        placeholder: 'Nome playlist'
+      }
+    ],
+    buttons: [
+      {
+        text: 'Annulla',
+        role: 'cancel',
+        cssClass: 'ff7-alert-button'
+      },
+      {
+        text: 'Crea',
+        cssClass: 'ff7-alert-button primary',
+        handler: data => {
+          const name = data.playlistName?.trim();
+          if (name) {
+            this.noteService.addPlaylist(name);
+          }
+        }
+      }
+    ],
+    cssClass: 'ff7-alert'
+  });
+
+  await alert.present();
+}
 
   async openNewNoteModal() {
     const modal = await this.modalCtrl.create({

@@ -42,7 +42,8 @@
   padding-bottom: 1rem;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  padding: 1vw;
+  padding: 10px;
+  cursor: pointer !important;
 
   &::-webkit-scrollbar {
     display: none;
