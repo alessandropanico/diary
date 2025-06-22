@@ -13,7 +13,10 @@ export class LoginPage implements OnInit {
 
   user: any = null;
 
-  constructor(private ngZone: NgZone, private alertCtrl: AlertController) { }
+  constructor(
+    private ngZone: NgZone,
+    private alertCtrl: AlertController,
+) { }
 
   ngOnInit() {
     const storedUser = localStorage.getItem('user');
@@ -55,6 +58,8 @@ export class LoginPage implements OnInit {
     });
 
     await alert.present();
+    window.location.href ='/profilo'
+
   }
 
 
