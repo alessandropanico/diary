@@ -1,41 +1,38 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar class="ff7-toolbar">
     <ion-title *ngIf="!isSelectionMode">Note</ion-title>
     <ion-title *ngIf="isSelectionMode">{{ selectedNoteIds.size }} selezionate</ion-title>
 
-  <ion-buttons slot="end">
-  <ion-button *ngIf="!isSelectionMode" (click)="openCreatePlaylist()">➕ Crea Playlist</ion-button>
-  <ion-button *ngIf="!isSelectionMode && selectedPlaylistId !== 'all'" (click)="confirmDeleteCurrentPlaylist()">🗑️ Elimina Playlist</ion-button>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" class="ff7-button" *ngIf="!isSelectionMode" (click)="openCreatePlaylist()">
+        ➕ Playlist
+      </ion-button>
+      <ion-button fill="clear" class="ff7-button" *ngIf="!isSelectionMode && selectedPlaylistId !== 'all'" (click)="confirmDeleteCurrentPlaylist()">
+        🗑️
+      </ion-button>
 
-  <ion-button *ngIf="isSelectionMode" (click)="deleteSelectedNotes()">
-    <ion-icon name="trash"></ion-icon>
-  </ion-button>
-  <ion-button *ngIf="isSelectionMode" (click)="cancelSelectionMode()">
-    <ion-icon name="close"></ion-icon>
-  </ion-button>
-</ion-buttons>
-
+      <ion-button fill="clear" class="ff7-button" *ngIf="isSelectionMode" (click)="deleteSelectedNotes()">
+        <ion-icon name="trash"></ion-icon>
+      </ion-button>
+      <ion-button fill="clear" class="ff7-button" *ngIf="isSelectionMode" (click)="cancelSelectionMode()">
+        <ion-icon name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding" (click)="onContentClick($event)">
-  <!-- Scroll orizzontale per le playlist -->
+<ion-content class="ff7-content" (click)="onContentClick($event)">
   <div class="playlist-scroll" appDragScroll>
-    <div *ngFor="let playlist of playlists" (click)="selectPlaylist(playlist.id)"
-      [class.selected]="playlist.id === selectedPlaylistId">
+    <div *ngFor="let playlist of playlists" (click)="selectPlaylist(playlist.id)" [class.selected]="playlist.id === selectedPlaylistId">
       {{ playlist.name }}
     </div>
   </div>
 
-
-
-  <!-- Griglia note con checkbox se selezione attiva -->
   <div class="note-grid">
     <div class="note-thumbnail" *ngFor="let note of filteredNotes" (click)="onNoteClick(note, $event)"
       (contextmenu)="onNoteRightClick(note, $event)" (press)="onNoteLongPress(note)">
 
-      <ion-checkbox *ngIf="isSelectionMode" [checked]="selectedNoteIds.has(note.id)"
-        (ionChange)="toggleNoteSelection(note)">
+      <ion-checkbox *ngIf="isSelectionMode" [checked]="selectedNoteIds.has(note.id)" (ionChange)="toggleNoteSelection(note)">
       </ion-checkbox>
 
       <h3>{{ note.title }}</h3>
@@ -48,7 +45,7 @@
   </ion-text>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="!isSelectionMode">
-    <ion-fab-button (click)="openNewNoteModal()">
+    <ion-fab-button class="ff7-fab" (click)="openNewNoteModal()">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>
