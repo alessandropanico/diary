@@ -18,11 +18,9 @@
 
         <ion-item routerLink="/home" (click)="closeMenu()">Home</ion-item>
         <ion-item routerLink="/sveglie" (click)="closeMenu()">Sveglie</ion-item>
-        <!-- <ion-item routerLink="/fotocamera" (click)="closeMenu()">Fotocamera</ion-item> -->
         <ion-item routerLink="/galleria" (click)="closeMenu()">Galleria</ion-item>
         <ion-item routerLink="/list-task" (click)="closeMenu()">Task</ion-item>
         <ion-item routerLink="/note" (click)="closeMenu()">Note</ion-item>
-        <!-- <ion-item routerLink="/impostazioni" (click)="closeMenu()">Impostazioni</ion-item> -->
         <ion-item routerLink="/login" (click)="closeMenu()">Login</ion-item>
         <ion-item routerLink="/backup" (click)="closeMenu()">Backup</ion-item>
         <ion-item routerLink="/riconoscimenti" (click)="closeMenu()">Riconoscimenti</ion-item>
@@ -35,7 +33,6 @@
     </ion-content>
   </ion-menu>
 
-  <!-- Sostituito <div> con <ion-content> -->
   <ion-content id="main-content">
     <ion-header>
       <ion-toolbar>
@@ -45,7 +42,6 @@
         <ion-title class="ff7-title">Il tuo Diario</ion-title>
       </ion-toolbar>
     </ion-header>
-
     <router-outlet></router-outlet>
   </ion-content>
 </ion-app>
