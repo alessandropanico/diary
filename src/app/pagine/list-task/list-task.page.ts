@@ -37,6 +37,8 @@ export class ListTaskPage implements OnInit {
   async openTaskModal() {
     const modal = await this.modalCtrl.create({
       component: TaskModalComponent,
+        cssClass: 'ff7-modal-glow'
+
     });
     await modal.present();
   }

@@ -193,3 +193,25 @@ ion-buttons ion-button:hover {
   right: 0 !important;
   bottom: 0 !important;
 }
+
+
+ion-modal.ff7-modal-glow::part(content) {
+  background: #0a0a1a;
+  border-radius: 0;
+  box-shadow: 0 0 10px 2px #00ffee66, 0 0 20px 4px #00bbff44;
+  border: 1px solid #00ffee33;
+  animation: neonPulse 4s ease-in-out infinite;
+}
+
+/* Optional animation */
+@keyframes neonPulse {
+  0% {
+    box-shadow: 0 0 20px #00ffee66, 0 0 40px #00bbff44;
+  }
+  50% {
+    box-shadow: 0 0 35px #00ffffaa, 0 0 70px #00ccff88;
+  }
+  100% {
+    box-shadow: 0 0 20px #00ffee66, 0 0 40px #00bbff44;
+  }
+}
