@@ -1,39 +1,115 @@
-.profile-header {
-  margin-bottom: 30px;
+:host {
+  --primary-glow: #00f0ff;
+  --bg-blur: rgba(20, 20, 30, 0.75);
+  --text-light: #e0faff;
+  --label-color: #a0cfd8;
+  --danger-color: #ff4e4e;
+}
+
+ion-content {
+  background: linear-gradient(145deg, #10151f, #0b0f18);
+  color: var(--text-light);
+  // font-family: 'Segoe UI', 'Roboto', 'Final Fantasy', sans-serif;
+}
+
+ion-header, ion-toolbar {
+  background: rgba(10, 15, 25, 0.8);
+  backdrop-filter: blur(10px);
+  --color: var(--text-light);
+  --background: transparent;
+  border-bottom: 1px solid #1a2735;
+}
+
+ion-title {
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: var(--text-light);
+  text-shadow: 0 0 6px var(--primary-glow);
+}
+
+ion-button {
+  --background: none;
+  --color: var(--primary-glow);
+  text-shadow: 0 0 4px var(--primary-glow);
+  font-weight: 500;
+}
+
+ion-button[color="danger"] {
+  --color: var(--danger-color);
+  text-shadow: 0 0 4px var(--danger-color);
 }
 
 .profile-avatar {
-  width: 120px;
-  height: 120px;
-  margin: 0 auto;
-  overflow: hidden;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
-  border: 2px solid #ccc;
+  border: 2px solid var(--primary-glow);
+  margin: 20px auto;
+  box-shadow: 0 0 15px var(--primary-glow);
+  transition: box-shadow 0.3s ease;
 
   &.editable {
     cursor: pointer;
-    border-color: #3880ff;
-    box-shadow: 0 0 5px #3880ff;
+    border: 2px dashed var(--primary-glow);
+    box-shadow: 0 0 20px var(--primary-glow), 0 0 5px #1dc4e0;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }
 
-.profile-avatar.editable {
-  cursor: pointer;
-  border: 2px dashed #3880ff;
-  transition: box-shadow 0.3s ease;
-  box-shadow: 0 0 5px #3880ff;
+.profile-view h2,
+.profile-view h3 {
+  text-shadow: 0 0 5px var(--primary-glow);
 }
 
-
-.profile-nickname {
-  font-weight: 700;
-  font-size: 1.5rem;
-  margin-bottom: 0;
+.profile-view h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin: 10px 0 5px;
 }
 
-.profile-name {
-  font-weight: 400;
-  font-size: 1.1rem;
-  color: var(--ion-color-medium);
+.profile-view h3 {
+  font-size: 1.2rem;
+  color: var(--label-color);
+}
+
+.profile-view p {
+  font-size: 1rem;
+  color: var(--text-light);
   margin-top: 4px;
+}
+
+ion-item {
+  background: var(--bg-blur);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  --color: var(--text-light);
+  --border-color: transparent;
+  --highlight-background: transparent;
+}
+
+ion-label {
+  color: var(--label-color);
+}
+
+.label-stacked.sc-ion-label-md-h{
+   font-family: 'Orbitron', sans-serif !important;
+}
+
+ion-input,
+ion-textarea {
+  color: white;
+}
+
+ion-button[type="submit"] {
+  margin-top: 20px;
+  --background: var(--primary-glow);
+  --color: black;
+  font-weight: bold;
+  box-shadow: 0 0 10px var(--primary-glow);
 }
