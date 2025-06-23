@@ -1,18 +1,48 @@
-.welcome-message {
-  color: white;
-  font-size: 6vw;
-}
+.home-reminder {
+  margin-top: 2vh;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 0 8px #00ffe0aa;
 
-.sfondo {
-  // background-image: url('/assets/immaginiGenerali/sfondo.jpg');
-  background-size: cover;
-  /* Copre tutto lo schermo senza distorsioni */
-  background-position: center;
-  background-repeat: no-repeat;
-  width: 100%;
-}
+  .reminder-title {
+    color: #00ffe0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    text-shadow: 0 0 4px #00ffe0;
+    text-align: center;
+  }
 
-.sectinonTask {
-  padding: 1vw;
+  ion-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: transparent;
+  }
+
+  ion-item {
+    --background: #1B1D2A;
+    --color: white;
+    border: 1px solid rgba(0, 255, 224, 0.3333333333);
+    transition: transform 0.2s ease;
+  }
+
+  ion-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 6px #00ffe0aa;
+  }
+
+  h3 {
+    font-size: 1rem;
+    margin: 0;
+    color: #e0f7ff;
+  }
+
+  p {
+    font-size: 0.85rem;
+    color: #ccc;
+    margin: 4px 0 0;
+  }
 }
 

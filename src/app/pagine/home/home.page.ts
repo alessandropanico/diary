@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { TaskService } from 'src/app/services/task.service';
+import { Task } from 'src/app/interfaces/task';
 
 @Component({
   selector: 'app-home',
@@ -9,11 +11,16 @@ import { Component, OnInit } from '@angular/core';
 export class HomePage implements OnInit {
 
   greetingMessage: string = '';
+  todayTasks: Task[] = [];
 
-  constructor() { }
+  constructor(private taskService: TaskService) {}
 
   ngOnInit() {
     this.greetingMessage = this.getGreetingMessage();
+      // Osserva le task e filtra quelle con scadenza oggi
+    this.taskService.tasks$.subscribe(tasks => {
+      this.todayTasks = tasks.filter(task => this.isToday(task.dueDate) && !task.completed);
+    });
   }
 
   // Metodo per determinare il messaggio di benvenuto in base all'ora del giorno
@@ -27,5 +34,16 @@ export class HomePage implements OnInit {
     } else {
       return 'Buona sera!';
     }
+  }
+
+   isToday(dateString: string): boolean {
+    const today = new Date();
+    const taskDate = new Date(dateString);
+
+    return (
+      taskDate.getFullYear() === today.getFullYear() &&
+      taskDate.getMonth() === today.getMonth() &&
+      taskDate.getDate() === today.getDate()
+    );
   }
 }
