@@ -1,16 +1,16 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-title>Backup Dati</ion-title>
+  <ion-toolbar class="ff7-toolbar">
+    <ion-title >Backup Dati</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <ion-button expand="block" (click)="exportBackup()">
+<ion-content class="ion-padding ff7-content">
+  <ion-button expand="block" class="ff7-button" (click)="exportBackup()">
     Esporta Backup
   </ion-button>
 
-  <ion-item>
-    <ion-label>Importa Backup</ion-label>
-    <input type="file" (change)="onFileSelected($event)" accept=".json" />
+  <ion-item lines="none" class="ff7-item">
+    <ion-label class="ff7-label">Importa Backup</ion-label>
+    <input type="file" (change)="onFileSelected($event)" accept=".json" class="ff7-input" />
   </ion-item>
 </ion-content>
