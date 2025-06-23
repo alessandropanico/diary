@@ -20,6 +20,7 @@
           <div class="card">
             <img [src]="photo.src" class="card-img-top" alt="Foto" (click)="openLightbox(photo.src)" />
             <button class="btn btn-danger" (click)="askDelete(photo)">Elimina</button>
+            <button class="btn btn-primary" (click)="sharePhoto(photo.src)">Condividi</button>
           </div>
         </div>
       </div>

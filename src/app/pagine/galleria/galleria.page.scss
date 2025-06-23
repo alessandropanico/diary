@@ -380,3 +380,21 @@
     opacity: 1;
   }
 }
+
+.btn-primary {
+  background: transparent;
+  border: 1.5px solid #00e5ff;
+  color: #00e5ff;
+  border-radius: 6px;
+  font-weight: 600;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.btn-primary:hover {
+  background-color: #00e5ff;
+  color: black;
+}

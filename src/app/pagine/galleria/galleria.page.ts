@@ -116,4 +116,28 @@ export class GalleriaPage implements OnInit {
     }
     this.previewActive = false;
   }
+
+  async sharePhoto(photoSrc: string) {
+    try {
+      const response = await fetch(photoSrc);
+      const blob = await response.blob();
+
+      const file = new File([blob], 'foto.jpg', { type: blob.type });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Condividi foto',
+          text: 'Guarda questa foto!',
+        });
+      } else {
+        alert('La condivisione file non è supportata su questo dispositivo.');
+      }
+    } catch (error) {
+      console.error('Errore nella condivisione:', error);
+      alert('Errore durante la condivisione della foto.');
+    }
+  }
+
+
 }
