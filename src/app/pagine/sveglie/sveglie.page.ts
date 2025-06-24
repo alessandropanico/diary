@@ -358,21 +358,48 @@ export class SvegliePage {
     }
   }
 
-
-  openInfo(index: number | null = null) {
-    if (index !== null) {
-      const alarm = this.alarms[index];
-      this.alarmTime = alarm.time;
-      this.alarmNote = alarm.note;
-      this.selectedDays = this.weekDays.map(d => alarm.days.includes(d));
-      this.editingAlarmIndex = index;
-      this.selectedSoundFileName = alarm.soundFile || '';
-      this.alarmSoundFile = null; // 🔁 Reset per evitare riutilizzo del file
-    } else {
-      this.resetForm();
-    }
-    this.alarmInfo = true;
+  async loadSoundUrl(fileName: string): Promise<void> {
+  if (!fileName) {
+    this.selectedSoundUrl = null;
+    return;
   }
+
+  if (this.isMobile()) {
+    const base64 = await this.getSoundFromFilesystem(fileName);
+    this.selectedSoundUrl = base64;
+  } else {
+    const blob = await this.getSoundFromIndexedDB(fileName);
+    if (blob) {
+      this.selectedSoundUrl = URL.createObjectURL(blob);
+    } else {
+      this.selectedSoundUrl = null;
+    }
+  }
+}
+
+
+async openInfo(index: number | null = null) {
+  if (index !== null) {
+    const alarm = this.alarms[index];
+    this.alarmTime = alarm.time;
+    this.alarmNote = alarm.note;
+    this.selectedDays = this.weekDays.map(d => alarm.days.includes(d));
+    this.editingAlarmIndex = index;
+    this.selectedSoundFileName = alarm.soundFile || '';
+    this.alarmSoundFile = null; // reset
+
+    if (this.selectedSoundFileName) {
+      await this.loadSoundUrl(this.selectedSoundFileName);
+    } else {
+      this.selectedSoundUrl = null;
+    }
+  } else {
+    this.resetForm();
+    this.selectedSoundUrl = null;
+  }
+  this.alarmInfo = true;
+}
+
 
   closeInfo() {
     this.alarmInfo = false;
