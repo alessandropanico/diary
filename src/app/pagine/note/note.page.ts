@@ -191,7 +191,7 @@ export class NotePage implements OnInit, OnDestroy {
 
     const alert = await this.alertCtrl.create({
       header: 'Elimina Playlist',
-      message: `Vuoi eliminare la playlist "<strong>${playlist.name}</strong>"? Tutte le note associate saranno eliminate.`,
+      message: `Vuoi eliminare la playlist ${playlist.name}? Tutte le note associate saranno eliminate.`,
       buttons: [
         {
           text: 'Annulla',
