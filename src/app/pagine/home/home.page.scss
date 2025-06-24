@@ -1,3 +1,9 @@
+.welcome-message {
+  font-size: 60px;
+  margin-top: 15px;
+}
+
+
 .home-reminder {
   margin-top: 2vh;
   padding: 1rem;
@@ -46,3 +52,13 @@
   }
 }
 
+@media screen and (max-width:600px) {
+
+
+  .welcome-message {
+    font-size: 30px;
+    margin-top: 20px;
+  }
+
+
+}

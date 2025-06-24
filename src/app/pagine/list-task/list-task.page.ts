@@ -18,11 +18,21 @@ export class ListTaskPage implements OnInit {
   ) { }
 
   ngOnInit() {
-    // Abbonati al flusso delle task per ottenere gli aggiornamenti
     this.taskService.tasks$.subscribe(tasks => {
+      const now = new Date();
+
+      // Controlla e aggiorna le task scadute ma non completate
+      tasks.forEach((task, index) => {
+        const due = new Date(task.dueDate);
+        if (!task.completed && due < now) {
+          this.taskService.toggleCompletion(index);
+        }
+      });
+
       this.tasks = tasks;
     });
   }
+
 
   // Funzione per cambiare lo stato di completamento della task
   toggleCompletion(index: number) {
@@ -37,7 +47,7 @@ export class ListTaskPage implements OnInit {
   async openTaskModal() {
     const modal = await this.modalCtrl.create({
       component: TaskModalComponent,
-        cssClass: 'ff7-modal-glow'
+      cssClass: 'ff7-modal-glow'
 
     });
     await modal.present();
