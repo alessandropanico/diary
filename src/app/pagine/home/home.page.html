@@ -1,31 +1,33 @@
 <ion-content>
-<section class="sfondo">
+  <section class="sfondo">
 
-  <div class="d-flex justify-content-center">
-    <!-- Messaggio di benvenuto -->
-    <div class="welcome-message">
-      {{ greetingMessage }}
+    <div class="d-flex justify-content-center">
+      <!-- Messaggio di benvenuto -->
+      <div class="welcome-message">
+        {{ greetingMessage }}
+      </div>
     </div>
-  </div>
 
-  <app-clock></app-clock>
+    <app-clock></app-clock>
 
-  <section *ngIf="todayTasks.length > 0" class="home-reminder">
-  <h2 class="reminder-title">Hai {{ todayTasks.length }} task in scadenza oggi</h2>
-  <ion-list lines="none">
-    <ion-item *ngFor="let task of todayTasks">
-      <ion-label>
-        <h3>{{ task.name }}</h3>
-        <p>{{ task.description }}</p>
-      </ion-label>
-    </ion-item>
-  </ion-list>
-</section>
+    <section *ngIf="todayTasks.length > 0" class="home-reminder">
+      <h2 class="reminder-title">Hai {{ todayTasks.length }} task in scadenza oggi</h2>
+      <ion-list lines="none">
+        <ion-item *ngFor="let task of todayTasks">
+          <ion-label>
+            <h3>{{ task.name }}</h3>
+            <p>{{ task.description }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </section>
 
-<section *ngIf="todayTasks.length === 0" class="home-reminder-empty">
-  <p>Non hai task in scadenza oggi!</p>
-</section>
+    <section *ngIf="todayTasks.length === 0" class="home-reminder-empty">
+      <div class="d-flex justify-content-center">
+        <p>Non hai task in scadenza oggi!</p>
+      </div>
+    </section>
 
 
-</section>
+  </section>
 </ion-content>
