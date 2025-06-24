@@ -380,7 +380,7 @@ input:checked+.slider:before {
 
 /* WebKit-specific (Chrome, Edge, Safari) */
 .ff7-audio::-webkit-media-controls-panel {
-  background: linear-gradient(145deg, #1b1d2a, #0a0f1a);
+  background: #0a0f1a; /* background piatto, più scuro */
   border-radius: 8px;
   border: 1px solid #00ffe0;
 }
@@ -402,7 +402,7 @@ input:checked+.slider:before {
 }
 
 .ff7-audio::-webkit-media-controls-volume-slider {
-  background-color: #00ffe0;
+  background-color: transparent;
 }
 
 
