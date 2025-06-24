@@ -44,7 +44,8 @@
 ion-content {
   --overflow: auto !important;
   overflow-y: auto !important;
-  height: 100vh !important;
+  min-height: 100vh !important;
+  height: auto !important;
 }
 
 html,

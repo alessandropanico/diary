@@ -27,6 +27,9 @@ export class SvegliePage {
   selectedSoundFileName: string = '';
   @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
 
+  selectedSoundUrl: string | null = null;
+
+
   constructor(private storage: Storage) {
     this.init();
   }
@@ -347,12 +350,6 @@ export class SvegliePage {
     console.log('Modal mostrato');
   }
 
-
-
-
-
-
-
   stopRingingAudio() {
     if (this.ringingAudio) {
       this.ringingAudio.pause();
@@ -433,13 +430,15 @@ export class SvegliePage {
 
 
 
-  onSoundFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.alarmSoundFile = input.files[0];
-      this.selectedSoundFileName = this.alarmSoundFile.name;
-    }
+onSoundFileSelected(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files.length > 0) {
+    this.alarmSoundFile = input.files[0];
+    this.selectedSoundFileName = this.alarmSoundFile.name;
+    this.selectedSoundUrl = URL.createObjectURL(this.alarmSoundFile); // Crea l'URL per l'anteprima
   }
+}
+
 
   private saveSoundToIndexedDB(file: File): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -520,9 +519,13 @@ export class SvegliePage {
     }
   }
 
+
+
   clearSelectedSound() {
     this.selectedSoundFileName = '';
     this.alarmSoundFile = null;
+    this.selectedSoundUrl = null; // <--- aggiunto
+
     if (this.fileInputRef?.nativeElement) {
       this.fileInputRef.nativeElement.value = ''; // svuota l'input file visivamente
     }
