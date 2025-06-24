@@ -65,14 +65,14 @@
   </div>
 </div>
 
-<ion-content class="ion-padding">
+<ion-content [fullscreen]="true" class="ion-padding">
 
   <!-- Lista sveglie -->
   <div *ngIf="alarms.length > 0" class="alarms-container">
     <h2 class="titolo-dark">Sveglie Attive</h2>
 
     <div class="row">
-      <div class="col-md-4 mb-3" *ngFor="let alarm of alarms; let i = index">
+      <div class="col-md-4 mb-4" *ngFor="let alarm of alarms; let i = index">
         <div class="alarm-card">
 
           <!-- Orario & Nota -->

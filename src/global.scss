@@ -246,3 +246,15 @@ ion-modal.ff7-modal-glow::part(content) {
 }
 
 //--------------------------------------
+
+@media screen and (max-width:600px) {
+  ion-content::part(scroll) {
+    padding-bottom: 8vh;
+  }
+
+  .sc-ion-buttons-md-s ion-button:not(.button-round) {
+    --border-radius: 2px;
+    font-size: 3.5vw;
+}
+}
+//--------------------------------------
