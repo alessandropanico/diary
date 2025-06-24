@@ -59,7 +59,7 @@
   }
 }
 
-.playlist-scroll > div {
+.playlist-scroll>div {
   display: inline-flex;
   align-items: center;
   padding: 0.4rem 1rem;
@@ -72,12 +72,12 @@
   cursor: pointer;
 }
 
-.playlist-scroll > div:hover {
+.playlist-scroll>div:hover {
   background-color: #00ffee10;
   box-shadow: 0 0 6px #00ffee60;
 }
 
-.playlist-scroll > div.selected {
+.playlist-scroll>div.selected {
   background-color: #00ffee;
   color: #0a0a1a;
   font-weight: bold;
@@ -127,14 +127,14 @@
   text-overflow: ellipsis;
 }
 
-.text{
+.text {
   padding-left: 10px;
 }
 
 ion-checkbox {
   position: absolute;
   top: 6px;
-  left: 6px;
+  right: 6px;
+  left: auto;
   transform: scale(0.9);
 }
-
