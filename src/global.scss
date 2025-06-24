@@ -41,19 +41,12 @@
   src: url(assets/FONT/KiddosyOutline.ttf);
 }
 
-ion-content {
-  --overflow: initial !important;
-  overflow: hidden !important;
-  height: 100% !important;
-}
-
-
 html,
 body {
-  min-height: 100% !important;
-  height: auto I !important;
-  overflow: auto !important;
+  height: 100%;
+  overflow: auto;
 }
+
 
 .titolo {
   color: white;
@@ -217,3 +210,4 @@ ion-modal.ff7-modal-glow::part(content) {
     box-shadow: 0 0 20px #00ffee66, 0 0 40px #00bbff44;
   }
 }
+
