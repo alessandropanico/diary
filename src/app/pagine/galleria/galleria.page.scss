@@ -259,7 +259,7 @@
 /* Bottone elimina: stile flat elegante, bordo sottile, colore di testo tenue */
 .btn-danger {
   background: transparent;
-  border: 1.5px solid #a33e3e;
+  border: 1.5px solid #d81e1e;
   color: #a33e3e;
   border-radius: 6px;
   font-weight: 600;
@@ -326,9 +326,7 @@
 
 .btn {
   cursor: pointer;
-  border: none;
   padding: 10px 18px;
-  border-radius: 10px;
   font-weight: 600;
   font-family: 'Orbitron', sans-serif;
   transition: all 0.3s ease;
