@@ -83,16 +83,6 @@ ion-button[color="danger"] {
   margin-top: 4px;
 }
 
-ion-item {
-  background: var(--bg-blur);
-  border-radius: 12px;
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  --color: var(--text-light);
-  --border-color: transparent;
-  --highlight-background: transparent;
-}
-
 ion-label {
   color: var(--label-color);
 }
@@ -112,4 +102,57 @@ ion-button[type="submit"] {
   --color: black;
   font-weight: bold;
   box-shadow: 0 0 10px var(--primary-glow);
+}
+
+ion-list{
+  background-color: transparent;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+:host {
+  font-family: 'Orbitron', sans-serif;
+  --primary-glow: #00ffee;
+  --bg-blur: rgba(15, 15, 35, 0.8);
+  --text-light: #ffffff;
+  --label-color: #a0cfd8;
+}
+
+.ff7-item {
+  background: var(--bg-blur);
+  border: 1px solid #00ffee50;
+  border-radius: 0px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  box-shadow: 0 0 8px #00ffee20;
+  transition: box-shadow 0.3s ease;
+}
+
+.ff7-item:hover {
+  box-shadow: 0 0 12px #00ffee60;
+}
+
+ion-label {
+  color: var(--label-color);
+  font-family: 'Orbitron', sans-serif;
+}
+
+ion-input,
+ion-textarea {
+  color: var(--text-light);
+  font-family: 'Orbitron', sans-serif;
+}
+
+ion-item.ff7-item {
+  --background: transparent !important;
+  --inner-border-width: 0px;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --min-height: auto;
+  background: rgba(15, 15, 35, 0.8);
+  border: 1px solid #00ffee50;
+  box-shadow: 0 0 8px #00ffee20;
+  border-radius: 0;
+  margin-bottom: 16px;
+  padding: 12px;
 }

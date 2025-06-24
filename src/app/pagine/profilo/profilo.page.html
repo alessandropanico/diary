@@ -23,24 +23,26 @@
     <p>{{ profile.bio || 'Descrizione assente' }}</p>
   </div>
 
-  <form *ngIf="editing" (ngSubmit)="saveProfile()">
-    <ion-list lines="none">
-      <ion-item>
-        <ion-label position="stacked">Nickname</ion-label>
-        <ion-input [(ngModel)]="profileEdit.nickname" name="nickname" required></ion-input>
-      </ion-item>
+<form *ngIf="editing" (ngSubmit)="saveProfile()">
+  <ion-list lines="none">
+    <ion-item class="ff7-item">
+      <ion-label position="stacked">Nickname</ion-label>
+      <ion-input [(ngModel)]="profileEdit.nickname" name="nickname" required></ion-input>
+    </ion-item>
 
-      <ion-item>
-        <ion-label position="stacked">Nome e Cognome</ion-label>
-        <ion-input [(ngModel)]="profileEdit.name" name="name" required></ion-input>
-      </ion-item>
+    <ion-item class="ff7-item">
+      <ion-label position="stacked">Nome e Cognome</ion-label>
+      <ion-input [(ngModel)]="profileEdit.name" name="name" required></ion-input>
+    </ion-item>
 
-      <ion-item>
-        <ion-label position="stacked">Descrizione</ion-label>
-        <ion-textarea [(ngModel)]="profileEdit.bio" name="bio"></ion-textarea>
-      </ion-item>
-    </ion-list>
+    <ion-item class="ff7-item">
+      <ion-label position="stacked">Descrizione</ion-label>
+      <ion-textarea [(ngModel)]="profileEdit.bio" name="bio"></ion-textarea>
+    </ion-item>
+  </ion-list>
 
-    <ion-button expand="block" type="submit">Salva</ion-button>
-  </form>
+  <ion-button expand="block" type="submit">Salva</ion-button>
+</form>
+
+
 </ion-content>
