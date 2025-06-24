@@ -20,39 +20,56 @@ export class TaskModalComponent {
     completed: false,
   };
 
+  minDate: string = '';
   messageSuccess = '';
 
   constructor(
     private taskService: TaskService,
     private modalCtrl: ModalController,
     private alertController: AlertController
-  ) { }
+  ) {
+    this.setMinDate();
+  }
+
+  setMinDate() {
+    const today = new Date();
+    this.minDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
+  }
 
   async addTask() {
+    const dueDate = new Date(this.newTask.dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
+
+    // ❌ Protezione extra se qualcuno forza il campo
+    if (dueDate < today) {
+      const alert = await this.alertController.create({
+        header: 'Data non valida',
+        message: 'Non puoi inserire una task con data nel passato.',
+        buttons: ['OK'],
+      });
+      return await alert.present();
+    }
+
     if (this.newTask.name.trim() && this.newTask.dueDate) {
       this.taskService.addTask(this.newTask);
       this.messageSuccess = 'Task aggiunta!';
 
-      // Rimuovi il focus dall'elemento attivo prima di aprire l'alert
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
 
-      // Mostra l'alert e attendi che venga chiuso prima di chiudere il modale
-      await this.showGamingAlert(); // ⚠️ aspetta che l'utente prema "Avanti!"
-      await this.modalCtrl.dismiss(); // chiudi il modale solo dopo
+      await this.showGamingAlert();
+      await this.modalCtrl.dismiss();
     }
   }
-
-
 
   async showGamingAlert(): Promise<void> {
     return new Promise(async (resolve) => {
       const alert = await this.alertController.create({
         header: 'TASK AGGIUNTA!',
-        message: `
-        Obiettivo impostato con successo!
-      `,
+        message: `Obiettivo impostato con successo!`,
         cssClass: ['gaming-alert', 'alert-dark-force'],
         buttons: [
           {
@@ -60,7 +77,7 @@ export class TaskModalComponent {
             role: 'cancel',
             cssClass: 'alert-continue',
             handler: () => {
-              resolve(); // solo quando l’utente preme “Avanti”
+              resolve();
             }
           },
         ],
@@ -72,8 +89,8 @@ export class TaskModalComponent {
     });
   }
 
-
   close() {
     this.modalCtrl.dismiss();
   }
 }
+
