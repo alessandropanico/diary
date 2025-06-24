@@ -20,7 +20,6 @@
   <div *ngIf="!editing" class="profile-view">
     <h2>{{ profile.nickname || 'nickname' }}</h2>
     <h3>{{ profile.name || 'Nome e Cognome' }}</h3>
-    <p><strong>Email:</strong> {{ profile.email || '-' }}</p>
     <p>{{ profile.bio || 'Descrizione assente' }}</p>
   </div>
 
@@ -34,11 +33,6 @@
       <ion-item>
         <ion-label position="stacked">Nome e Cognome</ion-label>
         <ion-input [(ngModel)]="profileEdit.name" name="name" required></ion-input>
-      </ion-item>
-
-      <ion-item>
-        <ion-label position="stacked">Email</ion-label>
-        <ion-input [(ngModel)]="profileEdit.email" name="email" type="email" required></ion-input>
       </ion-item>
 
       <ion-item>
