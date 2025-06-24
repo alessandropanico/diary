@@ -50,14 +50,8 @@
         <button type="button" class="remove-file-btn" (click)="clearSelectedSound()">❌</button>
       </div>
 
-        <audio
-    *ngIf="selectedSoundUrl"
-    [src]="selectedSoundUrl"
-    controls
-    class="ff7-audio">
-  </audio>
-
-
+      <audio *ngIf="selectedSoundUrl" [src]="selectedSoundUrl" controls class="ff7-audio">
+      </audio>
 
       <!-- Azione -->
       <button *ngIf="editingAlarmIndex === null" class="success-btn neon-btn" (click)="setAlarm()">

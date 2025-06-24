@@ -520,7 +520,6 @@ onSoundFileSelected(event: Event): void {
   }
 
 
-
   clearSelectedSound() {
     this.selectedSoundFileName = '';
     this.alarmSoundFile = null;
