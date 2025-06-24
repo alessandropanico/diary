@@ -37,13 +37,13 @@ export class HomePage implements OnInit {
   }
 
    isToday(dateString: string): boolean {
-    const today = new Date();
-    const taskDate = new Date(dateString);
+  const today = new Date();
+  const taskDate = new Date(dateString);
 
-    return (
-      taskDate.getFullYear() === today.getFullYear() &&
-      taskDate.getMonth() === today.getMonth() &&
-      taskDate.getDate() === today.getDate()
-    );
-  }
+  today.setHours(0, 0, 0, 0);
+  taskDate.setHours(0, 0, 0, 0);
+
+  return taskDate.getTime() === today.getTime();
+}
+
 }

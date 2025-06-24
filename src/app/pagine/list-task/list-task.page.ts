@@ -17,21 +17,24 @@ export class ListTaskPage implements OnInit {
     private modalCtrl: ModalController
   ) { }
 
-  ngOnInit() {
-    this.taskService.tasks$.subscribe(tasks => {
-      const now = new Date();
+ngOnInit() {
+  this.taskService.tasks$.subscribe(tasks => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Rende il confronto solo per la data
 
-      // Controlla e aggiorna le task scadute ma non completate
-      tasks.forEach((task, index) => {
-        const due = new Date(task.dueDate);
-        if (!task.completed && due < now) {
-          this.taskService.toggleCompletion(index);
-        }
-      });
+    tasks.forEach((task, index) => {
+      const due = new Date(task.dueDate);
+      due.setHours(0, 0, 0, 0); // Anche la task
 
-      this.tasks = tasks;
+      if (!task.completed && due < today) {
+        this.taskService.toggleCompletion(index); // Flag solo quelle prima di oggi
+      }
     });
-  }
+
+    this.tasks = tasks;
+  });
+}
+
 
 
   // Funzione per cambiare lo stato di completamento della task
