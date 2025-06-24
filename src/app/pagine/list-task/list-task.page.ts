@@ -17,24 +17,36 @@ export class ListTaskPage implements OnInit {
     private modalCtrl: ModalController
   ) { }
 
-ngOnInit() {
-  this.taskService.tasks$.subscribe(tasks => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Rende il confronto solo per la data
+  ngOnInit() {
+    this.taskService.tasks$.subscribe(tasks => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Rende il confronto solo per la data
 
-    tasks.forEach((task, index) => {
-      const due = new Date(task.dueDate);
-      due.setHours(0, 0, 0, 0); // Anche la task
+      tasks.forEach((task, index) => {
+        const due = new Date(task.dueDate);
+        due.setHours(0, 0, 0, 0); // Anche la task
 
-      if (!task.completed && due < today) {
-        this.taskService.toggleCompletion(index); // Flag solo quelle prima di oggi
-      }
+        if (!task.completed && due < today) {
+          this.taskService.toggleCompletion(index); // Flag solo quelle prima di oggi
+        }
+      });
+
+      this.tasks = tasks;
     });
+  }
 
-    this.tasks = tasks;
-  });
+formatDateIT(dateString: string): string {
+  const date = new Date(dateString);
+
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // i mesi partono da 0
+  const year = date.getFullYear();
+
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
-
 
 
   // Funzione per cambiare lo stato di completamento della task

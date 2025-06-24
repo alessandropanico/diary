@@ -22,7 +22,7 @@
         <div class="task-content">
           <div class="task-title" [class.completed]="task.completed">{{ task.name }}</div>
           <p class="task-description">{{ task.description }}</p>
-          <p class="task-date"><strong>Scadenza:</strong> {{ task.dueDate }}</p>
+          <p class="task-date"><strong>Scadenza:</strong> {{ formatDateIT(task.dueDate) }}</p>
         </div>
 
         <button class="ff7-delete-btn" (click)="deleteTask(i)">✖</button>
