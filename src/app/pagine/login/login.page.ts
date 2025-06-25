@@ -16,7 +16,7 @@ export class LoginPage implements OnInit {
   constructor(
     private ngZone: NgZone,
     private alertCtrl: AlertController,
-) { }
+  ) { }
 
   ngOnInit() {
     const storedUser = localStorage.getItem('user');
@@ -58,7 +58,7 @@ export class LoginPage implements OnInit {
     });
 
     await alert.present();
-    window.location.href ='/profilo'
+    window.location.href = '/profilo'
 
   }
 
@@ -90,7 +90,10 @@ export class LoginPage implements OnInit {
 
     await alert.present();
 
-    setTimeout(() => this.renderGoogleButton(), 0);
+    setTimeout(() => {
+      this.renderGoogleButton();
+      window.location.reload();
+    }, 0);
   }
 
 

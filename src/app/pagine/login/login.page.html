@@ -5,16 +5,20 @@
 </ion-header>
 
 <ion-content class="ff7-content ion-text-center">
-  <div *ngIf="!user" class="ff7-login-box">
-    <h2 class="ff7-login-title">Accedi con Google</h2>
-    <div id="googleSignInDiv" class="ff7-google-button"></div>
+  <div class="cont">
+    <div *ngIf="!user" class="ff7-login-box">
+      <h2 class="ff7-login-title">Accedi con Google</h2>
+      <div id="googleSignInDiv" class="ff7-google-button"></div>
+    </div>
   </div>
 
-  <div *ngIf="user" class="ff7-login-box">
-    <h2 class="ff7-login-title">Ciao, {{ user.name }}</h2>
-    <p class="ff7-login-email">{{ user.email }}</p>
-    <ion-button expand="block" color="danger" (click)="logout()" class="ff7-logout-button">
-      Logout
-    </ion-button>
+  <div class="cont">
+    <div *ngIf="user" class="ff7-login-box">
+      <h2 class="ff7-login-title">Ciao, {{ user.name }}</h2>
+      <p class="ff7-login-email">{{ user.email }}</p>
+      <ion-button expand="block" color="danger" (click)="logout()" class="ff7-logout-button">
+        Logout
+      </ion-button>
+    </div>
   </div>
 </ion-content>

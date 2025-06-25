@@ -27,6 +27,15 @@
   gap: 16px;
 }
 
+.cont{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .task-item {
   display: flex;
   align-items: flex-start;
@@ -36,6 +45,7 @@
   padding: 12px;
   box-shadow: 0 0 8px #00ffee20;
   transition: 0.3s ease;
+  width: 97%;
 }
 
 .task-item:hover {

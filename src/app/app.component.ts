@@ -95,7 +95,8 @@ export class AppComponent implements OnInit {
 
     await alert.present();
 
-    this.router.navigate(['/login']);
+    window.location.reload();
+    window.location.href = '/home'
   }
 
 

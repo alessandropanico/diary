@@ -3,6 +3,12 @@
   margin-top: 15px;
 }
 
+.cont{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
 .home-reminder {
   margin-top: 2vh;
@@ -10,6 +16,7 @@
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   box-shadow: 0 0 8px #00ffe0aa;
+  width: 97%;
 
   .reminder-title {
     color: #00ffe0;

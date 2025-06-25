@@ -10,12 +10,20 @@
   font-family: 'Orbitron', sans-serif;
 }
 
+.cont{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .ff7-login-box {
   margin-top: 60px;
   padding: 20px;
   border: 1px solid #00ffee30;
   background: rgba(0, 0, 0, 0.4);
   box-shadow: 0 0 12px #00ffee40;
+  width: 97%;
 }
 
 .ff7-login-title {
