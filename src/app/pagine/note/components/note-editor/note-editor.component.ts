@@ -332,18 +332,12 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
     draw();
   }
 
-
-
-
-
-
   get formattedDuration(): string {
     const remaining = this.audioDuration - this.currentTime;
     const minutes = Math.floor(remaining / 60);
     const seconds = Math.floor(remaining % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   }
-
 
   deleteAudio() {
     if (this.audioPlayer) {
