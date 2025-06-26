@@ -340,37 +340,42 @@ setupAudioVisualizer(audioElement: HTMLAudioElement) {
 
 
 
-  formatDuration(seconds: number): string {
-    if (isNaN(seconds) || seconds === Infinity) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
-    return `${mins}:${secs}`;
-  }
+initAudioPlayer() {
+  if (!this.audioUrl) return;
 
-  initAudioPlayer() {
-    if (!this.audioUrl) return;
+  if (!this.audioPlayer || this.audioPlayer.src !== this.audioUrl) {
+    this.audioPlayer = new Audio(this.audioUrl);
 
-    if (!this.audioPlayer || this.audioPlayer.src !== this.audioUrl) {
-      this.audioPlayer = new Audio(this.audioUrl);
-
+    if (this.audioPlayer.readyState >= 1) { // HAVE_METADATA
+      this.audioDuration = this.audioPlayer.duration;
+      this.cdr.detectChanges();
+    } else {
       this.audioPlayer.addEventListener('loadedmetadata', () => {
         this.audioDuration = this.audioPlayer!.duration;
-        this.cdr.detectChanges(); // forza l’aggiornamento in template
+        this.cdr.detectChanges();
       });
-
-      this.audioPlayer.ontimeupdate = () => {
-        this.currentTime = this.audioPlayer!.currentTime;
-        this.cdr.detectChanges();
-      };
-
-      this.audioPlayer.onended = () => {
-        this.isPlaying = false;
-        this.currentTime = 0;
-        this.stopVisualizer();
-        this.cdr.detectChanges();
-      };
     }
+
+    this.audioPlayer.ontimeupdate = () => {
+      this.currentTime = this.audioPlayer!.currentTime;
+      this.cdr.detectChanges();
+    };
+
+    this.audioPlayer.onended = () => {
+      this.isPlaying = false;
+      this.currentTime = 0;
+      this.stopVisualizer();
+      this.cdr.detectChanges();
+    };
   }
+}
+
+formatDuration(seconds: number): string {
+  if (isNaN(seconds) || seconds === Infinity) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+  return `${mins}:${secs}`;
+}
 
 
 }
