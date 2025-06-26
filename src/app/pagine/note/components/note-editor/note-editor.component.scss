@@ -98,6 +98,8 @@ ion-content {
   color: #0ff;
 }
 
+//---------------------------------------
+
 .ff7-audio-player {
   display: flex;
   align-items: center;
@@ -106,20 +108,27 @@ ion-content {
 
 .ff7-audio-play {
   background: none;
-  border: none;
-  font-size: 24px;
-  color: #00ffbb;
-  cursor: pointer;
+  border: 2px solid #00ffee; /* il bordo che vuoi */
+  border-radius: 50%;
+  font-size: 20px;
+  color: #00ffee;
   width: 36px;
   height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  cursor: pointer;
   user-select: none;
+
+  /* Rimuove stile emoji predefinito e rende testo monospace */
+  font-family: monospace, monospace;
+  line-height: 1;
+  text-shadow: none;
+  filter: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-//---------------------------------------
 
 .ff7-audio-bar {
   flex-grow: 1;
