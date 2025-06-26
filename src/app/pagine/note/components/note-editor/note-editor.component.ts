@@ -28,6 +28,9 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
   noteAudioBase64?: string;
   mediaElementSource?: MediaElementAudioSourceNode;
 
+  progressInterval?: any;
+
+
   @ViewChild('visualizerCanvas', { static: false }) visualizerCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('visualizerCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
@@ -213,35 +216,46 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
 togglePlayback() {
   if (!this.audioUrl) return;
 
-  // Ricrea sempre l'elemento audio per evitare il problema del binding singolo
-  if (this.audioPlayer) {
-    this.audioPlayer.pause();
-    this.stopVisualizer();
+  if (!this.audioPlayer) {
+    this.audioPlayer = new Audio(this.audioUrl);
+
+    this.audioPlayer.addEventListener('loadedmetadata', () => {
+      this.audioDuration = this.audioPlayer!.duration;
+      this.cdr.detectChanges();
+    });
+
+    this.audioPlayer.addEventListener('ended', () => {
+      this.isPlaying = false;
+      this.currentTime = 0;
+      clearInterval(this.progressInterval);
+      this.stopVisualizer();
+      this.cdr.detectChanges();
+    });
   }
 
-  this.audioPlayer = new Audio(this.audioUrl);
-  this.isPlaying = true;
-
-  this.audioPlayer.addEventListener('loadedmetadata', () => {
-    this.audioDuration = this.audioPlayer!.duration;
-    this.cdr.detectChanges();
-  });
-
-  this.audioPlayer.ontimeupdate = () => {
-    this.currentTime = this.audioPlayer!.currentTime;
-    this.cdr.detectChanges();
-  };
-
-  this.audioPlayer.onended = () => {
+  if (this.isPlaying) {
+    this.audioPlayer.pause();
+    clearInterval(this.progressInterval);
     this.isPlaying = false;
-    this.currentTime = 0;
-    this.stopVisualizer();
-    this.cdr.detectChanges();
-  };
+  } else {
+    this.audioPlayer.play();
+    this.isPlaying = true;
 
-  this.audioPlayer.play();
-  this.setupAudioVisualizer(this.audioPlayer);
+    // aggiorna ogni 200ms
+    this.progressInterval = setInterval(() => {
+      if (this.audioPlayer) {
+        this.currentTime = this.audioPlayer.currentTime;
+        this.audioDuration = this.audioPlayer.duration || this.audioDuration;
+        this.cdr.detectChanges();
+      }
+    }, 200);
+
+    this.setupAudioVisualizer(this.audioPlayer);
+  }
+
+  this.cdr.detectChanges();
 }
+
 
 
   stopVisualizer() {
@@ -343,32 +357,34 @@ setupAudioVisualizer(audioElement: HTMLAudioElement) {
 initAudioPlayer() {
   if (!this.audioUrl) return;
 
-  if (!this.audioPlayer || this.audioPlayer.src !== this.audioUrl) {
-    this.audioPlayer = new Audio(this.audioUrl);
+  this.audioPlayer = new Audio(this.audioUrl);
 
-    if (this.audioPlayer.readyState >= 1) { // HAVE_METADATA
-      this.audioDuration = this.audioPlayer.duration;
-      this.cdr.detectChanges();
-    } else {
-      this.audioPlayer.addEventListener('loadedmetadata', () => {
+  this.audioPlayer.addEventListener('loadedmetadata', () => {
+    this.audioDuration = this.audioPlayer!.duration;
+
+    // Retry se la durata inizialmente è NaN o Infinity (comune con Base64)
+    if (isNaN(this.audioDuration) || this.audioDuration === Infinity) {
+      setTimeout(() => {
         this.audioDuration = this.audioPlayer!.duration;
         this.cdr.detectChanges();
-      });
+      }, 1000);
     }
 
-    this.audioPlayer.ontimeupdate = () => {
-      this.currentTime = this.audioPlayer!.currentTime;
-      this.cdr.detectChanges();
-    };
+    this.cdr.detectChanges();
+  });
 
-    this.audioPlayer.onended = () => {
-      this.isPlaying = false;
-      this.currentTime = 0;
-      this.stopVisualizer();
-      this.cdr.detectChanges();
-    };
-  }
+  this.audioPlayer.addEventListener('timeupdate', () => {
+    this.currentTime = this.audioPlayer!.currentTime;
+    this.cdr.detectChanges();
+  });
+
+  this.audioPlayer.addEventListener('ended', () => {
+    this.currentTime = 0;
+    this.isPlaying = false;
+    this.cdr.detectChanges();
+  });
 }
+
 
 formatDuration(seconds: number): string {
   if (isNaN(seconds) || seconds === Infinity) return '0:00';
@@ -377,5 +393,18 @@ formatDuration(seconds: number): string {
   return `${mins}:${secs}`;
 }
 
+seekAudio(event: MouseEvent) {
+  if (!this.audioPlayer || !this.audioDuration) return;
+
+  const target = event.currentTarget as HTMLElement;
+  const rect = target.getBoundingClientRect();
+  const clickX = event.clientX - rect.left;
+  const percentage = clickX / rect.width;
+
+  const newTime = percentage * this.audioDuration;
+  this.audioPlayer.currentTime = newTime;
+  this.currentTime = newTime;
+  this.cdr.detectChanges();
+}
 
 }
