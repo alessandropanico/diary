@@ -42,3 +42,7 @@
   flex-direction: column;
   gap: 12px;
 }
+
+ion-content {
+  --overflow: auto !important;
+}
