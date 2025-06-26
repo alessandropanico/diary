@@ -53,3 +53,55 @@ ion-content {
     padding-bottom: 0vh !important;
   }
 }
+
+.ff7-audio-preview {
+  background: #1b1b1b;
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 0 10px #00ffbb55;
+  margin-top: 15px;
+}
+
+.ff7-audio-bar {
+  position: relative;
+  height: 40px;
+  background: #222;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ff7-visualizer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
+  background: transparent;
+}
+
+.ff7-audio-progress {
+  position: absolute;
+  height: 100%;
+  background: rgba(0, 255, 180, 0.25);
+  border-radius: 8px;
+  z-index: 0;
+}
+
+.ff7-audio-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-family: monospace;
+  font-size: 14px;
+  color: #0ff;
+}
+
+.ff7-audio-play {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #00ffbb;
+}
