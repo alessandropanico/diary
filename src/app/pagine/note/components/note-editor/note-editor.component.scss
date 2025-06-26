@@ -103,32 +103,27 @@ ion-content {
 .ff7-audio-player {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 30px;
 }
 
 .ff7-audio-play {
   background: none;
-  border: 2px solid #00ffee; /* il bordo che vuoi */
+  // border: 2px solid #00ffee;
   border-radius: 50%;
-  font-size: 20px;
-  color: #00ffee;
   width: 36px;
   height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  user-select: none;
-
-  /* Rimuove stile emoji predefinito e rende testo monospace */
-  font-family: monospace, monospace;
-  line-height: 1;
-  text-shadow: none;
-  filter: none;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  color: #00ffee;
+  font-size:35px;
+  padding: 0;
 }
 
+.ff7-audio-play ion-icon {
+  pointer-events: none; /* evita conflitti click */
+}
 
 .ff7-audio-bar {
   flex-grow: 1;
@@ -145,7 +140,8 @@ ion-content {
 .ff7-audio-progress {
   position: absolute;
   height: 100%;
-  background: linear-gradient(to right, #00ffee, #00ffbb);
+  background: linear-gradient(to right, #00ffee, #33ffdd, #00ffbb);
+
   box-shadow: 0 0 10px #00ffeeaa;
   border-radius: 6px;
   transition: width 0.1s linear;

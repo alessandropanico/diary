@@ -36,9 +36,10 @@
     <div class="ff7-audio-preview" *ngIf="audioUrl && audioDuration">
 
   <div class="ff7-audio-player">
-    <button class="ff7-audio-play" (click)="togglePlayback()">
-        {{ isPlaying ? '❚❚' : '▶' }}
-    </button>
+<button class="ff7-audio-play" (click)="togglePlayback()">
+  <ion-icon [name]="isPlaying ? 'pause' : 'play'"></ion-icon>
+</button>
+
 
     <div class="ff7-audio-bar" (click)="seekAudio($event)">
       <div class="ff7-audio-progress" [style.width.%]="(currentTime / audioDuration) * 100"></div>
