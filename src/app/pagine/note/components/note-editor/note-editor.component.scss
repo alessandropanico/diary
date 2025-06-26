@@ -106,19 +106,42 @@ ion-content {
   color: #00ffbb;
 }
 
+//---------------------------------------
+
 .ff7-audio-bar {
+  position: relative;
   width: 100%;
   height: 10px;
-  background-color: #ddd;
-  border-radius: 5px;
-  overflow: hidden;
+  background: linear-gradient(90deg, #0a0a1a, #111122);
+  border-radius: 6px;
+  overflow: visible;
+  margin: 20px 0;
   cursor: pointer;
-  margin: 8px 0;
+  box-shadow: 0 0 5px #00ffee44 inset;
 }
 
 .ff7-audio-progress {
+  position: absolute;
   height: 100%;
-  background-color: #3880ff;
+  background: linear-gradient(to right, #00ffee, #00ffbb);
+  box-shadow: 0 0 10px #00ffeeaa;
+  border-radius: 6px;
   transition: width 0.1s linear;
+  z-index: 1;
 }
 
+.ff7-audio-dot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border: 2px solid #00ffee;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #ffffffaa, 0 0 12px #00ffee88;
+  pointer-events: none;
+  transition: left 0.1s linear;
+  z-index: 2;
+}

@@ -213,63 +213,72 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
     }
   }
 
-togglePlayback() {
-  if (!this.audioUrl) return;
+  togglePlayback() {
+    if (!this.audioUrl) return;
 
-  if (!this.audioPlayer) {
-    this.audioPlayer = new Audio(this.audioUrl);
+    if (!this.audioPlayer) {
+      this.audioPlayer = new Audio(this.audioUrl);
 
-    this.audioPlayer.addEventListener('loadedmetadata', () => {
-      this.audioDuration = this.audioPlayer!.duration;
-      this.cdr.detectChanges();
-    });
-
-    this.audioPlayer.addEventListener('ended', () => {
-      this.isPlaying = false;
-      this.currentTime = 0;
-      clearInterval(this.progressInterval);
-      this.stopVisualizer();
-      this.cdr.detectChanges();
-    });
-  }
-
-  if (this.isPlaying) {
-    this.audioPlayer.pause();
-    clearInterval(this.progressInterval);
-    this.isPlaying = false;
-  } else {
-    this.audioPlayer.play();
-    this.isPlaying = true;
-
-    // aggiorna ogni 200ms
-    this.progressInterval = setInterval(() => {
-      if (this.audioPlayer) {
-        this.currentTime = this.audioPlayer.currentTime;
-        this.audioDuration = this.audioPlayer.duration || this.audioDuration;
+      this.audioPlayer.addEventListener('loadedmetadata', () => {
+        this.audioDuration = this.audioPlayer!.duration;
         this.cdr.detectChanges();
-      }
-    }, 200);
+      });
 
-    this.setupAudioVisualizer(this.audioPlayer);
+      this.audioPlayer.addEventListener('ended', () => {
+        this.audioPlayer!.currentTime = 0;
+        this.currentTime = 0;
+
+        // 🔄 forza il reset visivo della barra
+        setTimeout(() => {
+          this.audioDuration = this.audioPlayer!.duration || 1; // evita divisione per 0
+          this.cdr.detectChanges();
+        });
+
+        this.isPlaying = false;
+        clearInterval(this.progressInterval);
+        this.stopVisualizer();
+      });
+
+
+    }
+
+    if (this.isPlaying) {
+      this.audioPlayer.pause();
+      clearInterval(this.progressInterval);
+      this.isPlaying = false;
+    } else {
+      this.audioPlayer.play();
+      this.isPlaying = true;
+
+      // aggiorna ogni 200ms
+      this.progressInterval = setInterval(() => {
+        if (this.audioPlayer) {
+          this.currentTime = this.audioPlayer.currentTime;
+          this.audioDuration = this.audioPlayer.duration || this.audioDuration;
+          this.cdr.detectChanges();
+        }
+      }, 200);
+
+      this.setupAudioVisualizer(this.audioPlayer);
+    }
+
+    this.cdr.detectChanges();
   }
-
-  this.cdr.detectChanges();
-}
 
 
 
   stopVisualizer() {
-  cancelAnimationFrame(this.animationId!);
-  this.clearVisualizerCanvas();
+    cancelAnimationFrame(this.animationId!);
+    this.clearVisualizerCanvas();
 
-  if (this.audioContext) {
-    this.audioContext.close();
-    this.audioContext = undefined;
+    if (this.audioContext) {
+      this.audioContext.close();
+      this.audioContext = undefined;
+    }
+
+    this.mediaElementSource = undefined;
+    this.analyser = undefined;
   }
-
-  this.mediaElementSource = undefined;
-  this.analyser = undefined;
-}
 
 
   clearVisualizerCanvas() {
@@ -283,45 +292,45 @@ togglePlayback() {
 
 
 
-setupAudioVisualizer(audioElement: HTMLAudioElement) {
-  if (!this.canvasRef) return;
+  setupAudioVisualizer(audioElement: HTMLAudioElement) {
+    if (!this.canvasRef) return;
 
-  const canvas = this.canvasRef.nativeElement;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+    const canvas = this.canvasRef.nativeElement;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  this.audioContext = new AudioContext();
+    this.audioContext = new AudioContext();
 
-  // Important: sempre creare nuova connessione
-  this.mediaElementSource = this.audioContext.createMediaElementSource(audioElement);
-  this.analyser = this.audioContext.createAnalyser();
-  this.mediaElementSource.connect(this.analyser);
-  this.analyser.connect(this.audioContext.destination);
-  this.analyser.fftSize = 128;
+    // Important: sempre creare nuova connessione
+    this.mediaElementSource = this.audioContext.createMediaElementSource(audioElement);
+    this.analyser = this.audioContext.createAnalyser();
+    this.mediaElementSource.connect(this.analyser);
+    this.analyser.connect(this.audioContext.destination);
+    this.analyser.fftSize = 128;
 
-  const bufferLength = this.analyser.frequencyBinCount;
-  const dataArray = new Uint8Array(bufferLength);
+    const bufferLength = this.analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
 
-  const draw = () => {
-    this.animationId = requestAnimationFrame(draw);
-    if (!this.analyser) return;
+    const draw = () => {
+      this.animationId = requestAnimationFrame(draw);
+      if (!this.analyser) return;
 
-    this.analyser.getByteFrequencyData(dataArray);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      this.analyser.getByteFrequencyData(dataArray);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const barWidth = (canvas.width / bufferLength) * 1.5;
-    let x = 0;
+      const barWidth = (canvas.width / bufferLength) * 1.5;
+      let x = 0;
 
-    for (let i = 0; i < bufferLength; i++) {
-      const barHeight = (dataArray[i] / 255) * canvas.height;
-      ctx.fillStyle = '#00ffbb';
-      ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-      x += barWidth + 1;
-    }
-  };
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * canvas.height;
+        ctx.fillStyle = '#00ffbb';
+        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+        x += barWidth + 1;
+      }
+    };
 
-  draw();
-}
+    draw();
+  }
 
 
 
@@ -354,57 +363,67 @@ setupAudioVisualizer(audioElement: HTMLAudioElement) {
 
 
 
-initAudioPlayer() {
-  if (!this.audioUrl) return;
+  initAudioPlayer() {
+    if (!this.audioUrl) return;
 
-  this.audioPlayer = new Audio(this.audioUrl);
+    this.audioPlayer = new Audio(this.audioUrl);
 
-  this.audioPlayer.addEventListener('loadedmetadata', () => {
-    this.audioDuration = this.audioPlayer!.duration;
+    this.audioPlayer.addEventListener('loadedmetadata', () => {
+      this.audioDuration = this.audioPlayer!.duration;
 
-    // Retry se la durata inizialmente è NaN o Infinity (comune con Base64)
-    if (isNaN(this.audioDuration) || this.audioDuration === Infinity) {
+      // Retry se la durata inizialmente è NaN o Infinity (comune con Base64)
+      if (isNaN(this.audioDuration) || this.audioDuration === Infinity) {
+        setTimeout(() => {
+          this.audioDuration = this.audioPlayer!.duration;
+          this.cdr.detectChanges();
+        }, 1000);
+      }
+
+      this.cdr.detectChanges();
+    });
+
+    this.audioPlayer.addEventListener('timeupdate', () => {
+      this.currentTime = this.audioPlayer!.currentTime;
+      this.cdr.detectChanges();
+    });
+
+    this.audioPlayer.addEventListener('ended', () => {
+      this.audioPlayer!.currentTime = 0;
+      this.currentTime = 0;
+
+      // 🔄 forza il reset visivo della barra
       setTimeout(() => {
-        this.audioDuration = this.audioPlayer!.duration;
+        this.audioDuration = this.audioPlayer!.duration || 1; // evita divisione per 0
         this.cdr.detectChanges();
-      }, 1000);
-    }
+      });
 
+      this.isPlaying = false;
+      clearInterval(this.progressInterval);
+      this.stopVisualizer();
+    });
+
+  }
+
+
+  formatDuration(seconds: number): string {
+    if (isNaN(seconds) || seconds === Infinity) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
+  }
+
+  seekAudio(event: MouseEvent) {
+    if (!this.audioPlayer || !this.audioDuration) return;
+
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const percentage = clickX / rect.width;
+
+    const newTime = percentage * this.audioDuration;
+    this.audioPlayer.currentTime = newTime;
+    this.currentTime = newTime;
     this.cdr.detectChanges();
-  });
-
-  this.audioPlayer.addEventListener('timeupdate', () => {
-    this.currentTime = this.audioPlayer!.currentTime;
-    this.cdr.detectChanges();
-  });
-
-  this.audioPlayer.addEventListener('ended', () => {
-    this.currentTime = 0;
-    this.isPlaying = false;
-    this.cdr.detectChanges();
-  });
-}
-
-
-formatDuration(seconds: number): string {
-  if (isNaN(seconds) || seconds === Infinity) return '0:00';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
-  return `${mins}:${secs}`;
-}
-
-seekAudio(event: MouseEvent) {
-  if (!this.audioPlayer || !this.audioDuration) return;
-
-  const target = event.currentTarget as HTMLElement;
-  const rect = target.getBoundingClientRect();
-  const clickX = event.clientX - rect.left;
-  const percentage = clickX / rect.width;
-
-  const newTime = percentage * this.audioDuration;
-  this.audioPlayer.currentTime = newTime;
-  this.currentTime = newTime;
-  this.cdr.detectChanges();
-}
+  }
 
 }

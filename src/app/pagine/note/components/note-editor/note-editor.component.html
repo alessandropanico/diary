@@ -29,15 +29,16 @@
       {{ recording ? 'Stop Registrazione' : 'Registra Audio' }}
     </ion-button>
 
-    <ion-button *ngIf="audioUrl" expand="block" color="success" (click)="playAudio()">
+    <!-- <ion-button *ngIf="audioUrl" expand="block" color="success" (click)="playAudio()">
       ▶️ Ascolta Registrazione
-    </ion-button>
+    </ion-button> -->
 
     <div class="ff7-audio-preview" *ngIf="audioUrl && audioDuration">
-    <div class="ff7-audio-bar" (click)="seekAudio($event)">
-  <div class="ff7-audio-progress" [style.width.%]="(currentTime / audioDuration) * 100"></div>
-</div>
 
+      <div class="ff7-audio-bar" (click)="seekAudio($event)">
+        <div class="ff7-audio-progress" [style.width.%]="(currentTime / audioDuration) * 100"></div>
+        <div class="ff7-audio-dot" [style.left.%]="(currentTime / audioDuration) * 100"></div>
+      </div>
 
       <div class="ff7-audio-meta">
         <span>{{ formatDuration(currentTime) }} / {{ formatDuration(audioDuration) }}</span>
