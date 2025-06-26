@@ -33,22 +33,22 @@
       ▶️ Ascolta Registrazione
     </ion-button>
 
-<div class="ff7-audio-preview" *ngIf="audioUrl && audioDuration">
-  <div class="ff7-audio-bar">
-    <!-- Spettrometro -->
-    <canvas #visualizerCanvas class="ff7-visualizer-overlay"></canvas>
+    <div class="ff7-audio-preview" *ngIf="audioUrl && audioDuration">
+      <div class="ff7-audio-bar">
+        <!-- Spettrometro -->
+        <canvas #visualizerCanvas class="ff7-visualizer-overlay"></canvas>
 
-    <!-- Progress bar sotto -->
-    <div class="ff7-audio-progress" [style.width.%]="(currentTime / audioDuration) * 100"></div>
-  </div>
+        <!-- Progress bar sotto -->
+        <div class="ff7-audio-progress" [style.width.%]="(currentTime / audioDuration) * 100"></div>
+      </div>
 
-  <div class="ff7-audio-meta">
-    <span>{{ formatDuration(currentTime) }} / {{ formatDuration(audioDuration) }}</span>
-    <button class="ff7-audio-play" (click)="togglePlayback()">
-      {{ isPlaying ? '⏸️' : '▶️' }}
-    </button>
-  </div>
-</div>
+      <div class="ff7-audio-meta">
+        <span>{{ formatDuration(currentTime) }} / {{ formatDuration(audioDuration) }}</span>
+        <button class="ff7-audio-play" (click)="togglePlayback()">
+          {{ isPlaying ? '⏸️' : '▶️' }}
+        </button>
+      </div>
+    </div>
 
 
     <ion-button *ngIf="audioUrl" expand="block" color="danger" (click)="deleteAudio()">
