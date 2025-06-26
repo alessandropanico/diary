@@ -60,6 +60,7 @@ ion-content {
   padding: 10px;
   box-shadow: 0 0 10px #00ffbb55;
   margin-top: 15px;
+  width: 97%;
 }
 
 .ff7-audio-bar {
@@ -100,6 +101,13 @@ ion-content {
 
 //---------------------------------------
 
+.cont {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .ff7-audio-player {
   display: flex;
   align-items: center;
@@ -117,12 +125,12 @@ ion-content {
   justify-content: center;
   cursor: pointer;
   color: #00ffee;
-  font-size:35px;
+  font-size: 35px;
   padding: 0;
 }
 
 .ff7-audio-play ion-icon {
-  pointer-events: none; /* evita conflitti click */
+  pointer-events: none;
 }
 
 .ff7-audio-bar {
@@ -131,7 +139,7 @@ ion-content {
   height: 10px;
   background: linear-gradient(90deg, #0a0a1a, #111122);
   border-radius: 6px;
-  overflow: visible; /* per far uscire il dot */
+  overflow: visible;
   cursor: pointer;
   box-shadow: 0 0 5px #00ffee44 inset;
   margin: 0;
@@ -141,7 +149,6 @@ ion-content {
   position: absolute;
   height: 100%;
   background: linear-gradient(to right, #00ffee, #33ffdd, #00ffbb);
-
   box-shadow: 0 0 10px #00ffeeaa;
   border-radius: 6px;
   transition: width 0.1s linear;
