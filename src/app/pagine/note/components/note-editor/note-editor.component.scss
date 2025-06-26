@@ -31,7 +31,8 @@
   resize: none;
   outline: none;
   width: 100%;
-  min-height: 0; /* important for flex-grow */
+  min-height: 0;
+  height: 100%;
   line-height: 1.5;
   overflow-y: auto;
 }
@@ -45,4 +46,10 @@
 
 ion-content {
   --overflow: auto !important;
+}
+
+@media screen and (max-width:600px) {
+  ion-content::part(scroll) {
+    padding-bottom: 0vh !important;
+  }
 }
