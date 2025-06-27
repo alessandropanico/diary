@@ -12,16 +12,15 @@ Animazioni fluide (con Angular animations o librerie Ionic): per transizioni tra
 Tema personalizzabile: permetti all’utente di scegliere colori principali e stile;
 
 Tracking umore/giornata: aggiungi una sezione per annotare come ci si sente ogni giorno (magari emoji + breve nota);
-
 Dashboard giornaliera/settimanale: mostra attività completate, note salvate, sveglie usate;
-
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
 Integrazione con AI (anche semplice):
-
 [suggerimenti per ottimizzare la giornata;
 sintesi delle note;
-generazione automatica di to-do da note vocali.]
+generazione automatica di to-do da note vocali.];
+
+Traduzione inglese, quindi choose language;
 
 Collegare account Google AdSense;
 Guadagnare con Google AdMob;
