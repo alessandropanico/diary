@@ -8,10 +8,7 @@ import { environment } from 'src/environments/environment';
 const app = initializeApp(environment.firebaseConfig);
 const auth = getAuth(app);
 
-
-
 declare const google: any;
-
 
 @Component({
   selector: 'app-login',
@@ -41,11 +38,10 @@ export class LoginPage implements OnInit {
     document.body.appendChild(script);
 
     script.onload = () => {
-    google.accounts.id.initialize({
-      client_id: '379328633803-nq9v84nsipbn5mdctnt3tgn3i9gap8c3.apps.googleusercontent.com',
+      google.accounts.id.initialize({
+        client_id: '379328633803-nq9v84nsipbn5mdctnt3tgn3i9gap8c3.apps.googleusercontent.com',
         callback: (response: any) => this.ngZone.run(() => this.handleCredentialResponse(response))
-});
-
+      });
 
       google.accounts.id.renderButton(
         document.getElementById('googleSignInDiv'),
@@ -57,41 +53,40 @@ export class LoginPage implements OnInit {
   }
 
   async handleCredentialResponse(response: any) {
-  try {
-    const credential = GoogleAuthProvider.credential(response.credential);
-    const userCredential = await signInWithCredential(auth, credential);
-    const firebaseUser = userCredential.user;
+    try {
+      const credential = GoogleAuthProvider.credential(response.credential);
+      const userCredential = await signInWithCredential(auth, credential);
+      const firebaseUser = userCredential.user;
 
-    this.user = {
-      name: firebaseUser.displayName,
-      email: firebaseUser.email,
-      photoURL: firebaseUser.photoURL,
-      uid: firebaseUser.uid
-    };
+      this.user = {
+        name: firebaseUser.displayName,
+        email: firebaseUser.email,
+        photoURL: firebaseUser.photoURL,
+        uid: firebaseUser.uid
+      };
 
-    localStorage.setItem('user', JSON.stringify(this.user));
+      localStorage.setItem('user', JSON.stringify(this.user));
 
-    const alert = await this.alertCtrl.create({
-      header: 'Accesso riuscito',
-      message: `Benvenuto ${this.user.name}`,
-      buttons: ['OK'],
-      cssClass: 'ff7-alert',
-    });
-    await alert.present();
+      const alert = await this.alertCtrl.create({
+        header: 'Accesso riuscito',
+        message: `Benvenuto ${this.user.name}`,
+        buttons: ['OK'],
+        cssClass: 'ff7-alert',
+      });
+      await alert.present();
 
-    window.location.href = '/profilo';
-  } catch (error: any) {
-    console.error('Errore durante login Firebase:', error);
-    const alert = await this.alertCtrl.create({
-      header: 'Errore Login',
-      message: `Impossibile autenticarti: ${error.message}`,
-      buttons: ['OK'],
-      cssClass: 'ff7-alert',
-    });
-    await alert.present();
+      window.location.href = '/profilo';
+    } catch (error: any) {
+      console.error('Errore durante login Firebase:', error);
+      const alert = await this.alertCtrl.create({
+        header: 'Errore Login',
+        message: `Impossibile autenticarti: ${error.message}`,
+        buttons: ['OK'],
+        cssClass: 'ff7-alert',
+      });
+      await alert.present();
+    }
   }
-}
-
 
 
   parseJwt(token: string) {
@@ -109,26 +104,24 @@ export class LoginPage implements OnInit {
   }
 
   async logout() {
-  await signOut(auth);
-  this.user = null;
-  localStorage.removeItem('user');
+    await signOut(auth);
+    this.user = null;
+    localStorage.removeItem('user');
 
-  const alert = await this.alertCtrl.create({
-    header: 'Logout',
-    message: 'Logout effettuato con successo.',
-    buttons: ['OK'],
-    cssClass: 'ff7-alert',
-  });
+    const alert = await this.alertCtrl.create({
+      header: 'Logout',
+      message: 'Logout effettuato con successo.',
+      buttons: ['OK'],
+      cssClass: 'ff7-alert',
+    });
 
-  await alert.present();
+    await alert.present();
 
-  setTimeout(() => {
-    this.renderGoogleButton();
-    window.location.reload();
-  }, 0);
-}
-
-
+    setTimeout(() => {
+      this.renderGoogleButton();
+      window.location.reload();
+    }, 0);
+  }
 
 
   renderGoogleButton() {
