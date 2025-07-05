@@ -30,13 +30,4 @@ export class UserDataService {
     await setDoc(docRef, data, { merge: true });
   }
 
-  async addNote(note: any) {
-    const uid = this.getUserUid();
-    if (!uid) return;
-
-    const docRef = doc(this.db, 'users', uid);
-    await updateDoc(docRef, {
-      notes: arrayUnion(note)
-    });
-  }
 }
