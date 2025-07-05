@@ -49,18 +49,18 @@ export class ProfiloPage implements OnInit {
   }
 
 
-  startEdit() {
-    this.editing = true;
+ startEdit() {
+  this.editing = true;
 
-    // Form vuoto quando entri in modifica
-    this.profileEdit = {
-      photo: this.profile.photo,
-      nickname: '',
-      name: '',
-      email: '',
-      bio: ''
-    };
-  }
+  this.profileEdit = {
+    photo: this.profile.photo,
+    nickname: this.profile.nickname,
+    name: this.profile.name,
+    email: this.profile.email,
+    bio: this.profile.bio
+  };
+}
+
 
   cancelEdit() {
     this.editing = false;
