@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { NgZone } from '@angular/core';
+import { AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-profilo',
@@ -27,7 +28,10 @@ export class ProfiloPage implements OnInit {
 
   editing = false;
 
-  constructor(private ngZone: NgZone) { }
+  constructor(
+    private ngZone: NgZone,
+    private alertCtrl: AlertController
+  ) { }
 
   ngOnInit() {
     const storedProfile = localStorage.getItem('profile') || localStorage.getItem('user');
@@ -71,29 +75,48 @@ export class ProfiloPage implements OnInit {
     };
   }
 
-  saveProfile() {
-    this.profile = {
-      photo: this.profileEdit.photo, // accetta '' per rimuovere
-      nickname: this.profileEdit.nickname || '',
-      name: this.profileEdit.name || '',
-      email: this.profileEdit.email || '',
-      bio: this.profileEdit.bio || ''
-    };
+async saveProfile() {
+  this.profile = {
+    photo: this.profileEdit.photo,
+    nickname: this.profileEdit.nickname || '',
+    name: this.profileEdit.name || '',
+    email: this.profileEdit.email || '',
+    bio: this.profileEdit.bio || ''
+  };
 
-    localStorage.setItem('profile', JSON.stringify(this.profile));
-    this.editing = false;
+  localStorage.setItem('profile', JSON.stringify(this.profile));
+  this.editing = false;
 
-    // Svuota il form dopo salvataggio, ma tieni la foto sincronizzata
-    this.profileEdit = {
-      photo: this.profile.photo,
-      nickname: '',
-      name: '',
-      email: '',
-      bio: ''
-    };
+  this.profileEdit = {
+    photo: this.profile.photo,
+    nickname: '',
+    name: '',
+    email: '',
+    bio: ''
+  };
 
-    alert('Profilo aggiornato!');
-  }
+  await this.presentFF7Alert('Profilo aggiornato!');
+}
+
+async presentFF7Alert(message: string) {
+  const alert = await this.alertCtrl.create({
+    cssClass: 'ff7-alert',
+    header: '✔️ Salvataggio',
+    message,
+    buttons: [
+      {
+        text: 'OK',
+        cssClass: 'ff7-alert-button',
+        role: 'cancel'
+      }
+    ],
+    backdropDismiss: true,
+    animated: true,
+    mode: 'ios'
+  });
+
+  await alert.present();
+}
 
 
   changePhoto() {
