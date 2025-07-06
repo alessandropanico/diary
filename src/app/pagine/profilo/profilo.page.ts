@@ -1,9 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-import { NgZone } from '@angular/core';
+import { Component, OnInit, NgZone } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 
 import { UserDataService } from 'src/app/services/user-data.service';
-import { getAuth } from 'firebase/auth';
+import { getAuth, User } from 'firebase/auth'; // Importa User type
 
 @Component({
   selector: 'app-profilo',
@@ -30,6 +29,7 @@ export class ProfiloPage implements OnInit {
   };
 
   editing = false;
+  isLoading = true; // Stato del caricamento
 
   constructor(
     private ngZone: NgZone,
@@ -37,116 +37,135 @@ export class ProfiloPage implements OnInit {
     private userDataService: UserDataService,
   ) { }
 
-async ngOnInit() { // Rendiamo ngOnInit asincrono
-    const currentUser = getAuth().currentUser; // Ottieni l'utente Firebase attualmente loggato
+  async ngOnInit() {
+    this.isLoading = true; // Mostra lo spinner all'inizio del caricamento
+    console.log("ngOnInit: Avvio caricamento profilo.");
 
-    if (currentUser) {
-      // 1. Prova a caricare i dati da Firestore
-      const firestoreData = await this.userDataService.getUserData();
+    // Questa funzione tenta di caricare il profilo
+    const loadProfileData = async (user: User) => {
+      try {
+        const firestoreData = await this.userDataService.getUserData();
 
-      if (firestoreData) {
-        // Se i dati esistono su Firestore, usali
-        this.profile = {
-          photo: firestoreData.photo || currentUser.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
-          nickname: firestoreData.nickname || currentUser.displayName?.split(' ')[0] || '',
-          name: firestoreData.name || currentUser.displayName || '',
-          email: firestoreData.email || currentUser.email || '',
-          bio: firestoreData.bio || ''
-        };
-      } else {
-        // Se non ci sono dati su Firestore, usa i dati di base dell'utente di Firebase Auth
-        this.profile = {
-          photo: currentUser.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
-          nickname: currentUser.displayName?.split(' ')[0] || '', // Prendi solo la prima parte del nome
-          name: currentUser.displayName || '',
-          email: currentUser.email || '',
-          bio: ''
-        };
-        // E potresti voler salvare questi dati iniziali su Firestore la prima volta
-        await this.userDataService.saveUserData(this.profile);
+        if (firestoreData) {
+          this.profile = {
+            photo: firestoreData.photo || user.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
+            nickname: firestoreData.nickname || user.displayName?.split(' ')[0] || '',
+            name: firestoreData.name || user.displayName || '',
+            email: firestoreData.email || user.email || '',
+            bio: firestoreData.bio || ''
+          };
+          console.log("Dati profilo caricati da Firestore.");
+        } else {
+          this.profile = {
+            photo: user.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
+            nickname: user.displayName?.split(' ')[0] || '',
+            name: user.displayName || '',
+            email: user.email || '',
+            bio: ''
+          };
+          await this.userDataService.saveUserData(this.profile);
+          console.log("Dati iniziali del profilo salvati su Firestore.");
+        }
+      } catch (error) {
+        console.error("Errore durante il caricamento/salvataggio iniziale da Firestore:", error);
+        await this.presentFF7Alert('Errore nel caricamento del profilo. Riprova più tardi.');
       }
-    } else {
-      // Caso limite: nessun utente loggato. Potresti reindirizzare al login.
-      console.warn("Nessun utente loggato sulla pagina profilo.");
-      // Optional: window.location.href = '/login';
-    }
+    };
 
-    // Inizializza profileEdit con i dati attuali del profilo
+    // --- LOGICA DI ATTESA E CARICAMENTO DELL'UTENTE ---
+    let attempts = 0;
+    const maxAttempts = 20; // Tenta per un massimo di 20 * 200ms = 4 secondi
+    const intervalTime = 200; // Controlla ogni 200ms
+
+    const checkUserAndLoad = () => {
+      const currentUser = getAuth().currentUser;
+
+      if (currentUser) {
+        console.log(`Tentativo ${attempts + 1}: Utente Firebase disponibile. UID: ${currentUser.uid}`);
+        loadProfileData(currentUser)
+          .then(() => {
+            this.profileEdit = { ...this.profile };
+            this.isLoading = false; // Nascondi lo spinner
+            console.log("Caricamento profilo completato.");
+          })
+          .catch(() => {
+            this.isLoading = false; // Nascondi lo spinner anche in caso di errore di caricamento
+            console.error("Errore finale nel caricamento dati dopo che l'utente era disponibile.");
+          });
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        console.log(`Tentativo ${attempts}: Utente non ancora disponibile. Ritento...`);
+        setTimeout(checkUserAndLoad, intervalTime); // Ripeti il controllo
+      } else {
+        // Fallback se l'utente non diventa disponibile dopo N tentativi
+        console.warn("ngOnInit: Utente non loggato dopo il massimo dei tentativi. Resetting profile data.");
+        this.profile = { photo: '', nickname: '', name: '', email: '', bio: '' };
+        this.profileEdit = { ...this.profile };
+        this.isLoading = false; // Nascondi lo spinner
+        this.presentFF7Alert('Impossibile caricare il profilo. Assicurati di essere loggato.');
+        // Puoi anche reindirizzare al login qui se lo desideri
+        // this.router.navigateByUrl('/login');
+      }
+    };
+
+    checkUserAndLoad(); // Avvia il processo di controllo
+  }
+
+
+  startEdit() {
+    this.editing = true;
     this.profileEdit = { ...this.profile };
   }
 
 
- startEdit() {
-  this.editing = true;
-
-  this.profileEdit = {
-    photo: this.profile.photo,
-    nickname: this.profile.nickname,
-    name: this.profile.name,
-    email: this.profile.email,
-    bio: this.profile.bio
-  };
-}
-
-
   cancelEdit() {
     this.editing = false;
-
-    // Ripulisci il form
-    this.profileEdit = {
-      photo: '',
-      nickname: '',
-      name: '',
-      email: '',
-      bio: ''
-    };
+    this.profileEdit = { ...this.profile }; // Ripristina ai valori originali del profilo
   }
 
-async saveProfile() {
-  // Prima aggiorniamo il 'profile' locale con i dati del 'profileEdit'
-  this.profile = {
-    photo: this.profileEdit.photo,
-    nickname: this.profileEdit.nickname || '',
-    name: this.profileEdit.name || '',
-    email: this.profileEdit.email || '', // L'email di solito non si modifica qui, ma la teniamo per completezza
-    bio: this.profileEdit.bio || ''
-  };
+  async saveProfile() {
+    this.isLoading = true; // Mostra lo spinner anche durante il salvataggio
 
-  // Salva i dati aggiornati su Firestore tramite il servizio
-  await this.userDataService.saveUserData(this.profile);
+    this.profile = {
+      photo: this.profileEdit.photo,
+      nickname: this.profileEdit.nickname || '',
+      name: this.profileEdit.name || '',
+      email: this.profileEdit.email || '',
+      bio: this.profileEdit.bio || ''
+    };
 
-  // Non è più strettamente necessario salvare su localStorage se Firestore è la fonte di verità,
-  // ma puoi mantenerlo come cache se preferisci.
-  // localStorage.setItem('profile', JSON.stringify(this.profile));
+    try {
+      await this.userDataService.saveUserData(this.profile);
+      console.log('Profilo aggiornato e salvato su Firestore!');
+      await this.presentFF7Alert('Profilo aggiornato e salvato!');
+    } catch (error) {
+      console.error('Errore durante il salvataggio del profilo:', error);
+      await this.presentFF7Alert('Errore durante il salvataggio del profilo.');
+    } finally {
+      this.editing = false;
+      this.profileEdit = { ...this.profile }; // Allinea profileEdit a profile dopo il salvataggio
+      this.isLoading = false; // Nascondi lo spinner alla fine del salvataggio
+    }
+  }
 
-  this.editing = false;
-
-  // Ripristina profileEdit per essere pronto per la prossima modifica
-  this.profileEdit = { ...this.profile };
-
-  await this.presentFF7Alert('Profilo aggiornato e salvato!');
-}
-
-async presentFF7Alert(message: string) {
-  const alert = await this.alertCtrl.create({
-    cssClass: 'ff7-alert',
-    header: '✔️ Salvataggio',
-    message,
-    buttons: [
-      {
-        text: 'OK',
-        cssClass: 'ff7-alert-button',
-        role: 'cancel'
-      }
-    ],
-    backdropDismiss: true,
-    animated: true,
-    mode: 'ios'
-  });
-
-  await alert.present();
-}
-
+  async presentFF7Alert(message: string) {
+    const alert = await this.alertCtrl.create({
+      cssClass: 'ff7-alert',
+      header: '✔️ Salvataggio',
+      message,
+      buttons: [
+        {
+          text: 'OK',
+          cssClass: 'ff7-alert-button',
+          role: 'cancel'
+        }
+      ],
+      backdropDismiss: true,
+      animated: true,
+      mode: 'ios'
+    });
+    await alert.present();
+  }
 
   changePhoto() {
     const input = document.createElement('input');
@@ -165,7 +184,6 @@ async presentFF7Alert(message: string) {
         reader.readAsDataURL(input.files[0]);
       }
     };
-
     input.click();
   }
 

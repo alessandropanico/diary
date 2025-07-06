@@ -156,3 +156,28 @@ ion-item.ff7-item {
   margin-bottom: 16px;
   padding: 12px;
 }
+
+
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: absolute; /* Posiziona sopra il contenuto */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000; /* Assicura che sia sopra gli altri elementi */
+  text-align: center;
+
+  ion-spinner {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 15px;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+  }
+}

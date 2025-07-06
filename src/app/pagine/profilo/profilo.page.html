@@ -2,47 +2,53 @@
   <ion-toolbar>
     <ion-title>Profilo</ion-title>
     <ion-buttons slot="end">
-      <ion-button *ngIf="!editing" (click)="startEdit()">Modifica</ion-button>
+      <ion-button *ngIf="!editing && !isLoading" (click)="startEdit()">Modifica</ion-button>
       <ion-button *ngIf="editing" color="danger" (click)="cancelEdit()">Annulla</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content fullscreen class="ion-padding ion-text-center">
-  <ion-avatar class="profile-avatar" [class.editable]="editing" (click)="editing && changePhoto()">
-    <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
-  </ion-avatar>
 
-  <ion-button *ngIf="editing" expand="block" fill="outline" color="medium" (click)="removePhoto()">
-    Rimuovi foto profilo
-  </ion-button>
-
-  <div *ngIf="!editing" class="profile-view">
-    <h2>{{ profile.nickname || 'nickname' }}</h2>
-    <h3>{{ profile.name || 'Nome e Cognome' }}</h3>
-    <p>{{ profile.bio || 'Descrizione assente' }}</p>
+  <div *ngIf="isLoading" class="loading-overlay">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Caricamento profilo...</p>
   </div>
 
-<form *ngIf="editing" (ngSubmit)="saveProfile()">
-  <ion-list lines="none">
-    <ion-item class="ff7-item">
-      <ion-label position="stacked">Nickname</ion-label>
-      <ion-input [(ngModel)]="profileEdit.nickname" name="nickname" required></ion-input>
-    </ion-item>
+  <div *ngIf="!isLoading">
+    <ion-avatar class="profile-avatar" [class.editable]="editing" (click)="editing && changePhoto()">
+      <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
+    </ion-avatar>
 
-    <ion-item class="ff7-item">
-      <ion-label position="stacked">Nome e Cognome</ion-label>
-      <ion-input [(ngModel)]="profileEdit.name" name="name" required></ion-input>
-    </ion-item>
+    <ion-button *ngIf="editing" expand="block" fill="outline" color="medium" (click)="removePhoto()">
+      Rimuovi foto profilo
+    </ion-button>
 
-    <ion-item class="ff7-item">
-      <ion-label position="stacked">Descrizione</ion-label>
-      <ion-textarea [(ngModel)]="profileEdit.bio" name="bio"></ion-textarea>
-    </ion-item>
-  </ion-list>
+    <div *ngIf="!editing" class="profile-view">
+      <h2>{{ profile.nickname || 'nickname' }}</h2>
+      <h3>{{ profile.name || 'Nome e Cognome' }}</h3>
+      <p>{{ profile.bio || 'Descrizione assente' }}</p>
+    </div>
 
-  <ion-button expand="block" type="submit">Salva</ion-button>
-</form>
+    <form *ngIf="editing" (ngSubmit)="saveProfile()">
+      <ion-list lines="none">
+        <ion-item class="ff7-item">
+          <ion-label position="stacked">Nickname</ion-label>
+          <ion-input [(ngModel)]="profileEdit.nickname" name="nickname" required></ion-input>
+        </ion-item>
 
+        <ion-item class="ff7-item">
+          <ion-label position="stacked">Nome e Cognome</ion-label>
+          <ion-input [(ngModel)]="profileEdit.name" name="name" required></ion-input>
+        </ion-item>
 
+        <ion-item class="ff7-item">
+          <ion-label position="stacked">Descrizione</ion-label>
+          <ion-textarea [(ngModel)]="profileEdit.bio" name="bio"></ion-textarea>
+        </ion-item>
+      </ion-list>
+
+      <ion-button expand="block" type="submit">Salva</ion-button>
+    </form>
+  </div>
 </ion-content>
