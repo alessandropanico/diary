@@ -4,6 +4,9 @@ import { MenuController, AlertController } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 
+import { UserDataService } from './services/user-data.service';
+import { getAuth } from 'firebase/auth';
+
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
@@ -14,16 +17,24 @@ import { Router } from '@angular/router';
     <router-outlet></router-outlet>
   `
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy  {
 
   profile: any = null;
   userSub!: Subscription;
+
+  // Aggiungiamo 'profilePhotoUrl' per gestire l'URL dell'immagine da Firestore
+  profilePhotoUrl: string | null = null;
+
+  deferredPrompt: any;
+  showInstallButton = false;
 
   constructor(
     private menu: MenuController,
     private authService: AuthService,
     private alertCtrl: AlertController,
-    private router: Router
+    private router: Router,
+    private userDataService: UserDataService,
+
 
   ) {
     window.addEventListener('beforeinstallprompt', (e: any) => {
@@ -34,18 +45,33 @@ export class AppComponent implements OnInit {
 
   }
 
-  ngOnInit() {
+async ngOnInit() {
+    // Sottoscriviti all'observable dell'utente di AuthService
+    // (Presuppone che AuthService abbia un modo per notificare i cambiamenti di stato dell'utente)
     this.userSub = this.authService.getUserObservable().subscribe(user => {
-      this.profile = user;
+      // Quando l'utente cambia (login/logout), aggiorna la foto del profilo
+      if (user) {
+        this.loadProfilePhoto(); // Carica la foto da Firestore
+      } else {
+        this.profilePhotoUrl = 'assets/immaginiGenerali/default-avatar.jpg'; // Reset se logout
+      }
     });
+
+    // Carica la foto iniziale all'avvio dell'app se l'utente è già loggato
+    const currentUser = getAuth().currentUser;
+    if (currentUser) {
+      await this.loadProfilePhoto();
+    }
   }
 
   ngOnDestroy() {
-    this.userSub.unsubscribe();
+    if (this.userSub) {
+      this.userSub.unsubscribe();
+    }
   }
 
-  deferredPrompt: any;
-  showInstallButton = false;
+
+
 
   toggleMenu() {
     this.menu.toggle();
@@ -73,8 +99,10 @@ export class AppComponent implements OnInit {
     return this.authService.isLoggedIn();
   }
 
-  getProfilePhoto(): string {
-    return this.profile?.photo || this.profile?.picture || 'assets/immaginiGenerali/default-avatar.jpg';
+
+
+   getProfilePhoto(): string {
+    return this.profilePhotoUrl || 'assets/immaginiGenerali/default-avatar.jpg';
   }
 
   loadProfile() {
@@ -82,8 +110,8 @@ export class AppComponent implements OnInit {
     this.profile = storedProfile ? JSON.parse(storedProfile) : null;
   }
 
-  async logout() {
-    this.authService.logout();
+ async logout() {
+    await this.authService.logout(); // Assicurati che authService.logout() faccia il signOut da Firebase
     this.closeMenu();
 
     const alert = await this.alertCtrl.create({
@@ -95,9 +123,29 @@ export class AppComponent implements OnInit {
 
     await alert.present();
 
-    window.location.reload();
-    window.location.href = '/home'
+    // Reindirizza l'utente e ricarica (opzionale, router.navigate è più pulito)
+    this.router.navigateByUrl('/home').then(() => {
+      window.location.reload(); // Puoi provare a rimuovere questa riga se il reindirizzamento è sufficiente
+    });
   }
+
+  async loadProfilePhoto() {
+    const currentUser = getAuth().currentUser;
+    if (currentUser) {
+      const userData = await this.userDataService.getUserData();
+      if (userData && userData.photo) {
+        this.profilePhotoUrl = userData.photo;
+      } else if (currentUser.photoURL) {
+        // Se non c'è una foto su Firestore, usa quella di Google Auth
+        this.profilePhotoUrl = currentUser.photoURL;
+      } else {
+        this.profilePhotoUrl = 'assets/immaginiGenerali/default-avatar.jpg';
+      }
+    } else {
+      this.profilePhotoUrl = 'assets/immaginiGenerali/default-avatar.jpg';
+    }
+  }
+
 
 
 }
