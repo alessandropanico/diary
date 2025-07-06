@@ -5,6 +5,9 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCredential, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { environment } from 'src/environments/environment';
 
+import { UserDataService } from 'src/app/services/user-data.service';
+
+
 const app = initializeApp(environment.firebaseConfig);
 const auth = getAuth(app);
 
@@ -23,9 +26,10 @@ export class LoginPage implements OnInit {
   constructor(
     private ngZone: NgZone,
     private alertCtrl: AlertController,
+    private userDataService: UserDataService,
   ) { }
 
-  ngOnInit() {
+   ngOnInit() {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       this.user = JSON.parse(storedUser);
@@ -52,7 +56,7 @@ export class LoginPage implements OnInit {
     };
   }
 
-  async handleCredentialResponse(response: any) {
+   async handleCredentialResponse(response: any) {
     try {
       const credential = GoogleAuthProvider.credential(response.credential);
       const userCredential = await signInWithCredential(auth, credential);
@@ -66,6 +70,14 @@ export class LoginPage implements OnInit {
       };
 
       localStorage.setItem('user', JSON.stringify(this.user));
+
+      // Salva i dati utente su Firestore usando il servizio
+      await this.userDataService.saveUserData({
+        name: firebaseUser.displayName,
+        email: firebaseUser.email,
+        photoURL: firebaseUser.photoURL,
+        lastLogin: new Date().toISOString() // Esempio: aggiungi la data dell'ultimo login
+      });
 
       const alert = await this.alertCtrl.create({
         header: 'Accesso riuscito',
@@ -103,10 +115,13 @@ export class LoginPage implements OnInit {
     }
   }
 
-  async logout() {
+ async logout() {
     await signOut(auth);
     this.user = null;
     localStorage.removeItem('user');
+
+    // Potresti voler anche pulire i dati utente locali se necessario
+    // this.userDataService.clearUserData(); // Se avessi una funzione del genere nel servizio
 
     const alert = await this.alertCtrl.create({
       header: 'Logout',
