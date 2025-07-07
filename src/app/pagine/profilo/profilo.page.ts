@@ -2,7 +2,7 @@ import { Component, OnInit, NgZone } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 
 import { UserDataService } from 'src/app/services/user-data.service';
-import { getAuth, User } from 'firebase/auth'; // Importa User type
+import { getAuth, User } from 'firebase/auth';
 
 @Component({
   selector: 'app-profilo',
@@ -29,7 +29,7 @@ export class ProfiloPage implements OnInit {
   };
 
   editing = false;
-  isLoading = true; // Stato del caricamento
+  isLoading = true;
 
   constructor(
     private ngZone: NgZone,
@@ -38,10 +38,9 @@ export class ProfiloPage implements OnInit {
   ) { }
 
   async ngOnInit() {
-    this.isLoading = true; // Mostra lo spinner all'inizio del caricamento
+    this.isLoading = true;
     console.log("ngOnInit: Avvio caricamento profilo.");
 
-    // Questa funzione tenta di caricare il profilo
     const loadProfileData = async (user: User) => {
       try {
         const firestoreData = await this.userDataService.getUserData();
@@ -72,10 +71,9 @@ export class ProfiloPage implements OnInit {
       }
     };
 
-    // --- LOGICA DI ATTESA E CARICAMENTO DELL'UTENTE ---
     let attempts = 0;
-    const maxAttempts = 20; // Tenta per un massimo di 20 * 200ms = 4 secondi
-    const intervalTime = 200; // Controlla ogni 200ms
+    const maxAttempts = 20;
+    const intervalTime = 200;
 
     const checkUserAndLoad = () => {
       const currentUser = getAuth().currentUser;
@@ -85,30 +83,27 @@ export class ProfiloPage implements OnInit {
         loadProfileData(currentUser)
           .then(() => {
             this.profileEdit = { ...this.profile };
-            this.isLoading = false; // Nascondi lo spinner
+            this.isLoading = false;
             console.log("Caricamento profilo completato.");
           })
           .catch(() => {
-            this.isLoading = false; // Nascondi lo spinner anche in caso di errore di caricamento
+            this.isLoading = false;
             console.error("Errore finale nel caricamento dati dopo che l'utente era disponibile.");
           });
       } else if (attempts < maxAttempts) {
         attempts++;
         console.log(`Tentativo ${attempts}: Utente non ancora disponibile. Ritento...`);
-        setTimeout(checkUserAndLoad, intervalTime); // Ripeti il controllo
+        setTimeout(checkUserAndLoad, intervalTime);
       } else {
-        // Fallback se l'utente non diventa disponibile dopo N tentativi
         console.warn("ngOnInit: Utente non loggato dopo il massimo dei tentativi. Resetting profile data.");
         this.profile = { photo: '', nickname: '', name: '', email: '', bio: '' };
         this.profileEdit = { ...this.profile };
-        this.isLoading = false; // Nascondi lo spinner
+        this.isLoading = false;
         this.presentFF7Alert('Impossibile caricare il profilo. Assicurati di essere loggato.');
-        // Puoi anche reindirizzare al login qui se lo desideri
-        // this.router.navigateByUrl('/login');
       }
     };
 
-    checkUserAndLoad(); // Avvia il processo di controllo
+    checkUserAndLoad();
   }
 
 
@@ -120,11 +115,11 @@ export class ProfiloPage implements OnInit {
 
   cancelEdit() {
     this.editing = false;
-    this.profileEdit = { ...this.profile }; // Ripristina ai valori originali del profilo
+    this.profileEdit = { ...this.profile };
   }
 
   async saveProfile() {
-    this.isLoading = true; // Mostra lo spinner anche durante il salvataggio
+    this.isLoading = true;
 
     this.profile = {
       photo: this.profileEdit.photo,
@@ -143,8 +138,8 @@ export class ProfiloPage implements OnInit {
       await this.presentFF7Alert('Errore durante il salvataggio del profilo.');
     } finally {
       this.editing = false;
-      this.profileEdit = { ...this.profile }; // Allinea profileEdit a profile dopo il salvataggio
-      this.isLoading = false; // Nascondi lo spinner alla fine del salvataggio
+      this.profileEdit = { ...this.profile };
+      this.isLoading = false;
     }
   }
 
