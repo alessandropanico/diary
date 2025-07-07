@@ -15,22 +15,36 @@
     <div class="task-list">
 
       <div class="cont">
-      <div *ngFor="let task of tasks; let i = index" class="task-item">
-        <label class="task-checkbox">
-          <input type="checkbox" [checked]="task.completed" (click)="toggleCompletion(i)" />
-          <span class="checkmark"></span>
-        </label>
+        <div *ngFor="let task of tasks" class="task-item">
+          <label class="task-checkbox">
+            <input type="checkbox" [checked]="task.completed" (click)="toggleCompletion(task)" />
+            <span class="checkmark"></span>
+          </label>
 
-        <div class="task-content">
-          <div class="task-title" [class.completed]="task.completed">{{ task.name }}</div>
-          <p class="task-description">{{ task.description }}</p>
-          <p class="task-date"><strong>Scadenza:</strong> {{ formatDateIT(task.dueDate) }}</p>
+          <div class="task-content">
+            <div class="task-title" [class.completed]="task.completed">{{ task.name }}</div>
+            <p class="task-description">{{ task.description }}</p>
+            <p class="task-date"><strong>Scadenza:</strong> {{ formatDateIT(task.dueDate) }}</p>
+          </div>
+
+          <button class="ff7-delete-btn" (click)="deleteTask(task)">✖</button>
         </div>
-
-        <button class="ff7-delete-btn" (click)="deleteTask(i)">✖</button>
-      </div>
       </div>
     </div>
+
+    <div *ngIf="isLoadingTasks" class="loading-spinner">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Caricamento task...</p>
+    </div>
+
+    <ion-card *ngIf="!isLoadingTasks && tasks.length === 0" class="no-tasks-card">
+      <ion-card-header>
+        <ion-card-title>Nessuna Task!</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        Non hai ancora aggiunto nessuna task. Clicca sul pulsante "➕ Aggiungi" per crearne una!
+      </ion-card-content>
+    </ion-card>
 
   </section>
 </ion-content>
