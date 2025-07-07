@@ -25,7 +25,6 @@ export class ListTaskPage implements OnInit, OnDestroy {
 
   async ngOnInit() {
     this.tasksSubscription = this.taskService.tasks$.subscribe(tasks => {
-      console.log('ListTaskPage: tasks$ aggiornato. Numero di task:', tasks.length);
       this.tasks = tasks;
       this.isLoadingTasks = false;
 
@@ -36,7 +35,6 @@ export class ListTaskPage implements OnInit, OnDestroy {
           const dueDate = new Date(task.dueDate);
           dueDate.setHours(0, 0, 0, 0);
           if (dueDate < today) {
-            console.log(`Task '${task.name}' scaduta e non completata. La marco come completata.`);
             try {
               await this.taskService.toggleCompletion(task.id, true);
             } catch (error) {
@@ -58,7 +56,6 @@ export class ListTaskPage implements OnInit, OnDestroy {
           this.isLoadingTasks = false;
         }
       } else {
-        console.warn("ListTaskPage: Nessun utente loggato. Task non caricate e array svuotato.");
         this.tasks = [];
         this.isLoadingTasks = false;
       }

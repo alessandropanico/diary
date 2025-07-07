@@ -22,7 +22,7 @@
         <ion-item routerLink="/list-task" (click)="closeMenu()">Task</ion-item>
         <ion-item routerLink="/note" (click)="closeMenu()">Note</ion-item>
         <ion-item routerLink="/login" (click)="closeMenu()">Login</ion-item>
-        <ion-item routerLink="/backup" (click)="closeMenu()">Backup</ion-item>
+        <!-- <ion-item routerLink="/backup" (click)="closeMenu()">Backup</ion-item> -->
         <ion-item routerLink="/riconoscimenti" (click)="closeMenu()">Riconoscimenti</ion-item>
         <ion-item *ngIf="isLoggedIn()" (click)="logout(); closeMenu()">
           <ion-icon slot="start" name="log-out-outline"></ion-icon>

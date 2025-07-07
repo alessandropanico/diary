@@ -4,7 +4,7 @@ import { Note } from 'src/app/interfaces/note';
 import { Playlist } from 'src/app/interfaces/playlist';
 import { ModalController, AlertController } from '@ionic/angular';
 import { NoteEditorComponent } from './components/note-editor/note-editor.component';
-import { firstValueFrom, Subscription } from 'rxjs';
+import { combineLatest, firstValueFrom, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-note',
@@ -23,6 +23,7 @@ export class NotePage implements OnInit, OnDestroy {
   selectedNoteIds: Set<string> = new Set();
 
   private subs: Subscription[] = [];
+  isLoading = true;
 
   constructor(
     private noteService: NoteService,
@@ -30,24 +31,28 @@ export class NotePage implements OnInit, OnDestroy {
     private alertCtrl: AlertController,
   ) { }
 
-  ngOnInit() {
-    this.subs.push(
-      this.noteService.playlists$.subscribe(playlists => {
-        this.playlists = playlists;
-        if (!this.playlists.some(p => p.id === this.selectedPlaylistId)) {
-          this.selectedPlaylistId = 'all';
-          this.filterNotes();
-        }
-      })
-    );
+ngOnInit() {
+  this.isLoading = true;
 
-    this.subs.push(
-      this.noteService.notes$.subscribe(notes => {
-        this.notes = notes;
-        this.filterNotes();
-      })
-    );
-  }
+  const sub = combineLatest([
+    this.noteService.playlists$,
+    this.noteService.notes$
+  ]).subscribe(([playlists, notes]) => {
+    this.playlists = playlists;
+    this.notes = notes;
+
+    this.selectedPlaylistId = 'all';
+    this.filterNotes();
+
+    // Simuliamo un ritardo per test visivo
+    setTimeout(() => {
+      this.isLoading = false;
+    }, 1500);
+  });
+
+  this.subs.push(sub);
+}
+
 
   ngOnDestroy() {
     this.subs.forEach(s => s.unsubscribe());

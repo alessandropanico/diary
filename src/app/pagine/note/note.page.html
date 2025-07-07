@@ -22,31 +22,38 @@
 </ion-header>
 
 <ion-content class="ff7-content" (click)="onContentClick($event)">
-  <div class="playlist-scroll" appDragScroll>
-    <div *ngFor="let playlist of playlists" (click)="selectPlaylist(playlist.id)" [class.selected]="playlist.id === selectedPlaylistId">
-      {{ playlist.name }}
-    </div>
+  <div *ngIf="isLoading" class="loading-overlay">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Caricamento...</p>
   </div>
 
-  <div class="note-grid">
-    <div class="note-thumbnail" *ngFor="let note of filteredNotes" (click)="onNoteClick(note, $event)"
-      (contextmenu)="onNoteRightClick(note, $event)" (press)="onNoteLongPress(note)">
-
-      <ion-checkbox *ngIf="isSelectionMode" [checked]="selectedNoteIds.has(note.id)" (ionChange)="toggleNoteSelection(note)">
-      </ion-checkbox>
-
-      <h3>{{ note.title }}</h3>
-      <p>{{ note.content | slice:0:50 }}{{ note.content.length > 50 ? '...' : '' }}</p>
+  <div *ngIf="!isLoading">
+    <div class="playlist-scroll" appDragScroll>
+      <div *ngFor="let playlist of playlists" (click)="selectPlaylist(playlist.id)" [class.selected]="playlist.id === selectedPlaylistId">
+        {{ playlist.name }}
+      </div>
     </div>
+
+    <div class="note-grid">
+      <div class="note-thumbnail" *ngFor="let note of filteredNotes" (click)="onNoteClick(note, $event)"
+        (contextmenu)="onNoteRightClick(note, $event)" (press)="onNoteLongPress(note)">
+
+        <ion-checkbox *ngIf="isSelectionMode" [checked]="selectedNoteIds.has(note.id)" (ionChange)="toggleNoteSelection(note)">
+        </ion-checkbox>
+
+        <h3>{{ note.title }}</h3>
+        <p>{{ note.content | slice:0:50 }}{{ note.content.length > 50 ? '...' : '' }}</p>
+      </div>
+    </div>
+
+    <ion-text class="text" color="medium" *ngIf="filteredNotes.length === 0">
+      Nessuna nota in questa playlist.
+    </ion-text>
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="!isSelectionMode">
+      <ion-fab-button class="ff7-fab2" (click)="openNewNoteModal()">
+        <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
   </div>
-
-  <ion-text class="text" color="medium" *ngIf="filteredNotes.length === 0">
-    Nessuna nota in questa playlist.
-  </ion-text>
-
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="!isSelectionMode">
-    <ion-fab-button class="ff7-fab2" (click)="openNewNoteModal()">
-      <ion-icon name="add"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
 </ion-content>
