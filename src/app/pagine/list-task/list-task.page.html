@@ -11,7 +11,22 @@
 </ion-header>
 
 <ion-content class="ff7-content">
-  <section class="task-section">
+
+  <div *ngIf="isLoadingTasks" class="loading-overlay">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Caricamento task...</p>
+  </div>
+
+  <ion-card *ngIf="!isLoadingTasks && tasks.length === 0" class="no-tasks-card">
+    <ion-card-header>
+      <ion-card-title>Nessuna Task!</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      Non hai ancora aggiunto nessuna task. Clicca sul pulsante "➕ Aggiungi" per crearne una!
+    </ion-card-content>
+  </ion-card>
+
+  <section *ngIf="!isLoadingTasks && tasks.length > 0" class="task-section">
     <div class="task-list">
 
       <div class="cont">
@@ -31,20 +46,6 @@
         </div>
       </div>
     </div>
-
-    <div *ngIf="isLoadingTasks" class="loading-spinner">
-      <ion-spinner name="crescent"></ion-spinner>
-      <p>Caricamento task...</p>
-    </div>
-
-    <ion-card *ngIf="!isLoadingTasks && tasks.length === 0" class="no-tasks-card">
-      <ion-card-header>
-        <ion-card-title>Nessuna Task!</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        Non hai ancora aggiunto nessuna task. Clicca sul pulsante "➕ Aggiungi" per crearne una!
-      </ion-card-content>
-    </ion-card>
-
   </section>
+
 </ion-content>
