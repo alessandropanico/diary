@@ -39,8 +39,6 @@ export class ProfiloPage implements OnInit {
 
   async ngOnInit() {
     this.isLoading = true;
-    console.log("ngOnInit: Avvio caricamento profilo.");
-
     const loadProfileData = async (user: User) => {
       try {
         const firestoreData = await this.userDataService.getUserData();
@@ -53,7 +51,6 @@ export class ProfiloPage implements OnInit {
             email: firestoreData.email || user.email || '',
             bio: firestoreData.bio || ''
           };
-          console.log("Dati profilo caricati da Firestore.");
         } else {
           this.profile = {
             photo: user.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
@@ -63,7 +60,6 @@ export class ProfiloPage implements OnInit {
             bio: ''
           };
           await this.userDataService.saveUserData(this.profile);
-          console.log("Dati iniziali del profilo salvati su Firestore.");
         }
       } catch (error) {
         console.error("Errore durante il caricamento/salvataggio iniziale da Firestore:", error);
@@ -79,12 +75,10 @@ export class ProfiloPage implements OnInit {
       const currentUser = getAuth().currentUser;
 
       if (currentUser) {
-        console.log(`Tentativo ${attempts + 1}: Utente Firebase disponibile. UID: ${currentUser.uid}`);
         loadProfileData(currentUser)
           .then(() => {
             this.profileEdit = { ...this.profile };
             this.isLoading = false;
-            console.log("Caricamento profilo completato.");
           })
           .catch(() => {
             this.isLoading = false;
@@ -92,7 +86,6 @@ export class ProfiloPage implements OnInit {
           });
       } else if (attempts < maxAttempts) {
         attempts++;
-        console.log(`Tentativo ${attempts}: Utente non ancora disponibile. Ritento...`);
         setTimeout(checkUserAndLoad, intervalTime);
       } else {
         console.warn("ngOnInit: Utente non loggato dopo il massimo dei tentativi. Resetting profile data.");
@@ -131,7 +124,6 @@ export class ProfiloPage implements OnInit {
 
     try {
       await this.userDataService.saveUserData(this.profile);
-      console.log('Profilo aggiornato e salvato su Firestore!');
       await this.presentFF7Alert('Profilo aggiornato e salvato!');
     } catch (error) {
       console.error('Errore durante il salvataggio del profilo:', error);
