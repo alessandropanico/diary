@@ -3,7 +3,8 @@ export interface Note {
   title: string;
   content: string;
   playlistId: string;
-  createdAt: number;
-  audioUrl?: string; // ⬅️ Aggiunta qui
-  audioBase64?: string;     // persistente in localStorage
+  createdAt?: number; // ✅ Ora è opzionale
+  updatedAt?: number; // ✅ Ora è opzionale
+  audioUrl?: string;
+  audioBase64?: string;
 }

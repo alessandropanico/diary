@@ -34,22 +34,22 @@
     </ion-button> -->
 
     <div class="cont">
-    <div class="ff7-audio-preview" *ngIf="audioUrl && audioDuration">
+      <div class="ff7-audio-preview" *ngIf="audioUrl && audioDuration">
 
-      <div class="ff7-audio-player">
-        <button class="ff7-audio-play" (click)="togglePlayback()">
-          <ion-icon [name]="isPlaying ? 'pause' : 'play'"></ion-icon>
-        </button>
-        <div class="ff7-audio-bar" (click)="seekAudio($event)">
-          <div class="ff7-audio-progress" [style.width.%]="(currentTime / audioDuration) * 100"></div>
-          <div class="ff7-audio-dot" [style.left.%]="(currentTime / audioDuration) * 100"></div>
+        <div class="ff7-audio-player">
+          <button class="ff7-audio-play" (click)="togglePlayback()">
+            <ion-icon [name]="isPlaying ? 'pause' : 'play'"></ion-icon>
+          </button>
+          <div class="ff7-audio-bar" (click)="seekAudio($event)">
+            <div class="ff7-audio-progress" [style.width.%]="(currentTime / audioDuration) * 100"></div>
+            <div class="ff7-audio-dot" [style.left.%]="(currentTime / audioDuration) * 100"></div>
+          </div>
+        </div>
+
+        <div class="ff7-audio-meta">
+          <span>{{ formatDuration(currentTime) }} / {{ formatDuration(audioDuration) }}</span>
         </div>
       </div>
-
-      <div class="ff7-audio-meta">
-        <span>{{ formatDuration(currentTime) }} / {{ formatDuration(audioDuration) }}</span>
-      </div>
-    </div>
     </div>
 
 

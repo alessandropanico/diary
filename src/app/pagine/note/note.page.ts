@@ -2,10 +2,9 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { NoteService } from 'src/app/services/note.service';
 import { Note } from 'src/app/interfaces/note';
 import { Playlist } from 'src/app/interfaces/playlist';
-import { ModalController } from '@ionic/angular';
+import { ModalController, AlertController } from '@ionic/angular';
 import { NoteEditorComponent } from './components/note-editor/note-editor.component';
-import { Subscription } from 'rxjs';
-import { AlertController } from '@ionic/angular'; // importa questo
+import { firstValueFrom, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-note',
@@ -28,14 +27,19 @@ export class NotePage implements OnInit, OnDestroy {
   constructor(
     private noteService: NoteService,
     private modalCtrl: ModalController,
-    private alertCtrl: AlertController
-
+    private alertCtrl: AlertController // Iniettato correttamente
   ) { }
 
   ngOnInit() {
     this.subs.push(
       this.noteService.playlists$.subscribe(playlists => {
         this.playlists = playlists;
+        // Aggiungi un controllo qui per la playlist selezionata
+        // Se la playlist selezionata non esiste più, torna ad 'all'
+        if (!this.playlists.some(p => p.id === this.selectedPlaylistId)) {
+          this.selectedPlaylistId = 'all';
+          this.filterNotes(); // Ri-filtra le note per la nuova playlist selezionata
+        }
       })
     );
 
@@ -88,6 +92,7 @@ export class NotePage implements OnInit, OnDestroy {
           handler: data => {
             const name = data.playlistName?.trim();
             if (name) {
+              // Non è necessario await qui perché addPlaylist non influenza il flusso UI immediato
               this.noteService.addPlaylist(name);
             }
           }
@@ -128,7 +133,6 @@ export class NotePage implements OnInit, OnDestroy {
     await modal.present();
   }
 
-
   onNoteClick(note: Note, event: MouseEvent) {
     if (this.isSelectionMode) {
       this.toggleNoteSelection(note);
@@ -160,8 +164,22 @@ export class NotePage implements OnInit, OnDestroy {
     }
   }
 
-  deleteSelectedNotes() {
-    this.selectedNoteIds.forEach(id => this.noteService.deleteNote(id));
+  async deleteSelectedNotes() { // Reso async per coerenza, anche se forEach è sincrono
+    // Considera di usare Promise.all o un batch per eliminazioni multiple
+    // se il servizio deleteNote fosse asincrono e volessi attendere tutte le eliminazioni.
+    // Attualmente, deleteNote nel servizio è asincrono.
+    // Per eliminare più note in modo più efficiente, potresti aggiungere un metodo
+    // `deleteMultipleNotes(ids: string[])` al tuo servizio che usa un singolo batch.
+    const deletionPromises = Array.from(this.selectedNoteIds).map(id =>
+      firstValueFrom(this.noteService.deleteNote(id))
+    );
+    try {
+      await Promise.all(deletionPromises);
+      console.log('Note selezionate eliminate con successo.');
+    } catch (error) {
+      console.error('Errore durante l\'eliminazione delle note selezionate:', error);
+    }
+
     this.cancelSelectionMode();
   }
 
@@ -173,21 +191,28 @@ export class NotePage implements OnInit, OnDestroy {
   onContentClick(event: MouseEvent) {
     if (!this.isSelectionMode) return;
 
-    // Controlla che il click non sia su un elemento interattivo (checkbox, note, bottoni)
     const target = event.target as HTMLElement;
 
-    // Se il click è dentro un checkbox o una nota, non annullare la selezione
     if (target.closest('ion-checkbox, .note-thumbnail, ion-button, ion-fab-button')) {
       return;
     }
 
-    // Altrimenti annulla la modalità selezione
     this.cancelSelectionMode();
   }
 
   async confirmDeleteCurrentPlaylist() {
     const playlist = this.playlists.find(p => p.id === this.selectedPlaylistId);
     if (!playlist) return;
+
+    if (playlist.id === 'all') {
+      const alert = await this.alertCtrl.create({
+        header: 'Impossibile eliminare',
+        message: 'La playlist "All" non può essere eliminata.',
+        buttons: ['OK']
+      });
+      await alert.present();
+      return;
+    }
 
     const alert = await this.alertCtrl.create({
       header: 'Elimina Playlist',
@@ -201,8 +226,24 @@ export class NotePage implements OnInit, OnDestroy {
         {
           text: 'Elimina',
           cssClass: 'ff7-alert-button danger',
-          handler: () => {
-            this.deletePlaylist(playlist.id);
+          handler: async () => {
+            try {
+              await firstValueFrom(this.noteService.deletePlaylist(playlist.id));
+              console.log(`Playlist "${playlist.name}" e le sue note eliminate con successo.`);
+
+              // --- **QUESTA È LA RIGA CRUCIALE DA AGGIUNGERE/MODIFICARE** ---
+              this.selectedPlaylistId = 'all'; // Ritorna alla playlist "All"
+              this.filterNotes(); // Ri-filtra le note per la playlist "All"
+
+            } catch (error) {
+              console.error('Errore durante l\'eliminazione della playlist:', error);
+              const errorAlert = await this.alertCtrl.create({
+                header: 'Errore',
+                message: 'Si è verificato un errore durante l\'eliminazione della playlist. Riprova.',
+                buttons: ['OK']
+              });
+              await errorAlert.present();
+            }
           }
         }
       ],
@@ -212,15 +253,14 @@ export class NotePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-
-  deletePlaylist(playlistId: string) {
-    this.noteService.deletePlaylist(playlistId);
-    if (this.selectedPlaylistId === playlistId) {
-      this.selectedPlaylistId = 'all';
-      this.filterNotes();
-    }
-  }
-
-
-
+  // Questo metodo DEVE essere rimosso o modificato profondamente.
+  // Se lo stai usando, sta causando il problema.
+  // L'eliminazione DEVE passare attraverso confirmDeleteCurrentPlaylist().
+  // deletePlaylist(playlistId: string) {
+  //   this.noteService.deletePlaylist(playlistId); // Non awaita!
+  //   if (this.selectedPlaylistId === playlistId) {
+  //     this.selectedPlaylistId = 'all'; // Eseguito troppo presto!
+  //     this.filterNotes();
+  //   }
+  // }
 }

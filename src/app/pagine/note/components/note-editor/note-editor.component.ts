@@ -1,7 +1,9 @@
-import { Component, Input, OnInit, ChangeDetectorRef, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectorRef, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core'; // Aggiunto OnDestroy
 import { ModalController, ActionSheetController, AlertController } from '@ionic/angular';
 import { NoteService } from 'src/app/services/note.service';
 import { Note } from 'src/app/interfaces/note';
+import { firstValueFrom } from 'rxjs';
+import { v4 as uuidv4 } from 'uuid';
 
 @Component({
   selector: 'app-note-editor',
@@ -9,7 +11,7 @@ import { Note } from 'src/app/interfaces/note';
   styleUrls: ['./note-editor.component.scss'],
   standalone: false,
 })
-export class NoteEditorComponent implements OnInit, AfterViewInit {
+export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy { // Aggiunto OnDestroy
   @Input() playlistId: string = 'all';
   @Input() note?: Note;
 
@@ -29,7 +31,6 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
   mediaElementSource?: MediaElementAudioSourceNode;
 
   progressInterval?: any;
-
 
   @ViewChild('visualizerCanvas', { static: false }) visualizerCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('visualizerCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
@@ -51,48 +52,66 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
       this.title = this.note.title;
       this.content = this.note.content;
 
-      if (this.note.audioBase64) {
+      // Se la nota esiste e ha un URL audio (da Storage o Base64 temporaneo)
+      if (this.note.audioUrl) {
+        this.audioUrl = this.note.audioUrl;
+        this.initAudioPlayer();
+      } else if (this.note.audioBase64) {
+        // Se c'è un audioBase64 (es. se la nota è appena stata registrata e non ancora salvata con l'URL di Storage)
         this.noteAudioBase64 = this.note.audioBase64;
-        this.audioUrl = this.note.audioBase64;
-        this.initAudioPlayer(); // nuova riga
+        this.audioUrl = this.note.audioBase64; // Temporaneamente usa il base64 come URL
+        this.initAudioPlayer();
       }
     }
   }
 
-
-
   ngAfterViewInit() {
-    // setup visualizer solo se audioPlayer è pronto
     if (this.audioPlayer) {
       this.setupAudioVisualizer(this.audioPlayer);
     }
   }
 
-  save() {
-    if (!this.title.trim() || (!this.content.trim() && !this.audioUrl)) {
+  async save() {
+    if (!this.title.trim()) {
+      console.warn('Il titolo della nota non può essere vuoto.');
       return;
     }
 
-    const noteData: Note = {
-      id: this.note?.id || Date.now().toString(),
+    // Crea un oggetto Note parziale per costruire i dati da inviare a Firestore
+    const noteDataToSend: Partial<Note> = {
+      id: this.note?.id || uuidv4(),
       title: this.title.trim(),
       content: this.content.trim(),
       playlistId: this.note?.playlistId || this.playlistId,
-      createdAt: this.note?.createdAt || Date.now(),
-      audioUrl: this.audioUrl,
-      audioBase64: this.noteAudioBase64,
+      createdAt: this.note?.createdAt, // Mantiene createdAt se esiste (per update)
+      // updatedAt sarà gestito dal servizio con serverTimestamp()
     };
 
-    if (this.note) {
-      this.noteService.updateNote(noteData);
-    } else {
-      this.noteService.addNote(noteData);
+    // Aggiungi audioUrl solo se presente
+    if (this.audioUrl) {
+      noteDataToSend.audioUrl = this.audioUrl;
     }
 
-    this.cdr.detectChanges();
-    this.modalCtrl.dismiss({ note: noteData }, 'save');
-  }
+    // Aggiungi audioBase64 solo se presente (verrà usato per l'upload dal servizio)
+    if (this.noteAudioBase64) {
+      noteDataToSend.audioBase64 = this.noteAudioBase64;
+    }
 
+    try {
+      if (this.note) {
+        // Il servizio NoteService deve gestire l'upload dell'audio se audioBase64 è presente
+        await firstValueFrom(this.noteService.updateNote(noteDataToSend as Note)); // Cast a Note se necessario
+        console.log('Nota aggiornata con successo:', noteDataToSend.id);
+      } else {
+        await firstValueFrom(this.noteService.addNote(noteDataToSend as Note)); // Cast a Note se necessario
+        console.log('Nota aggiunta con successo:', noteDataToSend.id);
+      }
+      this.noteAudioBase64 = undefined; // Pulisci il base64 dopo il salvataggio
+      this.modalCtrl.dismiss({ note: noteDataToSend }, 'save');
+    } catch (error) {
+      console.error('Errore durante il salvataggio della nota:', error);
+    }
+  }
 
   close() {
     this.modalCtrl.dismiss(null, 'cancel');
@@ -105,10 +124,15 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
         {
           text: 'Elimina',
           icon: 'trash',
-          handler: () => {
-            if (this.note) {
-              this.noteService.deleteNote(this.note.id);
-              this.modalCtrl.dismiss({ note: this.note }, 'delete');
+          handler: async () => {
+            if (this.note && this.note.id) {
+              try {
+                await firstValueFrom(this.noteService.deleteNote(this.note.id));
+                console.log('Nota eliminata con successo:', this.note.id);
+                this.modalCtrl.dismiss({ note: this.note }, 'delete');
+              } catch (error) {
+                console.error('Errore durante l\'eliminazione della nota:', error);
+              }
             }
           }
         },
@@ -120,16 +144,16 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
           }
         },
         {
-          text: 'Annulla'
+          text: 'Annulla',
+          role: 'cancel'
         }
       ]
     });
-
     await actionSheet.present();
   }
 
   async presentMovePrompt() {
-    const playlists = this.noteService.getPlaylists().filter(p => p.id !== 'all');
+    const playlists = this.noteService.getPlaylistsSnapshot().filter(p => p.id !== 'all');
 
     const alert = await this.alertCtrl.create({
       header: 'Sposta in playlist',
@@ -138,7 +162,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
         type: 'radio',
         label: p.name,
         value: p.id,
-        checked: false
+        checked: this.note?.playlistId === p.id
       })),
       buttons: [
         {
@@ -147,21 +171,30 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
         },
         {
           text: 'Sposta',
-          handler: (selectedPlaylistId: string) => {
-            if (this.note && selectedPlaylistId) {
+          handler: async (selectedPlaylistId: string) => {
+            if (this.note && selectedPlaylistId && this.note.playlistId !== selectedPlaylistId) {
               const updatedNote: Note = {
                 ...this.note,
-                playlistId: selectedPlaylistId
+                playlistId: selectedPlaylistId,
+                updatedAt: undefined
               };
-              this.noteService.updateNote(updatedNote);
-              this.cdr.detectChanges();
-              this.modalCtrl.dismiss({ note: updatedNote }, 'move');
+              try {
+                await firstValueFrom(this.noteService.updateNote(updatedNote));
+                console.log(`Nota spostata con successo alla playlist ${selectedPlaylistId}`);
+                this.cdr.detectChanges();
+                this.modalCtrl.dismiss({ note: updatedNote }, 'move');
+              } catch (error) {
+                console.error('Errore durante lo spostamento della nota:', error);
+              }
+            } else if (this.note?.playlistId === selectedPlaylistId) {
+              console.log('La nota è già in questa playlist.');
+              return true;
             }
+            return true;
           }
         }
       ]
     });
-
     await alert.present();
   }
 
@@ -186,100 +219,72 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
         };
         reader.readAsDataURL(blob);
 
-        this.initAudioPlayer(); // nuova riga
+        this.initAudioPlayer();
+        stream.getTracks().forEach(track => track.stop());
       };
-
-
-
 
       this.mediaRecorder.start();
       this.recording = true;
+      this.cdr.detectChanges();
     }).catch(err => {
       alert('Errore accesso microfono: ' + err);
+      console.error('Errore accesso microfono:', err);
     });
   }
-
 
   stopRecording() {
     this.mediaRecorder?.stop();
     this.recording = false;
-  }
-
-
-  playAudio() {
-    if (this.audioUrl) {
-      this.audioPlayer = new Audio(this.audioUrl);
-      this.audioPlayer.play();
-    }
+    this.cdr.detectChanges();
   }
 
   togglePlayback() {
     if (!this.audioUrl) return;
 
     if (!this.audioPlayer) {
-      this.audioPlayer = new Audio(this.audioUrl);
+      this.initAudioPlayer();
+    }
 
-      this.audioPlayer.addEventListener('loadedmetadata', () => {
-        this.audioDuration = this.audioPlayer!.duration;
-        this.cdr.detectChanges();
-      });
-
-      this.audioPlayer.addEventListener('ended', () => {
-        this.audioPlayer!.currentTime = 0;
-        this.currentTime = 0;
-
-        // 🔄 forza il reset visivo della barra
-        setTimeout(() => {
-          this.audioDuration = this.audioPlayer!.duration || 1; // evita divisione per 0
-          this.cdr.detectChanges();
-        });
-
-        this.isPlaying = false;
+    if (this.audioPlayer) {
+      if (this.isPlaying) {
+        this.audioPlayer.pause();
         clearInterval(this.progressInterval);
+        this.isPlaying = false;
         this.stopVisualizer();
-      });
+      } else {
+        this.audioPlayer.play();
+        this.isPlaying = true;
 
+        this.progressInterval = setInterval(() => {
+          if (this.audioPlayer) {
+            this.currentTime = this.audioPlayer.currentTime;
+            this.audioDuration = this.audioPlayer.duration || this.audioDuration;
+            this.cdr.detectChanges();
+          }
+        }, 200);
 
+        this.setupAudioVisualizer(this.audioPlayer);
+      }
     }
-
-    if (this.isPlaying) {
-      this.audioPlayer.pause();
-      clearInterval(this.progressInterval);
-      this.isPlaying = false;
-    } else {
-      this.audioPlayer.play();
-      this.isPlaying = true;
-
-      // aggiorna ogni 200ms
-      this.progressInterval = setInterval(() => {
-        if (this.audioPlayer) {
-          this.currentTime = this.audioPlayer.currentTime;
-          this.audioDuration = this.audioPlayer.duration || this.audioDuration;
-          this.cdr.detectChanges();
-        }
-      }, 200);
-
-      this.setupAudioVisualizer(this.audioPlayer);
-    }
-
     this.cdr.detectChanges();
   }
 
-
-
   stopVisualizer() {
-    cancelAnimationFrame(this.animationId!);
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = undefined;
+    }
+
     this.clearVisualizerCanvas();
 
     if (this.audioContext) {
-      this.audioContext.close();
-      this.audioContext = undefined;
+      this.audioContext.close().then(() => {
+        this.audioContext = undefined;
+        this.mediaElementSource = undefined;
+        this.analyser = undefined;
+      }).catch(err => console.error("Errore chiusura AudioContext:", err));
     }
-
-    this.mediaElementSource = undefined;
-    this.analyser = undefined;
   }
-
 
   clearVisualizerCanvas() {
     const canvas = this.canvasRef?.nativeElement;
@@ -289,19 +294,18 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
     }
   }
 
-
-
-
   setupAudioVisualizer(audioElement: HTMLAudioElement) {
-    if (!this.canvasRef) return;
+    if (!this.canvasRef || !audioElement) return;
 
     const canvas = this.canvasRef.nativeElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    if (this.audioContext) {
+      this.audioContext.close();
+    }
     this.audioContext = new AudioContext();
 
-    // Important: sempre creare nuova connessione
     this.mediaElementSource = this.audioContext.createMediaElementSource(audioElement);
     this.analyser = this.audioContext.createAnalyser();
     this.mediaElementSource.connect(this.analyser);
@@ -312,8 +316,11 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
     const dataArray = new Uint8Array(bufferLength);
 
     const draw = () => {
+      if (!this.isPlaying || !this.analyser || !this.audioContext || this.audioContext.state === 'closed') {
+        this.stopVisualizer();
+        return;
+      }
       this.animationId = requestAnimationFrame(draw);
-      if (!this.analyser) return;
 
       this.analyser.getByteFrequencyData(dataArray);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -329,14 +336,13 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
       }
     };
 
-    draw();
+    if (this.isPlaying) {
+      draw();
+    }
   }
 
   get formattedDuration(): string {
-    const remaining = this.audioDuration - this.currentTime;
-    const minutes = Math.floor(remaining / 60);
-    const seconds = Math.floor(remaining % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    return this.formatDuration(this.audioDuration - this.currentTime);
   }
 
   deleteAudio() {
@@ -346,58 +352,67 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
     }
 
     this.audioUrl = undefined;
+    this.noteAudioBase64 = undefined; // Metti a undefined
     this.audioDuration = 0;
     this.currentTime = 0;
     this.audioChunks = [];
     this.isPlaying = false;
 
     this.stopVisualizer();
+    clearInterval(this.progressInterval);
     this.cdr.detectChanges();
   }
 
-
-
   initAudioPlayer() {
     if (!this.audioUrl) return;
+
+    if (this.audioPlayer && this.audioPlayer.src === this.audioUrl) {
+      return;
+    }
+
+    if (this.audioPlayer) {
+      this.audioPlayer.pause();
+      this.audioPlayer = undefined;
+    }
 
     this.audioPlayer = new Audio(this.audioUrl);
 
     this.audioPlayer.addEventListener('loadedmetadata', () => {
       this.audioDuration = this.audioPlayer!.duration;
 
-      // Retry se la durata inizialmente è NaN o Infinity (comune con Base64)
       if (isNaN(this.audioDuration) || this.audioDuration === Infinity) {
         setTimeout(() => {
-          this.audioDuration = this.audioPlayer!.duration;
-          this.cdr.detectChanges();
-        }, 1000);
+          if (this.audioPlayer) {
+            this.audioDuration = this.audioPlayer.duration;
+            this.cdr.detectChanges();
+          }
+        }, 500);
       }
-
       this.cdr.detectChanges();
-    });
+    }, { once: true });
 
     this.audioPlayer.addEventListener('timeupdate', () => {
       this.currentTime = this.audioPlayer!.currentTime;
-      this.cdr.detectChanges();
     });
 
     this.audioPlayer.addEventListener('ended', () => {
-      this.audioPlayer!.currentTime = 0;
-      this.currentTime = 0;
+      if (this.audioPlayer) {
+        this.audioPlayer.currentTime = 0;
+        this.currentTime = 0;
 
-      // 🔄 forza il reset visivo della barra
-      setTimeout(() => {
-        this.audioDuration = this.audioPlayer!.duration || 1; // evita divisione per 0
-        this.cdr.detectChanges();
-      });
+        setTimeout(() => {
+          if (this.audioPlayer) {
+            this.audioDuration = this.audioPlayer.duration || 1;
+            this.cdr.detectChanges();
+          }
+        }, 50);
 
-      this.isPlaying = false;
-      clearInterval(this.progressInterval);
-      this.stopVisualizer();
+        this.isPlaying = false;
+        clearInterval(this.progressInterval);
+        this.stopVisualizer();
+      }
     });
-
   }
-
 
   formatDuration(seconds: number): string {
     if (isNaN(seconds) || seconds === Infinity) return '0:00';
@@ -407,7 +422,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
   }
 
   seekAudio(event: MouseEvent) {
-    if (!this.audioPlayer || !this.audioDuration) return;
+    if (!this.audioPlayer || !this.audioDuration || !this.audioUrl) return;
 
     const target = event.currentTarget as HTMLElement;
     const rect = target.getBoundingClientRect();
@@ -420,4 +435,17 @@ export class NoteEditorComponent implements OnInit, AfterViewInit {
     this.cdr.detectChanges();
   }
 
+  ngOnDestroy(): void {
+    if (this.audioPlayer) {
+      this.audioPlayer.pause();
+      // È buona pratica rimuovere i listener specifici se non si usa { once: true } ovunque
+      // Tuttavia, se si usa { once: true }, non sono strettamente necessari qui
+      // this.audioPlayer.removeEventListener('loadedmetadata', () => {});
+      // this.audioPlayer.removeEventListener('timeupdate', () => {});
+      // this.audioPlayer.removeEventListener('ended', () => {});
+      this.audioPlayer = undefined;
+    }
+    clearInterval(this.progressInterval);
+    this.stopVisualizer();
+  }
 }
