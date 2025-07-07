@@ -27,18 +27,16 @@ export class NotePage implements OnInit, OnDestroy {
   constructor(
     private noteService: NoteService,
     private modalCtrl: ModalController,
-    private alertCtrl: AlertController // Iniettato correttamente
+    private alertCtrl: AlertController,
   ) { }
 
   ngOnInit() {
     this.subs.push(
       this.noteService.playlists$.subscribe(playlists => {
         this.playlists = playlists;
-        // Aggiungi un controllo qui per la playlist selezionata
-        // Se la playlist selezionata non esiste più, torna ad 'all'
         if (!this.playlists.some(p => p.id === this.selectedPlaylistId)) {
           this.selectedPlaylistId = 'all';
-          this.filterNotes(); // Ri-filtra le note per la nuova playlist selezionata
+          this.filterNotes();
         }
       })
     );
@@ -92,7 +90,6 @@ export class NotePage implements OnInit, OnDestroy {
           handler: data => {
             const name = data.playlistName?.trim();
             if (name) {
-              // Non è necessario await qui perché addPlaylist non influenza il flusso UI immediato
               this.noteService.addPlaylist(name);
             }
           }
@@ -147,7 +144,7 @@ export class NotePage implements OnInit, OnDestroy {
   }
 
   onNoteRightClick(note: Note, event: MouseEvent) {
-    event.preventDefault(); // evita il menu contestuale
+    event.preventDefault();
     this.isSelectionMode = true;
     this.selectedNoteIds.add(note.id);
   }
@@ -164,12 +161,7 @@ export class NotePage implements OnInit, OnDestroy {
     }
   }
 
-  async deleteSelectedNotes() { // Reso async per coerenza, anche se forEach è sincrono
-    // Considera di usare Promise.all o un batch per eliminazioni multiple
-    // se il servizio deleteNote fosse asincrono e volessi attendere tutte le eliminazioni.
-    // Attualmente, deleteNote nel servizio è asincrono.
-    // Per eliminare più note in modo più efficiente, potresti aggiungere un metodo
-    // `deleteMultipleNotes(ids: string[])` al tuo servizio che usa un singolo batch.
+  async deleteSelectedNotes() {
     const deletionPromises = Array.from(this.selectedNoteIds).map(id =>
       firstValueFrom(this.noteService.deleteNote(id))
     );
@@ -231,9 +223,8 @@ export class NotePage implements OnInit, OnDestroy {
               await firstValueFrom(this.noteService.deletePlaylist(playlist.id));
               console.log(`Playlist "${playlist.name}" e le sue note eliminate con successo.`);
 
-              // --- **QUESTA È LA RIGA CRUCIALE DA AGGIUNGERE/MODIFICARE** ---
-              this.selectedPlaylistId = 'all'; // Ritorna alla playlist "All"
-              this.filterNotes(); // Ri-filtra le note per la playlist "All"
+              this.selectedPlaylistId = 'all';
+              this.filterNotes();
 
             } catch (error) {
               console.error('Errore durante l\'eliminazione della playlist:', error);
@@ -252,15 +243,4 @@ export class NotePage implements OnInit, OnDestroy {
 
     await alert.present();
   }
-
-  // Questo metodo DEVE essere rimosso o modificato profondamente.
-  // Se lo stai usando, sta causando il problema.
-  // L'eliminazione DEVE passare attraverso confirmDeleteCurrentPlaylist().
-  // deletePlaylist(playlistId: string) {
-  //   this.noteService.deletePlaylist(playlistId); // Non awaita!
-  //   if (this.selectedPlaylistId === playlistId) {
-  //     this.selectedPlaylistId = 'all'; // Eseguito troppo presto!
-  //     this.filterNotes();
-  //   }
-  // }
 }

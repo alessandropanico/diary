@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
   styleUrls: ['./note-editor.component.scss'],
   standalone: false,
 })
-export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy { // Aggiunto OnDestroy
+export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() playlistId: string = 'all';
   @Input() note?: Note;
 
@@ -52,14 +52,12 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy { /
       this.title = this.note.title;
       this.content = this.note.content;
 
-      // Se la nota esiste e ha un URL audio (da Storage o Base64 temporaneo)
       if (this.note.audioUrl) {
         this.audioUrl = this.note.audioUrl;
         this.initAudioPlayer();
       } else if (this.note.audioBase64) {
-        // Se c'è un audioBase64 (es. se la nota è appena stata registrata e non ancora salvata con l'URL di Storage)
         this.noteAudioBase64 = this.note.audioBase64;
-        this.audioUrl = this.note.audioBase64; // Temporaneamente usa il base64 come URL
+        this.audioUrl = this.note.audioBase64;
         this.initAudioPlayer();
       }
     }
@@ -77,36 +75,31 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy { /
       return;
     }
 
-    // Crea un oggetto Note parziale per costruire i dati da inviare a Firestore
     const noteDataToSend: Partial<Note> = {
       id: this.note?.id || uuidv4(),
       title: this.title.trim(),
       content: this.content.trim(),
       playlistId: this.note?.playlistId || this.playlistId,
-      createdAt: this.note?.createdAt, // Mantiene createdAt se esiste (per update)
-      // updatedAt sarà gestito dal servizio con serverTimestamp()
+      createdAt: this.note?.createdAt,
     };
 
-    // Aggiungi audioUrl solo se presente
     if (this.audioUrl) {
       noteDataToSend.audioUrl = this.audioUrl;
     }
 
-    // Aggiungi audioBase64 solo se presente (verrà usato per l'upload dal servizio)
     if (this.noteAudioBase64) {
       noteDataToSend.audioBase64 = this.noteAudioBase64;
     }
 
     try {
       if (this.note) {
-        // Il servizio NoteService deve gestire l'upload dell'audio se audioBase64 è presente
-        await firstValueFrom(this.noteService.updateNote(noteDataToSend as Note)); // Cast a Note se necessario
+        await firstValueFrom(this.noteService.updateNote(noteDataToSend as Note));
         console.log('Nota aggiornata con successo:', noteDataToSend.id);
       } else {
-        await firstValueFrom(this.noteService.addNote(noteDataToSend as Note)); // Cast a Note se necessario
+        await firstValueFrom(this.noteService.addNote(noteDataToSend as Note));
         console.log('Nota aggiunta con successo:', noteDataToSend.id);
       }
-      this.noteAudioBase64 = undefined; // Pulisci il base64 dopo il salvataggio
+      this.noteAudioBase64 = undefined;
       this.modalCtrl.dismiss({ note: noteDataToSend }, 'save');
     } catch (error) {
       console.error('Errore durante il salvataggio della nota:', error);
@@ -352,7 +345,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy { /
     }
 
     this.audioUrl = undefined;
-    this.noteAudioBase64 = undefined; // Metti a undefined
+    this.noteAudioBase64 = undefined;
     this.audioDuration = 0;
     this.currentTime = 0;
     this.audioChunks = [];

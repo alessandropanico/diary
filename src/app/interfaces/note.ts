@@ -3,8 +3,8 @@ export interface Note {
   title: string;
   content: string;
   playlistId: string;
-  createdAt?: number; // ✅ Ora è opzionale
-  updatedAt?: number; // ✅ Ora è opzionale
+  createdAt?: number;
+  updatedAt?: number;
   audioUrl?: string;
   audioBase64?: string;
 }
