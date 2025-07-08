@@ -26,33 +26,35 @@ export class ListTaskPage implements OnInit, OnDestroy {
   async ngOnInit() {
     this.tasksSubscription = this.taskService.tasks$.subscribe(tasks => {
       this.tasks = tasks;
-      this.isLoadingTasks = false;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      tasks.forEach(async task => {
-        if (task.id && !task.completed) {
-          const dueDate = new Date(task.dueDate);
-          dueDate.setHours(0, 0, 0, 0);
-          if (dueDate < today) {
-            try {
-              await this.taskService.toggleCompletion(task.id, true);
-            } catch (error) {
-              console.error('Errore durante il marcare la task scaduta:', error);
-            }
-          }
-        }
-      });
     });
-
 
     onAuthStateChanged(getAuth(), async (user: User | null) => {
       if (user) {
         this.isLoadingTasks = true;
         try {
           await this.taskService.loadTasks();
+
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          this.tasks.forEach(async task => {
+            if (task.id && !task.completed) {
+              const dueDate = new Date(task.dueDate);
+              dueDate.setHours(0, 0, 0, 0);
+              if (dueDate < today) {
+                try {
+                  await this.taskService.toggleCompletion(task.id, true);
+                } catch (error) {
+                  console.error('Errore durante il marcare la task scaduta:', error);
+                }
+              }
+            }
+          });
+
         } catch (error) {
+          console.error('Errore nel caricamento task:', error);
           this.tasks = [];
+        } finally {
           this.isLoadingTasks = false;
         }
       } else {
@@ -136,7 +138,14 @@ export class ListTaskPage implements OnInit, OnDestroy {
     const { data } = await modal.onDidDismiss();
     if (data && data.refreshTasks) {
       this.isLoadingTasks = true;
-      await this.taskService.loadTasks();
+      try {
+        await this.taskService.loadTasks();
+      } catch (error) {
+        console.error('Errore nel ricaricare le task:', error);
+        this.tasks = [];
+      } finally {
+        this.isLoadingTasks = false;
+      }
     }
   }
 }
