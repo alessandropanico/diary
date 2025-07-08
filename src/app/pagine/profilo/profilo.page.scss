@@ -6,39 +6,6 @@
   --danger-color: #ff4e4e;
 }
 
-ion-content {
-  background: linear-gradient(145deg, #10151f, #0b0f18);
-  color: var(--text-light);
-  // font-family: 'Segoe UI', 'Roboto', 'Final Fantasy', sans-serif;
-}
-
-ion-header, ion-toolbar {
-  background: rgba(10, 15, 25, 0.8);
-  backdrop-filter: blur(10px);
-  --color: var(--text-light);
-  --background: transparent;
-  border-bottom: 1px solid #1a2735;
-}
-
-ion-title {
-  font-weight: 600;
-  font-size: 1.3rem;
-  color: var(--text-light);
-  text-shadow: 0 0 6px var(--primary-glow);
-}
-
-ion-button {
-  --background: none;
-  --color: var(--primary-glow);
-  text-shadow: 0 0 4px var(--primary-glow);
-  font-weight: 500;
-}
-
-ion-button[color="danger"] {
-  --color: var(--danger-color);
-  text-shadow: 0 0 4px var(--danger-color);
-}
-
 .profile-avatar {
   width: 140px;
   height: 140px;
@@ -84,7 +51,7 @@ ion-button[color="danger"] {
 }
 
 ion-label {
-  color: var(--label-color);
+  color: #00ffe0;
 }
 
 .label-stacked.sc-ion-label-md-h{
@@ -289,32 +256,19 @@ ion-item.ff7-item {
 // Stili FF7 per gli input e i bottoni
 .ff7-item {
   --background: #1a1a1a;
-  --color: #0f0;
-  --highlight-color-focused: #00ff00;
-  --border-color: #00ff00; // Colore del bordo/linea per gli item
+  --color: #00ffe0;
+  --highlight-color-focused: #00ffe0;
+  --border-color: #00ffe0; // Colore del bordo/linea per gli item
   margin-bottom: 10px;
   border-radius: 5px;
-  border: 1px solid #00ff00;
+  border: 1px solid #00ffe0;
 }
 
 .ff7-item ion-label {
-  color: #0f0;
+  color: #00ffe0;
 }
 
 .ff7-item ion-input, .ff7-item ion-textarea {
-  --color: #00ff00; // Colore del testo digitato
-  caret-color: #00ff00; // Colore del cursore
-}
-
-ion-button {
-  --background: #00ff00;
-  --color: #000;
-  --border-radius: 5px;
-  font-weight: bold;
-  margin-top: 20px;
-}
-ion-button[fill="outline"] {
-  --background: transparent;
-  --border-color: #00ff00;
-  --color: #00ff00;
+  --color: #00ffe0; // Colore del testo digitato
+  caret-color: #00ffe0; // Colore del cursore
 }
