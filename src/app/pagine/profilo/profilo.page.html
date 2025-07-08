@@ -27,7 +27,7 @@
       Rimuovi banner
     </ion-button>
 
-    <ion-avatar class="profile-avatar" [class.editable]="editing" (click)="editing && changePhoto()">
+    <ion-avatar class="profile-avatar" [class.editable]="editing" [style.margin-top]="avatarMarginTop" (click)="editing && changePhoto()">
       <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
     </ion-avatar>
 

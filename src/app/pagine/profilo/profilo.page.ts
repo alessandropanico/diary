@@ -32,6 +32,7 @@ export class ProfiloPage implements OnInit {
 
   editing = false;
   isLoading = true;
+  avatarMarginTop = '-60px'; // Valore iniziale per sovrapporsi al banner
 
   constructor(
     private ngZone: NgZone,
@@ -106,11 +107,13 @@ export class ProfiloPage implements OnInit {
   startEdit() {
     this.editing = true;
     this.profileEdit = { ...this.profile };
+    this.avatarMarginTop = '20px';
   }
 
   cancelEdit() {
     this.editing = false;
     this.profileEdit = { ...this.profile };
+    this.avatarMarginTop = '-60px';
   }
 
   async saveProfile() {
@@ -118,7 +121,7 @@ export class ProfiloPage implements OnInit {
 
     this.profile = {
       photo: this.profileEdit.photo,
-      banner: this.profileEdit.banner, // Salva il banner
+      banner: this.profileEdit.banner, 
       nickname: this.profileEdit.nickname || '',
       name: this.profileEdit.name || '',
       email: this.profileEdit.email || '',
