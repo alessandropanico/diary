@@ -165,10 +165,13 @@
 }
 
 .lightbox-img {
-  max-width: 90vw;
-  max-height: 90vh;
-  border-radius: 8px;
+  width: auto;
+  height: 60vh;
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.8);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+
 
 .arrow {
   position: absolute;
