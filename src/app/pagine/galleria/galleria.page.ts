@@ -14,7 +14,7 @@ interface Photo {
 })
 export class GalleriaPage implements OnInit {
 
-  constructor(private photoService: PhotoService) {}
+  constructor(private photoService: PhotoService) { }
 
   @ViewChild('video', { static: false }) videoElement!: ElementRef<HTMLVideoElement>;
   photos: Photo[] = [];
@@ -26,35 +26,43 @@ export class GalleriaPage implements OnInit {
 
   confirmDeletePhoto: Photo | null = null;
   isLoading = true;
+  cameraFacing: 'user' | 'environment' = 'environment';
 
   // Getter per foto selezionata (lightbox)
   get selectedPhoto(): string {
     return this.photos[this.selectedPhotoIndex]?.src || '';
   }
 
-ngOnInit() {
-  this.loadPhotos();
-}
-
-
-
- async loadPhotos() {
-  this.isLoading = true;
-  try {
-    this.photos = await this.photoService.getPhotos();
-  } catch (error) {
-    console.error('Errore caricamento foto', error);
-  } finally {
-    this.isLoading = false;
+  ngOnInit() {
+    this.loadPhotos();
   }
-}
+
+
+
+  async loadPhotos() {
+    this.isLoading = true;
+    try {
+      this.photos = await this.photoService.getPhotos();
+    } catch (error) {
+      console.error('Errore caricamento foto', error);
+    } finally {
+      this.isLoading = false;
+    }
+  }
 
 
   // Fotocamera
   async startCamera() {
     try {
       this.previewActive = true;
-      this.stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: this.cameraFacing }
+        }
+
+      });
+
       this.videoElement.nativeElement.srcObject = this.stream;
     } catch (error) {
       console.error('Errore nella fotocamera:', error);
@@ -62,6 +70,17 @@ ngOnInit() {
       this.previewActive = false;
     }
   }
+
+  isMobile(): boolean {
+    return /Mobi|Android/i.test(navigator.userAgent);
+  }
+
+  async toggleCamera() {
+    this.stopCamera();
+    this.cameraFacing = this.cameraFacing === 'user' ? 'environment' : 'user';
+    await this.startCamera();
+  }
+
 
   async takePhoto() {
     const video = this.videoElement?.nativeElement;

@@ -1,8 +1,8 @@
 .camera-overlay {
   position: fixed;
-  top: 60px; // sotto l’header se presente
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%); 
   width: 90%;
   max-width: 500px;
   z-index: 1000;
@@ -10,6 +10,7 @@
   overflow: hidden;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
+
 
 .camera-preview {
   width: 100%;
