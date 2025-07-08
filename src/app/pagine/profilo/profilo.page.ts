@@ -121,7 +121,7 @@ export class ProfiloPage implements OnInit {
 
     this.profile = {
       photo: this.profileEdit.photo,
-      banner: this.profileEdit.banner, 
+      banner: this.profileEdit.banner,
       nickname: this.profileEdit.nickname || '',
       name: this.profileEdit.name || '',
       email: this.profileEdit.email || '',
@@ -139,6 +139,7 @@ export class ProfiloPage implements OnInit {
       this.profileEdit = { ...this.profile };
       this.isLoading = false;
     }
+    this.avatarMarginTop = '-60px';
   }
 
   async presentFF7Alert(message: string) {
