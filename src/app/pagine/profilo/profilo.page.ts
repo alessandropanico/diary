@@ -1,8 +1,8 @@
 import { Component, OnInit, NgZone } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { UserDataService } from 'src/app/services/user-data.service';
-import { getAuth, User } from 'firebase/auth'; // Mantieni questo se usi Firebase Auth
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'; // Importa Camera di Capacitor
+import { getAuth, User } from 'firebase/auth';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 @Component({
   selector: 'app-profilo',
@@ -14,7 +14,7 @@ export class ProfiloPage implements OnInit {
 
   profile = {
     photo: '',
-    banner: '', // NUOVA PROPRIETÀ
+    banner: '',
     nickname: '',
     name: '',
     email: '',
@@ -23,7 +23,7 @@ export class ProfiloPage implements OnInit {
 
   profileEdit = {
     photo: '',
-    banner: '', // NUOVA PROPRIETÀ
+    banner: '',
     nickname: '',
     name: '',
     email: '',
@@ -32,7 +32,7 @@ export class ProfiloPage implements OnInit {
 
   editing = false;
   isLoading = true;
-  avatarMarginTop = '-60px'; // Valore iniziale per sovrapporsi al banner
+  avatarMarginTop = '-60px';
 
   constructor(
     private ngZone: NgZone,
@@ -49,7 +49,7 @@ export class ProfiloPage implements OnInit {
         if (firestoreData) {
           this.profile = {
             photo: firestoreData.photo || user.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
-            banner: firestoreData.banner || 'assets/immaginiGenerali/default-banner.jpg', // Imposta default per il banner
+            banner: firestoreData.banner || 'assets/immaginiGenerali/default-banner.jpg',
             nickname: firestoreData.nickname || user.displayName?.split(' ')[0] || '',
             name: firestoreData.name || user.displayName || '',
             email: firestoreData.email || user.email || '',
@@ -58,7 +58,7 @@ export class ProfiloPage implements OnInit {
         } else {
           this.profile = {
             photo: user.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
-            banner: 'assets/immaginiGenerali/default-banner.jpg', // Imposta default per il banner
+            banner: 'assets/immaginiGenerali/default-banner.jpg',
             nickname: user.displayName?.split(' ')[0] || '',
             name: user.displayName || '',
             email: user.email || '',
@@ -94,7 +94,7 @@ export class ProfiloPage implements OnInit {
         setTimeout(checkUserAndLoad, intervalTime);
       } else {
         console.warn("ngOnInit: Utente non loggato dopo il massimo dei tentativi. Resetting profile data.");
-        this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '' }; // Aggiorna reset
+        this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '' };
         this.profileEdit = { ...this.profile };
         this.isLoading = false;
         this.presentFF7Alert('Impossibile caricare il profilo. Assicurati di essere loggato.');
@@ -161,14 +161,14 @@ export class ProfiloPage implements OnInit {
     await alert.present();
   }
 
-  // --- NUOVI METODI PER IL BANNER ---
+
 
   async changeBanner() {
     const image = await Camera.getPhoto({
       quality: 90,
-      allowEditing: true, // Permette all'utente di ritagliare/modificare l'immagine
-      resultType: CameraResultType.DataUrl, // Ottieni l'immagine come stringa Base64
-      source: CameraSource.Photos // Permetti all'utente di scegliere dalla galleria
+      allowEditing: true,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Photos
     });
 
     if (image.dataUrl) {
@@ -179,10 +179,8 @@ export class ProfiloPage implements OnInit {
   }
 
   removeBanner() {
-    this.profileEdit.banner = ''; // Imposta il banner a vuoto per usare il default
+    this.profileEdit.banner = '';
   }
-
-  // --- METODI ESISTENTI PER FOTO PROFILO ---
 
   async changePhoto() {
     const image = await Camera.getPhoto({

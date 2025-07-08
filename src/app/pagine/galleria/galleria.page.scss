@@ -251,7 +251,7 @@
 
 /* Immagine dentro card: arrotondata e con bordo sottile */
 .card-img-top {
-  border-radius: 8px 8px 0 0;
+  border-radius: 0;
   border-bottom: 1.5px solid #555;
   width: 100%;
   display: block;
@@ -333,8 +333,9 @@
   font-weight: 600;
   font-family: 'Orbitron', sans-serif;
   transition: all 0.3s ease;
-  border-top-left-radius: 0px !important;
-  border-top-right-radius: 0px !important;
+  // border-top-left-radius: 0px !important;
+  // border-top-right-radius: 0px !important;
+  border-radius: 0;
 }
 
 .neon-btn {
@@ -386,7 +387,7 @@
   background: transparent;
   border: 1.5px solid #00e5ff;
   color: #00e5ff;
-  border-radius: 6px;
+  border-radius: 0px;
   font-weight: 600;
   padding: 6px 14px;
   font-size: 0.9rem;
