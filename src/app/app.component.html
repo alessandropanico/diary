@@ -1,5 +1,7 @@
-<ion-app>
-<ion-menu side="start" menuId="first" contentId="main-content" (ionWillOpen)="loadProfilePhoto()">
+<app-splash *ngIf="showSplash"></app-splash>
+
+<ion-app *ngIf="!showSplash">
+  <ion-menu side="start" menuId="first" contentId="main-content" (ionWillOpen)="loadProfilePhoto()">
     <ion-header>
       <ion-toolbar>
         <ion-title>Menu</ion-title>
@@ -7,7 +9,7 @@
     </ion-header>
     <ion-content class="menu-content">
       <ion-list class="cursor">
-
+        <!-- Menu Items -->
         <ion-item [routerLink]="isLoggedIn() ? '/profilo' : '/login'" (click)="closeMenu()">
           <ion-avatar slot="start" *ngIf="isLoggedIn()">
             <img [src]="getProfilePhoto()" />
@@ -22,13 +24,12 @@
         <ion-item routerLink="/list-task" (click)="closeMenu()">Task</ion-item>
         <ion-item routerLink="/note" (click)="closeMenu()">Note</ion-item>
         <ion-item routerLink="/login" (click)="closeMenu()">Login</ion-item>
-        <!-- <ion-item routerLink="/backup" (click)="closeMenu()">Backup</ion-item> -->
         <ion-item routerLink="/riconoscimenti" (click)="closeMenu()">Riconoscimenti</ion-item>
+
         <ion-item *ngIf="isLoggedIn()" (click)="logout(); closeMenu()">
           <ion-icon slot="start" name="log-out-outline"></ion-icon>
           <ion-label>Logout</ion-label>
         </ion-item>
-
       </ion-list>
     </ion-content>
   </ion-menu>

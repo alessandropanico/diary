@@ -15,21 +15,21 @@ import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideAnalytics, getAnalytics } from '@angular/fire/analytics';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { provideAuth, getAuth } from '@angular/fire/auth';
+import { SharedModule } from "./shared/shared.module";
 
 @NgModule({
   declarations: [AppComponent,],
-  imports:
-    [BrowserModule,
-      RouterModule,
-      IonicModule.forRoot(), AppRoutingModule,
-      IonicStorageModule.forRoot(),
-      ServiceWorkerModule.register('ngsw-worker.js', {
+  imports: [BrowserModule,
+    RouterModule,
+    IonicModule.forRoot(), AppRoutingModule,
+    IonicStorageModule.forRoot(),
+    ServiceWorkerModule.register('ngsw-worker.js', {
         enabled: !isDevMode(),
         // Register the ServiceWorker as soon as the application is stable
         // or after 30 seconds (whichever comes first).
         registrationStrategy: 'registerWhenStable:30000'
-      }) // Inizializza lo storage
-    ],
+    }) // Inizializza lo storage
+    , SharedModule],
   providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
   // ✅ Qui sotto i provider Firebase
   provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),

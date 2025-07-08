@@ -25,6 +25,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   deferredPrompt: any;
   showInstallButton = false;
+  showSplash = true;
 
   constructor(
     private menu: MenuController,
@@ -55,6 +56,10 @@ export class AppComponent implements OnInit, OnDestroy {
     if (currentUser) {
       await this.loadProfilePhoto();
     }
+
+  setTimeout(() => {
+    this.showSplash = false;
+  }, 3500);
   }
 
   ngOnDestroy() {
