@@ -1,8 +1,10 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
+import { SplashComponent } from './splash/splash.component';
 
 @NgModule({
+  declarations: [SplashComponent],
   imports: [
     CommonModule,
     IonicModule,
@@ -10,6 +12,7 @@ import { IonicModule } from '@ionic/angular';
   ],
   exports: [
     IonicModule,
+    SplashComponent
   ]
 })
-export class SharedModule {}
+export class SharedModule { }
