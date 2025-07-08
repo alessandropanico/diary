@@ -63,7 +63,6 @@ export class TaskService {
       // Ordina le task, ad esempio per data di creazione (le più vecchie prima)
       loadedTasks.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       this.tasksSubject.next(loadedTasks);
-      console.log(`TaskService: Caricate ${loadedTasks.length} task per l'utente ${uid}.`);
     } catch (error) {
       console.error('TaskService: Errore durante il caricamento delle task da Firestore:', error);
       // Qui potresti voler gestire l'errore in modo più user-friendly
@@ -85,7 +84,6 @@ export class TaskService {
       const tasksCollectionRef = collection(this.db, `users/${uid}/tasks`);
       // addDoc genera un ID del documento automaticamente
       const docRef = await addDoc(tasksCollectionRef, task);
-      console.log('TaskService: Task aggiunta con ID:', docRef.id);
 
       // Aggiorna localmente l'elenco delle task dopo l'aggiunta a Firestore
       const currentTasks = this.tasksSubject.value;
@@ -110,7 +108,6 @@ export class TaskService {
     try {
       const taskDocRef = doc(this.db, `users/${uid}/tasks`, taskId);
       await deleteDoc(taskDocRef);
-      console.log('TaskService: Task eliminata con ID:', taskId);
 
       // Aggiorna localmente l'elenco delle task dopo l'eliminazione da Firestore
       const currentTasks = this.tasksSubject.value;
@@ -136,7 +133,6 @@ export class TaskService {
     try {
       const taskDocRef = doc(this.db, `users/${uid}/tasks`, taskId);
       await updateDoc(taskDocRef, { completed: completed });
-      console.log('TaskService: Stato completamento task aggiornato per ID:', taskId);
 
       // Aggiorna localmente l'elenco delle task
       const currentTasks = this.tasksSubject.value;
