@@ -1,6 +1,11 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { PhotoService } from 'src/app/services/photo.service';
 
+interface Photo {
+  id: number;
+  src: string;
+}
+
 @Component({
   selector: 'app-galleria',
   templateUrl: './galleria.page.html',
@@ -9,21 +14,83 @@ import { PhotoService } from 'src/app/services/photo.service';
 })
 export class GalleriaPage implements OnInit {
 
-  constructor(private photoService: PhotoService) { }
+  constructor(private photoService: PhotoService) {}
 
-
-  @ViewChild('video', { static: false }) videoElement!: ElementRef;
-  photos: { src: string }[] = [];
+  @ViewChild('video', { static: false }) videoElement!: ElementRef<HTMLVideoElement>;
+  photos: Photo[] = [];
   previewActive = false;
   stream: MediaStream | null = null;
 
   lightboxOpen = false;
   selectedPhotoIndex = 0;
 
+  confirmDeletePhoto: Photo | null = null;
+  isLoading = true;
+
+  // Getter per foto selezionata (lightbox)
   get selectedPhoto(): string {
     return this.photos[this.selectedPhotoIndex]?.src || '';
   }
 
+ngOnInit() {
+  this.loadPhotos();
+}
+
+
+
+ async loadPhotos() {
+  this.isLoading = true;
+  try {
+    this.photos = await this.photoService.getPhotos();
+  } catch (error) {
+    console.error('Errore caricamento foto', error);
+  } finally {
+    this.isLoading = false;
+  }
+}
+
+
+  // Fotocamera
+  async startCamera() {
+    try {
+      this.previewActive = true;
+      this.stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      this.videoElement.nativeElement.srcObject = this.stream;
+    } catch (error) {
+      console.error('Errore nella fotocamera:', error);
+      alert('Impossibile avviare la fotocamera.');
+      this.previewActive = false;
+    }
+  }
+
+  async takePhoto() {
+    const video = this.videoElement?.nativeElement;
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context || !video) return;
+
+    // Riduzione dimensioni e compressione
+    canvas.width = video.videoWidth / 2;
+    canvas.height = video.videoHeight / 2;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async (blob) => {
+      if (blob) {
+        await this.photoService.addPhoto(blob);
+        await this.loadPhotos();
+        this.stopCamera();
+      }
+    }, 'image/jpeg', 0.7);
+  }
+
+  stopCamera() {
+    if (this.stream) {
+      this.stream.getTracks().forEach(track => track.stop());
+    }
+    this.previewActive = false;
+  }
+
+  // Lightbox
   openLightbox(photoSrc: string) {
     const index = this.photos.findIndex(p => p.src === photoSrc);
     if (index >= 0) {
@@ -50,17 +117,15 @@ export class GalleriaPage implements OnInit {
     }
   }
 
-
-  confirmDeletePhoto: { src: string } | null = null;
-
-  askDelete(photo: { src: string }) {
+  // Eliminazione
+  askDelete(photo: Photo) {
     this.confirmDeletePhoto = photo;
   }
 
-  confirmDelete() {
+  async confirmDelete() {
     if (this.confirmDeletePhoto) {
-      this.photoService.deletePhoto(this.confirmDeletePhoto);
-      this.loadPhotos();
+      await this.photoService.deletePhoto(this.confirmDeletePhoto.id);
+      await this.loadPhotos();
       this.confirmDeletePhoto = null;
     }
   }
@@ -69,62 +134,19 @@ export class GalleriaPage implements OnInit {
     this.confirmDeletePhoto = null;
   }
 
-  ngOnInit() {
-    this.loadPhotos();
+  async deletePhoto(photo: Photo) {
+    await this.photoService.deletePhoto(photo.id);
+    await this.loadPhotos();
   }
 
-  loadPhotos() {
-    this.photos = this.photoService.getPhotos();
-  }
-
-  deletePhoto(photo: { src: string }) {
-    this.photoService.deletePhoto(photo);
-    this.loadPhotos();
-  }
-
-  async startCamera() {
-    try {
-      this.previewActive = true;
-      this.stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      this.videoElement.nativeElement.srcObject = this.stream;
-    } catch (error) {
-      console.error('Errore nella fotocamera:', error);
-      alert('Impossibile avviare la fotocamera.');
-      this.previewActive = false;
-    }
-  }
-
-  async takePhoto() {
-    const video = this.videoElement?.nativeElement;
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (!context || !video) return;
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const imageData = canvas.toDataURL('image/png');
-    this.photoService.addPhoto(imageData);
-    this.loadPhotos();
-    this.stopCamera();
-  }
-
-  stopCamera() {
-    if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
-    }
-    this.previewActive = false;
-  }
-
+  // Condivisione
   async sharePhoto(photoSrc: string) {
     try {
       const response = await fetch(photoSrc);
       const blob = await response.blob();
-
       const file = new File([blob], 'foto.jpg', { type: blob.type });
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: 'Condividi foto',
@@ -138,6 +160,5 @@ export class GalleriaPage implements OnInit {
       alert('Errore durante la condivisione della foto.');
     }
   }
-
 
 }

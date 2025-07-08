@@ -6,7 +6,13 @@
 
 
 <ion-content class="ion-padding" >
-  <section class="sfondo">
+  
+   <div *ngIf="isLoading" class="loading-overlay">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Caricamento foto...</p>
+  </div>
+
+  <section *ngIf="!isLoading" class="sfondo">
 
     <!-- Galleria -->
     <div class="container" [class.blur]="previewActive">
