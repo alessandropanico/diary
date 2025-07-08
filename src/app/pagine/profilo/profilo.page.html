@@ -16,6 +16,17 @@
   </div>
 
   <div *ngIf="!isLoading">
+    <div class="profile-banner-container" [class.editable]="editing" (click)="editing && changeBanner()">
+      <img [src]="(editing ? profileEdit.banner : profile.banner) || 'assets/immaginiGenerali/default-banner.jpg'" alt="Banner Profilo" class="profile-banner" />
+      <div *ngIf="editing" class="banner-edit-overlay">
+        <ion-icon name="camera-outline"></ion-icon>
+        <span>Cambia Banner</span>
+      </div>
+    </div>
+    <ion-button *ngIf="editing && profileEdit.banner" expand="block" fill="outline" color="medium" (click)="removeBanner()" class="remove-banner-button">
+      Rimuovi banner
+    </ion-button>
+
     <ion-avatar class="profile-avatar" [class.editable]="editing" (click)="editing && changePhoto()">
       <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
     </ion-avatar>

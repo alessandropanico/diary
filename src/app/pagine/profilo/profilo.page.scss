@@ -200,3 +200,121 @@ ion-item.ff7-item {
   }
 }
 
+//----------------------------
+
+/* Aggiungi questi stili al tuo profilo.page.scss */
+
+.profile-banner-container {
+  width: 100%;
+  height: 150px; /* Altezza fissa per il banner */
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 20px; /* Spazio sotto il banner */
+  border-radius: 8px; /* Bordi arrotondati, se preferisci */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); // Ombra leggera
+
+  &.editable {
+    cursor: pointer;
+    &:hover .banner-edit-overlay {
+      opacity: 1;
+    }
+  }
+}
+
+.profile-banner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Assicura che l'immagine copra l'area senza distorsioni */
+  display: block;
+}
+
+.banner-edit-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  font-size: 1.2em;
+
+  ion-icon {
+    font-size: 2em;
+    margin-bottom: 5px;
+  }
+}
+
+.remove-banner-button {
+  margin-top: 10px; // Spazio tra banner e pulsante
+  margin-bottom: 20px; // Spazio tra pulsante e avatar
+}
+
+
+/* Rivedi gli stili dell'avatar per posizionarlo correttamente rispetto al banner */
+.profile-avatar {
+  width: 120px; /* Rendi l'avatar un po' più grande per Facebook-like */
+  height: 120px;
+  border: 4px solid var(--ion-color-primary); /* Colore del bordo */
+  border-radius: 50%;
+  overflow: hidden;
+  margin: -60px auto 20px auto; /* Sposta l'avatar in alto sopra il banner e aggiungi spazio sotto */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Ombra per farlo risaltare */
+  background-color: var(--ion-color-dark); /* Background per l'avatar */
+  z-index: 99999;
+  position: relative;
+
+  &.editable {
+    cursor: pointer;
+    border: 4px dashed var(--ion-color-secondary); /* Bordo tratteggiato in modalità modifica */
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Assicurati che il resto degli stili del profilo si adatti al nuovo layout */
+.profile-view, form {
+  margin-top: 20px; // Spazio aggiuntivo per compensare l'avatar che sporge
+}
+
+// Stili FF7 per gli input e i bottoni
+.ff7-item {
+  --background: #1a1a1a;
+  --color: #0f0;
+  --highlight-color-focused: #00ff00;
+  --border-color: #00ff00; // Colore del bordo/linea per gli item
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: 1px solid #00ff00;
+}
+
+.ff7-item ion-label {
+  color: #0f0;
+}
+
+.ff7-item ion-input, .ff7-item ion-textarea {
+  --color: #00ff00; // Colore del testo digitato
+  caret-color: #00ff00; // Colore del cursore
+}
+
+ion-button {
+  --background: #00ff00;
+  --color: #000;
+  --border-radius: 5px;
+  font-weight: bold;
+  margin-top: 20px;
+}
+ion-button[fill="outline"] {
+  --background: transparent;
+  --border-color: #00ff00;
+  --color: #00ff00;
+}
