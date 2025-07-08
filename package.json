@@ -24,6 +24,7 @@
     "@angular/platform-browser-dynamic": "^19.2.14",
     "@angular/router": "^19.2.14",
     "@angular/service-worker": "^19.2.14",
+    "@capacitor-community/admob": "^7.0.3",
     "@capacitor/android": "^7.1.0",
     "@capacitor/app": "7.0.0",
     "@capacitor/camera": "^7.0.0",
