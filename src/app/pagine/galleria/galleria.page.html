@@ -5,9 +5,9 @@
 </ion-header>
 
 
-<ion-content class="ion-padding" >
+<ion-content class="ion-padding">
 
-   <div *ngIf="isLoading" class="loading-overlay">
+  <div *ngIf="isLoading" class="loading-overlay">
     <ion-spinner name="crescent" color="primary"></ion-spinner>
     <p>Caricamento foto...</p>
   </div>
@@ -45,19 +45,23 @@
     </div>
 
 
+    <!--Camera-->
+    <div class="camera-bar" *ngIf="previewActive">
 
-    <!-- Barra con pulsante scatto -->
-<div class="camera-bar" *ngIf="previewActive">
-  <button class="circle-button neon-border" (click)="takePhoto()">
-    <div class="inner-circle"></div>
-  </button>
-  <button class="close-button neon-text" (click)="stopCamera()">✖</button>
+      <!-- 🔄 Pulsante per girare la fotocamera (solo su mobile) -->
+      <button class="switch-camera-button neon-text" (click)="toggleCamera()" *ngIf="isMobile()">
+        <ion-icon name="camera-reverse-outline"></ion-icon>
+      </button>
 
-  <!-- 🔄 Pulsante per girare la fotocamera (solo su mobile) -->
-  <button class="switch-camera-button neon-text" (click)="toggleCamera()" *ngIf="isMobile()">
-    🔄
-  </button>
-</div>
+      <!-- Barra con pulsante scatto -->
+      <button class="circle-button neon-border" (click)="takePhoto()">
+        <div class="inner-circle"></div>
+      </button>
+
+      <!--Stop camera-->
+      <button class="close-button neon-text" (click)="stopCamera()">✖</button>
+
+    </div>
 
 
     <!-- Pulsante apri fotocamera se non attiva -->

@@ -71,9 +71,13 @@ export class GalleriaPage implements OnInit {
     }
   }
 
-  isMobile(): boolean {
-    return /Mobi|Android/i.test(navigator.userAgent);
-  }
+ isMobile(): boolean {
+  return (
+    (navigator.maxTouchPoints > 1 || 'ontouchstart' in window) &&
+    window.innerWidth <= 768
+  );
+}
+
 
   async toggleCamera() {
     this.stopCamera();
