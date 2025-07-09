@@ -147,14 +147,15 @@ export class UserDataService {
     try {
       const docSnap = await getDoc(userDocRef);
       if (docSnap.exists()) {
-        return docSnap.data(); // Restituisce i dati del documento
+        // Restituisci i dati del documento E il suo ID (che è l'UID)
+        return { uid: docSnap.id, ...docSnap.data() }; // <-- MODIFICA QUI
       } else {
         console.log("Nessun documento utente trovato in Firestore per l'UID:", userId);
         return null;
       }
     } catch (error) {
       console.error("Errore nel recupero dei dati utente per ID:", userId, error);
-      throw error; // Rilancia l'errore per gestirlo nel componente chiamante
+      throw error;
     }
   }
 

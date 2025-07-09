@@ -49,7 +49,13 @@ const routes: Routes = [
     // *** MODIFICA QUI: Aggiungi /:id per il parametro ***
     path: 'profilo-altri-utenti/:id',
     loadChildren: () => import('./pagine/profilo-altri-utenti/profilo-altri-utenti.module').then( m => m.ProfiloAltriUtentiPageModule)
-  }
+  },
+  {
+    // Questo percorso accetta l'ID della conversazione come parametro
+    path: 'chat/:conversationId',
+    loadChildren: () => import('./pagine/chat/chat.module').then(m => m.ChatPageModule),
+    canActivate: [AuthGuard] // È fondamentale proteggere le chat
+  },
 
 
 

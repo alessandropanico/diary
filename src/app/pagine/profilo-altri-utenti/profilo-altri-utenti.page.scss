@@ -267,6 +267,22 @@ ion-item.ff7-item {
 }
 
 .ff7-item ion-input, .ff7-item ion-textarea {
-  --color: #00ffe0; // Colore del testo digitato
-  caret-color: #00ffe0; // Colore del cursore
+  --color: #00ffe0;
+  caret-color: #00ffe0;
+}
+
+.ff7-button.message-button {
+  margin-top: 25px;
+  --background: #0080ff;
+  --background-activated: #0056b3;
+  --color: white;
+  font-weight: bold;
+  letter-spacing: 1px;
+  box-shadow: 0 0 15px rgba(0, 128, 255, 0.7);
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 0 20px rgba(0, 128, 255, 1);
+    transform: translateY(-2px);
+  }
 }
