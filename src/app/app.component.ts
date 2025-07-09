@@ -1,10 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AuthService } from './services/auth.service';
-import { MenuController, AlertController } from '@ionic/angular';
-import { Subscription } from 'rxjs';
+import { MenuController, AlertController, ModalController } from '@ionic/angular';
+import { Subject, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { UserDataService } from './services/user-data.service';
 import { getAuth } from 'firebase/auth';
+import { SearchModalComponent } from './shared/search-modal/search-modal.component';
 
 @Component({
   selector: 'app-root',
@@ -27,12 +28,21 @@ export class AppComponent implements OnInit, OnDestroy {
   showInstallButton = false;
   showSplash = true;
 
+    // --- Proprietà per la Ricerca Utenti ---
+  searchQuery: string = '';
+  searchResults: any[] = [];
+  isSearchingUsers: boolean = false;
+  searchPerformed: boolean = false;
+  private searchTerms = new Subject<string>();
+  private searchSubscription: Subscription | undefined;
+
   constructor(
     private menu: MenuController,
     private authService: AuthService,
     private alertCtrl: AlertController,
     private router: Router,
     private userDataService: UserDataService,
+        private modalCtrl: ModalController // Inietta ModalController
 
 
   ) {
@@ -139,6 +149,35 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  // --- Metodi per il menu di ricerca ---
+async openSearchMenu() {
+    await this.menu.open('search-menu');
+    await this.menu.close('first'); // Chiudi il menu principale se aperto
+    this.searchQuery = '';
+    this.searchResults = [];
+    this.searchPerformed = false;
+    this.isSearchingUsers = false;
+  }
 
+  // Metodo per chiudere il menu di ricerca
+  closeSearchMenu() {
+    this.menu.close('search-menu');
+  }
+
+  // Gestore input per la searchbar
+  onSearchInput(event: any) {
+    this.searchQuery = event.target.value;
+    this.searchTerms.next(this.searchQuery);
+  }
+
+    // NUOVO METODO PER APRIRE IL MODALE DI RICERCA
+  async presentSearchModal() {
+    const modal = await this.modalCtrl.create({
+      component: SearchModalComponent,
+      cssClass: 'search-modal' // Una classe CSS opzionale per stilizzare il modale
+    });
+    await modal.present();
+    await this.menu.close('first'); // Chiudi il menu principale quando si apre il modale
+  }
 
 }

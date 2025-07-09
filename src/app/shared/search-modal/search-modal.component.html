@@ -1,0 +1,43 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismissModal()" class="ff7-close-button">
+        <ion-icon name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Cerca Utenti</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding search-modal-content">
+  <ion-searchbar
+    placeholder="Cerca per nickname o nome..."
+    (ionInput)="onSearchInput($event)"
+    class="ff7-searchbar"
+  ></ion-searchbar>
+
+  <ion-list *ngIf="!isSearchingUsers && searchResults.length > 0">
+    <ion-item *ngFor="let user of searchResults" class="ff7-search-result-item" (click)="selectUser(user.uid)">
+      <ion-avatar slot="start">
+        <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto Profilo">
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ user.nickname }}</h2>
+        <p>{{ user.name }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+  <div *ngIf="isSearchingUsers" class="ion-text-center ion-padding">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p class="search-status-text">Ricerca in corso...</p>
+  </div>
+
+  <div *ngIf="!isSearchingUsers && searchPerformed && searchResults.length === 0 && searchQuery.length > 0" class="ion-text-center ion-padding">
+    <p class="search-status-text">Nessun utente trovato per "{{ searchQuery }}".</p>
+  </div>
+
+  <div *ngIf="!searchPerformed && !isSearchingUsers" class="ion-text-center ion-padding">
+    <p class="search-status-text">Inizia a digitare per cercare utenti.</p>
+  </div>
+</ion-content>
