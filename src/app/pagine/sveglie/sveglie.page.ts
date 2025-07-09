@@ -5,6 +5,7 @@ import { AlarmPlugin } from 'src/app/plugin/alarm-plugin';
 import { Alarm } from 'src/app/interfaces/alarm';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { ViewChild, ElementRef } from '@angular/core';
+import { AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-sveglie',
@@ -30,7 +31,10 @@ export class SvegliePage {
   selectedSoundUrl: string | null = null;
 
 
-  constructor(private storage: Storage) {
+  constructor(private storage: Storage,
+      private alertController: AlertController
+
+  ) {
     this.init();
   }
 
@@ -556,6 +560,46 @@ onSoundFileSelected(event: Event): void {
       this.fileInputRef.nativeElement.value = ''; // svuota l'input file visivamente
     }
   }
+
+  async confirmRemoveAlarm(index: number) {
+  const alarm = this.alarms[index];
+  const time = alarm?.time || '';
+
+  const alert = await this.alertController.create({
+    header: 'Conferma eliminazione',
+    message: `Sei sicuro di voler eliminare la sveglia impostata per le ${time}?`,
+    buttons: [
+      {
+        text: 'Annulla',
+        role: 'cancel'
+      },
+      {
+        text: 'Elimina',
+        handler: async () => {
+          try {
+            if (alarm?.ids) {
+              await LocalNotifications.cancel({
+                notifications: alarm.ids.map((id: number) => ({ id })),
+              });
+            }
+            this.alarms.splice(index, 1);
+            await this.saveAlarms();
+          } catch (error) {
+            console.error("Errore durante l'eliminazione della sveglia:", error);
+            const errorAlert = await this.alertController.create({
+              header: 'Errore',
+              message: 'Impossibile eliminare la sveglia. Riprova.',
+              buttons: ['OK'],
+            });
+            await errorAlert.present();
+          }
+        }
+      }
+    ]
+  });
+
+  await alert.present();
+}
 
 
 }
