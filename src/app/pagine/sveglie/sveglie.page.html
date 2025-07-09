@@ -66,6 +66,16 @@
 
 <ion-content [fullscreen]="true" class="ion-padding">
 
+  <ion-card *ngIf="alarms.length === 0" class="no-alarms-card">
+    <ion-card-header>
+      <ion-card-title>Nessuna Sveglia!</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      Non hai ancora aggiunto nessuna sveglia. Clicca sul pulsante "➕ Aggiungi Sveglia" per crearne una!
+    </ion-card-content>
+  </ion-card>
+
+
   <!-- Lista sveglie -->
   <div *ngIf="alarms.length > 0" class="alarms-container">
     <h2 class="titolo-dark">Sveglie Attive</h2>
