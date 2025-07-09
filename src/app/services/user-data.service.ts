@@ -133,5 +133,31 @@ export class UserDataService {
       return null;
     }
   }
+
+
+  //-----------------------------------------
+
+  async getUserDataById(userId: string): Promise<any | null> {
+    if (!userId) {
+      console.warn("ID utente non fornito per getUserDataById.");
+      return null;
+    }
+
+    const userDocRef = doc(this.firestore, 'users', userId);
+    try {
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        return docSnap.data(); // Restituisce i dati del documento
+      } else {
+        console.log("Nessun documento utente trovato in Firestore per l'UID:", userId);
+        return null;
+      }
+    } catch (error) {
+      console.error("Errore nel recupero dei dati utente per ID:", userId, error);
+      throw error; // Rilancia l'errore per gestirlo nel componente chiamante
+    }
+  }
+
+
 }
 

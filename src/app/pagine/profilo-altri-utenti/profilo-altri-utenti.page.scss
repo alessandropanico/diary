@@ -1,0 +1,274 @@
+:host {
+  --primary-glow: #00f0ff;
+  --bg-blur: rgba(20, 20, 30, 0.75);
+  --text-light: #e0faff;
+  --label-color: #a0cfd8;
+  --danger-color: #ff4e4e;
+}
+
+.profile-avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 2px solid var(--primary-glow);
+  margin: 20px auto;
+  box-shadow: 0 0 15px var(--primary-glow);
+  transition: box-shadow 0.3s ease, margin-top 0.3s ease-in-out;
+
+  &.editable {
+    cursor: pointer;
+    border: 2px dashed var(--primary-glow);
+    box-shadow: 0 0 20px var(--primary-glow), 0 0 5px #1dc4e0;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.profile-view h2,
+.profile-view h3 {
+  text-shadow: 0 0 5px var(--primary-glow);
+}
+
+.profile-view h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin: 10px 0 5px;
+}
+
+.profile-view h3 {
+  font-size: 1.2rem;
+  color: var(--label-color);
+}
+
+.profile-view p {
+  font-size: 1rem;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+ion-label {
+  color: #00ffe0;
+}
+
+.label-stacked.sc-ion-label-md-h{
+   font-family: 'Orbitron', sans-serif !important;
+}
+
+ion-input,
+ion-textarea {
+  color: white;
+}
+
+ion-button[type="submit"] {
+  margin-top: 20px;
+  --background: var(--primary-glow);
+  --color: black;
+  font-weight: bold;
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+ion-list{
+  background-color: transparent;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+:host {
+  font-family: 'Orbitron', sans-serif;
+  --primary-glow: #00ffee;
+  --bg-blur: rgba(15, 15, 35, 0.8);
+  --text-light: #ffffff;
+  --label-color: #a0cfd8;
+}
+
+.ff7-item {
+  background: var(--bg-blur);
+  border: 1px solid #00ffee50;
+  border-radius: 0px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  box-shadow: 0 0 8px #00ffee20;
+  transition: box-shadow 0.3s ease;
+}
+
+.ff7-item:hover {
+  box-shadow: 0 0 12px #00ffee60;
+}
+
+ion-label {
+  color: var(--label-color);
+  font-family: 'Orbitron', sans-serif;
+}
+
+ion-input,
+ion-textarea {
+  color: var(--text-light);
+  font-family: 'Orbitron', sans-serif;
+}
+
+ion-item.ff7-item {
+  --background: transparent !important;
+  --inner-border-width: 0px;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --min-height: auto;
+  background: rgba(15, 15, 35, 0.8);
+  border: 1px solid #00ffee50;
+  box-shadow: 0 0 8px #00ffee20;
+  border-radius: 0;
+  margin-bottom: 16px;
+  padding: 12px;
+}
+
+
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  text-align: center;
+
+  ion-spinner {
+    width: 64px;
+    height: 64px;
+    color: #00ffee;
+    animation: pulse 1.2s infinite ease-in-out;
+  }
+
+  p {
+    color: #00ffee;
+    font-family: 'Orbitron', 'Segoe UI', monospace;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    margin-top: 12px;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+//----------------------------
+
+/* Aggiungi questi stili al tuo profilo.page.scss */
+
+.profile-banner-container {
+  width: 100%;
+  height: 150px; /* Altezza fissa per il banner */
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 20px; /* Spazio sotto il banner */
+  border-radius: 8px; /* Bordi arrotondati, se preferisci */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); // Ombra leggera
+
+  &.editable {
+    cursor: pointer;
+    &:hover .banner-edit-overlay {
+      opacity: 1;
+    }
+  }
+}
+
+.profile-banner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Assicura che l'immagine copra l'area senza distorsioni */
+  display: block;
+}
+
+.banner-edit-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  font-size: 1.2em;
+
+  ion-icon {
+    font-size: 2em;
+    margin-bottom: 5px;
+  }
+}
+
+.remove-banner-button {
+  margin-top: 10px; // Spazio tra banner e pulsante
+  margin-bottom: 20px; // Spazio tra pulsante e avatar
+}
+
+
+/* Rivedi gli stili dell'avatar per posizionarlo correttamente rispetto al banner */
+.profile-avatar {
+  width: 120px; /* Rendi l'avatar un po' più grande per Facebook-like */
+  height: 120px;
+  border: 4px solid var(--ion-color-primary); /* Colore del bordo */
+  border-radius: 50%;
+  overflow: hidden;
+  margin: -60px auto 20px auto; /* Sposta l'avatar in alto sopra il banner e aggiungi spazio sotto */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Ombra per farlo risaltare */
+  background-color: var(--ion-color-dark); /* Background per l'avatar */
+  z-index: 99999;
+  position: relative;
+
+  &.editable {
+    cursor: pointer;
+    border: 4px dashed var(--ion-color-secondary); /* Bordo tratteggiato in modalità modifica */
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Assicurati che il resto degli stili del profilo si adatti al nuovo layout */
+.profile-view, form {
+  margin-top: 20px; // Spazio aggiuntivo per compensare l'avatar che sporge
+}
+
+// Stili FF7 per gli input e i bottoni
+.ff7-item {
+  --background: #1a1a1a;
+  --color: #00ffe0;
+  --highlight-color-focused: #00ffe0;
+  --border-color: #00ffe0; // Colore del bordo/linea per gli item
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: 1px solid #00ffe0;
+}
+
+.ff7-item ion-label {
+  color: #00ffe0;
+}
+
+.ff7-item ion-input, .ff7-item ion-textarea {
+  --color: #00ffe0; // Colore del testo digitato
+  caret-color: #00ffe0; // Colore del cursore
+}

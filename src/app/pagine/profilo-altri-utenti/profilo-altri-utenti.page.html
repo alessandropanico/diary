@@ -1,0 +1,38 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Profilo Utente</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content fullscreen class="ion-padding ion-text-center">
+
+  <div *ngIf="isLoading" class="loading-overlay">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Caricamento profilo...</p>
+  </div>
+
+  <div *ngIf="!isLoading && profileData">
+    <div class="profile-banner-container">
+      <img [src]="profileData.banner || 'assets/immaginiGenerali/default-banner.jpg'" alt="Banner Profilo" class="profile-banner" />
+    </div>
+
+    <ion-avatar class="profile-avatar">
+      <img [src]="profileData.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
+    </ion-avatar>
+
+    <div class="profile-view">
+      <h2>{{ profileData.nickname || 'Nickname non disponibile' }}</h2>
+      <h3>{{ profileData.name || 'Nome e Cognome non disponibili' }}</h3>
+      <p>{{ profileData.bio || 'Descrizione assente' }}</p>
+      <p>Email: {{ profileData.email || 'Email non disponibile' }}</p>
+      </div>
+  </div>
+
+  <div *ngIf="!isLoading && !profileData">
+    <p>Impossibile caricare il profilo utente. Potrebbe non esistere o esserci stato un errore.</p>
+  </div>
+
+</ion-content>

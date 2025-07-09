@@ -44,7 +44,13 @@ const routes: Routes = [
     path: 'profilo',
     loadChildren: () => import('./pagine/profilo/profilo.module').then(m => m.ProfiloPageModule),
     canActivate: [AuthGuard]
+  },
+   {
+    // *** MODIFICA QUI: Aggiungi /:id per il parametro ***
+    path: 'profilo-altri-utenti/:id',
+    loadChildren: () => import('./pagine/profilo-altri-utenti/profilo-altri-utenti.module').then( m => m.ProfiloAltriUtentiPageModule)
   }
+
 
 
 
