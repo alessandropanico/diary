@@ -8,7 +8,6 @@ Tag e ricerca intelligente per note/task: cerca per parola chiave, categoria, ta
 Task intelligenti: suggerimenti basati sull’ora/giorno (es. "Hai dimenticato di completare una task ieri");
 
 Dark mode automatica: basata su orario o preferenze di sistema;
-Animazioni fluide (con Angular animations o librerie Ionic): per transizioni tra schermate o attivazioni di elementi.
 Tema personalizzabile: permetti all’utente di scegliere colori principali e stile;
 
 Tracking umore/giornata: aggiungi una sezione per annotare come ci si sente ogni giorno (magari emoji + breve nota);
