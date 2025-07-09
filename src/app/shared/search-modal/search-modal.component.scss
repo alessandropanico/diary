@@ -1,7 +1,6 @@
-/* src/app/components/search-modal/search-modal.component.scss */
 .search-modal-content {
-  --background: linear-gradient(145deg, #10151f, #0b0f18); /* Un background scuro per il modale */
-  color: var(--ion-color-primary); /* Colore del testo */
+  --background: linear-gradient(145deg, #10151f, #0b0f18);
+  color: var(--ion-color-primary);
 }
 
 ion-header {
@@ -54,8 +53,12 @@ ion-title {
 
   ion-label p {
     font-size: 0.9rem;
-    color: var(--ion-color-medium); // O altra variabile colore per il testo secondario
+    color: var(--ion-color-medium);
   }
+}
+
+ion-list{
+  background-color: transparent !important;
 }
 
 .search-status-text {
@@ -69,7 +72,6 @@ ion-title {
   padding: 0 10px;
 }
 
-/* Stili per lo spinner di caricamento */
 ion-spinner {
   color: var(--ion-color-primary);
 }
