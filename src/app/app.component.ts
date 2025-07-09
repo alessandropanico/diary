@@ -28,7 +28,6 @@ export class AppComponent implements OnInit, OnDestroy {
   showInstallButton = false;
   showSplash = true;
 
-    // --- Proprietà per la Ricerca Utenti ---
   searchQuery: string = '';
   searchResults: any[] = [];
   isSearchingUsers: boolean = false;
@@ -42,9 +41,7 @@ export class AppComponent implements OnInit, OnDestroy {
     private alertCtrl: AlertController,
     private router: Router,
     private userDataService: UserDataService,
-        private modalCtrl: ModalController // Inietta ModalController
-
-
+    private modalCtrl: ModalController
   ) {
     window.addEventListener('beforeinstallprompt', (e: any) => {
       e.preventDefault();
@@ -67,9 +64,9 @@ export class AppComponent implements OnInit, OnDestroy {
       await this.loadProfilePhoto();
     }
 
-  setTimeout(() => {
-    this.showSplash = false;
-  }, 3500);
+    setTimeout(() => {
+      this.showSplash = false;
+    }, 3500);
   }
 
   ngOnDestroy() {
@@ -77,7 +74,6 @@ export class AppComponent implements OnInit, OnDestroy {
       this.userSub.unsubscribe();
     }
   }
-
 
   toggleMenu() {
     this.menu.toggle();
@@ -105,7 +101,6 @@ export class AppComponent implements OnInit, OnDestroy {
     return this.authService.isLoggedIn();
   }
 
-
   getProfilePhoto(): string {
     return this.profilePhotoUrl || 'assets/immaginiGenerali/default-avatar.jpg';
   }
@@ -129,7 +124,7 @@ export class AppComponent implements OnInit, OnDestroy {
     await alert.present();
 
     this.router.navigateByUrl('/home').then(() => {
-      window.location.reload(); // Puoi provare a rimuovere questa riga se il reindirizzamento è sufficiente
+      window.location.reload();
     });
   }
 
@@ -149,35 +144,31 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  // --- Metodi per il menu di ricerca ---
-async openSearchMenu() {
+  async openSearchMenu() {
     await this.menu.open('search-menu');
-    await this.menu.close('first'); // Chiudi il menu principale se aperto
+    await this.menu.close('first');
     this.searchQuery = '';
     this.searchResults = [];
     this.searchPerformed = false;
     this.isSearchingUsers = false;
   }
 
-  // Metodo per chiudere il menu di ricerca
   closeSearchMenu() {
     this.menu.close('search-menu');
   }
 
-  // Gestore input per la searchbar
   onSearchInput(event: any) {
     this.searchQuery = event.target.value;
     this.searchTerms.next(this.searchQuery);
   }
 
-    // NUOVO METODO PER APRIRE IL MODALE DI RICERCA
   async presentSearchModal() {
     const modal = await this.modalCtrl.create({
       component: SearchModalComponent,
-      cssClass: 'search-modal' // Una classe CSS opzionale per stilizzare il modale
+      cssClass: 'search-modal'
     });
     await modal.present();
-    await this.menu.close('first'); // Chiudi il menu principale quando si apre il modale
+    await this.menu.close('first');
   }
 
 }
