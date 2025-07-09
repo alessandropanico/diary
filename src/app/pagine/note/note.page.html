@@ -7,7 +7,8 @@
       <ion-button fill="clear" class="ff7-button" *ngIf="!isSelectionMode" (click)="openCreatePlaylist()">
         ➕ Playlist
       </ion-button>
-      <ion-button fill="clear" class="ff7-button" *ngIf="!isSelectionMode && selectedPlaylistId !== 'all'" (click)="confirmDeleteCurrentPlaylist()">
+      <ion-button fill="clear" class="ff7-button" *ngIf="!isSelectionMode && selectedPlaylistId !== 'all'"
+        (click)="confirmDeleteCurrentPlaylist()">
         🗑️
       </ion-button>
 
@@ -29,16 +30,27 @@
 
   <div *ngIf="!isLoading">
     <div class="playlist-scroll" appDragScroll>
-      <div *ngFor="let playlist of playlists" (click)="selectPlaylist(playlist.id)" [class.selected]="playlist.id === selectedPlaylistId">
+      <div *ngFor="let playlist of playlists" (click)="selectPlaylist(playlist.id)"
+        [class.selected]="playlist.id === selectedPlaylistId">
         {{ playlist.name }}
       </div>
     </div>
+
+    <ion-card class="no-tasks-card" *ngIf="filteredNotes.length === 0">
+      <ion-card-header>
+        <ion-card-title>Nessuna nota!</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        Non hai ancora aggiunto nessuna task. Clicca sul pulsante "➕" per crearne una!
+      </ion-card-content>
+    </ion-card>
 
     <div class="note-grid">
       <div class="note-thumbnail" *ngFor="let note of filteredNotes" (click)="onNoteClick(note, $event)"
         (contextmenu)="onNoteRightClick(note, $event)" (press)="onNoteLongPress(note)">
 
-        <ion-checkbox *ngIf="isSelectionMode" [checked]="selectedNoteIds.has(note.id)" (ionChange)="toggleNoteSelection(note)">
+        <ion-checkbox *ngIf="isSelectionMode" [checked]="selectedNoteIds.has(note.id)"
+          (ionChange)="toggleNoteSelection(note)">
         </ion-checkbox>
 
         <h3>{{ note.title }}</h3>
@@ -46,9 +58,7 @@
       </div>
     </div>
 
-    <ion-text class="text" color="medium" *ngIf="filteredNotes.length === 0">
-      Nessuna nota in questa playlist.
-    </ion-text>
+
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="!isSelectionMode">
       <ion-fab-button class="ff7-fab2" (click)="openNewNoteModal()">
