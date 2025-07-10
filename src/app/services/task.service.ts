@@ -1,8 +1,8 @@
 // src/app/services/task.service.ts
 
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { Task } from '../interfaces/task'; // Assicurati che l'interfaccia Task abbia 'id?: string;'
+import { BehaviorSubject, Observable, Subscription } from 'rxjs'; // Importa Subscription
+import { Task } from '../interfaces/task';
 import {
   getFirestore,
   collection,
@@ -12,9 +12,9 @@ import {
   updateDoc,
   deleteDoc,
   query,
-  where // Non usiamo 'where' in questo esempio, ma è utile per query più complesse
+  where
 } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth'; // Per ottenere l'UID dell'utente
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth'; // Importa User e onAuthStateChanged
 
 @Injectable({
   providedIn: 'root'
@@ -23,12 +23,34 @@ export class TaskService {
   private tasksSubject = new BehaviorSubject<Task[]>([]);
   tasks$: Observable<Task[]> = this.tasksSubject.asObservable();
 
-  private db = getFirestore(); // Istanza di Firestore
+  private db = getFirestore();
+  private authStateSubscription: Subscription; // Aggiunto per gestire la sottoscrizione all'auth
 
   constructor() {
-    // Non carichiamo più da localStorage all'avvio del servizio.
-    // Il caricamento avverrà nel componente che visualizza le task,
-    // dopo che l'utente è autenticato.
+    // Inizializza l'ascoltatore dello stato di autenticazione nel costruttore del servizio
+    // Questo assicura che loadTasks() venga chiamato non appena l'utente è autenticato.
+    const auth = getAuth();
+    this.authStateSubscription = new Subscription(); // Inizializza la subscription
+
+    this.authStateSubscription.add(
+      onAuthStateChanged(auth, async (user: User | null) => {
+        if (user) {
+          console.log('TaskService: Utente autenticato, caricamento task iniziali...');
+          await this.loadTasks(); // Carica le task non appena l'utente è loggato
+        } else {
+          console.log('TaskService: Utente non autenticato, svuoto le task.');
+          this.tasksSubject.next([]); // Svuota le task se l'utente si disconnette
+        }
+      })
+    );
+  }
+
+  // È buona pratica disiscriversi dagli observables quando il servizio non è più necessario
+  // Anche se i servizi singleton come questo raramente vengono distrutti.
+  ngOnDestroy() {
+    if (this.authStateSubscription) {
+      this.authStateSubscription.unsubscribe();
+    }
   }
 
   /**
@@ -47,25 +69,23 @@ export class TaskService {
     const uid = this.getUserUid();
     if (!uid) {
       console.warn('TaskService: Nessun utente autenticato. Impossibile caricare le task.');
-      this.tasksSubject.next([]); // Svuota le task se l'utente non è loggato
+      this.tasksSubject.next([]);
       return;
     }
 
     try {
-      // Riferimento alla sottocollezione 'tasks' dell'utente corrente
       const tasksCollectionRef = collection(this.db, `users/${uid}/tasks`);
       const querySnapshot = await getDocs(tasksCollectionRef);
       const loadedTasks: Task[] = [];
       querySnapshot.forEach(docSnap => {
-        // Aggiungi l'ID del documento al dato della task
         loadedTasks.push({ id: docSnap.id, ...docSnap.data() as Task });
       });
-      // Ordina le task, ad esempio per data di creazione (le più vecchie prima)
       loadedTasks.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       this.tasksSubject.next(loadedTasks);
+      console.log(`TaskService: Caricate ${loadedTasks.length} task da Firestore.`);
     } catch (error) {
       console.error('TaskService: Errore durante il caricamento delle task da Firestore:', error);
-      // Qui potresti voler gestire l'errore in modo più user-friendly
+      // Potresti voler rimettere in stato di errore o svuotare le task in caso di fallimento grave
     }
   }
 
@@ -77,20 +97,19 @@ export class TaskService {
     const uid = this.getUserUid();
     if (!uid) {
       console.error('TaskService: Nessun utente autenticato. Impossibile aggiungere la task.');
-      throw new Error('Unauthorized'); // Lancia un errore per gestirlo nel componente
+      throw new Error('Unauthorized');
     }
 
     try {
       const tasksCollectionRef = collection(this.db, `users/${uid}/tasks`);
-      // addDoc genera un ID del documento automaticamente
       const docRef = await addDoc(tasksCollectionRef, task);
 
-      // Aggiorna localmente l'elenco delle task dopo l'aggiunta a Firestore
       const currentTasks = this.tasksSubject.value;
       this.tasksSubject.next([...currentTasks, { id: docRef.id, ...task }]);
+      console.log('TaskService: Task aggiunta e BehaviorSubject aggiornato.');
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiunta della task a Firestore:', error);
-      throw error; // Rilancia l'errore per gestirlo nel componente
+      throw error;
     }
   }
 
@@ -109,9 +128,9 @@ export class TaskService {
       const taskDocRef = doc(this.db, `users/${uid}/tasks`, taskId);
       await deleteDoc(taskDocRef);
 
-      // Aggiorna localmente l'elenco delle task dopo l'eliminazione da Firestore
       const currentTasks = this.tasksSubject.value;
       this.tasksSubject.next(currentTasks.filter(t => t.id !== taskId));
+      console.log('TaskService: Task eliminata e BehaviorSubject aggiornato.');
     } catch (error) {
       console.error('TaskService: Errore durante l\'eliminazione della task da Firestore:', error);
       throw error;
@@ -134,18 +153,15 @@ export class TaskService {
       const taskDocRef = doc(this.db, `users/${uid}/tasks`, taskId);
       await updateDoc(taskDocRef, { completed: completed });
 
-      // Aggiorna localmente l'elenco delle task
       const currentTasks = this.tasksSubject.value;
       const updatedTasks = currentTasks.map(t =>
         t.id === taskId ? { ...t, completed: completed } : t
       );
       this.tasksSubject.next(updatedTasks);
+      console.log('TaskService: Stato task aggiornato e BehaviorSubject aggiornato.');
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiornamento della task in Firestore:', error);
       throw error;
     }
   }
-
-  // I metodi loadTasks() e saveTasks() basati su localStorage sono stati rimossi.
-  // La gestione del salvataggio è ora implicita nelle operazioni di Firestore.
 }
