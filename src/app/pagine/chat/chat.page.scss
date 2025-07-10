@@ -20,6 +20,8 @@
   display: flex;
   flex-direction: column;
   padding: 10px;
+    padding-bottom: 80px; // 👈 lascia spazio al footer fisso
+
 }
 
 .chat-bubble {
@@ -61,12 +63,12 @@
   border-bottom-left-radius: 0; // Angolo per la "coda"
 }
 
-ion-footer {
-  background: rgba(10, 15, 25, 0.9);
-  backdrop-filter: blur(8px);
-  border-top: 1px solid rgba(0, 255, 238, 0.2);
-  padding: 5px 10px;
-}
+// ion-footer {
+//   background: rgba(10, 15, 25, 0.9);
+//   backdrop-filter: blur(8px);
+//   border-top: 1px solid rgba(0, 255, 238, 0.2);
+//   padding: 5px 10px;
+// }
 
 .message-input-item {
   --background: transparent;
@@ -126,12 +128,14 @@ ion-footer {
 
 //------------------------------------------
 
-@media screen and (max-width:600px) {
-  ion-content::part(scroll) {
-    padding-bottom: 0vh !important;
-  }
-
-  ion-content{
-    padding-bottom: 0vh !important;
-  }
+ion-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1002; // sopra contenuto e overlay
+  background: rgba(10, 15, 25, 0.9);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(0, 255, 238, 0.2);
+  padding: 5px 10px;
 }
