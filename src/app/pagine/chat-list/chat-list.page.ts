@@ -50,53 +50,53 @@ export class ChatListPage implements OnInit, OnDestroy {
 
   // Metodo per caricare le conversazioni dell'utente loggato
   async loadUserConversations() {
-    if (!this.loggedInUserId) {
-      console.warn('ChatListPage: Impossibile caricare le conversazioni, loggedInUserId è nullo.');
-      this.isLoading = false;
-      return;
-    }
-
-    // Sottoscriviti all'observable che recupera le conversazioni dell'utente
-    this.conversationsSubscription = this.chatService.getUserConversations(this.loggedInUserId).subscribe(async (convs) => {
-      console.log('ChatListPage: Conversazioni recuperate grezze:', convs);
-      const processedConvs: any[] = []; // Array temporaneo per le conversazioni processate
-
-      for (const conv of convs) {
-        // Trova l'ID dell'altro partecipante nella conversazione
-        const otherParticipantId = conv.participants.find((id: string) => id !== this.loggedInUserId);
-        let otherParticipantName = 'Utente Sconosciuto';
-        let otherParticipantPhoto = 'assets/immaginiGenerali/default-avatar.jpg'; // Immagine di profilo di default
-
-        if (otherParticipantId) {
-          try {
-            // Recupera i dati del profilo dell'altro utente
-            const otherUserData = await this.userDataService.getUserDataById(otherParticipantId);
-            if (otherUserData) {
-              otherParticipantName = otherUserData.username || otherUserData.displayName || 'Utente Senza Nome';
-              otherParticipantPhoto = otherUserData.profilePhotoUrl || 'assets/immaginiGenerali/default-avatar.jpg';
-            }
-          } catch (error) {
-            console.error('Errore nel recupero dati altro partecipante:', otherParticipantId, error);
-            // Continua anche se c'è un errore, per non bloccare la lista
-          }
-        }
-
-        processedConvs.push({
-          ...conv, // Tutte le proprietà della conversazione originale
-          otherParticipantId,
-          otherParticipantName,
-          otherParticipantPhoto,
-          // Formatta la data dell'ultimo messaggio per una visualizzazione amichevole
-          displayLastMessageAt: conv.lastMessageAt?.toDate ? this.formatDate(conv.lastMessageAt.toDate()) : 'N/A'
-        });
-      }
-      this.conversations = processedConvs; // Assegna l'array processato
-      this.isLoading = false; // Caricamento completato
-    }, (error) => {
-      console.error('Errore nel recupero delle conversazioni:', error);
-      this.isLoading = false; // Termina caricamento anche in caso di errore
-    });
+  if (!this.loggedInUserId) {
+    console.warn('ChatListPage: Impossibile caricare le conversazioni, loggedInUserId è nullo.');
+    this.isLoading = false;
+    return;
   }
+
+  this.conversationsSubscription = this.chatService.getUserConversations(this.loggedInUserId).subscribe(async (convs) => {
+    console.log('ChatListPage: Conversazioni recuperate grezze:', convs);
+    const processedConvs: any[] = [];
+
+    for (const conv of convs) {
+      const otherParticipantId = conv.participants.find((id: string) => id !== this.loggedInUserId);
+      // Lasciamo i fallback qui, ma UserDataService dovrebbe già fornire valori sensati
+      let otherParticipantName = 'Utente Sconosciuto';
+      let otherParticipantPhoto = 'assets/immaginiGenerali/default-avatar.jpg';
+
+      if (otherParticipantId) {
+        try {
+          // otherUserData ora avrà le proprietà 'username' e 'profilePhotoUrl'
+          const otherUserData = await this.userDataService.getUserDataById(otherParticipantId);
+
+          if (otherUserData) {
+            // Questi campi saranno sempre stringhe grazie a UserDataService
+            otherParticipantName = otherUserData.username; // Usa username
+            otherParticipantPhoto = otherUserData.profilePhotoUrl; // Usa profilePhotoUrl
+          }
+        } catch (error) {
+          console.error('Errore nel recupero dati altro partecipante:', otherParticipantId, error);
+          // I fallback rimangono invariati
+        }
+      }
+
+      processedConvs.push({
+        ...conv,
+        otherParticipantId,
+        otherParticipantName,
+        otherParticipantPhoto,
+        displayLastMessageAt: conv.lastMessageAt?.toDate ? this.formatDate(conv.lastMessageAt.toDate()) : 'N/A'
+      });
+    }
+    this.conversations = processedConvs;
+    this.isLoading = false;
+  }, (error) => {
+    console.error('Errore nel recupero delle conversazioni:', error);
+    this.isLoading = false;
+  });
+}
 
   // Metodo per aprire la chat specifica
   openChat(conversationId: string) {

@@ -1,3 +1,5 @@
+// user-data.service.ts
+
 import { Injectable } from '@angular/core';
 import { getAuth } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit, getFirestore } from 'firebase/firestore';
@@ -7,7 +9,7 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit,
 })
 export class UserDataService {
   private db = getFirestore();
-  private firestore = getFirestore();
+  private firestore = getFirestore(); // Puoi usare solo uno dei due, sono la stessa istanza
   private auth = getAuth();
 
   private getUserUid(): string | null {
@@ -100,10 +102,11 @@ export class UserDataService {
       }
     });
 
-    allResults.sort((a, b) => a.nickname.localeCompare(b.nickname));
+    allResults.sort((a, b) => (a.nickname || '').localeCompare(b.nickname || ''));
 
     return allResults;
   }
+
   async getUserDataByUid(uid: string): Promise<any | null> {
     const userDocRef = doc(this.db, 'users', uid);
     const userDocSnap = await getDoc(userDocRef);
@@ -136,7 +139,7 @@ export class UserDataService {
 
 
   //-----------------------------------------
-
+  // METODO AGGIORNATO QUI per garantire tipi stringa e campi corretti
   async getUserDataById(userId: string): Promise<any | null> {
     if (!userId) {
       console.warn("ID utente non fornito per getUserDataById.");
@@ -147,18 +150,25 @@ export class UserDataService {
     try {
       const docSnap = await getDoc(userDocRef);
       if (docSnap.exists()) {
-        // Restituisci i dati del documento E il suo ID (che è l'UID)
-        return { uid: docSnap.id, ...docSnap.data() }; // <-- MODIFICA QUI
+        const data = docSnap.data();
+        // Restituisci un oggetto con i campi che usi nel ChatListPage
+        // Assicurati che siano sempre stringhe con un fallback predefinito
+        return {
+          uid: docSnap.id,
+          username: data['nickname'] || data['name'] || 'Utente Senza Nome', // Mappa nickname/name a username
+          displayName: data['name'] || data['nickname'] || 'Utente Senza Nome', // Mappa name/nickname a displayName
+          profilePhotoUrl: data['photo'] || 'assets/immaginiGenerali/default-avatar.jpg', // Mappa photo a profilePhotoUrl
+          bio: data['bio'] || '', // Aggiunto per completezza, se lo usi altrove
+          // Puoi aggiungere altri campi del tuo profilo utente qui, con fallback a stringa vuota
+        };
       } else {
         console.log("Nessun documento utente trovato in Firestore per l'UID:", userId);
         return null;
       }
     } catch (error) {
       console.error("Errore nel recupero dei dati utente per ID:", userId, error);
-      throw error;
+      // In caso di errore, puoi decidere se rilanciare o restituire null/oggetto di fallback
+      return null; // Per non bloccare la UI, restituiamo null in caso di errore
     }
   }
-
-
 }
-
