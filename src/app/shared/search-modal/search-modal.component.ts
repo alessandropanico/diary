@@ -2,10 +2,10 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { UserDataService } from 'src/app/services/user-data.service';
-
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
+
 @Component({
   selector: 'app-search-modal',
   templateUrl: './search-modal.component.html',
@@ -13,7 +13,7 @@ import { getAuth } from 'firebase/auth';
   standalone: false,
 })
 export class SearchModalComponent implements OnInit, OnDestroy {
-  
+
   searchQuery: string = '';
   searchResults: any[] = [];
   isSearchingUsers: boolean = false;
