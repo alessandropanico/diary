@@ -1,7 +1,12 @@
 --TO DO--
 
 Aggiungere FireBase per database su app;
-Aggiungere chat (?);
+
+Aggiungere chat;
+**PER LA CHAT**
+//METTERE CHE SI ELIMIANO I MESSAGGI,
+//GIORNI IN CUI I MESSAGGI SONO STATI INIVATI (OGGI SE OGGI)
+
 Utilizzare notifiche per mobile;
 
 Tag e ricerca intelligente per note/task: cerca per parola chiave, categoria, tag;
