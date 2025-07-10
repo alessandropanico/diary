@@ -2,11 +2,23 @@
 
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ChatService } from 'src/app/services/chat.service'; // Importa il ChatService
-import { getAuth } from 'firebase/auth'; // Per ottenere l'ID dell'utente corrente
-import { Observable, Subscription } from 'rxjs'; // Per gestire gli Observable e le sottoscrizioni
-import { IonContent, AlertController } from '@ionic/angular'; // Per lo scroll automatico e gli alert
-import { UserDataService } from 'src/app/services/user-data.service'; // Per ottenere i dati dell'altro utente
+import { ChatService } from 'src/app/services/chat.service';
+import { getAuth } from 'firebase/auth';
+import { Observable, Subscription } from 'rxjs';
+import { IonContent, AlertController } from '@ionic/angular';
+// Importa UserDataService ma anche una possibile interfaccia per otherUser
+import { UserDataService } from 'src/app/services/user-data.service';
+
+// Definisci una piccola interfaccia per come ti aspetti che otherUser sia
+// Questo riflette i nomi dei campi che hai mappato in getUserDataById nel UserDataService
+interface OtherUserChatData {
+  uid: string;
+  username: string; // Mappa da nickname/name
+  displayName: string; // Mappa da name/nickname
+  profilePhotoUrl: string; // Mappa da photo
+  bio?: string; // Se presente
+  // Aggiungi altri campi se li recuperi e li usi
+}
 
 @Component({
   selector: 'app-chat',
@@ -15,21 +27,22 @@ import { UserDataService } from 'src/app/services/user-data.service'; // Per ott
   standalone: false,
 })
 export class ChatPage implements OnInit, OnDestroy {
-  @ViewChild(IonContent) content!: IonContent; // Riferimento al contenuto per lo scroll
+  @ViewChild(IonContent) content!: IonContent;
 
   conversationId: string | null = null;
   messages: any[] = [];
-  newMessageText: string = ''; // Contiene il testo del messaggio da inviare
+  newMessageText: string = '';
   loggedInUserId: string | null = null;
-  otherUser: any = null; // Dati dell'altro utente nella chat
+  // Usa l'interfaccia OtherUserChatData qui
+  otherUser: OtherUserChatData | null = null; // Dati dell'altro utente nella chat
 
-  messagesSubscription: Subscription | undefined; // Per gestire la sottoscrizione ai messaggi
+  messagesSubscription: Subscription | undefined;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private chatService: ChatService,
-    private userDataService: UserDataService, // Inietta UserDataService
+    private userDataService: UserDataService,
     private alertCtrl: AlertController
   ) { }
 
@@ -47,16 +60,21 @@ export class ChatPage implements OnInit, OnDestroy {
       this.conversationId = params.get('conversationId');
 
       if (this.conversationId) {
-        // Iscriviti ai messaggi in tempo reale
         this.messagesSubscription = this.chatService.getMessages(this.conversationId).subscribe(async messages => {
           this.messages = messages;
-          // Ottieni i dettagli della conversazione per identificare l'altro utente
           const conversationDetails = await this.chatService.getConversationDetails(this.conversationId!);
           if (conversationDetails && conversationDetails.participants) {
             const otherParticipantId = conversationDetails.participants.find((id: string) => id !== this.loggedInUserId);
             if (otherParticipantId) {
+              // Il metodo getUserDataById del servizio UserDataService è già stato modificato
+              // per restituire un oggetto con 'username', 'displayName', 'profilePhotoUrl'.
+              // Quindi, otherUser riceverà questi campi.
               this.otherUser = await this.userDataService.getUserDataById(otherParticipantId);
-              // Forza lo scroll alla fine dopo il caricamento iniziale dei messaggi
+
+              // Se vuoi assicurarti che 'username' sia il nome principale visualizzato
+              // puoi fare un controllo aggiuntivo qui, ma non è strettamente necessario
+              // se l'HTML viene aggiornato correttamente.
+              console.log("Dati altro utente recuperati per la chat:", this.otherUser);
               setTimeout(() => this.scrollToBottom(), 100);
             }
           }
@@ -72,7 +90,6 @@ export class ChatPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    // Annulla la sottoscrizione quando la pagina viene distrutta per evitare memory leaks
     if (this.messagesSubscription) {
       this.messagesSubscription.unsubscribe();
     }
@@ -80,13 +97,13 @@ export class ChatPage implements OnInit, OnDestroy {
 
   async sendMessage() {
     if (!this.newMessageText.trim() || !this.conversationId || !this.loggedInUserId) {
-      return; // Non inviare messaggi vuoti
+      return;
     }
 
     try {
       await this.chatService.sendMessage(this.conversationId, this.loggedInUserId, this.newMessageText.trim());
-      this.newMessageText = ''; // Pulisci l'input
-      this.scrollToBottom(); // Scorri alla fine dopo aver inviato il messaggio
+      this.newMessageText = '';
+      this.scrollToBottom();
     } catch (error) {
       console.error('Errore durante l\'invio del messaggio:', error);
       this.presentFF7Alert('Impossibile inviare il messaggio.');
@@ -95,7 +112,7 @@ export class ChatPage implements OnInit, OnDestroy {
 
   scrollToBottom() {
     if (this.content) {
-      this.content.scrollToBottom(300); // 300ms di animazione
+      this.content.scrollToBottom(300);
     }
   }
 
