@@ -1,7 +1,5 @@
-// src/app/pagine/chat-list/chat-list.page.ts
-
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ChatService } from 'src/app/services/chat.service'; // Assicurati che il percorso sia corretto
+import { ChatService } from 'src/app/services/chat.service'; 
 import { UserDataService } from 'src/app/services/user-data.service'; // Assicurati che il percorso sia corretto
 import { getAuth, onAuthStateChanged } from 'firebase/auth'; // Per ottenere l'utente autenticato
 import { Subscription } from 'rxjs'; // Per gestire la sottoscrizione ai messaggi
