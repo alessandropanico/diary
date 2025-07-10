@@ -4,43 +4,39 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
 
-  <div *ngIf="isLoadingTasks" class="loading-overlay">
-    <ion-spinner name="crescent"></ion-spinner>
-    <p>Caricamento...</p>
+<div *ngIf="isLoadingTasks" class="loading-overlay">
+  <ion-spinner name="crescent"></ion-spinner>
+  <p>Caricamento...</p>
+</div>
+
+<div class="d-flex justify-content-center">
+  <div class="welcome-message">
+    {{ greetingMessage }}
+  </div>
+</div>
+
+<app-clock></app-clock>
+
+<section *ngIf="!isLoadingTasks" class="sectionHome">
+  <div class="cont">
+    <section *ngIf="todayTasks.length > 0" class="home-reminder">
+      <h2 class="reminder-title">Hai {{ todayTasks.length }} task in scadenza oggi</h2>
+      <ion-list lines="none">
+        <ion-item *ngFor="let task of todayTasks">
+          <ion-label>
+            <h3>{{ task.name }}</h3>
+            <p>{{ task.description }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </section>
   </div>
 
-      <div class="d-flex justify-content-center">
-        <div class="welcome-message">
-          {{ greetingMessage }}
-        </div>
-      </div>
-
-      <app-clock></app-clock>
-      
-  <section *ngIf="!isLoadingTasks">
-      <div class="cont">
-        <section *ngIf="todayTasks.length > 0" class="home-reminder">
-          <h2 class="reminder-title">Hai {{ todayTasks.length }} task in scadenza oggi</h2>
-          <ion-list lines="none">
-            <ion-item *ngFor="let task of todayTasks">
-              <ion-label>
-                <h3>{{ task.name }}</h3>
-                <p>{{ task.description }}</p>
-              </ion-label>
-            </ion-item>
-          </ion-list>
-        </section>
-      </div>
-
-      <section *ngIf="todayTasks.length === 0" class="home-reminder-empty">
-        <div class="d-flex justify-content-center">
-          <p>Non hai task in scadenza oggi!</p>
-        </div>
-      </section>
-
+  <section *ngIf="todayTasks.length === 0" class="home-reminder-empty">
+    <div class="d-flex justify-content-center">
+      <p>Non hai task in scadenza oggi!</p>
+    </div>
   </section>
 
-
-</ion-content>
+</section>
