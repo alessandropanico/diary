@@ -98,6 +98,7 @@ ion-footer {
   height: 48px;
   min-width: 48px;
   border-radius: 50%; // Bottone circolare
+  cursor: pointer;
 }
 
 // Stile per l'alert custom (già nel profilo-altri-utenti.page.scss, ma è buona pratica averlo a livello globale o importarlo)

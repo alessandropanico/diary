@@ -12,28 +12,25 @@
 
 <ion-content [fullscreen]="true" class="chat-content">
   <div class="message-container">
-    <div *ngFor="let message of messages"
-         [class.my-message]="isMyMessage(message.senderId)"
-         [class.other-message]="!isMyMessage(message.senderId)"
-         class="chat-bubble">
+    <div *ngFor="let message of messages" [class.my-message]="isMyMessage(message.senderId)"
+      [class.other-message]="!isMyMessage(message.senderId)" class="chat-bubble">
       <p class="message-text">{{ message.text }}</p>
       <span class="message-timestamp">{{ message.timestamp | date:'shortTime' }}</span>
     </div>
   </div>
-</ion-content>
 
-<ion-footer class="ion-no-border">
-  <ion-toolbar>
-    <ion-item class="message-input-item">
-      <ion-input
-        placeholder="Scrivi un messaggio..."
-        [(ngModel)]="newMessageText"
-        (keyup.enter)="sendMessage()"
-        class="ff7-input"
-      ></ion-input>
-      <ion-button slot="end" (click)="sendMessage()" [disabled]="!newMessageText.trim()" class="ff7-button send-button">
-        <ion-icon name="send-outline"></ion-icon>
-      </ion-button>
-    </ion-item>
-  </ion-toolbar>
-</ion-footer>
+  <ion-footer class="ion-no-border">
+    <ion-toolbar>
+      <ion-item class="message-input-item">
+        <ion-input placeholder="Scrivi un messaggio..." [(ngModel)]="newMessageText" (keyup.enter)="sendMessage()"
+          class="ff7-input"></ion-input>
+        <ion-button slot="end" (click)="sendMessage()" [disabled]="!newMessageText.trim()"
+          class="ff7-button send-button">
+          <ion-icon name="send-outline"></ion-icon>
+        </ion-button>
+      </ion-item>
+    </ion-toolbar>
+  </ion-footer>
+
+
+</ion-content>
