@@ -1,5 +1,3 @@
-// user-data.service.ts
-
 import { Injectable } from '@angular/core';
 import { getAuth } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit, getFirestore } from 'firebase/firestore';
@@ -9,7 +7,7 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit,
 })
 export class UserDataService {
   private db = getFirestore();
-  private firestore = getFirestore(); // Puoi usare solo uno dei due, sono la stessa istanza
+  private firestore = getFirestore();
   private auth = getAuth();
 
   private getUserUid(): string | null {
@@ -23,11 +21,9 @@ export class UserDataService {
       const userDocRef = doc(this.firestore, 'users', user.uid);
       const dataToSave = { ...data };
 
-      // *** MODIFICA QUI PER nicknameLowercase ***
       if (dataToSave.nickname) {
         dataToSave.nicknameLowercase = dataToSave.nickname.toLowerCase().trim();
       } else {
-        // Se nickname non è presente, imposta nicknameLowercase a una stringa vuota
         dataToSave.nicknameLowercase = '';
       }
 
@@ -48,7 +44,6 @@ export class UserDataService {
       throw new Error("Utente non autenticato.");
     }
   }
-  // user-data.service.ts (dal codice che mi hai fornito all'inizio)
   async searchUsers(searchTerm: string): Promise<any[]> {
     const normalizedSearchTerm = searchTerm.toLowerCase().trim();
     if (!normalizedSearchTerm) {
@@ -59,7 +54,6 @@ export class UserDataService {
     const allResults: any[] = [];
     const addedUids = new Set<string>();
 
-    // Query per nickname
     const queryByNickname = query(
       usersRef,
       where('nicknameLowercase', '>=', normalizedSearchTerm),
@@ -82,7 +76,6 @@ export class UserDataService {
       }
     });
 
-    // Query per nome
     const queryByName = query(
       usersRef,
       where('nameLowercase', '>=', normalizedSearchTerm),
@@ -105,7 +98,7 @@ export class UserDataService {
       }
     });
 
-    allResults.sort((a, b) => a.nickname.localeCompare(b.nickname)); // Ordina per nickname
+    allResults.sort((a, b) => a.nickname.localeCompare(b.nickname));
     return allResults;
   }
 
@@ -139,9 +132,6 @@ export class UserDataService {
     }
   }
 
-
-  //-----------------------------------------
-  // METODO AGGIORNATO QUI per garantire tipi stringa e campi corretti
   async getUserDataById(userId: string): Promise<any | null> {
     if (!userId) {
       console.warn("ID utente non fornito per getUserDataById.");
@@ -153,28 +143,22 @@ export class UserDataService {
       const docSnap = await getDoc(userDocRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // Restituisci TUTTI i dati del documento Firestore
-        // E in più aggiungi i campi mappati per compatibilità dove li usi già (es. chat-list)
         return {
           uid: docSnap.id,
-          // Campi originali dal database:
-          nickname: data['nickname'] || 'N/A', // Assicurati che siano stringhe
+          nickname: data['nickname'] || 'N/A',
           name: data['name'] || 'N/A',
           photo: data['photo'] || 'assets/immaginiGenerali/default-avatar.jpg',
-          banner: data['banner'] || 'assets/immaginiGenerali/default-banner.jpg', // Aggiunto banner
+          banner: data['banner'] || 'assets/immaginiGenerali/default-banner.jpg',
           bio: data['bio'] || 'N/A',
-          email: data['email'] || 'N/A', // Aggiunto email
-          lastLogin: data['lastLogin'] || 'N/A', // Aggiunto lastLogin se vuoi visualizzarlo
-          nicknameLowercase: data['nicknameLowercase'] || '', // Mantenuti per la ricerca
-          nameLowercase: data['nameLowercase'] || '', // Mantenuti per la ricerca
-
-          // Campi mappati per compatibilità con altre parti dell'app (es. ChatListPage)
+          email: data['email'] || 'N/A',
+          lastLogin: data['lastLogin'] || 'N/A',
+          nicknameLowercase: data['nicknameLowercase'] || '',
+          nameLowercase: data['nameLowercase'] || '',
           username: data['nickname'] || data['name'] || 'Utente Senza Nome',
           displayName: data['name'] || data['nickname'] || 'Utente Senza Nome',
           profilePhotoUrl: data['photo'] || 'assets/immaginiGenerali/default-avatar.jpg',
         };
       } else {
-        console.log("Nessun documento utente trovato in Firestore per l'UID:", userId);
         return null;
       }
     } catch (error) {
