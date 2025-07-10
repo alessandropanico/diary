@@ -65,7 +65,7 @@ export class ChatListPage implements OnInit, OnDestroy {
         // Trova l'ID dell'altro partecipante nella conversazione
         const otherParticipantId = conv.participants.find((id: string) => id !== this.loggedInUserId);
         let otherParticipantName = 'Utente Sconosciuto';
-        let otherParticipantPhoto = 'assets/icon/default-profile.png'; // Immagine di profilo di default
+        let otherParticipantPhoto = 'assets/immaginiGenerali/default-avatar.jpg'; // Immagine di profilo di default
 
         if (otherParticipantId) {
           try {
@@ -73,7 +73,7 @@ export class ChatListPage implements OnInit, OnDestroy {
             const otherUserData = await this.userDataService.getUserDataById(otherParticipantId);
             if (otherUserData) {
               otherParticipantName = otherUserData.username || otherUserData.displayName || 'Utente Senza Nome';
-              otherParticipantPhoto = otherUserData.profilePhotoUrl || 'assets/icon/default-profile.png';
+              otherParticipantPhoto = otherUserData.profilePhotoUrl || 'assets/immaginiGenerali/default-avatar.jpg';
             }
           } catch (error) {
             console.error('Errore nel recupero dati altro partecipante:', otherParticipantId, error);

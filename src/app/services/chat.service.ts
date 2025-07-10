@@ -1,3 +1,4 @@
+// chat.service.ts
 import { Injectable } from '@angular/core';
 import {
   getFirestore,
@@ -15,7 +16,31 @@ import {
   limit,
   onSnapshot
 } from 'firebase/firestore';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs'; // Importa forkJoin e of
+import { map, switchMap } from 'rxjs/operators'; // Importa gli operatori RxJS
+import * as dayjs from 'dayjs'; // Assicurati di aver installato dayjs: npm install dayjs
+
+// Interfaccia per i dettagli utente (se hai una collezione 'users')
+interface UserProfile {
+  name: string;
+  photoURL: string; // O il nome del tuo campo per l'URL della foto
+  // Aggiungi altri campi del tuo profilo utente se necessari
+}
+
+// Interfaccia per la conversazione estesa (con i dettagli dell'altro partecipante)
+export interface ExtendedConversation {
+  id: string;
+  participants: string[];
+  lastMessage: string;
+  lastMessageAt: any; // Firebase Timestamp
+  createdAt: any; // Firebase Timestamp
+  chatId: string;
+  otherParticipantId: string;
+  otherParticipantName: string;
+  otherParticipantPhoto: string;
+  displayLastMessageAt: string;
+}
+
 
 @Injectable({
   providedIn: 'root'
@@ -126,27 +151,87 @@ export class ChatService {
     }
   }
 
-  getUserConversations(userId: string): Observable<any[]> {
+  // --- METODO MODIFICATO QUI ---
+  getUserConversations(currentUserId: string): Observable<ExtendedConversation[]> {
     const conversationsRef = collection(this.firestore, 'conversations');
     const q = query(
       conversationsRef,
-      where('participants', 'array-contains', userId),
+      where('participants', 'array-contains', currentUserId),
       orderBy('lastMessageAt', 'desc')
     );
 
-    return new Observable(observer => {
+    return new Observable<any[]>(observer => {
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const conversations: any[] = [];
+        const rawConversations: any[] = [];
         snapshot.forEach(doc => {
-          conversations.push({ id: doc.id, ...doc.data() });
+          rawConversations.push({ id: doc.id, ...doc.data() });
         });
-        observer.next(conversations);
+        observer.next(rawConversations);
       }, (error) => {
         console.error('Errore nel recupero delle conversazioni utente in tempo reale:', error);
         observer.error(error);
       });
 
       return () => unsubscribe();
-    });
+    }).pipe(
+      switchMap(conversations => {
+        if (conversations.length === 0) {
+          return of([]); // Se non ci sono conversazioni, restituisci un array vuoto
+        }
+
+        const conversationObservables = conversations.map(conv => {
+          const otherParticipantId = conv.participants.find((pId: string) => pId !== currentUserId);
+
+          if (otherParticipantId) {
+            // Recupera i dettagli dell'altro utente dalla collezione 'users'
+            const userDocRef = doc(this.firestore, `users/${otherParticipantId}`);
+            return new Observable<ExtendedConversation>(userObserver => {
+              getDoc(userDocRef).then(userDocSnap => {
+                const userData = userDocSnap.data() as UserProfile; // Cast per TypeScript
+                userObserver.next({
+                  ...conv,
+                  otherParticipantId: otherParticipantId,
+                  otherParticipantName: userData?.name || 'Utente senza nome', // Fallback
+                  otherParticipantPhoto: userData?.photoURL || 'assets/imgs/default-user-photo.png', // Fallback. Cambia il percorso!
+                  displayLastMessageAt: this.formatTimestamp(conv.lastMessageAt)
+                });
+                userObserver.complete(); // Completa l'observable dopo aver ottenuto i dati
+              }).catch(error => {
+                console.error(`Errore nel recupero utente ${otherParticipantId}:`, error);
+                userObserver.next({ // Emetti comunque la conversazione con fallback in caso di errore
+                  ...conv,
+                  otherParticipantId: otherParticipantId,
+                  otherParticipantName: 'Utente senza nome',
+                  otherParticipantPhoto: 'assets/imgs/default-user-photo.png',
+                  displayLastMessageAt: this.formatTimestamp(conv.lastMessageAt)
+                });
+                userObserver.complete();
+              });
+            });
+          } else {
+            // Caso in cui la conversazione ha solo l'utente corrente (es. chat con se stesso)
+            return of({
+              ...conv,
+              otherParticipantId: currentUserId,
+              otherParticipantName: 'Tu (Utente)', // O il nome del tuo utente se lo recuperi
+              otherParticipantPhoto: 'assets/imgs/your-profile-photo.png', // Percorso della tua foto profilo
+              displayLastMessageAt: this.formatTimestamp(conv.lastMessageAt)
+            } as ExtendedConversation);
+          }
+        });
+        // Usa forkJoin per aspettare che tutte le richieste degli utenti siano complete
+        return forkJoin(conversationObservables);
+      })
+    );
+  }
+
+  private formatTimestamp(timestamp: any): string {
+    if (!timestamp) {
+      return '';
+    }
+    // Firebase Timestamp object has a toDate() method
+    const date = timestamp.toDate();
+    // Usa dayjs per formattare (assicurati sia installato: npm install dayjs)
+    return dayjs(date).format('DD/MM/YYYY HH:mm');
   }
 }
