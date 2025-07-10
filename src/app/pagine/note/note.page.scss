@@ -39,8 +39,8 @@
   --color: #000;
   box-shadow: 0 0 10px #00ffee;
   border-radius: 50%;
+  z-index: 1001; /* <-- Aggiungi un z-index più alto del tuo loading-overlay (che ha 1000) */
 }
-
 
 
 .playlist-scroll {
@@ -136,4 +136,11 @@ ion-checkbox {
   right: 6px;
   left: auto;
   transform: scale(0.9);
+}
+
+ion-fab[slot="fixed"] {
+  position: fixed !important;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1002; /* più alto del loading overlay */
 }
