@@ -30,6 +30,7 @@ export class ChatPage implements OnInit, OnDestroy {
   loggedInUserId: string | null = null;
   otherUser: OtherUserChatData | null = null;
   messagesSubscription: Subscription | undefined;
+  isLoading: boolean = true; // Aggiunto stato di caricamento
 
   constructor(
     private route: ActivatedRoute,
@@ -40,12 +41,15 @@ export class ChatPage implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
+    this.isLoading = true; // Inizia il caricamento
+
     const auth = getAuth();
     this.loggedInUserId = auth.currentUser ? auth.currentUser.uid : null;
 
     if (!this.loggedInUserId) {
       this.presentFF7Alert('Devi essere loggato per visualizzare le chat.');
       this.router.navigateByUrl('/login');
+      this.isLoading = false; // Ferma il caricamento se non loggato
       return;
     }
 
@@ -55,21 +59,32 @@ export class ChatPage implements OnInit, OnDestroy {
       if (this.conversationId) {
         this.messagesSubscription = this.chatService.getMessages(this.conversationId).subscribe(async messages => {
           this.messages = messages;
-          const conversationDetails = await this.chatService.getConversationDetails(this.conversationId!);
-          if (conversationDetails && conversationDetails.participants) {
-            const otherParticipantId = conversationDetails.participants.find((id: string) => id !== this.loggedInUserId);
-            if (otherParticipantId) {
-              this.otherUser = await this.userDataService.getUserDataById(otherParticipantId);
-              setTimeout(() => this.scrollToBottom(), 100);
+
+          // Ottieni i dettagli della conversazione solo se non li hai già o se i messaggi cambiano
+          // Questo evita di ricaricare i dati dell'altro utente ad ogni messaggio nuovo
+          if (!this.otherUser) { // Carica i dati dell'altro utente solo una volta
+            const conversationDetails = await this.chatService.getConversationDetails(this.conversationId!);
+            if (conversationDetails && conversationDetails.participants) {
+              const otherParticipantId = conversationDetails.participants.find((id: string) => id !== this.loggedInUserId);
+              if (otherParticipantId) {
+                // Il metodo getUserDataById del servizio UserDataService è già stato modificato
+                // per restituire un oggetto con 'username', 'displayName', 'profilePhotoUrl'.
+                this.otherUser = await this.userDataService.getUserDataById(otherParticipantId);
+              }
             }
           }
+
+          this.isLoading = false; // Ferma il caricamento dopo aver ottenuto i messaggi e l'utente
+          setTimeout(() => this.scrollToBottom(), 100);
         }, error => {
           console.error('Errore nel recupero dei messaggi:', error);
           this.presentFF7Alert('Errore nel caricamento dei messaggi.');
+          this.isLoading = false; // Ferma il caricamento in caso di errore
         });
       } else {
         this.presentFF7Alert('ID conversazione mancante.');
         this.router.navigateByUrl('/home');
+        this.isLoading = false; // Ferma il caricamento se l'ID è mancante
       }
     });
   }

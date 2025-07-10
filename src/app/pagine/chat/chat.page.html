@@ -11,7 +11,13 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="chat-content">
-  <div class="message-container">
+
+  <div *ngIf="isLoading" class="loading-overlay">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Caricamento chat...</p>
+  </div>
+
+  <div *ngIf="!isLoading" class="message-container">
     <div *ngFor="let message of messages" [class.my-message]="isMyMessage(message.senderId)"
       [class.other-message]="!isMyMessage(message.senderId)" class="chat-bubble">
       <p class="message-text">{{ message.text }}</p>
