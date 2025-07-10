@@ -1,7 +1,7 @@
 // src/app/services/task.service.ts
 
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, Subscription } from 'rxjs'; // Importa Subscription
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { Task } from '../interfaces/task';
 import {
   getFirestore,
@@ -14,62 +14,64 @@ import {
   query,
   where
 } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth'; // Importa User e onAuthStateChanged
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TaskService {
-  private tasksSubject = new BehaviorSubject<Task[]>([]);
-  tasks$: Observable<Task[]> = this.tasksSubject.asObservable();
+  // Inizializziamo con 'null' per indicare che lo stato delle task non è ancora noto.
+  // Solo dopo il primo caricamento (o svuotamento esplicito se non autenticato)
+  // emetteremo un array vuoto o le task caricate.
+  private tasksSubject = new BehaviorSubject<Task[] | null>(null);
+  tasks$: Observable<Task[] | null> = this.tasksSubject.asObservable();
 
   private db = getFirestore();
-  private authStateSubscription: Subscription; // Aggiunto per gestire la sottoscrizione all'auth
+  private authStateSubscription: Subscription;
+
+  // Aggiungi una flag per sapere se il caricamento iniziale è già avvenuto
+  private initialLoadCompleted: boolean = false;
 
   constructor() {
-    // Inizializza l'ascoltatore dello stato di autenticazione nel costruttore del servizio
-    // Questo assicura che loadTasks() venga chiamato non appena l'utente è autenticato.
     const auth = getAuth();
-    this.authStateSubscription = new Subscription(); // Inizializza la subscription
+    this.authStateSubscription = new Subscription();
 
     this.authStateSubscription.add(
       onAuthStateChanged(auth, async (user: User | null) => {
         if (user) {
           console.log('TaskService: Utente autenticato, caricamento task iniziali...');
-          await this.loadTasks(); // Carica le task non appena l'utente è loggato
+          await this.loadTasks();
+          this.initialLoadCompleted = true; // Imposta a true dopo il primo caricamento
         } else {
           console.log('TaskService: Utente non autenticato, svuoto le task.');
-          this.tasksSubject.next([]); // Svuota le task se l'utente si disconnette
+          this.tasksSubject.next([]); // Solo qui emettiamo un array vuoto se non autenticato
+          this.initialLoadCompleted = true; // Anche se svuotiamo, il caricamento iniziale è "completato"
         }
       })
     );
   }
 
-  // È buona pratica disiscriversi dagli observables quando il servizio non è più necessario
-  // Anche se i servizi singleton come questo raramente vengono distrutti.
   ngOnDestroy() {
     if (this.authStateSubscription) {
       this.authStateSubscription.unsubscribe();
     }
   }
 
-  /**
-   * Ottiene l'UID dell'utente corrente.
-   * @returns L'UID dell'utente o null se non autenticato.
-   */
   private getUserUid(): string | null {
     const user = getAuth().currentUser;
     return user ? user.uid : null;
   }
 
-  /**
-   * Carica le task dell'utente autenticato da Firestore.
-   */
   async loadTasks(): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
       console.warn('TaskService: Nessun utente autenticato. Impossibile caricare le task.');
-      this.tasksSubject.next([]);
+      // Se non autenticato e non è stato fatto un caricamento iniziale, emetti null, altrimenti svuota
+      if (!this.initialLoadCompleted) {
+        this.tasksSubject.next(null); // Mantieni lo stato "non caricato"
+      } else {
+        this.tasksSubject.next([]); // Se già caricato e poi disconnesso, svuota
+      }
       return;
     }
 
@@ -85,14 +87,11 @@ export class TaskService {
       console.log(`TaskService: Caricate ${loadedTasks.length} task da Firestore.`);
     } catch (error) {
       console.error('TaskService: Errore durante il caricamento delle task da Firestore:', error);
-      // Potresti voler rimettere in stato di errore o svuotare le task in caso di fallimento grave
+      // In caso di errore nel caricamento, potresti voler svuotare le task o gestire l'errore
+      this.tasksSubject.next([]); // Svuota le task in caso di errore di caricamento
     }
   }
 
-  /**
-   * Aggiunge una nuova task a Firestore.
-   * @param task La task da aggiungere.
-   */
   async addTask(task: Task): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
@@ -104,7 +103,7 @@ export class TaskService {
       const tasksCollectionRef = collection(this.db, `users/${uid}/tasks`);
       const docRef = await addDoc(tasksCollectionRef, task);
 
-      const currentTasks = this.tasksSubject.value;
+      const currentTasks = this.tasksSubject.value || []; // Gestisce il caso in cui sia ancora null
       this.tasksSubject.next([...currentTasks, { id: docRef.id, ...task }]);
       console.log('TaskService: Task aggiunta e BehaviorSubject aggiornato.');
     } catch (error) {
@@ -113,10 +112,6 @@ export class TaskService {
     }
   }
 
-  /**
-   * Elimina una task da Firestore.
-   * @param taskId L'ID della task da eliminare.
-   */
   async deleteTask(taskId: string): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
@@ -128,7 +123,7 @@ export class TaskService {
       const taskDocRef = doc(this.db, `users/${uid}/tasks`, taskId);
       await deleteDoc(taskDocRef);
 
-      const currentTasks = this.tasksSubject.value;
+      const currentTasks = this.tasksSubject.value || [];
       this.tasksSubject.next(currentTasks.filter(t => t.id !== taskId));
       console.log('TaskService: Task eliminata e BehaviorSubject aggiornato.');
     } catch (error) {
@@ -137,11 +132,6 @@ export class TaskService {
     }
   }
 
-  /**
-   * Aggiorna lo stato "completed" di una task in Firestore.
-   * @param taskId L'ID della task da aggiornare.
-   * @param completed Il nuovo stato di completamento.
-   */
   async toggleCompletion(taskId: string, completed: boolean): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
@@ -153,7 +143,7 @@ export class TaskService {
       const taskDocRef = doc(this.db, `users/${uid}/tasks`, taskId);
       await updateDoc(taskDocRef, { completed: completed });
 
-      const currentTasks = this.tasksSubject.value;
+      const currentTasks = this.tasksSubject.value || [];
       const updatedTasks = currentTasks.map(t =>
         t.id === taskId ? { ...t, completed: completed } : t
       );

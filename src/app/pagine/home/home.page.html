@@ -11,7 +11,6 @@
     <p>Caricamento...</p>
   </div>
 
-  <section *ngIf="!isLoadingTasks">
       <div class="d-flex justify-content-center">
         <div class="welcome-message">
           {{ greetingMessage }}
@@ -19,7 +18,8 @@
       </div>
 
       <app-clock></app-clock>
-
+      
+  <section *ngIf="!isLoadingTasks">
       <div class="cont">
         <section *ngIf="todayTasks.length > 0" class="home-reminder">
           <h2 class="reminder-title">Hai {{ todayTasks.length }} task in scadenza oggi</h2>
@@ -42,5 +42,5 @@
 
   </section>
 
-  
+
 </ion-content>

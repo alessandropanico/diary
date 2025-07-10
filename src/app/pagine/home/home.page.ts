@@ -1,9 +1,9 @@
 // src/app/pagine/home/home.page.ts
 
-import { Component, OnInit, OnDestroy } from '@angular/core'; // Aggiungi OnDestroy
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { TaskService } from 'src/app/services/task.service';
 import { Task } from 'src/app/interfaces/task';
-import { Subscription } from 'rxjs'; // Importa Subscription
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -11,33 +11,40 @@ import { Subscription } from 'rxjs'; // Importa Subscription
   styleUrls: ['home.page.scss'],
   standalone: false,
 })
-export class HomePage implements OnInit, OnDestroy { // Implementa OnDestroy
+export class HomePage implements OnInit, OnDestroy {
 
   greetingMessage: string = '';
   todayTasks: Task[] = [];
-  isLoadingTasks: boolean = true; // Imposta a true di default per mostrare il loading all'avvio
-  private tasksSubscription!: Subscription; // Per disiscriversi dalla sottoscrizione
+  // Inizializza a true per mostrare il loading. Sarà false solo dopo aver ricevuto un array (anche vuoto)
+  isLoadingTasks: boolean = true;
+  private tasksSubscription!: Subscription;
 
   constructor(private taskService: TaskService) {}
 
   ngOnInit() {
     this.greetingMessage = this.getGreetingMessage();
 
-    // Osserva le task e filtra quelle con scadenza oggi
     this.tasksSubscription = this.taskService.tasks$.subscribe(tasks => {
-      this.todayTasks = tasks.filter(task => this.isToday(task.dueDate) && !task.completed);
-      this.isLoadingTasks = false; // Una volta che le task sono state elaborate, nascondi il loading
+      // Se tasks è null, significa che il caricamento iniziale non è ancora avvenuto
+      if (tasks === null) {
+        this.isLoadingTasks = true; // Mantieni il loader attivo
+        this.todayTasks = []; // Assicurati che l'array sia vuoto per non mostrare dati vecchi/errati
+      } else {
+        // Se tasks non è null (quindi è Task[] o []), allora il caricamento è terminato.
+        console.log('HomePage: Ricevute task aggiornate dal servizio. Filtering for today...');
+        this.todayTasks = tasks.filter(task => this.isToday(task.dueDate) && !task.completed);
+        this.isLoadingTasks = false; // Nascondi il loader
+      }
     });
   }
 
   ngOnDestroy() {
-    // È fondamentale disiscriversi per evitare memory leaks
     if (this.tasksSubscription) {
       this.tasksSubscription.unsubscribe();
     }
   }
 
-  // Metodo per determinare il messaggio di benvenuto in base all'ora del giorno
+  // ... (restanti metodi come getGreetingMessage, isToday rimangono invariati)
   getGreetingMessage(): string {
     const currentHour = new Date().getHours();
     const now = new Date();

@@ -26,27 +26,45 @@ export class ListTaskPage implements OnInit, OnDestroy {
     private alertController: AlertController
   ) { }
 
-  async ngOnInit() {
+async ngOnInit() {
     // Sottoscrivi alla stream di task dal servizio.
     // Questo aggiornerà `this.tasks` ogni volta che il BehaviorSubject nel servizio emette un nuovo valore.
     this.tasksSubscription = this.taskService.tasks$.subscribe(tasks => {
-      this.tasks = tasks;
-      // Il loading spinner viene spento qui, garantendo che le task siano caricate.
-      this.isLoadingTasks = false;
-      console.log('ListTaskPage: Task aggiornate ricevute dal servizio.', this.tasks.length);
-    });
-
-    // Ascolta i cambiamenti di stato dell'autenticazione per caricare le task inizialmente.
-    this.authUnsubscribe = onAuthStateChanged(getAuth(), async (user: User | null) => {
-      if (user) {
-        console.log('ListTaskPage: Utente autenticato, caricamento task...');
-        await this.loadAndProcessTasks(); // Carica e processa le task quando l'utente è loggato
+      // Se 'tasks' è null, significa che il caricamento iniziale da Firestore non è ancora completato
+      // o che non c'è un utente autenticato e le task sono in uno stato iniziale non definito.
+      if (tasks === null) {
+        this.isLoadingTasks = true; // Mantieni il loading spinner attivo
+        this.tasks = []; // Assicurati che l'array sia vuoto per non visualizzare dati obsoleti
+        console.log('ListTaskPage: TaskService ha emesso NULL, mantenendo il loader...');
       } else {
-        console.log('ListTaskPage: Utente non autenticato, svuoto le task.');
-        this.tasks = [];
-        this.isLoadingTasks = false;
+        // Se 'tasks' non è null (è un Task[]), allora i dati sono stati caricati (anche se vuoti).
+        this.tasks = tasks; // Aggiorna le task visualizzate
+        this.isLoadingTasks = false; // Spegni il loading spinner
+        console.log('ListTaskPage: Task aggiornate ricevute dal servizio.', this.tasks.length);
       }
     });
+
+    // L'ascoltatore di onAuthStateChanged nel componente non è più strettamente necessario per
+    // "caricare le task iniziali" perché il TaskService stesso si occupa di questo nel suo costruttore
+    // quando rileva un utente autenticato.
+    // Tuttavia, se hai una logica specifica da eseguire qui quando l'utente cambia stato, puoi mantenerla.
+    // Per il caricamento delle task, il TaskService lo gestisce già internamente.
+    // Se la rimuovi, assicurati che il TaskService gestisca anche il caso di utenti non autenticati
+    // e l'emissione di [] o null al BehaviorSubject.
+    // La logica attuale del TaskService è robusta, quindi questo blocco qui è ridondante per il solo caricamento.
+    /*
+    this.authUnsubscribe = onAuthStateChanged(getAuth(), async (user: User | null) => {
+      if (user) {
+        console.log('ListTaskPage: Utente autenticato, il TaskService dovrebbe già aver caricato le task.');
+        // Non chiamare loadAndProcessTasks() direttamente qui, il servizio lo fa già.
+        // Se lo chiami, rischi di fare doppie chiamate o di sovrascrivere lo stato.
+      } else {
+        console.log('ListTaskPage: Utente non autenticato, il TaskService ha svuotato le task.');
+        // this.tasks = []; // Il BehaviorSubject del servizio dovrebbe già aver emesso [] o null
+        // this.isLoadingTasks = false; // Gestito dalla sottoscrizione principale
+      }
+    });
+    */
   }
 
   // Hook del ciclo di vita di Ionic: chiamato ogni volta che la pagina sta per diventare attiva.
