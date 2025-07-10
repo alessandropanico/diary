@@ -1,11 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ModalController } from '@ionic/angular';
-import { Router } from '@angular/router'; // Per la navigazione dopo aver selezionato un utente
-import { UserDataService } from 'src/app/services/user-data.service'; // Importa il servizio dati utente
+import { Router } from '@angular/router';
+import { UserDataService } from 'src/app/services/user-data.service';
 
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
-
+import { getAuth } from 'firebase/auth';
 @Component({
   selector: 'app-search-modal',
   templateUrl: './search-modal.component.html',
@@ -13,10 +13,12 @@ import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
   standalone: false,
 })
 export class SearchModalComponent implements OnInit, OnDestroy {
+  
   searchQuery: string = '';
   searchResults: any[] = [];
   isSearchingUsers: boolean = false;
   searchPerformed: boolean = false;
+  loggedInUserId: string | null = null;
   private searchTerms = new Subject<string>();
   private searchSubscription: Subscription | undefined;
 
@@ -27,6 +29,11 @@ export class SearchModalComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
+    const auth = getAuth();
+    this.loggedInUserId = auth.currentUser ? auth.currentUser.uid : null;
+    console.log('SearchModalComponent: Utente loggato ID:', this.loggedInUserId);
+
+
     this.searchSubscription = this.searchTerms.pipe(
       debounceTime(500),
       distinctUntilChanged(),
@@ -67,9 +74,13 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     this.searchTerms.next(this.searchQuery);
   }
 
-  // Metodo chiamato quando un utente viene selezionato dalla lista
   selectUser(uid: string) {
-    this.dismissModal(); // Chiudi il modale
-    this.router.navigate(['/profilo-altri-utenti', uid]); // Naviga alla pagina del profilo dell'altro utente
+    this.dismissModal();
+
+    if (this.loggedInUserId && uid === this.loggedInUserId) {
+      this.router.navigateByUrl('/profilo');
+    } else {
+      this.router.navigate(['/profilo-altri-utenti', uid]);
+    }
   }
 }
