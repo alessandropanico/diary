@@ -4,16 +4,12 @@
   </ion-toolbar>
 </ion-header>
 
-
-<ion-content class="ion-padding">
-
   <div *ngIf="isLoading" class="loading-overlay">
     <ion-spinner name="crescent" color="primary"></ion-spinner>
     <p>Caricamento foto...</p>
   </div>
 
-  <section *ngIf="!isLoading" class="sfondo">
-
+  <section *ngIf="!isLoading" class="sectionGalleria">
     <!-- Galleria -->
     <div class="container" [class.blur]="previewActive">
 
@@ -71,7 +67,6 @@
       </button>
     </div>
   </section>
-</ion-content>
 
 <!-- Camera Preview centrale -->
 <div class="camera-overlay" *ngIf="previewActive">

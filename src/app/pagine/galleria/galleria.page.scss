@@ -11,6 +11,9 @@
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
+.sectionGalleria{
+  margin-top: 50px;
+}
 
 .camera-preview {
   width: 100%;
@@ -56,7 +59,7 @@
 
 .camera-launcher {
   position: fixed;
-  bottom: 30px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1001;
