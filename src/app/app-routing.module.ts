@@ -56,6 +56,12 @@ const routes: Routes = [
     loadChildren: () => import('./pagine/chat/chat.module').then(m => m.ChatPageModule),
     canActivate: [AuthGuard] // È fondamentale proteggere le chat
   },
+   {
+    path: 'chat-list',
+    loadChildren: () => import('./pagine/chat-list/chat-list.module').then( m => m.ChatListPageModule),
+    canActivate: [AuthGuard] // Proteggiamo la lista delle chat
+  },
+
 
 
 

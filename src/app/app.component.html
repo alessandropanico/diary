@@ -9,6 +9,7 @@
     </ion-header>
     <ion-content class="menu-content">
       <ion-list class="cursor">
+
         <ion-item [routerLink]="isLoggedIn() ? '/profilo' : '/login'" (click)="closeMenu()">
           <ion-avatar slot="start" *ngIf="isLoggedIn()">
             <img [src]="getProfilePhoto()" />
@@ -17,9 +18,14 @@
           <ion-label>Profilo</ion-label>
         </ion-item>
 
-         <ion-item (click)="presentSearchModal()">
+        <ion-item (click)="presentSearchModal()">
           <ion-icon slot="start" name="search-outline"></ion-icon>
           <ion-label>Cerca Utenti</ion-label>
+        </ion-item>
+
+        <ion-item routerLink="/chat-list" (click)="closeMenu()">
+          <ion-icon slot="start" name="chatbubbles-outline"></ion-icon>
+          <ion-label>Chat</ion-label>
         </ion-item>
 
         <ion-item routerLink="/home" (click)="closeMenu()">Home</ion-item>
@@ -27,15 +33,14 @@
         <ion-item routerLink="/galleria" (click)="closeMenu()">Galleria</ion-item>
         <ion-item routerLink="/list-task" (click)="closeMenu()">Task</ion-item>
         <ion-item routerLink="/note" (click)="closeMenu()">Note</ion-item>
-        <ion-item routerLink="/login" (click)="closeMenu()">Login</ion-item>
         <ion-item routerLink="/riconoscimenti" (click)="closeMenu()">Riconoscimenti</ion-item>
-
+        <ion-item routerLink="/login" (click)="closeMenu()">Login</ion-item>
 
         <ion-item *ngIf="isLoggedIn()" (click)="logout(); closeMenu()">
           <ion-icon slot="start" name="log-out-outline"></ion-icon>
           <ion-label>Logout</ion-label>
         </ion-item>
-        
+
       </ion-list>
     </ion-content>
   </ion-menu>

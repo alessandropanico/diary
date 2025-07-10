@@ -1,0 +1,34 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title class="ff7-title">Le Tue Chat</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Caricamento chat...</p>
+  </div>
+
+  <ion-list *ngIf="!isLoading && conversations.length > 0">
+    <ion-item *ngFor="let conv of conversations" (click)="openChat(conv.id)" detail lines="none">
+      <ion-avatar slot="start">
+        <img [src]="conv.otherParticipantPhoto" alt="Foto Profilo">
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ conv.otherParticipantName }}</h2>
+        <p>{{ conv.lastMessage ? (conv.lastMessage.length > 40 ? (conv.lastMessage | slice:0:40) + '...' : conv.lastMessage) : 'Nessun messaggio' }}</p>
+      </ion-label>
+      <ion-note slot="end">{{ conv.displayLastMessageAt }}</ion-note>
+    </ion-item>
+  </ion-list>
+
+  <div *ngIf="!isLoading && conversations.length === 0" class="ion-text-center ion-padding">
+    <ion-icon name="chatbubbles-outline" size="large" color="medium"></ion-icon>
+    <p>Non hai ancora conversazioni attive.</p>
+    <ion-button routerLink="/cerca-utenti" shape="round">Inizia una nuova chat</ion-button>
+  </div>
+</ion-content>
