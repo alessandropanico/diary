@@ -123,3 +123,15 @@ ion-footer {
     box-shadow: 0 0 8px var(--primary-glow);
   }
 }
+
+//------------------------------------------
+
+@media screen and (max-width:600px) {
+  ion-content::part(scroll) {
+    padding-bottom: 0vh !important;
+  }
+
+  ion-content{
+    padding-bottom: 0vh !important;
+  }
+}
