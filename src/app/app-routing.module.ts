@@ -60,7 +60,15 @@ const routes: Routes = [
     path: 'chat-list',
     loadChildren: () => import('./pagine/chat-list/chat-list.module').then( m => m.ChatListPageModule),
     canActivate: [AuthGuard] // Proteggiamo la lista delle chat
+  },  {
+    path: 'followers-list',
+    loadChildren: () => import('./pagine/followers-list/followers-list.module').then( m => m.FollowersListPageModule)
   },
+  {
+    path: 'following-list',
+    loadChildren: () => import('./pagine/following-list/following-list.module').then( m => m.FollowingListPageModule)
+  },
+
 
 
 
