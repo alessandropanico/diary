@@ -19,10 +19,20 @@
     "target": "es2022",
     "module": "es2020",
     "lib": [
-      "es2018", 
+      "es2018",
       "dom"
     ],
-    "useDefineForClassFields": false
+    "useDefineForClassFields": false,
+    "types": [
+      "node",
+      "dayjs",
+      "dayjs/plugin/isToday",
+      "dayjs/plugin/isYesterday",
+      "dayjs/plugin/updateLocale"
+    ],
+    // --- AGGIUNTA QUI PER ALLOWSYNTHETICDEFAULTIMPORTS ---
+    "allowSyntheticDefaultImports": true
+    // --- FINE AGGIUNTA ---
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

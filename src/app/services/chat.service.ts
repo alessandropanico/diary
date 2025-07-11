@@ -8,17 +8,20 @@ import {
   getDocs,
   addDoc,
   doc,
+  startAfter,
   getDoc,
   updateDoc,
   setDoc,
   serverTimestamp,
   orderBy,
   limit,
-  onSnapshot
+  onSnapshot,
+  QueryDocumentSnapshot
 } from 'firebase/firestore';
 import { Observable, forkJoin, of } from 'rxjs'; // Importa forkJoin e of
 import { map, switchMap } from 'rxjs/operators'; // Importa gli operatori RxJS
 import * as dayjs from 'dayjs'; // Assicurati di aver installato dayjs: npm install dayjs
+import { Message, PagedMessages } from '../interfaces/chat';
 
 // Interfaccia per i dettagli utente (se hai una collezione 'users')
 interface UserProfile {
@@ -108,21 +111,42 @@ export class ChatService {
     }
   }
 
-  getMessages(conversationId: string, limitMessages: number = 50): Observable<any[]> {
+  getMessages(conversationId: string, limitMessages: number = 20): Observable<PagedMessages> {
     const messagesRef = collection(this.firestore, `conversations/${conversationId}/messages`);
     const q = query(
       messagesRef,
-      orderBy('timestamp', 'asc'),
+      orderBy('timestamp', 'desc'),
       limit(limitMessages)
     );
 
     return new Observable(observer => {
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const messages: any[] = [];
+      const unsubscribe = onSnapshot(q, async (snapshot) => {
+        const messages: Message[] = [];
+        let lastVisibleDoc: QueryDocumentSnapshot | null = null;
+        let firstVisibleDoc: QueryDocumentSnapshot | null = null;
+
         snapshot.forEach(doc => {
-          messages.push({ id: doc.id, ...doc.data(), timestamp: doc.data()['timestamp']?.toDate() || new Date() });
+          messages.push({ id: doc.id, ...doc.data(), timestamp: doc.data()['timestamp']?.toDate() || new Date() } as Message);
         });
-        observer.next(messages);
+
+        if (snapshot.docs.length > 0) {
+          firstVisibleDoc = snapshot.docs[0];
+          lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+        }
+
+        let hasMore = false;
+        if (lastVisibleDoc) {
+            const olderQuery = query(
+                messagesRef,
+                orderBy('timestamp', 'desc'),
+                startAfter(lastVisibleDoc),
+                limit(1)
+            );
+            const olderSnapshot = await getDocs(olderQuery);
+            hasMore = olderSnapshot.docs.length > 0;
+        }
+
+        observer.next({ messages, lastVisibleDoc, firstVisibleDoc, hasMore });
       }, (error) => {
         console.error('Errore nel recupero dei messaggi in tempo reale:', error);
         observer.error(error);
@@ -130,6 +154,46 @@ export class ChatService {
 
       return () => unsubscribe();
     });
+  }
+
+  async getOlderMessages(conversationId: string, limitMessages: number = 20, startAfterDoc: QueryDocumentSnapshot): Promise<PagedMessages> {
+    const messagesRef = collection(this.firestore, `conversations/${conversationId}/messages`);
+    const q = query(
+      messagesRef,
+      orderBy('timestamp', 'desc'),
+      startAfter(startAfterDoc),
+      limit(limitMessages)
+    );
+
+    try {
+      const snapshot = await getDocs(q);
+      const messages: Message[] = [];
+      snapshot.forEach(doc => {
+        messages.push({ id: doc.id, ...doc.data(), timestamp: doc.data()['timestamp']?.toDate() || new Date() } as Message);
+      });
+
+      let lastVisibleDoc: QueryDocumentSnapshot | null = null;
+      if (snapshot.docs.length > 0) {
+        lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+      }
+
+      let hasMore = false;
+      if (lastVisibleDoc) {
+          const nextQuery = query(
+              messagesRef,
+              orderBy('timestamp', 'desc'),
+              startAfter(lastVisibleDoc),
+              limit(1)
+          );
+          const nextSnapshot = await getDocs(nextQuery);
+          hasMore = nextSnapshot.docs.length > 0;
+      }
+
+      return { messages, lastVisibleDoc, firstVisibleDoc: null, hasMore };
+    } catch (error) {
+      console.error('Errore nel recupero dei messaggi più vecchi:', error);
+      throw error;
+    }
   }
 
   /**

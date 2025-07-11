@@ -17,11 +17,27 @@
   </div>
 
   <div *ngIf="!isLoading" class="message-container">
-    <div *ngFor="let message of messages" [class.my-message]="isMyMessage(message.senderId)"
-      [class.other-message]="!isMyMessage(message.senderId)" class="chat-bubble">
-      <p class="message-text">{{ message.text }}</p>
-      <span class="message-timestamp">{{ message.timestamp | date:'shortTime' }}</span>
-    </div>
+    <ion-infinite-scroll (ionInfinite)="loadMoreMessages($event)" threshold="100px" position="top" [disabled]="!hasMoreMessages">
+      <ion-infinite-scroll-content
+        loadingSpinner="crescent"
+        loadingText="Caricando messaggi precedenti..."
+      ></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+
+    <ng-container *ngFor="let message of messages; let i = index">
+      <div *ngIf="shouldShowDate(message, i)" class="date-divider">
+        <span>{{ formatDateHeader(message.timestamp) }}</span>
+      </div>
+
+      <div
+        [class.my-message]="isMyMessage(message.senderId)"
+        [class.other-message]="!isMyMessage(message.senderId)"
+        class="chat-bubble"
+      >
+        <p class="message-text">{{ message.text }}</p>
+        <span class="message-timestamp">{{ message.timestamp | date:'shortTime' }}</span>
+      </div>
+    </ng-container>
   </div>
 
   <ion-footer class="ion-no-border">
@@ -36,5 +52,4 @@
       </ion-item>
     </ion-toolbar>
   </ion-footer>
-
 </ion-content>
