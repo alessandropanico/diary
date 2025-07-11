@@ -3,10 +3,16 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/chat-list"></ion-back-button>
     </ion-buttons>
-    <ion-title>
-      <span *ngIf="otherUser">{{ otherUser.username || 'Utente' }}</span>
-      <span *ngIf="!otherUser">Chat</span>
-    </ion-title>
+
+    <div class="chat-custom-header" *ngIf="!isLoading && otherUser">
+      <ion-avatar *ngIf="otherUser.profilePhotoUrl" class="other-user-avatar">
+        <img [src]="otherUser.profilePhotoUrl" alt="Immagine profilo">
+      </ion-avatar>
+      <span class="username">{{ otherUser.username || 'Utente' }}</span>
+    </div>
+
+    <ion-title *ngIf="isLoading || !otherUser" class="chat-title-placeholder"></ion-title>
+
   </ion-toolbar>
 </ion-header>
 

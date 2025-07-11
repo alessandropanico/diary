@@ -78,6 +78,67 @@ ion-footer {
   min-height: 60px;
 }
 
+/* src/app/pagine/chat/chat.page.scss */
+
+ion-header {
+  ion-toolbar {
+    // Stili per il contenitore personalizzato dell'header
+    .chat-custom-header {
+      display: flex;
+      align-items: center; // Allinea verticalmente avatar e testo
+      margin-inline-start: var(--ion-safe-area-left, 16px); // Regola il padding iniziale
+      margin-left: 16px; // Fallback per browser che non supportano margin-inline-start
+      // Considera di usare 'position: absolute' o 'margin-left' maggiori se l'icona 'back' è molto vicina
+      // Potrebbe essere necessario un 'gap' o 'margin-right' sull'avatar per spaziatura
+      gap: 8px; // Spazio tra avatar e testo
+
+      // Stili per l'avatar dell'altro utente
+      .other-user-avatar {
+        --border-radius: 50%; // Rendi l'avatar circolare
+        width: 36px; // Dimensione dell'avatar
+        height: 36px; // Dimensione dell'avatar
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+
+      // Stili per il nome utente
+      .username {
+        font-weight: bold;
+        white-space: nowrap; // Evita che il nome si rompa su più righe
+        overflow: hidden; // Nasconde il testo che supera il contenitore
+        text-overflow: ellipsis; // Aggiunge i puntini di sospensione (...) se il testo è troppo lungo
+        max-width: calc(100vw - 150px); /* Regola questa larghezza in base ad altri elementi (es. back button) */
+      }
+    }
+
+    // Stili per il titolo predefinito "Chat"
+    .chat-title-default {
+      font-weight: bold;
+      color: var(--ion-color-step-950, #000);
+      text-align: center; // Se vuoi che il titolo predefinito sia centrato
+    }
+
+    // Rimuovi eventuali stili applicati direttamente a ion-title che potrebbero sovrapporsi
+    ion-title {
+      padding: 0; // Resetta il padding di default di ion-title se causa problemi
+      margin: 0; // Resetta i margini
+      position: static; // Assicurati che non ci siano posizionamenti assoluti indesiderati
+      transform: none; // Resetta eventuali trasformazioni
+      left: auto; right: auto; // Resetta posizionamenti
+      width: auto; // Resetta la larghezza
+    }
+  }
+}
+
+/* ... il resto del tuo SCSS rimane uguale ... */
 
 .message-input-item {
   --background: transparent;
