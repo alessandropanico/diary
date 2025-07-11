@@ -71,6 +71,15 @@ const routes: Routes = [
     loadChildren: () => import('./pagine/following-list/following-list.module').then(m => m.FollowingListPageModule),
     canActivate: [AuthGuard]
   },
+ {
+    path: 'followers-altro-list/:id', // :id è l'UID dell'utente target
+    loadChildren: () => import('./pagine/followers-altro-list/followers-altro-list.module').then( m => m.FollowersAltroListPageModule)
+  },
+  {
+    path: 'following-altro-list/:id', // :id è l'UID dell'utente target
+    loadChildren: () => import('./pagine/following-altro-list/following-altro-list.module').then( m => m.FollowingAltroListPageModule)
+  },
+
 
 
 

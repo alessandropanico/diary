@@ -1,0 +1,33 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="backButtonHref"></ion-back-button>
+    </ion-buttons>
+    <ion-title class="ff7-title">Follower di {{ targetUserNickname }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content fullscreen class="ion-padding">
+
+  <div *ngIf="isLoading" class="loading-overlay">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Caricamento follower...</p>
+  </div>
+
+  <ion-list *ngIf="!isLoading && followers.length > 0">
+    <ion-item *ngFor="let follower of followers" (click)="goToUserProfile(follower.uid)">
+      <ion-avatar slot="start">
+        <img [src]="follower.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo">
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ follower.nickname || 'Nickname non disponibile' }}</h2>
+        <p>{{ follower.name || 'Nome non disponibile' }}</p>
+      </ion-label>
+      </ion-item>
+  </ion-list>
+
+  <div *ngIf="!isLoading && followers.length === 0" class="ion-text-center ion-padding">
+    <p>{{ targetUserNickname }} non ha ancora follower.</p>
+  </div>
+
+</ion-content>

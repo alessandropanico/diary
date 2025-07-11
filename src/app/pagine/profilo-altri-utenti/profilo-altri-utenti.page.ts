@@ -1,11 +1,12 @@
+// src/app/pagine/profilo-altri-utenti/profilo-altri-utenti.page.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UserDataService } from 'src/app/services/user-data.service';
-import { FollowService } from 'src/app/services/follow.service'; // Importa FollowService
+import { FollowService } from 'src/app/services/follow.service';
 import { ChatService } from 'src/app/services/chat.service';
 import { AlertController } from '@ionic/angular';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
-import { Subscription } from 'rxjs'; // Importa Subscription
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-profilo-altri-utenti',
@@ -19,21 +20,21 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
   isLoading: boolean = true;
   loggedInUserId: string | null = null;
 
-  isFollowingUser: boolean = false; // Nuovo: stato se l'utente loggato segue questo profilo
-  targetUserFollowersCount: number = 0; // Nuovo: conteggio follower dell'utente visualizzato
-  targetUserFollowingCount: number = 0; // Nuovo: conteggio following dell'utente visualizzato
+  isFollowingUser: boolean = false;
+  targetUserFollowersCount: number = 0;
+  targetUserFollowingCount: number = 0;
 
   private authStateSubscription: Subscription | undefined;
-  private isFollowingSubscription: Subscription | undefined; // Nuovo: per isFollowing
-  private followersCountSubscription: Subscription | undefined; // Nuovo: per conteggio follower
-  private followingCountSubscription: Subscription | undefined; // Nuovo: per conteggio following
+  private isFollowingSubscription: Subscription | undefined;
+  private followersCountSubscription: Subscription | undefined;
+  private followingCountSubscription: Subscription | undefined;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private userDataService: UserDataService,
     private chatService: ChatService,
-    private followService: FollowService, // Inietta FollowService
+    private followService: FollowService,
     private alertCtrl: AlertController
   ) { }
 
@@ -50,8 +51,6 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
       } else {
         this.loggedInUserId = null;
         console.log('NGONINIT (onAuthStateChanged) - Nessun utente loggato.');
-        // Considera di reindirizzare l'utente al login se non autenticato e la pagina lo richiede
-        // this.router.navigateByUrl('/login');
       }
       await this.loadUserProfile();
     }));
@@ -69,10 +68,9 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
             console.warn('Nessun dato trovato per l\'utente con ID:', userId);
             await this.presentFF7Alert('Profilo utente non trovato.');
           } else {
-            // Aggiungi l'UID dell'utente visualizzato ai profileData, utile per il follow
             this.profileData.uid = userId;
             console.log('loadUserProfile - Dati profilo caricati:', this.profileData);
-            this.subscribeToFollowData(userId); // Sottoscrivi ai dati di follow
+            this.subscribeToFollowData(userId);
           }
         } catch (error) {
           console.error('loadUserProfile - Errore nel caricamento del profilo utente:', error);
@@ -89,30 +87,25 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
     });
   }
 
-  // Nuovo metodo per sottoscrivere ai dati di follow dell'utente visualizzato
   private subscribeToFollowData(targetUserId: string) {
-    // Pulisci le sottoscrizioni precedenti
     if (this.isFollowingSubscription) this.isFollowingSubscription.unsubscribe();
     if (this.followersCountSubscription) this.followersCountSubscription.unsubscribe();
     if (this.followingCountSubscription) this.followingCountSubscription.unsubscribe();
 
     if (this.loggedInUserId && this.loggedInUserId !== targetUserId) {
-      // Sottoscrivi allo stato "isFollowing"
       this.isFollowingSubscription = this.followService.isFollowing(this.loggedInUserId, targetUserId).subscribe(isFollowing => {
         this.isFollowingUser = isFollowing;
         console.log(`L'utente ${this.loggedInUserId} segue ${targetUserId}:`, this.isFollowingUser);
       });
     } else {
-      this.isFollowingUser = false; // Non segue se stesso o non loggato
+      this.isFollowingUser = false;
     }
 
-    // Sottoscrivi al conteggio dei follower dell'utente visualizzato
     this.followersCountSubscription = this.followService.getFollowersCount(targetUserId).subscribe(count => {
       this.targetUserFollowersCount = count;
       console.log(`Follower di ${targetUserId}:`, this.targetUserFollowersCount);
     });
 
-    // Sottoscrivi al conteggio dei seguiti dall'utente visualizzato
     this.followingCountSubscription = this.followService.getFollowingCount(targetUserId).subscribe(count => {
       this.targetUserFollowingCount = count;
       console.log(`Persone seguite da ${targetUserId}:`, this.targetUserFollowingCount);
@@ -141,7 +134,6 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
         await this.followService.followUser(this.loggedInUserId, this.profileData.uid);
         await this.presentFF7Alert(`Hai iniziato a seguire ${this.profileData.nickname}!`);
       }
-      // Lo stato isFollowingUser si aggiornerà automaticamente grazie all'Observable
     } catch (error) {
       console.error('Errore durante l\'operazione di follow/unfollow:', error);
       await this.presentFF7Alert('Si è verificato un errore. Riprova.');
@@ -187,11 +179,28 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
     }
   }
 
+  // --- METODI DI NAVIGAZIONE AGGIORNATI PER LE NUOVE PAGINE ---
+  goToFollowersList() {
+    if (this.profileData && this.profileData.uid) {
+      this.router.navigate(['/followers-altro-list', this.profileData.uid]);
+    } else {
+      console.warn('goToFollowersList: ID utente del profilo non disponibile per la navigazione.');
+    }
+  }
+
+  goToFollowingList() {
+    if (this.profileData && this.profileData.uid) {
+      this.router.navigate(['/following-altro-list', this.profileData.uid]);
+    } else {
+      console.warn('goToFollowingList: ID utente del profilo non disponibile per la navigazione.');
+    }
+  }
+  // --- FINE METODI DI NAVIGAZIONE AGGIORNATI ---
+
   ngOnDestroy(): void {
     if (this.authStateSubscription) {
       this.authStateSubscription.unsubscribe();
     }
-    // Pulisci anche le sottoscrizioni di follow
     if (this.isFollowingSubscription) {
       this.isFollowingSubscription.unsubscribe();
     }
