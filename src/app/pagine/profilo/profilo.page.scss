@@ -272,3 +272,39 @@ ion-item.ff7-item {
   --color: #00ffe0; // Colore del testo digitato
   caret-color: #00ffe0; // Colore del cursore
 }
+
+//--------------------------------------------
+
+/* Aggiungi questi stili in fondo al tuo src/app/pagine/profilo/profilo.page.scss */
+
+// Stili per i conteggi Follower/Following
+.follow-stats {
+  display: flex;
+  justify-content: center;
+  gap: 30px; /* Spazio tra "Follower" e "Seguiti" */
+  margin: 20px 0;
+  padding: 10px 0;
+  border-top: 1px solid rgba(0, 255, 238, 0.2);
+  border-bottom: 1px solid rgba(0, 255, 238, 0.2);
+  background: rgba(15, 15, 35, 0.5); // Sfondo leggermente scuro
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-light); // Usa la variabile definita nell'host
+
+  strong {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-glow); // Usa la variabile definita nell'host
+    text-shadow: 0 0 5px var(--primary-glow); // Usa la variabile definita nell'host
+  }
+
+  span {
+    font-size: 0.9rem;
+    color: var(--label-color); // Usa la variabile definita nell'host
+    margin-top: 5px;
+  }
+}

@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Profilo</ion-title>
+    <ion-title class="ff7-title">Profilo</ion-title>
     <ion-buttons slot="end">
       <ion-button *ngIf="!editing && !isLoading" (click)="startEdit()">Modifica</ion-button>
       <ion-button *ngIf="editing" color="danger" (click)="cancelEdit()">Annulla</ion-button>
@@ -23,7 +23,7 @@
         <span>Cambia Banner</span>
       </div>
     </div>
-    <ion-button *ngIf="editing && profileEdit.banner" expand="block" fill="outline" color="medium" (click)="removeBanner()" class="remove-banner-button">
+    <ion-button *ngIf="editing && profileEdit.banner && profileEdit.banner !== 'assets/immaginiGenerali/default-banner.jpg'" expand="block" fill="outline" color="medium" (click)="removeBanner()" class="remove-banner-button">
       Rimuovi banner
     </ion-button>
 
@@ -31,14 +31,25 @@
       <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
     </ion-avatar>
 
-    <ion-button *ngIf="editing" expand="block" fill="outline" color="medium" (click)="removePhoto()">
+    <ion-button *ngIf="editing && profileEdit.photo && profileEdit.photo !== 'assets/immaginiGenerali/default-avatar.jpg'" expand="block" fill="outline" color="medium" (click)="removePhoto()">
       Rimuovi foto profilo
     </ion-button>
 
-    <div *ngIf="!editing" class="profile-view">
+    <div class="profile-view">
       <h2>{{ profile.nickname || 'nickname' }}</h2>
       <h3>{{ profile.name || 'Nome e Cognome' }}</h3>
       <p>{{ profile.bio || 'Descrizione assente' }}</p>
+
+      <div class="follow-stats" *ngIf="loggedInUserId">
+        <div class="stat-item">
+          <strong>{{ followersCount }}</strong>
+          <span>Follower</span>
+        </div>
+        <div class="stat-item">
+          <strong>{{ followingCount }}</strong>
+          <span>Seguiti</span>
+        </div>
+      </div>
     </div>
 
     <form *ngIf="editing" (ngSubmit)="saveProfile()">

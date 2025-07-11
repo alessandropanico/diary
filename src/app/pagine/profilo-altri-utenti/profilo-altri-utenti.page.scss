@@ -286,3 +286,74 @@ ion-item.ff7-item {
     transform: translateY(-2px);
   }
 }
+
+
+/* Aggiungi questi stili in fondo al tuo src/app/pagine/profilo-altri-utenti/profilo-altri-utenti.page.scss */
+
+.profile-actions {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px; // Spazio tra i pulsanti
+}
+
+.follow-button {
+  --background: var(--primary-glow); // Colore vibrante per "Segui"
+  --color: black;
+  font-weight: bold;
+  letter-spacing: 1px;
+  box-shadow: 0 0 15px rgba(0, 255, 238, 0.7);
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 0 20px rgba(0, 255, 238, 1);
+    transform: translateY(-2px);
+  }
+}
+
+.unfollow-button {
+  --background: var(--danger-color); // Rosso per "Non seguire più"
+  --background-activated: #cc0000;
+  --color: white;
+  font-weight: bold;
+  letter-spacing: 1px;
+  box-shadow: 0 0 15px rgba(255, 78, 78, 0.7);
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 0 20px rgba(255, 78, 78, 1);
+    transform: translateY(-2px);
+  }
+}
+
+/* Stili per i conteggi Follower/Following (copiati dal tuo profilo.page.scss) */
+.follow-stats {
+  display: flex;
+  justify-content: center;
+  gap: 30px; /* Spazio tra "Follower" e "Seguiti" */
+  margin: 20px 0;
+  padding: 10px 0;
+  border-top: 1px solid rgba(0, 255, 238, 0.2);
+  border-bottom: 1px solid rgba(0, 255, 238, 0.2);
+  background: rgba(15, 15, 35, 0.5); // Sfondo leggermente scuro
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-light);
+
+  strong {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-glow);
+    text-shadow: 0 0 5px var(--primary-glow);
+  }
+
+  span {
+    font-size: 0.9rem;
+    color: var(--label-color);
+    margin-top: 5px;
+  }
+}

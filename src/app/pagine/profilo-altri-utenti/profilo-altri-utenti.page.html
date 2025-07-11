@@ -28,14 +28,30 @@
       <h2>{{ profileData.nickname || 'Nickname non disponibile' }}</h2>
       <h3>{{ profileData.name || 'Nome e Cognome non disponibili' }}</h3>
       <p>{{ profileData.bio || 'Descrizione assente' }}</p>
-      <p>Email: {{ profileData.email || 'Email non disponibile' }}</p>
 
-      <ion-button *ngIf="loggedInUserId && loggedInUserId !== profileData.uid" expand="block"
-        class="ff7-button message-button" (click)="startChat()">
-        Messaggia
-      </ion-button>
+      <div class="follow-stats">
+        <div class="stat-item">
+          <strong>{{ targetUserFollowersCount }}</strong>
+          <span>Follower</span>
+        </div>
+        <div class="stat-item">
+          <strong>{{ targetUserFollowingCount }}</strong>
+          <span>Seguiti</span>
+        </div>
+      </div>
 
+      <div class="profile-actions">
+        <ion-button *ngIf="loggedInUserId && loggedInUserId !== profileData.uid" expand="block"
+          [class.follow-button]="!isFollowingUser" [class.unfollow-button]="isFollowingUser"
+          (click)="toggleFollow()">
+          {{ isFollowingUser ? 'Non seguire più' : 'Segui' }}
+        </ion-button>
 
+        <ion-button *ngIf="loggedInUserId && loggedInUserId !== profileData.uid" expand="block"
+          class="ff7-button message-button" (click)="startChat()">
+          Messaggia
+        </ion-button>
+      </div>
     </div>
   </div>
 
