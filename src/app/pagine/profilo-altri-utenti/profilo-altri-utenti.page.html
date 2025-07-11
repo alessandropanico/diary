@@ -30,11 +30,11 @@
       <p>{{ profileData.bio || 'Descrizione assente' }}</p>
 
       <div class="follow-stats">
-        <div class="stat-item">
+        <div class="stat-item" (click)="goToFollowersList()">
           <strong>{{ targetUserFollowersCount }}</strong>
           <span>Follower</span>
         </div>
-        <div class="stat-item">
+        <div class="stat-item" (click)="goToFollowingList()">
           <strong>{{ targetUserFollowingCount }}</strong>
           <span>Seguiti</span>
         </div>

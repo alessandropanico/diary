@@ -132,38 +132,28 @@ export class UserDataService {
     }
   }
 
-  async getUserDataById(userId: string): Promise<any | null> {
-    if (!userId) {
-      console.warn("ID utente non fornito per getUserDataById.");
+ /**
+   * Recupera i dati del profilo di un utente tramite il suo ID.
+   * Restituisce una Promise<any | null>, coerentemente con gli altri tuoi metodi.
+   * @param userId L'ID dell'utente.
+   */
+  async getUserDataById(uid: string): Promise<any | null> {
+    if (!uid) {
+      console.warn("UID utente non fornito per getUserDataById.");
       return null;
     }
-
-    const userDocRef = doc(this.firestore, 'users', userId);
+    const userDocRef = doc(this.firestore, 'users', uid); // Usa this.firestore
     try {
-      const docSnap = await getDoc(userDocRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        return {
-          uid: docSnap.id,
-          nickname: data['nickname'] || 'N/A',
-          name: data['name'] || 'N/A',
-          photo: data['photo'] || 'assets/immaginiGenerali/default-avatar.jpg',
-          banner: data['banner'] || 'assets/immaginiGenerali/default-banner.jpg',
-          bio: data['bio'] || 'N/A',
-          email: data['email'] || 'N/A',
-          lastLogin: data['lastLogin'] || 'N/A',
-          nicknameLowercase: data['nicknameLowercase'] || '',
-          nameLowercase: data['nameLowercase'] || '',
-          username: data['nickname'] || data['name'] || 'Utente Senza Nome',
-          displayName: data['name'] || data['nickname'] || 'Utente Senza Nome',
-          profilePhotoUrl: data['photo'] || 'assets/immaginiGenerali/default-avatar.jpg',
-        };
-      } else {
-        return null;
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data();
+        // Aggiungi l'UID direttamente ai dati se non lo hai già nel tuo DB
+        return { uid: userDocSnap.id, ...data };
       }
+      return null; // Il documento non esiste
     } catch (error) {
-      console.error("Errore nel recupero dei dati utente per ID:", userId, error);
-      return null;
+      console.error("Errore nel recupero dati utente per UID:", uid, error);
+      throw error; // Rilancia l'errore per gestirlo nel componente
     }
   }
 }

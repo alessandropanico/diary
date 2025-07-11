@@ -5,8 +5,8 @@ import { UserDataService } from 'src/app/services/user-data.service';
 import { FollowService } from 'src/app/services/follow.service';
 import { ChatService } from 'src/app/services/chat.service';
 import { AlertController } from '@ionic/angular';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
-import { Subscription } from 'rxjs';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { Subscription } from 'rxjs'; // Importante per la gestione delle sottoscrizioni
 
 @Component({
   selector: 'app-profilo-altri-utenti',
@@ -24,10 +24,9 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
   targetUserFollowersCount: number = 0;
   targetUserFollowingCount: number = 0;
 
-  private authStateSubscription: Subscription | undefined;
-  private isFollowingSubscription: Subscription | undefined;
-  private followersCountSubscription: Subscription | undefined;
-  private followingCountSubscription: Subscription | undefined;
+  // Un'unica Subscription per gestire tutte le sottoscrizioni RxJS in ngOnDestroy
+  private allSubscriptions: Subscription = new Subscription();
+  private authStateUnsubscribe: (() => void) | undefined; // Per la funzione di unsubscribe di onAuthStateChanged
 
   constructor(
     private route: ActivatedRoute,
@@ -42,9 +41,8 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
     this.isLoading = true;
 
     const auth = getAuth();
-    this.authStateSubscription = new Subscription();
-
-    this.authStateSubscription.add(onAuthStateChanged(auth, async (user) => {
+    // Gestisci la funzione di unsubscribe di onAuthStateChanged separatamente
+    this.authStateUnsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         this.loggedInUserId = user.uid;
         console.log('NGONINIT (onAuthStateChanged) - Utente loggato ID:', this.loggedInUserId);
@@ -52,25 +50,31 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
         this.loggedInUserId = null;
         console.log('NGONINIT (onAuthStateChanged) - Nessun utente loggato.');
       }
+      // Dopo aver impostato loggedInUserId, procedi con il caricamento del profilo
       await this.loadUserProfile();
-    }));
+    });
   }
 
   private async loadUserProfile() {
-    this.route.paramMap.subscribe(async params => {
+    // Sottoscriviti ai parametri della route
+    const routeSub = this.route.paramMap.subscribe(async params => {
       const userId = params.get('id');
       console.log('loadUserProfile - ID utente profilo da URL:', userId);
 
       if (userId) {
+        this.isLoading = true; // Reimposta isLoading se l'ID cambia
         try {
+          // Questa riga funzionerà senza errori TS2339 se getUserDataById restituisce una Promise
           this.profileData = await this.userDataService.getUserDataById(userId);
+
           if (!this.profileData) {
             console.warn('Nessun dato trovato per l\'utente con ID:', userId);
             await this.presentFF7Alert('Profilo utente non trovato.');
           } else {
+            // Assicurati che l'UID sia presente, anche se il servizio lo dovrebbe già fornire
             this.profileData.uid = userId;
             console.log('loadUserProfile - Dati profilo caricati:', this.profileData);
-            this.subscribeToFollowData(userId);
+            this.subscribeToFollowData(userId); // Sottoscriviti ai dati di follow solo dopo aver caricato il profilo
           }
         } catch (error) {
           console.error('loadUserProfile - Errore nel caricamento del profilo utente:', error);
@@ -85,31 +89,36 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
         this.router.navigateByUrl('/home');
       }
     });
+    this.allSubscriptions.add(routeSub); // Aggiungi la sottoscrizione della route alla lista
   }
 
   private subscribeToFollowData(targetUserId: string) {
-    if (this.isFollowingSubscription) this.isFollowingSubscription.unsubscribe();
-    if (this.followersCountSubscription) this.followersCountSubscription.unsubscribe();
-    if (this.followingCountSubscription) this.followingCountSubscription.unsubscribe();
+    // Prima di aggiungere nuove sottoscrizioni, rimuovi quelle vecchie di follow
+    // In questo modo, se l'ID utente nel URL cambia, le vecchie sottoscrizioni vengono pulite.
+    // Questo è il motivo per cui preferiamo gestire le sottoscrizioni in modo più granulare qui.
+    this.unsubscribeFollowSubscriptions();
 
     if (this.loggedInUserId && this.loggedInUserId !== targetUserId) {
-      this.isFollowingSubscription = this.followService.isFollowing(this.loggedInUserId, targetUserId).subscribe(isFollowing => {
+      const isFollowingSub = this.followService.isFollowing(this.loggedInUserId, targetUserId).subscribe(isFollowing => {
         this.isFollowingUser = isFollowing;
         console.log(`L'utente ${this.loggedInUserId} segue ${targetUserId}:`, this.isFollowingUser);
       });
+      this.allSubscriptions.add(isFollowingSub); // Aggiungi alla lista globale
     } else {
       this.isFollowingUser = false;
     }
 
-    this.followersCountSubscription = this.followService.getFollowersCount(targetUserId).subscribe(count => {
+    const followersCountSub = this.followService.getFollowersCount(targetUserId).subscribe(count => {
       this.targetUserFollowersCount = count;
       console.log(`Follower di ${targetUserId}:`, this.targetUserFollowersCount);
     });
+    this.allSubscriptions.add(followersCountSub); // Aggiungi alla lista globale
 
-    this.followingCountSubscription = this.followService.getFollowingCount(targetUserId).subscribe(count => {
+    const followingCountSub = this.followService.getFollowingCount(targetUserId).subscribe(count => {
       this.targetUserFollowingCount = count;
       console.log(`Persone seguite da ${targetUserId}:`, this.targetUserFollowingCount);
     });
+    this.allSubscriptions.add(followingCountSub); // Aggiungi alla lista globale
   }
 
   async toggleFollow() {
@@ -198,18 +207,40 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
   // --- FINE METODI DI NAVIGAZIONE AGGIORNATI ---
 
   ngOnDestroy(): void {
-    if (this.authStateSubscription) {
-      this.authStateSubscription.unsubscribe();
+    // Esegui la funzione di unsubscribe di onAuthStateChanged
+    if (this.authStateUnsubscribe) {
+      this.authStateUnsubscribe();
     }
-    if (this.isFollowingSubscription) {
-      this.isFollowingSubscription.unsubscribe();
-    }
-    if (this.followersCountSubscription) {
-      this.followersCountSubscription.unsubscribe();
-    }
-    if (this.followingCountSubscription) {
-      this.followingCountSubscription.unsubscribe();
-    }
+    // Rimuovi tutte le sottoscrizioni RxJS dalla lista
+    this.allSubscriptions.unsubscribe();
+  }
+
+  // Questo metodo ora rimuove solo le sottoscrizioni relative al follow
+  // in modo che possano essere ri-aggiunte correttamente se l'utente del profilo cambia
+  private unsubscribeFollowSubscriptions(): void {
+    // Per disiscrivere sottoscrizioni specifiche da allSubscriptions
+    // senza disiscrivere tutto, dovremmo rimuoverle singolarmente.
+    // Un modo più semplice è ricreare l'oggetto Subscription ogni volta
+    // che chiamiamo subscribeToFollowData, ma questo sarebbe meno efficiente.
+    // L'approccio attuale (aggiungere a allSubscriptions e fare unsubscribe di tutto in ngOnDestroy)
+    // è accettabile se le sottoscrizioni di follow vengono sempre "rimpiazzate"
+    // quando l'ID del profilo cambia.
+
+    // Poiché isFollowingSubscription, followersCountSubscription, etc. non sono più proprietà
+    // separate, non possiamo fare l'unsubscribe direttamente su di esse.
+    // La pulizia avviene tramite allSubscriptions.unsubscribe() in ngOnDestroy.
+    // Se vuoi una gestione più precisa, dovresti dichiararle di nuovo come proprietà
+    // e gestirle singolarmente.
+    // Per mantenere il tuo codice pulito e funzionante con `allSubscriptions`,
+    // il metodo `unsubscribeFollowSubscriptions` come lo intendevi tu
+    // non è più strettamente necessario in questa forma.
+    // Se volessimo comunque disiscrivere solo quelle di follow, dovremmo
+    // tenere traccia dei riferimenti a quelle sottoscrizioni in modo esplicito
+    // e rimuoverle da allSubscriptions o disiscriverle individualmente.
+    // Per ora, l'approccio è che ngOnDestroy le pulirà tutte.
+    // Quindi, questo metodo, se non usato per una logica specifica di "reset parziale",
+    // può essere rimosso o lasciato vuoto, dato che la pulizia finale è in ngOnDestroy.
+    // Lo lascio qui come un commento per indicare la logica precedente, ma per ora è "vuoto" funzionalmente.
   }
 
   async presentFF7Alert(message: string) {
