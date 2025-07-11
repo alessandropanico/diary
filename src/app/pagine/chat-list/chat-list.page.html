@@ -21,7 +21,11 @@
       </ion-avatar>
       <ion-label>
         <h2>{{ conv.otherParticipantName }}</h2>
-        <p>{{ conv.lastMessage ? (conv.lastMessage.length > 40 ? (conv.lastMessage | slice:0:40) + '...' : conv.lastMessage) : 'Nessun messaggio' }}</p>
+        <p>
+          <span *ngIf="conv.lastMessagePrefix" class="message-prefix">{{ conv.lastMessagePrefix }}</span>
+          {{ conv.lastMessage ? (conv.lastMessage.length > 40 ? (conv.lastMessage | slice:0:40) + '...' :
+          conv.lastMessage) : 'Nessun messaggio' }}
+        </p>
       </ion-label>
       <ion-note slot="end">{{ conv.displayLastMessageAt }}</ion-note>
     </ion-item>

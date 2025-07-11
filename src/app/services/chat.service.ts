@@ -84,31 +84,28 @@ export class ChatService {
     }
   }
 
+   /**
+   * Invia un messaggio e aggiorna i dati della conversazione.
+   * @param conversationId L'ID della conversazione.
+   * @param senderId L'ID dell'utente che invia il messaggio.
+   * @param text Il testo del messaggio.
+   */
   async sendMessage(conversationId: string, senderId: string, text: string): Promise<void> {
-    if (!conversationId || !senderId || !text) {
-      console.error('Dati mancanti per inviare il messaggio.');
-      throw new Error('Dati messaggio incompleti.');
-    }
-
-    const messagesRef = collection(this.firestore, `conversations/${conversationId}/messages`);
+    const messagesCollectionRef = collection(this.firestore, `conversations/${conversationId}/messages`);
     const conversationDocRef = doc(this.firestore, 'conversations', conversationId);
 
-    try {
-      await addDoc(messagesRef, {
-        senderId: senderId,
-        text: text,
-        timestamp: serverTimestamp()
-      });
+    await addDoc(messagesCollectionRef, {
+      senderId: senderId,
+      text: text,
+      timestamp: serverTimestamp()
+    });
 
-      await updateDoc(conversationDocRef, {
-        lastMessage: text.substring(0, 50),
-        lastMessageAt: serverTimestamp()
-      });
-
-    } catch (error) {
-      console.error('Errore durante l\'invio del messaggio:', error);
-      throw error;
-    }
+    // *** ASSICURATI CHE QUESTA RIGA SIA PRESENTE E CORRETTA ***
+    await updateDoc(conversationDocRef, {
+      lastMessage: text,
+      lastMessageAt: serverTimestamp(),
+      lastMessageSenderId: senderId // <-- DEVE ESSERE QUI!
+    });
   }
 
   getMessages(conversationId: string, limitMessages: number = 20): Observable<PagedMessages> {
@@ -216,78 +213,35 @@ export class ChatService {
   }
 
   // --- METODO MODIFICATO QUI ---
-  getUserConversations(currentUserId: string): Observable<ExtendedConversation[]> {
+ getUserConversations(userId: string): Observable<any[]> { // Specifico il tipo di ritorno come Observable<any[]>
     const conversationsRef = collection(this.firestore, 'conversations');
     const q = query(
       conversationsRef,
-      where('participants', 'array-contains', currentUserId),
+      where('participants', 'array-contains', userId),
       orderBy('lastMessageAt', 'desc')
     );
 
-    return new Observable<any[]>(observer => {
+    return new Observable(observer => {
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const rawConversations: any[] = [];
-        snapshot.forEach(doc => {
-          rawConversations.push({ id: doc.id, ...doc.data() });
+        const convs = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            // Assicurati che lastMessageAt sia gestito correttamente se è un Timestamp di Firebase
+            lastMessageAt: data['lastMessageAt'] ? data['lastMessageAt'] : null,
+            // Assicurati che lastMessageSenderId sia incluso qui quando mappi i dati
+            lastMessageSenderId: data['lastMessageSenderId'] ? data['lastMessageSenderId'] : null
+          };
         });
-        observer.next(rawConversations);
+        observer.next(convs);
       }, (error) => {
-        console.error('Errore nel recupero delle conversazioni utente in tempo reale:', error);
         observer.error(error);
       });
-
-      return () => unsubscribe();
-    }).pipe(
-      switchMap(conversations => {
-        if (conversations.length === 0) {
-          return of([]); // Se non ci sono conversazioni, restituisci un array vuoto
-        }
-
-        const conversationObservables = conversations.map(conv => {
-          const otherParticipantId = conv.participants.find((pId: string) => pId !== currentUserId);
-
-          if (otherParticipantId) {
-            // Recupera i dettagli dell'altro utente dalla collezione 'users'
-            const userDocRef = doc(this.firestore, `users/${otherParticipantId}`);
-            return new Observable<ExtendedConversation>(userObserver => {
-              getDoc(userDocRef).then(userDocSnap => {
-                const userData = userDocSnap.data() as UserProfile; // Cast per TypeScript
-                userObserver.next({
-                  ...conv,
-                  otherParticipantId: otherParticipantId,
-                  otherParticipantName: userData?.name || 'Utente senza nome', // Fallback
-                  otherParticipantPhoto: userData?.photoURL || 'assets/imgs/default-user-photo.png', // Fallback. Cambia il percorso!
-                  displayLastMessageAt: this.formatTimestamp(conv.lastMessageAt)
-                });
-                userObserver.complete(); // Completa l'observable dopo aver ottenuto i dati
-              }).catch(error => {
-                console.error(`Errore nel recupero utente ${otherParticipantId}:`, error);
-                userObserver.next({ // Emetti comunque la conversazione con fallback in caso di errore
-                  ...conv,
-                  otherParticipantId: otherParticipantId,
-                  otherParticipantName: 'Utente senza nome',
-                  otherParticipantPhoto: 'assets/imgs/default-user-photo.png',
-                  displayLastMessageAt: this.formatTimestamp(conv.lastMessageAt)
-                });
-                userObserver.complete();
-              });
-            });
-          } else {
-            // Caso in cui la conversazione ha solo l'utente corrente (es. chat con se stesso)
-            return of({
-              ...conv,
-              otherParticipantId: currentUserId,
-              otherParticipantName: 'Tu (Utente)', // O il nome del tuo utente se lo recuperi
-              otherParticipantPhoto: 'assets/imgs/your-profile-photo.png', // Percorso della tua foto profilo
-              displayLastMessageAt: this.formatTimestamp(conv.lastMessageAt)
-            } as ExtendedConversation);
-          }
-        });
-        // Usa forkJoin per aspettare che tutte le richieste degli utenti siano complete
-        return forkJoin(conversationObservables);
-      })
-    );
+      return { unsubscribe }; // Restituisce la funzione di unsubscribe
+    });
   }
+
 
   private formatTimestamp(timestamp: any): string {
     if (!timestamp) {
