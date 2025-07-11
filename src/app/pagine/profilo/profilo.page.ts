@@ -1,4 +1,3 @@
-// src/app/pagine/profilo/profilo.page.ts
 import { Component, OnInit, NgZone, OnDestroy } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { UserDataService } from 'src/app/services/user-data.service';
@@ -6,7 +5,7 @@ import { FollowService } from 'src/app/services/follow.service';
 import { getAuth, User, onAuthStateChanged } from 'firebase/auth';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Subscription } from 'rxjs';
-import { Router } from '@angular/router'; // Importa Router
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-profilo',

@@ -1,12 +1,11 @@
-// src/app/pagine/profilo-altri-utenti/profilo-altri-utenti.page.ts
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UserDataService } from 'src/app/services/user-data.service';
 import { FollowService } from 'src/app/services/follow.service';
 import { ChatService } from 'src/app/services/chat.service';
 import { AlertController } from '@ionic/angular';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { Subscription } from 'rxjs'; // Importante per la gestione delle sottoscrizioni
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-profilo-altri-utenti',
@@ -24,6 +23,10 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
   targetUserFollowersCount: number = 0;
   targetUserFollowingCount: number = 0;
 
+  isLoadingStats: boolean = true;
+  private followersSub: Subscription | undefined;
+  private followingSub: Subscription | undefined;
+
   // Un'unica Subscription per gestire tutte le sottoscrizioni RxJS in ngOnDestroy
   private allSubscriptions: Subscription = new Subscription();
   private authStateUnsubscribe: (() => void) | undefined; // Per la funzione di unsubscribe di onAuthStateChanged
@@ -34,92 +37,137 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
     private userDataService: UserDataService,
     private chatService: ChatService,
     private followService: FollowService,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private ngZone: NgZone,
   ) { }
 
   async ngOnInit() {
     this.isLoading = true;
+    this.isLoadingStats = true; // Inizializza a true anche qui
 
     const auth = getAuth();
-    // Gestisci la funzione di unsubscribe di onAuthStateChanged separatamente
     this.authStateUnsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        this.loggedInUserId = user.uid;
-        console.log('NGONINIT (onAuthStateChanged) - Utente loggato ID:', this.loggedInUserId);
-      } else {
-        this.loggedInUserId = null;
-        console.log('NGONINIT (onAuthStateChanged) - Nessun utente loggato.');
-      }
-      // Dopo aver impostato loggedInUserId, procedi con il caricamento del profilo
-      await this.loadUserProfile();
+      this.ngZone.run(async () => { // Assicurati che gli aggiornamenti avvengano nell'Angular zone
+        if (user) {
+          this.loggedInUserId = user.uid;
+          console.log('NGONINIT (onAuthStateChanged) - Utente loggato ID:', this.loggedInUserId);
+        } else {
+          this.loggedInUserId = null;
+          console.log('NGONINIT (onAuthStateChanged) - Nessun utente loggato.');
+        }
+        await this.loadUserProfile();
+      });
     });
   }
 
   private async loadUserProfile() {
-    // Sottoscriviti ai parametri della route
+    // Prima di caricare un nuovo profilo, reimposta isLoadingStats
+    this.isLoadingStats = true;
+
+    // Unsubscribe dalle vecchie sottoscrizioni di follow prima di aggiungerne di nuove
+    this.unsubscribeFollowCounts();
+
     const routeSub = this.route.paramMap.subscribe(async params => {
       const userId = params.get('id');
       console.log('loadUserProfile - ID utente profilo da URL:', userId);
 
       if (userId) {
-        this.isLoading = true; // Reimposta isLoading se l'ID cambia
+        this.isLoading = true;
         try {
-          // Questa riga funzionerà senza errori TS2339 se getUserDataById restituisce una Promise
           this.profileData = await this.userDataService.getUserDataById(userId);
 
           if (!this.profileData) {
             console.warn('Nessun dato trovato per l\'utente con ID:', userId);
             await this.presentFF7Alert('Profilo utente non trovato.');
           } else {
-            // Assicurati che l'UID sia presente, anche se il servizio lo dovrebbe già fornire
             this.profileData.uid = userId;
             console.log('loadUserProfile - Dati profilo caricati:', this.profileData);
-            this.subscribeToFollowData(userId); // Sottoscriviti ai dati di follow solo dopo aver caricato il profilo
+            this.subscribeToFollowData(userId); // Sottoscriviti ai dati di follow
           }
         } catch (error) {
           console.error('loadUserProfile - Errore nel caricamento del profilo utente:', error);
           await this.presentFF7Alert('Si è verificato un errore durante il caricamento del profilo.');
+          this.isLoadingStats = false; // In caso di errore nel profilo, nascondi anche le stats
         } finally {
           this.isLoading = false;
         }
       } else {
         console.warn('loadUserProfile - Nessun ID utente fornito nell\'URL per il profilo esterno.');
         this.isLoading = false;
+        this.isLoadingStats = false; // Se non c'è ID, non c'è nulla da caricare
         await this.presentFF7Alert('ID utente mancante.');
         this.router.navigateByUrl('/home');
       }
     });
-    this.allSubscriptions.add(routeSub); // Aggiungi la sottoscrizione della route alla lista
+    this.allSubscriptions.add(routeSub);
   }
 
   private subscribeToFollowData(targetUserId: string) {
-    // Prima di aggiungere nuove sottoscrizioni, rimuovi quelle vecchie di follow
-    // In questo modo, se l'ID utente nel URL cambia, le vecchie sottoscrizioni vengono pulite.
-    // Questo è il motivo per cui preferiamo gestire le sottoscrizioni in modo più granulare qui.
-    this.unsubscribeFollowSubscriptions();
+    this.isLoadingStats = true; // Inizia il caricamento delle stats
+    this.unsubscribeFollowCounts(); // Assicurati di pulire le precedenti sottoscrizioni
+
+    let loadedCount = 0; // Contatore per il completamento delle sottoscrizioni
+
+    const checkCompletion = () => {
+      loadedCount++;
+      if (loadedCount === (this.loggedInUserId && this.loggedInUserId !== targetUserId ? 3 : 2)) {
+        // 3 se controlliamo isFollowing, 2 altrimenti
+        this.ngZone.run(() => {
+          this.isLoadingStats = false;
+          console.log('ProfiloAltriUtentiPage: Statistiche follower/following caricate.');
+        });
+      }
+    };
 
     if (this.loggedInUserId && this.loggedInUserId !== targetUserId) {
       const isFollowingSub = this.followService.isFollowing(this.loggedInUserId, targetUserId).subscribe(isFollowing => {
-        this.isFollowingUser = isFollowing;
-        console.log(`L'utente ${this.loggedInUserId} segue ${targetUserId}:`, this.isFollowingUser);
+        this.ngZone.run(() => { // Esegui nel contesto di Angular
+          this.isFollowingUser = isFollowing;
+          console.log(`L'utente ${this.loggedInUserId} segue ${targetUserId}:`, this.isFollowingUser);
+          checkCompletion();
+        });
+      }, error => {
+        console.error('Errore isFollowing:', error);
+        checkCompletion();
       });
-      this.allSubscriptions.add(isFollowingSub); // Aggiungi alla lista globale
+      this.allSubscriptions.add(isFollowingSub);
     } else {
-      this.isFollowingUser = false;
+      // Se non si controlla isFollowing, il conteggio iniziale sarà 0 o 1 (a seconda di come gestisci isFollowing nel checkCompletion)
+      // Per semplificare, assumiamo che se non c'è loggedInUserId o è lo stesso utente, isFollowing è false e la "sottoscrizione" è completa.
+      checkCompletion(); // Simula il completamento della sottoscrizione isFollowing
     }
 
-    const followersCountSub = this.followService.getFollowersCount(targetUserId).subscribe(count => {
-      this.targetUserFollowersCount = count;
-      console.log(`Follower di ${targetUserId}:`, this.targetUserFollowersCount);
+    this.followersSub = this.followService.getFollowersCount(targetUserId).subscribe(count => {
+      this.ngZone.run(() => {
+        this.targetUserFollowersCount = count;
+        console.log(`Follower di ${targetUserId}:`, this.targetUserFollowersCount);
+        checkCompletion();
+      });
+    }, error => {
+      console.error('Errore getFollowersCount:', error);
+      this.ngZone.run(() => {
+        this.targetUserFollowersCount = 0;
+        checkCompletion();
+      });
     });
-    this.allSubscriptions.add(followersCountSub); // Aggiungi alla lista globale
+    this.allSubscriptions.add(this.followersSub);
 
-    const followingCountSub = this.followService.getFollowingCount(targetUserId).subscribe(count => {
-      this.targetUserFollowingCount = count;
-      console.log(`Persone seguite da ${targetUserId}:`, this.targetUserFollowingCount);
+    this.followingSub = this.followService.getFollowingCount(targetUserId).subscribe(count => {
+      this.ngZone.run(() => {
+        this.targetUserFollowingCount = count;
+        console.log(`Persone seguite da ${targetUserId}:`, this.targetUserFollowingCount);
+        checkCompletion();
+      });
+    }, error => {
+      console.error('Errore getFollowingCount:', error);
+      this.ngZone.run(() => {
+        this.targetUserFollowingCount = 0;
+        checkCompletion();
+      });
     });
-    this.allSubscriptions.add(followingCountSub); // Aggiungi alla lista globale
+    this.allSubscriptions.add(this.followingSub);
   }
+
 
   async toggleFollow() {
     if (!this.loggedInUserId) {
@@ -260,5 +308,19 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
       mode: 'ios'
     });
     await alert.present();
+  }
+
+  private unsubscribeFollowCounts(): void {
+    if (this.followersSub) {
+      this.followersSub.unsubscribe();
+      this.followersSub = undefined;
+    }
+    if (this.followingSub) {
+      this.followingSub.unsubscribe();
+      this.followingSub = undefined;
+    }
+    // L'isFollowingSub non è più una proprietà separata, è aggiunta a allSubscriptions.
+    // L'approccio attuale con `loadedCount` e `checkCompletion` gestirà questo implicitamente
+    // quando `subscribeToFollowData` viene chiamato di nuovo.
   }
 }

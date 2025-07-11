@@ -29,21 +29,24 @@
       <h3>{{ profileData.name || 'Nome e Cognome non disponibili' }}</h3>
       <p>{{ profileData.bio || 'Descrizione assente' }}</p>
 
-      <div class="follow-stats">
-        <div class="stat-item" (click)="goToFollowersList()">
-          <strong>{{ targetUserFollowersCount }}</strong>
-          <span>Follower</span>
+      <div class="follow-stats-wrapper">
+        <div *ngIf="isLoadingStats" class="loading-stats-local-overlay">
+          <ion-spinner name="crescent" color="primary"></ion-spinner>
         </div>
-        <div class="stat-item" (click)="goToFollowingList()">
-          <strong>{{ targetUserFollowingCount }}</strong>
-          <span>Seguiti</span>
+        <div class="follow-stats" [class.hidden]="isLoadingStats">
+          <div class="stat-item clickable-stat" (click)="goToFollowersList()">
+            <strong>{{ targetUserFollowersCount }}</strong>
+            <span>Follower</span>
+          </div>
+          <div class="stat-item clickable-stat" (click)="goToFollowingList()">
+            <strong>{{ targetUserFollowingCount }}</strong>
+            <span>Seguiti</span>
+          </div>
         </div>
       </div>
-
       <div class="profile-actions">
         <ion-button *ngIf="loggedInUserId && loggedInUserId !== profileData.uid" expand="block"
-          [class.follow-button]="!isFollowingUser" [class.unfollow-button]="isFollowingUser"
-          (click)="toggleFollow()">
+          [class.follow-button]="!isFollowingUser" [class.unfollow-button]="isFollowingUser" (click)="toggleFollow()">
           {{ isFollowingUser ? 'Non seguire più' : 'Segui' }}
         </ion-button>
 
