@@ -12,9 +12,6 @@ Utilizzare notifiche per mobile;
 Tag e ricerca intelligente per note/task: cerca per parola chiave, categoria, tag;
 Task intelligenti: suggerimenti basati sull’ora/giorno (es. "Hai dimenticato di completare una task ieri");
 
-Dark mode automatica: basata su orario o preferenze di sistema;
-Tema personalizzabile: permetti all’utente di scegliere colori principali e stile;
-
 Tracking umore/giornata: aggiungi una sezione per annotare come ci si sente ogni giorno (magari emoji + breve nota);
 Dashboard giornaliera/settimanale: mostra attività completate, note salvate, sveglie usate;
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
@@ -24,12 +21,7 @@ Integrazione con AI (anche semplice):
 sintesi delle note;
 generazione automatica di to-do da note vocali.];
 
-Traduzione inglese, quindi choose language;
-
-Collegare account Google AdSense;
-Guadagnare con Google AdMob;
-[Integra Firebase Analytics o Google Analytics for Firebase per tracciare come gli
-utenti usano l’app e migliorare di conseguenza];
+Fixare nickname alla registrazione iniziale;
 
 
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
