@@ -44,11 +44,16 @@ dayjs.updateLocale('it', {
 // Per ora la manteniamo come nel tuo codice originale.
 interface OtherUserChatData {
   uid: string;
-  username: string;
+  username: string;        // Questo campo è quello che l'HTML si aspetta
   displayName: string;
-  profilePhotoUrl: string;
+  profilePhotoUrl: string; // Questo campo è quello che l'HTML si aspetta
   bio?: string;
+  // Aggiungi qui anche i campi che ricevi da UserDataService
+  nickname?: string; // Corrisponde a otherUserData.nickname
+  name?: string;     // Corrisponde a otherUserData.name
+  photo?: string;    // Corrisponde a otherUserData.photo
 }
+
 
 @Component({
   selector: 'app-chat',
@@ -118,20 +123,39 @@ export class ChatPage implements OnInit, OnDestroy {
   /**
    * Carica i dettagli dell'altro utente della chat.
    */
-  private async loadOtherUserDetails() {
-    // Se OtherUserChatData è identico a UserProfile, puoi usare UserProfile direttamente
-    // e rimuovere l'interfaccia OtherUserChatData.
-    // In questo caso, assicuriamoci che il metodo getUserDataById restituisca il tipo corretto.
+   private async loadOtherUserDetails() {
     const conversationDetails = await this.chatService.getConversationDetails(this.conversationId!);
     if (conversationDetails && conversationDetails.participants) {
       const otherParticipantId = conversationDetails.participants.find((id: string) => id !== this.loggedInUserId);
       if (otherParticipantId) {
-        // Correggiamo la tipizzazione qui per garantire che sia compatibile con OtherUserChatData
-        // o UserProfile, a seconda di come UserDataService.getUserDataById è definito.
-        // Assumiamo che UserDataService.getUserDataById restituisca una Promise<UserProfile | null>
-        // o Promise<OtherUserChatData | null>.
-        this.otherUser = await this.userDataService.getUserDataById(otherParticipantId) as OtherUserChatData;
+        const userDataFromService = await this.userDataService.getUserDataById(otherParticipantId);
+
+        if (userDataFromService) {
+          // *** CORREZIONE QUI: Mappa i dati dal servizio ai campi che l'HTML si aspetta ***
+          this.otherUser = {
+            uid: userDataFromService.uid,
+            username: userDataFromService.nickname || userDataFromService.name || 'Utente Sconosciuto', // Prendi il nickname o il nome
+            displayName: userDataFromService.name || userDataFromService.nickname || 'Utente', // Puoi scegliere quale usare come display
+            profilePhotoUrl: userDataFromService.photo || 'assets/immaginiGenerali/default-avatar.jpg', // Prendi la foto
+            bio: userDataFromService.bio || '' // Assicurati di includere altri campi se pertinenti
+          };
+          console.log('ChatPage: Dettagli altro utente caricati:', this.otherUser);
+        } else {
+          console.warn('ChatPage: Dati utente non trovati per ID:', otherParticipantId);
+          this.otherUser = {
+            uid: otherParticipantId,
+            username: 'Utente Sconosciuto',
+            displayName: 'Utente Sconosciuto',
+            profilePhotoUrl: 'assets/immaginiGenerali/default-avatar.jpg'
+          };
+        }
+      } else {
+        console.warn('ChatPage: Other participant ID not found in conversation details.');
+        this.otherUser = null;
       }
+    } else {
+      console.warn('ChatPage: Conversation details or participants not found.');
+      this.otherUser = null;
     }
   }
 
