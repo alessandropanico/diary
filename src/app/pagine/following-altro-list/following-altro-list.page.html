@@ -1,7 +1,7 @@
 <ion-header>
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/"></ion-back-button>
+      <ion-back-button [defaultHref]="'/profilo-altri-utenti/' + targetUserId"></ion-back-button>
     </ion-buttons>
     <ion-title>Seguiti</ion-title>
   </ion-toolbar>
@@ -14,7 +14,7 @@
   </div>
 
   <ion-list *ngIf="!isLoading && following.length > 0" class="ff7-list">
-    <ion-item *ngFor="let followedUser of following"class="ff7-list-item">
+    <ion-item *ngFor="let followedUser of following" class="ff7-list-item">
       <ion-avatar slot="start">
         <img [src]="followedUser.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo">
       </ion-avatar>
