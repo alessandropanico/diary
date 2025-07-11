@@ -46,6 +46,8 @@ export class ProfiloPage implements OnInit, OnDestroy {
   private followersCountSubscription: Subscription | undefined;
   private followingCountSubscription: Subscription | undefined;
 
+    isLoadingStats: boolean = true;
+
   constructor(
     private ngZone: NgZone,
     private alertCtrl: AlertController,
@@ -56,6 +58,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
 
   async ngOnInit() {
     this.isLoading = true;
+    this.isLoadingStats = true; // Inizializza anche questo a true
 
     const auth = getAuth();
     this.authStateUnsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
@@ -70,9 +73,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
           this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '' };
           this.profileEdit = { ...this.profile };
           this.isLoading = false;
+          this.isLoadingStats = false; // Se non c'è utente, non c'è nulla da caricare
           console.warn('ProfiloPage: Nessun utente loggato.');
-          // Potresti voler reindirizzare l'utente se non è loggato
-          // this.router.navigateByUrl('/login');
+          // this.router.navigateByUrl('/login'); // Decidi se reindirizzare
         }
       });
     });
@@ -107,7 +110,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
       await this.presentFF7Alert('Errore nel caricamento del profilo. Riprova più tardi.');
     } finally {
       this.profileEdit = { ...this.profile };
-      this.isLoading = false;
+      this.isLoading = false; // Il caricamento generale del profilo è completo qui
     }
   }
 
@@ -115,10 +118,26 @@ export class ProfiloPage implements OnInit, OnDestroy {
     if (this.followersCountSubscription) this.followersCountSubscription.unsubscribe();
     if (this.followingCountSubscription) this.followingCountSubscription.unsubscribe();
 
+    let loadedCount = 0; // Contatore per sapere quando entrambe le sottoscrizioni sono complete
+
     this.followersCountSubscription = this.followService.getFollowersCount(userId).subscribe(count => {
       this.ngZone.run(() => {
         this.followersCount = count;
         console.log(`I tuoi follower:`, this.followersCount);
+        loadedCount++;
+        if (loadedCount === 2) {
+          this.isLoadingStats = false; // Entrambe le statistiche sono state caricate
+          console.log('ProfiloPage: Statistiche follower/following caricate.');
+        }
+      });
+    }, error => {
+      console.error('Errore nel recupero dei follower count:', error);
+      this.ngZone.run(() => {
+        this.followersCount = 0;
+        loadedCount++;
+        if (loadedCount === 2) {
+          this.isLoadingStats = false;
+        }
       });
     });
 
@@ -126,9 +145,24 @@ export class ProfiloPage implements OnInit, OnDestroy {
       this.ngZone.run(() => {
         this.followingCount = count;
         console.log(`Persone che segui:`, this.followingCount);
+        loadedCount++;
+        if (loadedCount === 2) {
+          this.isLoadingStats = false; // Entrambe le statistiche sono state caricate
+          console.log('ProfiloPage: Statistiche follower/following caricate.');
+        }
+      });
+    }, error => {
+      console.error('Errore nel recupero del following count:', error);
+      this.ngZone.run(() => {
+        this.followingCount = 0;
+        loadedCount++;
+        if (loadedCount === 2) {
+          this.isLoadingStats = false;
+        }
       });
     });
   }
+
 
   startEdit() {
     this.editing = true;

@@ -40,17 +40,21 @@
       <h3>{{ profile.name || 'Nome e Cognome' }}</h3>
       <p>{{ profile.bio || 'Descrizione assente' }}</p>
 
-      <div class="follow-stats" *ngIf="loggedInUserId">
-        <div class="stat-item clickable-stat" (click)="goToFollowersList()">
-          <strong>{{ followersCount }}</strong>
-          <span>Follower</span>
+      <div class="follow-stats-wrapper"> <div *ngIf="isLoadingStats" class="loading-stats-local-overlay">
+            <ion-spinner name="crescent" color="primary"></ion-spinner>
         </div>
-        <div class="stat-item clickable-stat" (click)="goToFollowingList()">
-          <strong>{{ followingCount }}</strong>
-          <span>Seguiti</span>
+        <div class="follow-stats" [class.hidden]="isLoadingStats" *ngIf="loggedInUserId">
+            <div class="stat-item clickable-stat" (click)="goToFollowersList()">
+                <strong>{{ followersCount }}</strong>
+                <span>Follower</span>
+            </div>
+            <div class="stat-item clickable-stat" (click)="goToFollowingList()">
+                <strong>{{ followingCount }}</strong>
+                <span>Seguiti</span>
+            </div>
         </div>
       </div>
-    </div>
+      </div>
 
     <form *ngIf="editing" (ngSubmit)="saveProfile()">
       <ion-list lines="none">
