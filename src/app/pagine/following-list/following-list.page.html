@@ -1,13 +1,35 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>following-list</ion-title>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/profilo"></ion-back-button>
+    </ion-buttons>
+    <ion-title class="ff7-title">Persone che segui</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">following-list</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content fullscreen>
+  <div *ngIf="isLoading" class="loading-overlay">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Caricamento seguiti...</p>
+  </div>
+
+  <ion-list *ngIf="!isLoading && users.length > 0" class="ff7-list">
+    <ion-item *ngFor="let user of users" class="ff7-list-item">
+      <ion-avatar slot="start" (click)="goToUserProfile(user.uid)">
+        <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Avatar Utente" />
+      </ion-avatar>
+      <ion-label (click)="goToUserProfile(user.uid)">
+        <h2>{{ user.nickname }}</h2>
+        <p>{{ user.name }}</p>
+      </ion-label>
+      <ion-button slot="end" [color]="user.isFollowing ? 'danger' : 'primary'"
+        (click)="confirmToggleFollow(user.uid, user.nickname, user.isFollowing)">
+        {{ user.isFollowing ? 'Non seguire più' : 'Segui' }}
+      </ion-button>
+    </ion-item>
+  </ion-list>
+
+  <div *ngIf="!isLoading && users.length === 0" class="ion-padding ion-text-center">
+    <p>Non segui ancora nessuno.</p>
+  </div>
 </ion-content>

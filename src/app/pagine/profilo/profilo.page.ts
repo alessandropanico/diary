@@ -1,10 +1,12 @@
-import { Component, OnInit, NgZone, OnDestroy } from '@angular/core'; // Aggiunto OnDestroy
+// src/app/pagine/profilo/profilo.page.ts
+import { Component, OnInit, NgZone, OnDestroy } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { UserDataService } from 'src/app/services/user-data.service';
-import { FollowService } from 'src/app/services/follow.service'; // Importa il nuovo servizio
-import { getAuth, User, onAuthStateChanged } from 'firebase/auth'; // Aggiunto onAuthStateChanged
+import { FollowService } from 'src/app/services/follow.service';
+import { getAuth, User, onAuthStateChanged } from 'firebase/auth';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Subscription } from 'rxjs'; // Importa Subscription
+import { Subscription } from 'rxjs';
+import { Router } from '@angular/router'; // Importa Router
 
 @Component({
   selector: 'app-profilo',
@@ -12,7 +14,7 @@ import { Subscription } from 'rxjs'; // Importa Subscription
   styleUrls: ['./profilo.page.scss'],
   standalone: false,
 })
-export class ProfiloPage implements OnInit, OnDestroy { // Implementa OnDestroy
+export class ProfiloPage implements OnInit, OnDestroy {
 
   profile = {
     photo: '',
@@ -36,33 +38,33 @@ export class ProfiloPage implements OnInit, OnDestroy { // Implementa OnDestroy
   isLoading = true;
   avatarMarginTop = '-60px';
 
-  loggedInUserId: string | null = null; // Aggiungi questa proprietà per l'ID dell'utente loggato
-  followersCount = 0; // Contatore per i follower
-  followingCount = 0; // Contatore per le persone che segui
+  loggedInUserId: string | null = null;
+  followersCount = 0;
+  followingCount = 0;
 
-  private authStateUnsubscribe: (() => void) | undefined; // Per disiscriversi dall'auth state listener
-  private followersCountSubscription: Subscription | undefined; // Per disiscriversi dal conteggio follower
-  private followingCountSubscription: Subscription | undefined; // Per disiscriversi dal conteggio following
+  private authStateUnsubscribe: (() => void) | undefined;
+  private followersCountSubscription: Subscription | undefined;
+  private followingCountSubscription: Subscription | undefined;
 
   constructor(
     private ngZone: NgZone,
     private alertCtrl: AlertController,
     private userDataService: UserDataService,
-    private followService: FollowService, // Inietta il FollowService
+    private followService: FollowService,
+    private router: Router, // Inietta Router
   ) { }
 
   async ngOnInit() {
     this.isLoading = true;
 
-    // Ascolta lo stato di autenticazione per ottenere l'ID dell'utente loggato
     const auth = getAuth();
     this.authStateUnsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
-      this.ngZone.run(async () => { // Assicurati che gli aggiornamenti UI siano nel contesto di Angular
+      this.ngZone.run(async () => {
         if (user) {
           this.loggedInUserId = user.uid;
           console.log('ProfiloPage: Utente loggato ID:', this.loggedInUserId);
-          await this.loadProfileData(user); // Carica i dati del profilo
-          this.subscribeToFollowCounts(user.uid); // Sottoscrivi ai conteggi di follow
+          await this.loadProfileData(user);
+          this.subscribeToFollowCounts(user.uid);
         } else {
           this.loggedInUserId = null;
           this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '' };
@@ -98,7 +100,7 @@ export class ProfiloPage implements OnInit, OnDestroy { // Implementa OnDestroy
           email: user.email || '',
           bio: ''
         };
-        await this.userDataService.saveUserData(this.profile); // Salva i dati iniziali su Firestore
+        await this.userDataService.saveUserData(this.profile);
       }
     } catch (error) {
       console.error("Errore durante il caricamento/salvataggio iniziale da Firestore:", error);
@@ -109,7 +111,6 @@ export class ProfiloPage implements OnInit, OnDestroy { // Implementa OnDestroy
     }
   }
 
-  // Nuovo metodo per sottoscrivere ai conteggi di follow
   private subscribeToFollowCounts(userId: string) {
     if (this.followersCountSubscription) this.followersCountSubscription.unsubscribe();
     if (this.followingCountSubscription) this.followingCountSubscription.unsubscribe();
@@ -166,6 +167,20 @@ export class ProfiloPage implements OnInit, OnDestroy { // Implementa OnDestroy
     }
     this.avatarMarginTop = '-60px';
   }
+
+  // --- NUOVI METODI DI NAVIGAZIONE ---
+  goToFollowersList() {
+    if (this.loggedInUserId) {
+      this.router.navigate(['/followers-list', this.loggedInUserId]);
+    }
+  }
+
+  goToFollowingList() {
+    if (this.loggedInUserId) {
+      this.router.navigate(['/following-list', this.loggedInUserId]);
+    }
+  }
+  // --- FINE NUOVI METODI DI NAVIGAZIONE ---
 
   async presentFF7Alert(message: string) {
     const alert = await this.alertCtrl.create({
@@ -224,7 +239,6 @@ export class ProfiloPage implements OnInit, OnDestroy { // Implementa OnDestroy
     this.profileEdit.photo = '';
   }
 
-  // Implementa OnDestroy per pulire le sottoscrizioni
   ngOnDestroy(): void {
     if (this.authStateUnsubscribe) {
       this.authStateUnsubscribe();

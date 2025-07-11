@@ -41,11 +41,11 @@
       <p>{{ profile.bio || 'Descrizione assente' }}</p>
 
       <div class="follow-stats" *ngIf="loggedInUserId">
-        <div class="stat-item">
+        <div class="stat-item clickable-stat" (click)="goToFollowersList()">
           <strong>{{ followersCount }}</strong>
           <span>Follower</span>
         </div>
-        <div class="stat-item">
+        <div class="stat-item clickable-stat" (click)="goToFollowingList()">
           <strong>{{ followingCount }}</strong>
           <span>Seguiti</span>
         </div>

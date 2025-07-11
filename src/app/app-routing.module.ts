@@ -45,10 +45,10 @@ const routes: Routes = [
     loadChildren: () => import('./pagine/profilo/profilo.module').then(m => m.ProfiloPageModule),
     canActivate: [AuthGuard]
   },
-   {
+  {
     // *** MODIFICA QUI: Aggiungi /:id per il parametro ***
     path: 'profilo-altri-utenti/:id',
-    loadChildren: () => import('./pagine/profilo-altri-utenti/profilo-altri-utenti.module').then( m => m.ProfiloAltriUtentiPageModule)
+    loadChildren: () => import('./pagine/profilo-altri-utenti/profilo-altri-utenti.module').then(m => m.ProfiloAltriUtentiPageModule)
   },
   {
     // Questo percorso accetta l'ID della conversazione come parametro
@@ -56,17 +56,20 @@ const routes: Routes = [
     loadChildren: () => import('./pagine/chat/chat.module').then(m => m.ChatPageModule),
     canActivate: [AuthGuard] // È fondamentale proteggere le chat
   },
-   {
+  {
     path: 'chat-list',
-    loadChildren: () => import('./pagine/chat-list/chat-list.module').then( m => m.ChatListPageModule),
+    loadChildren: () => import('./pagine/chat-list/chat-list.module').then(m => m.ChatListPageModule),
     canActivate: [AuthGuard] // Proteggiamo la lista delle chat
-  },  {
-    path: 'followers-list',
-    loadChildren: () => import('./pagine/followers-list/followers-list.module').then( m => m.FollowersListPageModule)
   },
   {
-    path: 'following-list',
-    loadChildren: () => import('./pagine/following-list/following-list.module').then( m => m.FollowingListPageModule)
+    path: 'followers-list/:id', // Aggiungi questa rotta per la lista follower
+    loadChildren: () => import('./pagine/followers-list/followers-list.module').then(m => m.FollowersListPageModule),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'following-list/:id', // Aggiungi questa rotta per la lista following
+    loadChildren: () => import('./pagine/following-list/following-list.module').then(m => m.FollowingListPageModule),
+    canActivate: [AuthGuard]
   },
 
 

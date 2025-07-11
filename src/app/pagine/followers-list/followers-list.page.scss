@@ -1,0 +1,129 @@
+/* src/app/pagine/followers-list/followers-list.page.scss */
+/* src/app/pagine/following-list/following-list.page.scss */
+
+// Importa le variabili globali se necessarie
+
+
+
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  text-align: center;
+
+  ion-spinner {
+    width: 64px;
+    height: 64px;
+    color: var(--primary-glow, #00ffee);
+    animation: pulse 1.2s infinite ease-in-out;
+  }
+
+  p {
+    color: var(--primary-glow, #00ffee);
+    font-family: 'Orbitron', 'Segoe UI', monospace;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    margin-top: 12px;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+.ff7-list {
+  background: transparent !important;
+  padding-top: 15px; // Spazio dall'header
+}
+
+.ff7-list-item {
+  --background: var(--bg-blur, rgba(15, 15, 35, 0.8));
+  --border-radius: 8px;
+  --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  margin-bottom: 10px;
+  border: 1px solid var(--primary-glow, #00ffee50);
+  border-left: 5px solid var(--primary-glow, #00ffee); // Bordo laterale accattivante
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  padding: 10px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+  }
+
+  ion-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-glow, #00ffee);
+    overflow: hidden;
+    margin-right: 15px;
+    flex-shrink: 0; // Impedisce all'avatar di rimpicciolirsi
+  }
+
+  ion-label {
+    h2 {
+      color: var(--text-light, #ffffff);
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+      font-family: 'Orbitron', sans-serif;
+    }
+    p {
+      color: var(--label-color, #a0cfd8);
+      font-size: 0.9rem;
+    }
+  }
+
+  ion-button {
+    margin-left: auto; // Sposta il pulsante a destra
+    --background: var(--primary-glow, #00ffee);
+    --color: black;
+    font-weight: bold;
+    box-shadow: 0 0 8px rgba(0, 255, 238, 0.5);
+    transition: all 0.2s ease;
+
+    &.danger {
+      --background: var(--danger-color, #ff4e4e);
+      --color: white;
+      box-shadow: 0 0 8px rgba(255, 78, 78, 0.5);
+    }
+
+    &.primary {
+      --background: var(--primary-glow, #00ffee);
+      --color: black;
+      box-shadow: 0 0 8px rgba(0, 255, 238, 0.5);
+    }
+
+    &:hover {
+      filter: brightness(1.1);
+    }
+  }
+}
+
+// Aggiungi questo in profilo.page.scss
+.clickable-stat {
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+
+  &:active {
+    transform: scale(0.95);
+    filter: brightness(1.2);
+  }
+}
