@@ -54,12 +54,11 @@ export class ChatListPage implements OnInit, OnDestroy {
       return;
     }
 
-    this.conversationsSubscription = this.chatService.getUserConversations(this.loggedInUserId).subscribe(async (rawConvs: any[]) => { // rawConvs è di tipo any[]
+    this.conversationsSubscription = this.chatService.getUserConversations(this.loggedInUserId).subscribe(async (rawConvs: any[]) => {
       console.log('ChatListPage: Conversazioni recuperate grezze:', rawConvs);
       const processedConvs: any[] = [];
 
-      for (const conv of rawConvs) { // conv è di tipo any (derivato da rawConvs: any[])
-        // Assicurati che 'participants' sia un array prima di usarlo
+      for (const conv of rawConvs) {
         const otherParticipantId = Array.isArray(conv.participants) ?
                                    (conv.participants as string[]).find((id: string) => id !== this.loggedInUserId) :
                                    undefined;
@@ -72,19 +71,18 @@ export class ChatListPage implements OnInit, OnDestroy {
             const otherUserData = await this.userDataService.getUserDataById(otherParticipantId);
 
             if (otherUserData) {
-              otherParticipantName = otherUserData.username;
-              otherParticipantPhoto = otherUserData.profilePhotoUrl;
+              // *** CORREZIONE QUI: Usa i nomi dei campi restituiti da UserDataService ***
+              otherParticipantName = otherUserData.nickname || otherUserData.name || 'Utente Sconosciuto'; // Preferisci nickname, poi name
+              otherParticipantPhoto = otherUserData.photo || 'assets/immaginiGenerali/default-avatar.jpg'; // Usa 'photo'
             }
           } catch (error) {
             console.error('Errore nel recupero dati altro partecipante:', otherParticipantId, error);
           }
         }
 
-        // *** LOGICA PRINCIPALE: Controlla chi ha inviato l'ultimo messaggio ***
-        // Assicurati che lastMessageSenderId esista nel documento di conversazione
         const lastMessageSenderId = (conv.lastMessageSenderId as string | undefined);
         const wasLastMessageSentByMe = this.loggedInUserId && lastMessageSenderId === this.loggedInUserId;
-        const lastMessagePrefix = wasLastMessageSentByMe ? 'Io: ' : ''; // <-- Cambiato "Tu:" a "Io:"
+        const lastMessagePrefix = wasLastMessageSentByMe ? 'Io: ' : '';
 
         processedConvs.push({
           ...conv,
@@ -98,6 +96,7 @@ export class ChatListPage implements OnInit, OnDestroy {
       }
       this.conversations = processedConvs;
       this.isLoading = false;
+      console.log('ChatListPage: Conversazioni processate:', this.conversations); // Aggiunto log per debug
     }, (error) => {
       console.error('Errore nel recupero delle conversazioni:', error);
       this.isLoading = false;
