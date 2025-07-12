@@ -288,7 +288,6 @@ form {
 }
 
 .ff7-button.message-button {
-  margin-top: 25px;
   --background: #0080ff;
   --background-activated: #0056b3;
   --color: white;
@@ -307,7 +306,8 @@ form {
 .profile-actions {
   margin-top: 20px;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .follow-button {
