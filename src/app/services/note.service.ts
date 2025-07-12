@@ -68,19 +68,15 @@ export class NoteService {
       return;
     }
 
-    const playlistsCollection = collection(this.firestore, `users/${this.userId}/playlists`);
+    // Qui recuperiamo le playlist reali dall'utente
+    const playlistsCollection = collection(this.firestore, `users/${this.userId}/notePlaylists`); // *** MODIFICATO: Usiamo 'notePlaylists'
     collectionData(playlistsCollection, { idField: 'id' }).pipe(
       map(playlists => {
         const typedPlaylists = playlists as Playlist[];
-        const allPlaylistExists = typedPlaylists.some(p => p.id === 'all' && p.name === 'Tutti');
-        if (!allPlaylistExists) {
-          return [{ id: 'all', name: 'Tutti' }, ...typedPlaylists];
-        }
-        return typedPlaylists.sort((a, b) => {
-          if (a.id === 'all') return -1;
-          if (b.id === 'all') return 1;
-          return 0;
-        });
+        const allPlaylist: Playlist = { id: 'all', name: 'Tutti' };
+
+        // Aggiungiamo sempre "Tutti" e poi ordiniamo le altre playlist
+        return [allPlaylist, ...typedPlaylists.sort((a, b) => a.name.localeCompare(b.name))];
       }),
       tap(playlists => {
         this._playlistsSubject.next(playlists);
@@ -88,9 +84,12 @@ export class NoteService {
       }),
       catchError(error => {
         console.error('Errore nel caricamento delle playlist da Firestore:', error);
-        return of([]);
+        // In caso di errore, garantiamo che "Tutti" sia comunque presente
+        return of([{ id: 'all', name: 'Tutti' }]);
       })
     ).subscribe();
+
+    // Qui recuperiamo le note dell'utente
     const notesCollection = collection(this.firestore, `users/${this.userId}/notes`);
     collectionData(notesCollection, { idField: 'id' }).pipe(
       map(notes => notes as Note[]),
@@ -120,9 +119,13 @@ export class NoteService {
     if (!this.userId) return of(console.error('Non autorizzato: utente non loggato per addNote.'));
     if (!note.id) return of(console.error('Errore: ID nota mancante per addNote.'));
 
+    // Se la nota è associata a "Tutti" ('all'), salva null in Firestore
+    const playlistIdToSave = note.playlistId === 'all' ? null : note.playlistId;
+
     const noteRef = doc(this.firestore, `users/${this.userId}/notes/${note.id}`);
     const newNote: Note = {
       ...note,
+      playlistId: playlistIdToSave, // Usa il valore corretto per Firestore
       createdAt: serverTimestamp() as any,
       updatedAt: serverTimestamp() as any
     };
@@ -146,9 +149,13 @@ export class NoteService {
       return of(console.error('Non autorizzato o ID nota mancante per aggiornamento.'));
     }
 
+    // Se la nota è associata a "Tutti" ('all'), salva null in Firestore
+    const playlistIdToSave = updatedNote.playlistId === 'all' ? null : updatedNote.playlistId;
+
     const noteRef = doc(this.firestore, `users/${this.userId}/notes/${updatedNote.id}`);
     const noteToUpdate: Partial<Note> = {
       ...updatedNote,
+      playlistId: playlistIdToSave, // Usa il valore corretto per Firestore
       updatedAt: serverTimestamp() as any
     };
 
@@ -181,8 +188,6 @@ export class NoteService {
     );
   }
 
-
-
   /**
    * Restituisce un'istantanea corrente delle playlist.
    * Utile per accedere ai dati immediatamente (es. per popolare un prompt radio).
@@ -200,7 +205,8 @@ export class NoteService {
   addPlaylist(name: string): Observable<void> {
     if (!this.userId) return of(console.error('Non autorizzato: utente non loggato per addPlaylist.'));
 
-    const playlistCollectionRef = collection(this.firestore, `users/${this.userId}/playlists`);
+    // *** MODIFICATO: Usiamo 'notePlaylists'
+    const playlistCollectionRef = collection(this.firestore, `users/${this.userId}/notePlaylists`);
     const newDocRef = doc(playlistCollectionRef);
     const newPlaylist: Playlist = { id: newDocRef.id, name };
 
@@ -224,7 +230,8 @@ export class NoteService {
       return of(console.error('Non autorizzato o ID playlist non valido (non puoi eliminare "Tutti").'));
     }
 
-    const playlistRef = doc(this.firestore, `users/${this.userId}/playlists/${playlistId}`);
+    // *** MODIFICATO: Usiamo 'notePlaylists'
+    const playlistRef = doc(this.firestore, `users/${this.userId}/notePlaylists/${playlistId}`);
     const notesCollectionRef = collection(this.firestore, `users/${this.userId}/notes`);
     const q = query(notesCollectionRef, where('playlistId', '==', playlistId));
 
@@ -248,7 +255,6 @@ export class NoteService {
       })
     );
   }
-
 
   async signInAnonymously(): Promise<void> {
     try {
