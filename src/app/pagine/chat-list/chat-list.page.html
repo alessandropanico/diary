@@ -22,12 +22,13 @@
       <ion-label>
         <h2>{{ conv.otherParticipantName }}</h2>
         <p>
-          <span *ngIf="conv.lastMessagePrefix" class="message-prefix">{{ conv.lastMessagePrefix }}</span>
-          {{ conv.lastMessage ? (conv.lastMessage.length > 40 ? (conv.lastMessage | slice:0:40) + '...' :
-          conv.lastMessage) : 'Nessun messaggio' }}
+          {{ getDisplayLastMessage(conv) | slice:0:40 }}{{ conv.lastMessage && conv.lastMessage.length > 40 ? '...' : '' }}
         </p>
       </ion-label>
-      <ion-note slot="end">{{ conv.displayLastMessageAt }}</ion-note>
+      <ion-note slot="end">
+        {{ conv.displayLastMessageAt }}
+        <ion-icon name="ellipse" color="danger" *ngIf="hasUnreadMessages(conv)" class="dot-unread-icon"></ion-icon>
+      </ion-note>
     </ion-item>
   </ion-list>
 

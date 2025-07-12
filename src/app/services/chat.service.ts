@@ -1,7 +1,7 @@
-// chat.service.ts
-import { Injectable } from '@angular/core';
+// src/app/services/chat.service.ts
+import { Injectable, NgZone } from '@angular/core';
 import {
-  getFirestore,
+  Firestore, // <--- Useremo solo questa istanza iniettata
   collection,
   query,
   where,
@@ -16,42 +16,96 @@ import {
   orderBy,
   limit,
   onSnapshot,
-  QueryDocumentSnapshot
-} from 'firebase/firestore';
-import { Observable, forkJoin, of } from 'rxjs'; // Importa forkJoin e of
-import { map, switchMap } from 'rxjs/operators'; // Importa gli operatori RxJS
-import * as dayjs from 'dayjs'; // Assicurati di aver installato dayjs: npm install dayjs
-import { Message, PagedMessages } from '../interfaces/chat';
+  QueryDocumentSnapshot,
+  Timestamp // Importa Timestamp per i tipi di Firebase
+} from '@angular/fire/firestore'; // Importa Firestore da @angular/fire/firestore
 
-// Interfaccia per i dettagli utente (se hai una collezione 'users')
-interface UserProfile {
-  name: string;
-  photoURL: string; // O il nome del tuo campo per l'URL della foto
-  // Aggiungi altri campi del tuo profilo utente se necessari
+import { Observable } from 'rxjs'; // Manteniamo solo Observable, of e forkJoin se necessari
+import { map, switchMap } from 'rxjs/operators';
+import * as dayjs from 'dayjs'; // Assicurati di aver installato dayjs: npm install dayjs
+
+// Questo è un placeholder. Se hai un file interfaces/chat.ts,
+// le interfacce Message e PagedMessages dovrebbero venire da lì.
+export interface Message {
+  id: string;
+  senderId: string;
+  text: string;
+  timestamp: Date; // Usiamo Date perché 'toDate()' lo converte
 }
 
-// Interfaccia per la conversazione estesa (con i dettagli dell'altro partecipante)
+export interface PagedMessages {
+  messages: Message[];
+  lastVisibleDoc: QueryDocumentSnapshot | null;
+  firstVisibleDoc: QueryDocumentSnapshot | null; // Aggiunto per consistenza, anche se non sempre usato
+  hasMore: boolean;
+}
+
+// --- Interfacce DEFINITIVE per questo esercizio (puoi spostarle in interfaces/chat.ts) ---
+
+// Interfaccia per i dettagli utente (se hai una collezione 'users')
+// Questi campi devono corrispondere a ciò che UserDataService.getUserDataById restituisce
+export interface UserProfile {
+  uid?: string;
+  name?: string;
+  nickname?: string;
+  photo?: string;
+  photoURL?: string;
+  bio?: string;
+  email?: string;
+}
+
+// Interfaccia per il documento della conversazione letto direttamente da Firestore
+// (rappresenta il documento grezzo della collezione 'conversations' con l'ID)
+export interface ConversationDocument {
+  id: string; // L'ID del documento, mappato manualmente da doc.id
+  participants: string[];
+  lastMessage?: string;
+  lastMessageAt?: Timestamp; // Firebase Timestamp
+  createdAt?: Timestamp; // Firebase Timestamp
+  lastMessageSenderId?: string;
+  lastRead?: { [userId: string]: Timestamp }; // Mappa userId -> Timestamp
+  chatId?: string; // Il tuo documento Firestore ha anche un chatId a volte
+}
+
+// Interfaccia per la conversazione estesa (con i dettagli dell'altro partecipante e info UI)
+// Questa è la versione "arricchita" usata in ChatListPage
 export interface ExtendedConversation {
   id: string;
   participants: string[];
   lastMessage: string;
-  lastMessageAt: any; // Firebase Timestamp
-  createdAt: any; // Firebase Timestamp
+  lastMessageAt: Timestamp | null; // Firebase Timestamp
+  createdAt: Timestamp | null; // Firebase Timestamp
   chatId: string;
   otherParticipantId: string;
   otherParticipantName: string;
   otherParticipantPhoto: string;
-  displayLastMessageAt: string;
+  displayLastMessageAt: string; // Versione formattata della data
+  lastMessageSenderId?: string;
+  lastRead?: { [userId: string]: Timestamp };
+  hasUnreadMessages?: boolean;
+  unreadCount?: number;
+  unreadMessageCount?: number; // Aggiungi questa proprietà
+
 }
 
+// --- Fine Interfacce ---
+
+import { UserDataService } from './user-data.service';
+import { ChatNotificationService } from './chat-notification.service';
+import { getAuth } from 'firebase/auth'; // Per accedere all'utente loggato
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
-  private firestore = getFirestore();
-
-  constructor() { }
+  // Eliminiamo `private firestore = getFirestore();` per usare solo `this.afs`
+  // che viene iniettato da @angular/fire/firestore
+  constructor(
+    private afs: Firestore, // L'istanza di Firestore da @angular/fire
+    private userDataService: UserDataService,
+    private ngZone: NgZone, // Usato per assicurarsi che gli aggiornamenti UI avvengano nella zona di Angular
+    private chatNotificationService: ChatNotificationService // Servizio per il conteggio notifiche
+  ) { }
 
   private generateConversationId(user1Id: string, user2Id: string): string {
     const sortedIds = [user1Id, user2Id].sort();
@@ -60,7 +114,7 @@ export class ChatService {
 
   async getOrCreateConversation(user1Id: string, user2Id: string): Promise<string> {
     const chatId = this.generateConversationId(user1Id, user2Id);
-    const conversationDocRef = doc(this.firestore, 'conversations', chatId);
+    const conversationDocRef = doc(this.afs, 'conversations', chatId); // Usa this.afs
 
     try {
       const docSnap = await getDoc(conversationDocRef);
@@ -71,9 +125,14 @@ export class ChatService {
         const newConversationData = {
           participants: [user1Id, user2Id].sort(),
           createdAt: serverTimestamp(),
-          lastMessageAt: serverTimestamp(),
-          lastMessage: '',
-          chatId: chatId
+          lastMessageAt: serverTimestamp(), // Impostato al momento della creazione
+          lastMessage: '', // Messaggio iniziale vuoto
+          chatId: chatId,
+          // IMPORTANTISSIMO: Inizializza `lastRead` per entrambi gli utenti al momento della creazione!
+          lastRead: {
+            [user1Id]: serverTimestamp(),
+            [user2Id]: serverTimestamp()
+          }
         };
         await setDoc(conversationDocRef, newConversationData);
         return chatId;
@@ -84,15 +143,15 @@ export class ChatService {
     }
   }
 
-   /**
+  /**
    * Invia un messaggio e aggiorna i dati della conversazione.
    * @param conversationId L'ID della conversazione.
    * @param senderId L'ID dell'utente che invia il messaggio.
    * @param text Il testo del messaggio.
    */
   async sendMessage(conversationId: string, senderId: string, text: string): Promise<void> {
-    const messagesCollectionRef = collection(this.firestore, `conversations/${conversationId}/messages`);
-    const conversationDocRef = doc(this.firestore, 'conversations', conversationId);
+    const messagesCollectionRef = collection(this.afs, `conversations/${conversationId}/messages`); // Usa this.afs
+    const conversationDocRef = doc(this.afs, 'conversations', conversationId); // Usa this.afs
 
     await addDoc(messagesCollectionRef, {
       senderId: senderId,
@@ -100,16 +159,20 @@ export class ChatService {
       timestamp: serverTimestamp()
     });
 
-    // *** ASSICURATI CHE QUESTA RIGA SIA PRESENTE E CORRETTA ***
+    // Aggiorna la conversazione con l'ultimo messaggio, il suo timestamp, e il mittente
+    // Marca anche il messaggio come letto per il mittente in `lastRead`
     await updateDoc(conversationDocRef, {
       lastMessage: text,
       lastMessageAt: serverTimestamp(),
-      lastMessageSenderId: senderId // <-- DEVE ESSERE QUI!
+      lastMessageSenderId: senderId, // <-- Assicurati che questo campo venga sempre aggiornato
+      [`lastRead.${senderId}`]: serverTimestamp() // Marca il messaggio come letto per il mittente
     });
+    // Nota: Non incrementiamo qui il conteggio per l'altro utente.
+    // Sarà la ChatListPage, monitorando i cambiamenti, a rilevarlo come non letto.
   }
 
   getMessages(conversationId: string, limitMessages: number = 20): Observable<PagedMessages> {
-    const messagesRef = collection(this.firestore, `conversations/${conversationId}/messages`);
+    const messagesRef = collection(this.afs, `conversations/${conversationId}/messages`); // Usa this.afs
     const q = query(
       messagesRef,
       orderBy('timestamp', 'desc'),
@@ -123,30 +186,41 @@ export class ChatService {
         let firstVisibleDoc: QueryDocumentSnapshot | null = null;
 
         snapshot.forEach(doc => {
-          messages.push({ id: doc.id, ...doc.data(), timestamp: doc.data()['timestamp']?.toDate() || new Date() } as Message);
+          messages.push({
+            id: doc.id,
+            ...doc.data(),
+            // Converte Timestamp di Firebase in oggetto Date di JavaScript
+            timestamp: (doc.data()['timestamp'] as Timestamp)?.toDate() || new Date()
+          } as Message);
         });
 
+        // I messaggi sono ordinati in modo decrescente (dal più recente al più vecchio)
         if (snapshot.docs.length > 0) {
-          firstVisibleDoc = snapshot.docs[0];
-          lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+          firstVisibleDoc = snapshot.docs[0]; // Il più recente
+          lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1]; // Il più vecchio
         }
 
         let hasMore = false;
         if (lastVisibleDoc) {
-            const olderQuery = query(
-                messagesRef,
-                orderBy('timestamp', 'desc'),
-                startAfter(lastVisibleDoc),
-                limit(1)
-            );
-            const olderSnapshot = await getDocs(olderQuery);
-            hasMore = olderSnapshot.docs.length > 0;
+          // Controlla se ci sono messaggi ancora più vecchi
+          const olderQuery = query(
+            messagesRef,
+            orderBy('timestamp', 'desc'),
+            startAfter(lastVisibleDoc),
+            limit(1) // Basta controllare se esiste almeno un altro documento
+          );
+          const olderSnapshot = await getDocs(olderQuery);
+          hasMore = olderSnapshot.docs.length > 0;
         }
 
-        observer.next({ messages, lastVisibleDoc, firstVisibleDoc, hasMore });
+        this.ngZone.run(() => { // Assicurati che gli aggiornamenti avvengano nella zona di Angular
+          observer.next({ messages, lastVisibleDoc, firstVisibleDoc, hasMore });
+        });
       }, (error) => {
-        console.error('Errore nel recupero dei messaggi in tempo reale:', error);
-        observer.error(error);
+        this.ngZone.run(() => { // Gestisci gli errori nella zona di Angular
+          console.error('Errore nel recupero dei messaggi in tempo reale:', error);
+          observer.error(error);
+        });
       });
 
       return () => unsubscribe();
@@ -154,7 +228,7 @@ export class ChatService {
   }
 
   async getOlderMessages(conversationId: string, limitMessages: number = 20, startAfterDoc: QueryDocumentSnapshot): Promise<PagedMessages> {
-    const messagesRef = collection(this.firestore, `conversations/${conversationId}/messages`);
+    const messagesRef = collection(this.afs, `conversations/${conversationId}/messages`); // Usa this.afs
     const q = query(
       messagesRef,
       orderBy('timestamp', 'desc'),
@@ -166,7 +240,11 @@ export class ChatService {
       const snapshot = await getDocs(q);
       const messages: Message[] = [];
       snapshot.forEach(doc => {
-        messages.push({ id: doc.id, ...doc.data(), timestamp: doc.data()['timestamp']?.toDate() || new Date() } as Message);
+        messages.push({
+          id: doc.id,
+          ...doc.data(),
+          timestamp: (doc.data()['timestamp'] as Timestamp)?.toDate() || new Date()
+        } as Message);
       });
 
       let lastVisibleDoc: QueryDocumentSnapshot | null = null;
@@ -176,14 +254,14 @@ export class ChatService {
 
       let hasMore = false;
       if (lastVisibleDoc) {
-          const nextQuery = query(
-              messagesRef,
-              orderBy('timestamp', 'desc'),
-              startAfter(lastVisibleDoc),
-              limit(1)
-          );
-          const nextSnapshot = await getDocs(nextQuery);
-          hasMore = nextSnapshot.docs.length > 0;
+        const nextQuery = query(
+          messagesRef,
+          orderBy('timestamp', 'desc'),
+          startAfter(lastVisibleDoc),
+          limit(1)
+        );
+        const nextSnapshot = await getDocs(nextQuery);
+        hasMore = nextSnapshot.docs.length > 0;
       }
 
       return { messages, lastVisibleDoc, firstVisibleDoc: null, hasMore };
@@ -194,27 +272,70 @@ export class ChatService {
   }
 
   /**
-   * Ottiene i dettagli di una singola conversazione (util per mostrare nella lista chat)
-   * @param conversationId ID della conversazione.
-   * @returns I dettagli della conversazione.
+   * Ottiene i dettagli di una singola conversazione in tempo reale.
+   * Questo metodo è cruciale per la ChatListPage per ottenere dettagli aggiornati,
+   * inclusi i dati dell'altro partecipante e gli indicatori di ultima lettura.
+   * @param conversationId L'ID della conversazione.
+   * @returns Un Observable che emette i dettagli della conversazione.
    */
-  async getConversationDetails(conversationId: string): Promise<any | null> {
-    const docRef = doc(this.firestore, 'conversations', conversationId);
-    try {
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
-      }
-      return null;
-    } catch (error) {
-      console.error('Errore nel recupero dettagli conversazione:', error);
-      return null;
-    }
+  public getConversationDetails(conversationId: string): Observable<ExtendedConversation | null> {
+    const conversationRef = doc(this.afs, 'conversations', conversationId); // Usa this.afs
+    const auth = getAuth(); // Ottieni l'istanza di autenticazione
+
+    return new Observable(observer => {
+      const unsubscribe = onSnapshot(conversationRef, async (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as ConversationDocument; // Cast a ConversationDocument per tipizzazione
+
+          const currentUserId = auth.currentUser?.uid;
+          const participants = data.participants;
+          const otherParticipantId = participants.find((id: string) => id !== currentUserId);
+
+          let otherParticipantData: UserProfile | null = null;
+          if (otherParticipantId) {
+            // Usa il tuo UserDataService per ottenere i dettagli dell'altro utente
+            otherParticipantData = await this.userDataService.getUserDataById(otherParticipantId);
+          }
+
+          this.ngZone.run(() => { // Assicurati che l'aggiornamento UI avvenga nella zona di Angular
+            observer.next({
+              id: docSnap.id,
+              participants: participants,
+              lastMessage: data.lastMessage || '',
+              lastMessageAt: data.lastMessageAt || null, // È un Timestamp di Firebase
+              createdAt: data.createdAt || null, // È un Timestamp di Firebase
+              chatId: docSnap.id, // chatId è l'id del documento
+              otherParticipantId: otherParticipantId || '',
+              otherParticipantName: otherParticipantData?.nickname || otherParticipantData?.name || 'Utente Sconosciuto',
+              otherParticipantPhoto: otherParticipantData?.photo || 'assets/immaginiGenerali/default-avatar.jpg',
+              displayLastMessageAt: '', // Questo sarà calcolato nella ChatListPage usando la data effettiva
+              lastMessageSenderId: data.lastMessageSenderId || '', // Assicurati che questo campo esista
+              lastRead: data.lastRead || {} // Contiene la mappa di ultima lettura
+            } as ExtendedConversation); // Cast per assicurare la tipizzazione corretta
+          });
+        } else {
+          this.ngZone.run(() => {
+            observer.next(null); // La conversazione non esiste
+          });
+        }
+      }, (error: any) => {
+        this.ngZone.run(() => {
+          console.error('Errore in getConversationDetails onSnapshot:', error);
+          observer.error(error);
+        });
+      });
+      return () => unsubscribe(); // Restituisce la funzione di unsubscribe
+    });
   }
 
-  // --- METODO MODIFICATO QUI ---
- getUserConversations(userId: string): Observable<any[]> { // Specifico il tipo di ritorno come Observable<any[]>
-    const conversationsRef = collection(this.firestore, 'conversations');
+  /**
+   * Ottiene le conversazioni di un utente in tempo reale, mappandole a ConversationDocument.
+   * Questo è un flusso di dati grezzi che verrà arricchito dalla ChatListPage.
+   * @param userId L'ID dell'utente.
+   * @returns Un Observable che emette un array di ConversationDocument.
+   */
+  getUserConversations(userId: string): Observable<ConversationDocument[]> {
+    const conversationsRef = collection(this.afs, 'conversations'); // Usa this.afs
     const q = query(
       conversationsRef,
       where('participants', 'array-contains', userId),
@@ -223,33 +344,64 @@ export class ChatService {
 
     return new Observable(observer => {
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const convs = snapshot.docs.map(doc => {
+        const convs: ConversationDocument[] = snapshot.docs.map(doc => {
           const data = doc.data();
           return {
             id: doc.id,
-            ...data,
-            // Assicurati che lastMessageAt sia gestito correttamente se è un Timestamp di Firebase
-            lastMessageAt: data['lastMessageAt'] ? data['lastMessageAt'] : null,
-            // Assicurati che lastMessageSenderId sia incluso qui quando mappi i dati
-            lastMessageSenderId: data['lastMessageSenderId'] ? data['lastMessageSenderId'] : null
+            participants: data['participants'] as string[],
+            lastMessage: data['lastMessage'] as string || '',
+            lastMessageAt: data['lastMessageAt'] as Timestamp || null,
+            createdAt: data['createdAt'] as Timestamp || null,
+            lastMessageSenderId: data['lastMessageSenderId'] as string || '',
+            lastRead: data['lastRead'] as { [userId: string]: Timestamp } || {}
           };
         });
-        observer.next(convs);
+        this.ngZone.run(() => { // Esegui nella zona di Angular
+          observer.next(convs);
+        });
       }, (error) => {
-        observer.error(error);
+        this.ngZone.run(() => { // Esegui nella zona di Angular
+          console.error('Errore in getUserConversations onSnapshot:', error);
+          observer.error(error);
+        });
       });
       return { unsubscribe }; // Restituisce la funzione di unsubscribe
     });
   }
 
 
+  /**
+   * Marca i messaggi di una conversazione come letti per un utente specifico.
+   * Aggiorna il timestamp 'lastRead' per l'utente nella conversazione.
+   * @param conversationId L'ID della conversazione.
+   * @param userId L'ID dell'utente che ha letto i messaggi.
+   */
+  async markMessagesAsRead(conversationId: string, userId: string): Promise<void> {
+    const conversationRef = doc(this.afs, 'conversations', conversationId); // Usa this.afs
+    try {
+      // Imposta il timestamp di ultima lettura dell'utente sulla data e ora attuali
+      await updateDoc(conversationRef, {
+        [`lastRead.${userId}`]: serverTimestamp() // Usa serverTimestamp() per coerenza e precisione
+      });
+      console.log(`Conversazione ${conversationId} marcata come letta per l'utente ${userId}.`);
+
+      // Quando i messaggi vengono marcati come letti, svuota il conteggio per quella chat
+      this.chatNotificationService.clearUnread(conversationId); // <-- Chiama il servizio di notifica
+    } catch (error: any) {
+      console.error('Errore nel marcare i messaggi come letti:', error);
+      throw error;
+    }
+  }
+
+  // Questo metodo helper è stato spostato qui dal `chat-list.page.ts` per essere un helper
+  // e non è strettamente correlato alla logica di Firebase Firestore.
+  // La ChatListPage deciderà come visualizzare la data.
+  // Se non lo usi altrove, puoi considerarlo superfluo qui e lasciarlo nella ChatListPage.
   private formatTimestamp(timestamp: any): string {
     if (!timestamp) {
       return '';
     }
-    // Firebase Timestamp object has a toDate() method
     const date = timestamp.toDate();
-    // Usa dayjs per formattare (assicurati sia installato: npm install dayjs)
     return dayjs(date).format('DD/MM/YYYY HH:mm');
   }
 }

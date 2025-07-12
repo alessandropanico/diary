@@ -101,3 +101,9 @@ ion-ripple-effect {
 ion-list {
   background: transparent !important;
 }
+
+.notification-icon {
+    font-size: 1.2em; /* Dimensione dell'icona */
+    margin-left: 5px; /* Spazio tra la label "Chat" e l'icona */
+    vertical-align: middle; /* Allinea verticalmente con il testo */
+}

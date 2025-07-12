@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { UserDataService } from './services/user-data.service';
 import { getAuth } from 'firebase/auth';
 import { SearchModalComponent } from './shared/search-modal/search-modal.component';
+import { ChatNotificationService } from './services/chat-notification.service';
 
 @Component({
   selector: 'app-root',
@@ -34,6 +35,8 @@ export class AppComponent implements OnInit, OnDestroy {
   searchPerformed: boolean = false;
   private searchTerms = new Subject<string>();
   private searchSubscription: Subscription | undefined;
+  unreadCount = 0;
+  private sub: Subscription | undefined;
 
   constructor(
     private menu: MenuController,
@@ -41,7 +44,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private alertCtrl: AlertController,
     private router: Router,
     private userDataService: UserDataService,
-    private modalCtrl: ModalController
+    private modalCtrl: ModalController,
+    private chatNotificationService: ChatNotificationService
   ) {
     window.addEventListener('beforeinstallprompt', (e: any) => {
       e.preventDefault();
@@ -64,6 +68,10 @@ export class AppComponent implements OnInit, OnDestroy {
       await this.loadProfilePhoto();
     }
 
+    this.chatNotificationService.getUnreadCount$().subscribe(count => {
+    this.unreadCount = count;
+  });
+
     setTimeout(() => {
       this.showSplash = false;
     }, 3500);
@@ -73,6 +81,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.userSub) {
       this.userSub.unsubscribe();
     }
+    this.sub?.unsubscribe();
   }
 
   toggleMenu() {
