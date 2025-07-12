@@ -1,27 +1,37 @@
 // src/app/services/chat-notification.service.ts
 
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Subscription, Observable, combineLatest } from 'rxjs';
-import { getAuth, User as FirebaseUser } from 'firebase/auth'; // Importa User di Firebase Auth
-import { ChatService, ConversationDocument } from './chat.service'; // Importa il ChatService e le interfacce necessarie
-import { map, switchMap, tap } from 'rxjs/operators';
-import { Timestamp } from 'firebase/firestore'; // Importa Timestamp di Firebase
+import { BehaviorSubject, Subscription, Observable, forkJoin, from, of } from 'rxjs'; // Aggiungi forkJoin, from, of
+import { getAuth, User as FirebaseUser } from 'firebase/auth';
+import { ChatService, ConversationDocument } from './chat.service';
+import { map, switchMap, tap, catchError, distinctUntilChanged } from 'rxjs/operators'; // Aggiungi catchError, distinctUntilChanged
+import { Timestamp } from 'firebase/firestore';
 
 interface UnreadMessagesMap {
-  [chatId: string]: number; // Potrebbe essere 0 o 1 se contiamo solo "non letto", o il numero effettivo
+  [chatId: string]: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ChatNotificationService implements OnDestroy {
-  // unreadMessages non è più usato per il calcolo, ma mantenuto per la compatibilità con increment/clear
+  // `unreadMessages` è mantenuto per compatibilità esterna, ma non guida il conteggio globale.
   private unreadMessages: UnreadMessagesMap = {};
   private unreadCount$ = new BehaviorSubject<number>(0);
 
   private authSubscription: Subscription | undefined;
-  private conversationsSubscription: Subscription | undefined;
+  // `conversationsSubscription` non è più necessaria come sottoscrizione separata qui,
+  // la gestione è inline nello `switchMap` della pipeline RxJS.
+  // private conversationsSubscription: Subscription | undefined;
   private currentUserId: string | null = null;
+  private audio: HTMLAudioElement;
+
+  private lastSoundPlayedTimestamp: number = 0;
+  private minSoundInterval: number = 2000; // Intervallo minimo tra i suoni (2 secondi)
+
+  // Variabile per tenere traccia dello stato precedente delle conversazioni per la riproduzione del suono
+  private lastKnownConversations: { [chatId: string]: ConversationDocument } = {};
 
   constructor(private chatService: ChatService) {
+    this.audio = new Audio('assets/sound/notification.mp3');
     this.init(); // Inizializza il servizio all'avvio
   }
 
@@ -29,13 +39,13 @@ export class ChatNotificationService implements OnDestroy {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
-    if (this.conversationsSubscription) {
-      this.conversationsSubscription.unsubscribe();
-    }
+    // Rimuovi `conversationsSubscription` se non la usi più
+    // if (this.conversationsSubscription) {
+    //   this.conversationsSubscription.unsubscribe();
+    // }
   }
 
   private init() {
-    // 1. Ascolta i cambiamenti dello stato di autenticazione
     this.authSubscription = new Observable<FirebaseUser | null>(observer => {
       const auth = getAuth();
       const unsubscribe = auth.onAuthStateChanged(user => {
@@ -46,103 +56,190 @@ export class ChatNotificationService implements OnDestroy {
       tap(user => {
         this.currentUserId = user ? user.uid : null;
         if (!this.currentUserId) {
-          // Se l'utente si disconnette, resetta il conteggio e disiscriviti
-          this.unreadMessages = {};
+          // Se l'utente si disconnette, resetta il conteggio e lo stato delle conversazioni
+          this.unreadMessages = {}; // Reset della mappa interna (se ancora usata altrove)
           this.unreadCount$.next(0);
-          if (this.conversationsSubscription) {
-            this.conversationsSubscription.unsubscribe();
-            this.conversationsSubscription = undefined;
-          }
+          this.lastKnownConversations = {}; // Resetta anche per il suono
         }
       }),
-      // 2. Se l'utente è loggato, passa all'ascolto delle sue conversazioni
+      // **Logica principale del servizio:**
+      // Una volta che l'utente è loggato, avvia l'ascolto delle conversazioni
       switchMap(user => {
         if (user && user.uid) {
           console.log('ChatNotificationService: Ascolto conversazioni per utente:', user.uid);
-          return this.chatService.getUserConversations(user.uid);
+          return this.chatService.getUserConversations(user.uid).pipe(
+            // **TAP per la riproduzione del suono:**
+            // Questo `tap` esegue un'azione secondaria (controllare e riprodurre il suono)
+            // ogni volta che l'elenco delle conversazioni cambia.
+            tap((conversations: ConversationDocument[]) => this.checkForNewMessagesAndPlaySound(conversations)),
+            // **SWITCHMAP per il calcolo del conteggio totale dei messaggi non letti:**
+            // Dopo aver gestito il suono, passiamo al calcolo effettivo dei messaggi non letti.
+            switchMap((conversations: ConversationDocument[]) => {
+              if (conversations.length === 0) {
+                return of(0); // Nessuna conversazione, 0 messaggi non letti
+              }
+
+              // Crea un array di Observable, uno per ogni chiamata a countUnreadMessages
+              const unreadCountsObservables: Observable<number>[] = conversations.map(conv => {
+                const lastReadByMe: Timestamp | null = conv.lastRead?.[user.uid!] ?? null;
+                // Converte la Promise di countUnreadMessages in un Observable con `from()`
+                return from(this.chatService.countUnreadMessages(conv.id, user.uid!, lastReadByMe)).pipe(
+                  catchError(err => {
+                    console.error(`Errore nel conteggio messaggi non letti per chat ${conv.id}:`, err);
+                    return of(0); // In caso di errore per una singola chat, considera 0
+                  })
+                );
+              });
+
+              // Usa forkJoin per attendere che tutti gli Observable di conteggio si completino,
+              // poi somma i risultati.
+              return forkJoin(unreadCountsObservables).pipe(
+                map(counts => counts.reduce((sum, current) => sum + current, 0)),
+                // `distinctUntilChanged()`: Emette solo quando il valore totale cambia,
+                // riducendo gli aggiornamenti ridondanti.
+                distinctUntilChanged(),
+                tap(total => console.log('ChatNotificationService: Totale messaggi non letti calcolato:', total)),
+                catchError(err => {
+                  console.error('ChatNotificationService: Errore durante la somma dei messaggi non letti:', err);
+                  return of(0); // In caso di errore nella somma, resetta a 0
+                })
+              );
+            }),
+            catchError(err => {
+              console.error('ChatNotificationService: Errore nel recupero delle conversazioni:', err);
+              return of(0); // In caso di errore nel recupero delle conversazioni, considera 0
+            })
+          );
         } else {
-          return new Observable<ConversationDocument[]>(); // Observable vuoto se non loggato
+          return of(0); // Utente non loggato, 0 messaggi non letti
         }
       })
     ).subscribe({
-      next: (conversations: ConversationDocument[]) => {
-        // 3. Quando le conversazioni cambiano, ricalcola il totale dei non letti
-        console.log('ChatNotificationService: Ricevute conversazioni aggiornate:', conversations.length);
-        this.updateTotalUnreadFromConversations(conversations);
+      next: (totalUnread: number) => {
+        // Aggiorna il BehaviorSubject pubblico con il conteggio totale
+        this.unreadCount$.next(totalUnread);
+        console.log('ChatNotificationService: unreadCount$ aggiornato a:', totalUnread);
       },
       error: (err) => {
-        console.error('ChatNotificationService: Errore nel recupero delle conversazioni:', err);
+        console.error('ChatNotificationService: Errore nella pipeline principale:', err);
+        this.unreadCount$.next(0); // Reset in caso di errore critico
       }
     });
   }
 
-  private updateTotalUnreadFromConversations(conversations: ConversationDocument[]) {
-    let totalUnread = 0;
+  /**
+   * Controlla se ci sono nuovi messaggi dall'altro utente e riproduce un suono.
+   * Viene chiamato ogni volta che l'elenco delle conversazioni viene aggiornato da Firebase.
+   * @param currentConversations L'array corrente di ConversationDocument.
+   */
+  private async checkForNewMessagesAndPlaySound(currentConversations: ConversationDocument[]) {
     if (!this.currentUserId) {
-      this.unreadCount$.next(0);
+      this.lastKnownConversations = {}; // Reset se l'utente si è disconnesso
       return;
     }
 
-    // Qui ricalcoliamo il conteggio basandoci sui dati di Firebase
-    conversations.forEach(conv => {
-      const lastMessageAt = conv.lastMessageAt; // Timestamp dell'ultimo messaggio
-      const lastReadByMe = conv.lastRead?.[this.currentUserId!]; // Ultima lettura dell'utente corrente
+    let shouldPlaySound = false;
 
-      // Condizione per "non letto": c'è un ultimo messaggio E
-      // (non l'ho mai letto OPPURE l'ultimo messaggio è più recente della mia ultima lettura)
-      if (lastMessageAt && (!lastReadByMe || lastReadByMe.toMillis() < lastMessageAt.toMillis())) {
-        totalUnread++;
+    for (const conv of currentConversations) {
+      const lastKnownConv = this.lastKnownConversations[conv.id];
+
+      // Condizione per riprodurre il suono:
+      // 1. Esiste un ultimo messaggio (`conv.lastMessageAt`).
+      // 2. Il `lastMessageAt` della conversazione corrente è più recente
+      //    rispetto al `lastMessageAt` dell'ultima versione conosciuta della conversazione,
+      //    OPPURE è una nuova conversazione che non conoscevamo prima (`!lastKnownConv`).
+      // 3. Il mittente dell'ultimo messaggio NON è l'utente attualmente loggato (`conv.lastMessageSenderId !== this.currentUserId`).
+      if (
+        conv.lastMessageAt &&
+        (
+          !lastKnownConv ||
+          conv.lastMessageAt.toMillis() > (lastKnownConv.lastMessageAt?.toMillis() || 0)
+        ) &&
+        conv.lastMessageSenderId !== this.currentUserId
+      ) {
+        // Trovato almeno un nuovo messaggio non inviato da me.
+        shouldPlaySound = true;
+        // Non usiamo `break` qui per garantire che `lastKnownConversations` venga aggiornato con tutte le conv.
       }
-    });
+    }
 
-    // Aggiorna il BehaviorSubject con il nuovo conteggio totale
-    this.unreadCount$.next(totalUnread);
-    console.log('ChatNotificationService: Totale messaggi non letti aggiornato:', totalUnread);
+    // Riproduci il suono solo se `shouldPlaySound` è vero
+    // e se è passato l'intervallo minimo dall'ultima riproduzione.
+    const currentTime = Date.now();
+    if (shouldPlaySound && (currentTime - this.lastSoundPlayedTimestamp > this.minSoundInterval)) {
+      this.playNotificationSound();
+      this.lastSoundPlayedTimestamp = currentTime; // Aggiorna il timestamp dell'ultima riproduzione
+    }
+
+    // Aggiorna lo stato delle conversazioni conosciute *dopo* aver fatto il controllo del suono
+    // per il prossimo ciclo del `tap`.
+    this.lastKnownConversations = currentConversations.reduce((acc, conv) => {
+      acc[conv.id] = conv;
+      return acc;
+    }, {} as { [chatId: string]: ConversationDocument });
   }
 
-
-  // Questo metodo è ancora utile per il CHAT LIST PAGE per sapere se UNA SINGOLA CHAT ha notifiche
-  // MA non è più la fonte principale del conteggio globale
-  getUnreadCountForChat(chatId: string): number {
-      // Per il conteggio di una singola chat, potresti volerlo recuperare dallo stato più recente
-      // Dobbiamo estendere qui la logica se vogliamo un conteggio *esatto* per chat.
-      // Per ora, visto che ChatListPage calcola `unreadMessageCount`, potremmo usarlo.
-      // Tuttavia, il servizio in sé non ha uno stato dettagliato per chat, solo il totale.
-      // Per ora, manteniamo la vecchia logica di `unreadMessages` o la rimuoviamo se vogliamo affidarci solo a Firebase.
-      // Per coerenza con l'aggiornamento, questo metodo non è più la fonte primaria di verità per il conteggio *esatto* per chat.
-      // Potresti volerla rimuovere e far sì che ChatListPage calcoli il suo conteggio.
-      // Per il momento, la lascio ma sappi che non è agganciata a Firebase da qui.
-      return this.unreadMessages[chatId] || 0;
+  /**
+   * Riproduce il suono di notifica.
+   */
+  private playNotificationSound() {
+    this.audio.currentTime = 0; // Riposiziona l'audio all'inizio per riprodurlo di nuovo
+    this.audio.play().catch(e => console.warn("Errore durante la riproduzione del suono (ChatNotificationService):", e));
   }
 
-  // Questi metodi incrementUnread/clearUnread sono ora meno rilevanti per il conteggio *globale*
-  // perché il conteggio globale viene ricalcolato dal flusso di dati di Firebase.
-  // Tuttavia, la ChatListPage li usa ancora per aggiornare la mappa *interna* di ChatNotificationService,
-  // che poi triggera un updateTotalUnread. Se vogliamo affidarci solo a Firebase, questi possono essere rimossi
-  // e la ChatListPage non li chiamerà più.
-  // Per mantenere la compatibilità per ora:
-  incrementUnread(chatId: string) {
-    // Questo è un fallback o per aggiornamenti immediati non da Firebase
-    this.unreadMessages[chatId] = (this.unreadMessages[chatId] || 0) + 1;
-    this.updateTotalUnread(); // Ricalcola il totale dalla mappa interna
-  }
-
-  clearUnread(chatId: string) {
-    // Questo è un fallback o per aggiornamenti immediati non da Firebase
-    delete this.unreadMessages[chatId];
-    this.updateTotalUnread(); // Ricalcola il totale dalla mappa interna
-  }
-
-  // Questo metodo è ancora usato da incrementUnread/clearUnread per aggiornare il BehaviorSubject
-  // basandosi sulla mappa interna `unreadMessages`.
-  // Nel nuovo approccio basato su Firebase, `updateTotalUnreadFromConversations` è il principale.
-  private updateTotalUnread() {
-    const total = Object.values(this.unreadMessages).reduce((a, b) => a + b, 0);
-    this.unreadCount$.next(total);
-  }
-
-  // Questo è il metodo pubblico per ottenere il conteggio totale delle notifiche (per app.component)
+  /**
+   * Fornisce un Observable con il conteggio totale dei messaggi non letti.
+   * Questo è il metodo da sottoscrivere in `app.component.ts`.
+   * @returns Un Observable di tipo number.
+   */
   getUnreadCount$(): Observable<number> {
     return this.unreadCount$.asObservable();
   }
+
+  // --- METODI MANTENUTI PER COMPATIBILITÀ CON CHATLISTPAGE ---
+  /**
+   * Restituisce il conteggio dei messaggi non letti per una specifica chat
+   * basandosi sulla mappa interna del servizio.
+   * NOTA: Questo conteggio è mantenuto separatamente e non è la fonte principale
+   * del conteggio globale aggiornato da Firebase.
+   * @param chatId L'ID della chat.
+   * @returns Il numero di messaggi non letti per quella chat.
+   */
+  getUnreadCountForChat(chatId: string): number {
+    return this.unreadMessages[chatId] || 0;
+  }
+
+  /**
+   * Incrementa il conteggio dei messaggi non letti per una specifica chat
+   * nella mappa interna del servizio.
+   * NOTA: Non aggiorna direttamente il conteggio globale, che è guidato da Firebase.
+   * @param chatId L'ID della chat.
+   */
+  incrementUnread(chatId: string) {
+    this.unreadMessages[chatId] = (this.unreadMessages[chatId] || 0) + 1;
+    // Non chiamiamo `updateTotalUnread()` qui per evitare conflitti con la logica Firebase.
+    // L'aggiornamento globale avviene tramite la pipeline RxJS.
+    console.log(`ChatNotificationService: Incrementato unread per ${chatId} a ${this.unreadMessages[chatId]}`);
+  }
+
+  /**
+   * Azzera il conteggio dei messaggi non letti per una specifica chat
+   * nella mappa interna del servizio.
+   * NOTA: Non aggiorna direttamente il conteggio globale, che è guidato da Firebase.
+   * @param chatId L'ID della chat.
+   */
+  clearUnread(chatId: string) {
+    delete this.unreadMessages[chatId];
+    // Non chiamiamo `updateTotalUnread()` qui per evitare conflitti con la logica Firebase.
+    // L'aggiornamento globale avviene tramite la pipeline RxJS.
+    console.log(`ChatNotificationService: Azzerato unread per ${chatId}`);
+  }
+  // --- FINE METODI MANTENUTI ---
+
+  // Rimosso: `updateTotalUnread` perché non è più la fonte del conteggio globale.
+  // La mappa `unreadMessages` è ora solo per scopi locali/compatibilità.
+  // private updateTotalUnread() { ... }
+
+  // Rimosso: `updateTotalUnreadFromConversations` è stato integrato direttamente nella pipeline RxJS.
+  // private updateTotalUnreadFromConversations(conversations: ConversationDocument[]) { ... }
 }
