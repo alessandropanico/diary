@@ -27,7 +27,9 @@
       </ion-label>
       <ion-note slot="end">
         {{ conv.displayLastMessageAt }}
-        <ion-icon name="ellipse" color="danger" *ngIf="hasUnreadMessages(conv)" class="dot-unread-icon"></ion-icon>
+        <ion-badge color="danger" class="unread-count-badge" *ngIf="conv.unreadMessageCount && conv.unreadMessageCount > 0">
+            {{ conv.unreadMessageCount > 99 ? '99+' : conv.unreadMessageCount }}
+        </ion-badge>
       </ion-note>
     </ion-item>
   </ion-list>

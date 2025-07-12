@@ -85,21 +85,22 @@ export class ChatListPage implements OnInit, OnDestroy {
           const extendedConvsObservables = rawConvs.map(conv => {
             const otherParticipantId = conv.participants.find(id => id !== this.loggedInUserId);
 
-            // MODIFICA CRUCIALE QUI: Usa 'from' per convertire la Promise in un Observable
             const userProfileObservable = otherParticipantId
-              ? from(this.userDataService.getUserDataById(otherParticipantId)) // <-- Converto la Promise in Observable
-              : of(null); // Restituisci un Observable di null se non c'è un altro partecipante
+              ? from(this.userDataService.getUserDataById(otherParticipantId))
+              : of(null);
 
             return userProfileObservable.pipe(
               map((otherUserData: UserProfile | null) => {
                 const lastMessageAtDate = conv.lastMessageAt?.toDate();
 
-                let hasUnreadMessages = false;
+                let hasUnread = false;
+                let unreadCountForChat = 0; // Inizializza il contatore per la singola chat
 
                 const lastReadByMe = conv.lastRead?.[this.loggedInUserId!];
 
                 if (conv.lastMessageAt && (!lastReadByMe || lastReadByMe.toMillis() < conv.lastMessageAt.toMillis())) {
-                  hasUnreadMessages = true;
+                  hasUnread = true;
+                  unreadCountForChat = 1; // Imposta a 1 se c'è almeno un messaggio non letto
                 }
 
                 const extendedConv: ExtendedConversation = {
@@ -115,11 +116,12 @@ export class ChatListPage implements OnInit, OnDestroy {
                   displayLastMessageAt: lastMessageAtDate ? this.formatDate(lastMessageAtDate) : 'N/A',
                   lastMessageSenderId: conv.lastMessageSenderId || '',
                   lastRead: conv.lastRead || {},
-                  hasUnreadMessages: hasUnreadMessages
+                  hasUnreadMessages: hasUnread, // Questa proprietà è ancora utile per il global count
+                  unreadMessageCount: unreadCountForChat // Assegna il conteggio (0 o 1)
                 };
 
-                // Aggiorna il conteggio globale dei non letti nel servizio di notifica
-                if (hasUnreadMessages) {
+                // Aggiorna il conteggio globale nel servizio di notifica
+                if (hasUnread) {
                     this.chatNotificationService.incrementUnread(conv.id);
                 } else {
                     this.chatNotificationService.clearUnread(conv.id);
@@ -143,7 +145,8 @@ export class ChatListPage implements OnInit, OnDestroy {
                   displayLastMessageAt: lastMessageAtDate ? this.formatDate(lastMessageAtDate) : 'N/A',
                   lastMessageSenderId: conv.lastMessageSenderId || '',
                   lastRead: conv.lastRead || {},
-                  hasUnreadMessages: false
+                  hasUnreadMessages: false,
+                  unreadMessageCount: 0 // Fallback
                 } as ExtendedConversation);
               })
             );
@@ -193,6 +196,7 @@ export class ChatListPage implements OnInit, OnDestroy {
   }
 
   hasUnreadMessages(conversation: ExtendedConversation): boolean {
+    // La logica di base per determinare se ci sono messaggi non letti
     if (!this.loggedInUserId || !conversation.lastMessageAt) {
       return false;
     }

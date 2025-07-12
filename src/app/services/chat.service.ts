@@ -85,7 +85,7 @@ export interface ExtendedConversation {
   hasUnreadMessages?: boolean;
   unreadCount?: number;
   unreadMessageCount?: number; // Aggiungi questa proprietà
-
+  
 }
 
 // --- Fine Interfacce ---

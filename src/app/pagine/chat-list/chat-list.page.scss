@@ -7,3 +7,21 @@ ion-item{
     margin-left: 5px;
     vertical-align: middle;
 }
+
+.unread-count-badge {
+    min-width: 24px; /* Dimensione minima per il cerchio (larghezza) */
+    height: 24px;   /* Dimensione minima per il cerchio (altezza) */
+    border-radius: 50%; /* Rende il badge un cerchio */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8em; /* Dimensione del testo all'interno */
+    font-weight: bold;
+    margin-left: 8px; /* Spazio tra il timestamp e il badge */
+    padding: 0 6px; /* Riduci il padding orizzontale */
+    box-shadow: 0 0 5px rgba(255, 0, 0, 0.5); /* Aggiungi un piccolo glow */
+    color: white; /* Assicurati che il testo sia visibile sul colore di sfondo */
+    background-color: var(--ion-color-danger, #eb445a); /* Usa il colore danger di Ionic */
+}
+
+
