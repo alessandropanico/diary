@@ -1,7 +1,7 @@
 // src/app/services/chat.service.ts
 import { Injectable, NgZone } from '@angular/core';
 import {
-  Firestore, // <--- Useremo solo questa istanza iniettata
+  Firestore,
   collection,
   query,
   where,
@@ -20,7 +20,7 @@ import {
   Timestamp // Importa Timestamp per i tipi di Firebase
 } from '@angular/fire/firestore'; // Importa Firestore da @angular/fire/firestore
 
-import { Observable } from 'rxjs'; // Manteniamo solo Observable, of e forkJoin se necessari
+import { Observable } from 'rxjs'; // Manteniamo solo Observable
 import { map, switchMap } from 'rxjs/operators';
 import * as dayjs from 'dayjs'; // Assicurati di aver installato dayjs: npm install dayjs
 
@@ -85,26 +85,26 @@ export interface ExtendedConversation {
   hasUnreadMessages?: boolean;
   unreadCount?: number;
   unreadMessageCount?: number; // Aggiungi questa proprietà
-  
+
 }
 
 // --- Fine Interfacce ---
 
 import { UserDataService } from './user-data.service';
-import { ChatNotificationService } from './chat-notification.service';
+// Rimuovi l'importazione di ChatNotificationService. Non è più necessario qui.
+// import { ChatNotificationService } from './chat-notification.service';
 import { getAuth } from 'firebase/auth'; // Per accedere all'utente loggato
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
-  // Eliminiamo `private firestore = getFirestore();` per usare solo `this.afs`
-  // che viene iniettato da @angular/fire/firestore
   constructor(
     private afs: Firestore, // L'istanza di Firestore da @angular/fire
     private userDataService: UserDataService,
-    private ngZone: NgZone, // Usato per assicurarsi che gli aggiornamenti UI avvengano nella zona di Angular
-    private chatNotificationService: ChatNotificationService // Servizio per il conteggio notifiche
+    private ngZone: NgZone // Usato per assicurarsi che gli aggiornamenti UI avvengano nella zona di Angular
+    // Rimuovi completamente l'iniezione di ChatNotificationService dal costruttore
+    // private chatNotificationService: ChatNotificationService // Servizio per il conteggio notifiche
   ) { }
 
   private generateConversationId(user1Id: string, user2Id: string): string {
@@ -167,8 +167,8 @@ export class ChatService {
       lastMessageSenderId: senderId, // <-- Assicurati che questo campo venga sempre aggiornato
       [`lastRead.${senderId}`]: serverTimestamp() // Marca il messaggio come letto per il mittente
     });
-    // Nota: Non incrementiamo qui il conteggio per l'altro utente.
-    // Sarà la ChatListPage, monitorando i cambiamenti, a rilevarlo come non letto.
+    // Rimuovi qualsiasi chiamata a this.chatNotificationService.incrementUnread() qui.
+    // Il ChatNotificationService si aggiornerà da solo ascoltando i dati di Firebase.
   }
 
   getMessages(conversationId: string, limitMessages: number = 20): Observable<PagedMessages> {
@@ -385,8 +385,9 @@ export class ChatService {
       });
       console.log(`Conversazione ${conversationId} marcata come letta per l'utente ${userId}.`);
 
-      // Quando i messaggi vengono marcati come letti, svuota il conteggio per quella chat
-      this.chatNotificationService.clearUnread(conversationId); // <-- Chiama il servizio di notifica
+      // Rimuovi questa riga! Il ChatNotificationService ora si aggiorna da solo
+      // ascoltando i cambiamenti in Firebase.
+      // this.chatNotificationService.clearUnread(conversationId);
     } catch (error: any) {
       console.error('Errore nel marcare i messaggi come letti:', error);
       throw error;

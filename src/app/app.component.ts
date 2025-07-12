@@ -1,7 +1,8 @@
+// src/app/app.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AuthService } from './services/auth.service';
 import { MenuController, AlertController, ModalController } from '@ionic/angular';
-import { Subject, Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs'; // Assicurati che Subscription sia importato
 import { Router } from '@angular/router';
 import { UserDataService } from './services/user-data.service';
 import { getAuth } from 'firebase/auth';
@@ -22,7 +23,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   profile: any = null;
   userSub!: Subscription;
-
+  unreadCountSub: Subscription | undefined; // <--- AGGIUNTA QUESTA
   profilePhotoUrl: string | null = null;
 
   deferredPrompt: any;
@@ -36,7 +37,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private searchTerms = new Subject<string>();
   private searchSubscription: Subscription | undefined;
   unreadCount = 0;
-  private sub: Subscription | undefined;
+  // private sub: Subscription | undefined; // <--- QUESTA NON SERVE PIÙ
 
   constructor(
     private menu: MenuController,
@@ -68,9 +69,12 @@ export class AppComponent implements OnInit, OnDestroy {
       await this.loadProfilePhoto();
     }
 
-    this.chatNotificationService.getUnreadCount$().subscribe(count => {
-    this.unreadCount = count;
-  });
+    // <--- MODIFICA QUI
+    this.unreadCountSub = this.chatNotificationService.getUnreadCount$().subscribe(count => {
+      this.unreadCount = count;
+      console.log('AppComponent: Conteggio notifiche chat:', this.unreadCount); // Aggiunto per debug
+    });
+    // --->
 
     setTimeout(() => {
       this.showSplash = false;
@@ -81,7 +85,8 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.userSub) {
       this.userSub.unsubscribe();
     }
-    this.sub?.unsubscribe();
+    this.unreadCountSub?.unsubscribe(); // <--- MODIFICA QUI
+    // this.sub?.unsubscribe(); // <--- QUESTA VA RIMOSSA SE NON UTILIZZATA
   }
 
   toggleMenu() {
