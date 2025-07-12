@@ -17,3 +17,12 @@ if (environment.production) {
 
 platformBrowserDynamic().bootstrapModule(AppModule)
   .catch(err => console.error(err));
+
+// src/typings.d.ts o src/main.ts (o un altro file .d.ts nel tuo progetto)
+
+// --------------------------------------------------------
+declare global {
+  interface Window {
+    Capacitor: any; // Dichiara Capacitor come proprietà globale di Window
+  }
+}
