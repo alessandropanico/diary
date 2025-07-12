@@ -405,4 +405,29 @@ export class ChatService {
     const date = timestamp.toDate();
     return dayjs(date).format('DD/MM/YYYY HH:mm');
   }
+
+
+  /**
+ * Conta quanti messaggi non sono stati letti da uno specifico utente.
+ * @param conversationId ID della conversazione
+ * @param userId ID dell'utente attuale
+ * @param lastRead Timestamp dell'ultimo messaggio letto
+ */
+async countUnreadMessages(conversationId: string, userId: string, lastRead: Timestamp | null): Promise<number> {
+  const messagesRef = collection(this.afs, `conversations/${conversationId}/messages`);
+
+  let q;
+  if (lastRead) {
+    q = query(messagesRef, where('timestamp', '>', lastRead));
+  } else {
+    // Se non ha mai letto nulla, contali tutti
+    q = query(messagesRef);
+  }
+
+  const snapshot = await getDocs(q);
+  return snapshot.size;
+}
+
+
+
 }

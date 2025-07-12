@@ -26,6 +26,9 @@ export class ChatListPage implements OnInit, OnDestroy {
   loggedInUserId: string | null = null;
   isLoading: boolean = true;
 
+ auth = getAuth();
+ currentUserId = this.auth.currentUser?.uid;
+
   private authStateUnsubscribe: (() => void) | undefined;
   private conversationsSubscription: Subscription | undefined;
 
@@ -69,107 +72,109 @@ export class ChatListPage implements OnInit, OnDestroy {
    * e calcolando lo stato dei messaggi non letti.
    */
   async loadUserConversations() {
-    if (!this.loggedInUserId) {
-      console.warn('ChatListPage: Impossibile caricare le conversazioni, loggedInUserId è nullo.');
-      this.isLoading = false;
-      return;
-    }
-
-    this.conversationsSubscription = this.chatService.getUserConversations(this.loggedInUserId)
-      .pipe(
-        switchMap((rawConvs: ConversationDocument[]) => {
-          if (rawConvs.length === 0) {
-            return of([]);
-          }
-
-          const extendedConvsObservables = rawConvs.map(conv => {
-            const otherParticipantId = conv.participants.find(id => id !== this.loggedInUserId);
-
-            const userProfileObservable = otherParticipantId
-              ? from(this.userDataService.getUserDataById(otherParticipantId))
-              : of(null);
-
-            return userProfileObservable.pipe(
-              map((otherUserData: UserProfile | null) => {
-                const lastMessageAtDate = conv.lastMessageAt?.toDate();
-
-                let hasUnread = false;
-                let unreadCountForChat = 0; // Inizializza il contatore per la singola chat
-
-                const lastReadByMe = conv.lastRead?.[this.loggedInUserId!];
-
-                if (conv.lastMessageAt && (!lastReadByMe || lastReadByMe.toMillis() < conv.lastMessageAt.toMillis())) {
-                  hasUnread = true;
-                  unreadCountForChat = 1; // Imposta a 1 se c'è almeno un messaggio non letto
-                }
-
-                const extendedConv: ExtendedConversation = {
-                  id: conv.id,
-                  participants: conv.participants,
-                  lastMessage: conv.lastMessage || '',
-                  lastMessageAt: conv.lastMessageAt || null,
-                  createdAt: conv.createdAt || null,
-                  chatId: conv.id,
-                  otherParticipantId: otherParticipantId || '',
-                  otherParticipantName: otherUserData?.nickname || otherUserData?.name || 'Utente Sconosciuto',
-                  otherParticipantPhoto: otherUserData?.photo || 'assets/immaginiGenerali/default-avatar.jpg',
-                  displayLastMessageAt: lastMessageAtDate ? this.formatDate(lastMessageAtDate) : 'N/A',
-                  lastMessageSenderId: conv.lastMessageSenderId || '',
-                  lastRead: conv.lastRead || {},
-                  hasUnreadMessages: hasUnread, // Questa proprietà è ancora utile per il global count
-                  unreadMessageCount: unreadCountForChat // Assegna il conteggio (0 o 1)
-                };
-
-                // Aggiorna il conteggio globale nel servizio di notifica
-                if (hasUnread) {
-                    this.chatNotificationService.incrementUnread(conv.id);
-                } else {
-                    this.chatNotificationService.clearUnread(conv.id);
-                }
-
-                return extendedConv;
-              }),
-              catchError(error => {
-                console.error('Errore durante l\'arricchimento della conversazione con dati utente:', conv.id, error);
-                const lastMessageAtDate = conv.lastMessageAt?.toDate();
-                return of({
-                  id: conv.id,
-                  participants: conv.participants,
-                  lastMessage: conv.lastMessage || '',
-                  lastMessageAt: conv.lastMessageAt || null,
-                  createdAt: conv.createdAt || null,
-                  chatId: conv.id,
-                  otherParticipantId: otherParticipantId || '',
-                  otherParticipantName: 'Errore Utente',
-                  otherParticipantPhoto: 'assets/immaginiGenerali/default-avatar.jpg',
-                  displayLastMessageAt: lastMessageAtDate ? this.formatDate(lastMessageAtDate) : 'N/A',
-                  lastMessageSenderId: conv.lastMessageSenderId || '',
-                  lastRead: conv.lastRead || {},
-                  hasUnreadMessages: false,
-                  unreadMessageCount: 0 // Fallback
-                } as ExtendedConversation);
-              })
-            );
-          });
-          return forkJoin(extendedConvsObservables);
-        })
-      )
-      .subscribe({
-        next: (processedConvs: ExtendedConversation[]) => {
-          this.conversations = processedConvs.sort((a, b) => {
-            const dateA = a.lastMessageAt ? a.lastMessageAt.toMillis() : 0;
-            const dateB = b.lastMessageAt ? b.lastMessageAt.toMillis() : 0;
-            return dateB - dateA;
-          });
-          this.isLoading = false;
-          console.log('ChatListPage: Conversazioni finali processate:', this.conversations);
-        },
-        error: (error) => {
-          console.error('Errore nel recupero o elaborazione delle conversazioni:', error);
-          this.isLoading = false;
-        }
-      });
+  if (!this.loggedInUserId) {
+    console.warn('ChatListPage: Impossibile caricare le conversazioni, loggedInUserId è nullo.');
+    this.isLoading = false;
+    return;
   }
+
+  this.conversationsSubscription = this.chatService.getUserConversations(this.loggedInUserId)
+    .pipe(
+      switchMap((rawConvs: ConversationDocument[]) => {
+        if (rawConvs.length === 0) {
+          return of([]);
+        }
+
+        const extendedConvsObservables = rawConvs.map(conv => {
+          const otherParticipantId = conv.participants.find(id => id !== this.loggedInUserId);
+
+          const userProfileObservable = otherParticipantId
+            ? from(this.userDataService.getUserDataById(otherParticipantId))
+            : of(null);
+
+          return userProfileObservable.pipe(
+            switchMap(async (otherUserData: UserProfile | null) => {
+              const lastMessageAtDate = conv.lastMessageAt?.toDate();
+              const lastReadByMe: Timestamp | null = conv.lastRead?.[this.loggedInUserId!] ?? null;
+
+              // ✅ Nuova logica asincrona per calcolare il numero esatto di messaggi non letti
+              const unreadCountForChat = await this.chatService.countUnreadMessages(
+                conv.id,
+                this.loggedInUserId!,
+                lastReadByMe
+              );
+
+              const hasUnread = unreadCountForChat > 0;
+
+              const extendedConv: ExtendedConversation = {
+                id: conv.id,
+                participants: conv.participants,
+                lastMessage: conv.lastMessage || '',
+                lastMessageAt: conv.lastMessageAt || null,
+                createdAt: conv.createdAt || null,
+                chatId: conv.id,
+                otherParticipantId: otherParticipantId || '',
+                otherParticipantName: otherUserData?.nickname || otherUserData?.name || 'Utente Sconosciuto',
+                otherParticipantPhoto: otherUserData?.photo || 'assets/immaginiGenerali/default-avatar.jpg',
+                displayLastMessageAt: lastMessageAtDate ? this.formatDate(lastMessageAtDate) : 'N/A',
+                lastMessageSenderId: conv.lastMessageSenderId || '',
+                lastRead: conv.lastRead || {},
+                hasUnreadMessages: hasUnread,
+                unreadMessageCount: unreadCountForChat
+              };
+
+              // Aggiorna notifiche globali
+              if (hasUnread) {
+                this.chatNotificationService.incrementUnread(conv.id);
+              } else {
+                this.chatNotificationService.clearUnread(conv.id);
+              }
+
+              return extendedConv;
+            }),
+            catchError(error => {
+              console.error('Errore durante l\'arricchimento della conversazione con dati utente:', conv.id, error);
+              const lastMessageAtDate = conv.lastMessageAt?.toDate();
+
+              return of({
+                id: conv.id,
+                participants: conv.participants,
+                lastMessage: conv.lastMessage || '',
+                lastMessageAt: conv.lastMessageAt || null,
+                createdAt: conv.createdAt || null,
+                chatId: conv.id,
+                otherParticipantId: otherParticipantId || '',
+                otherParticipantName: 'Errore Utente',
+                otherParticipantPhoto: 'assets/immaginiGenerali/default-avatar.jpg',
+                displayLastMessageAt: lastMessageAtDate ? this.formatDate(lastMessageAtDate) : 'N/A',
+                lastMessageSenderId: conv.lastMessageSenderId || '',
+                lastRead: conv.lastRead || {},
+                hasUnreadMessages: false,
+                unreadMessageCount: 0
+              } as ExtendedConversation);
+            })
+          );
+        });
+
+        return forkJoin(extendedConvsObservables);
+      })
+    )
+    .subscribe({
+      next: (processedConvs: ExtendedConversation[]) => {
+        this.conversations = processedConvs.sort((a, b) => {
+          const dateA = a.lastMessageAt ? a.lastMessageAt.toMillis() : 0;
+          const dateB = b.lastMessageAt ? b.lastMessageAt.toMillis() : 0;
+          return dateB - dateA;
+        });
+        this.isLoading = false;
+        console.log('ChatListPage: Conversazioni finali processate:', this.conversations);
+      },
+      error: (error) => {
+        console.error('Errore nel recupero o elaborazione delle conversazioni:', error);
+        this.isLoading = false;
+      }
+    });
+}
 
   openChat(conversationId: string) {
     this.router.navigate(['/chat', conversationId]);
@@ -210,5 +215,6 @@ export class ChatListPage implements OnInit, OnDestroy {
     const prefix = this.isLastMessageFromMe(conversation) ? 'Io: ' : '';
     return prefix + (conversation.lastMessage || '');
   }
+
 
 }
