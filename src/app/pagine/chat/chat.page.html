@@ -4,7 +4,7 @@
       <ion-back-button defaultHref="/chat-list"></ion-back-button>
     </ion-buttons>
 
-    <div class="chat-custom-header" *ngIf="!isLoading && otherUser">
+    <div class="chat-custom-header" *ngIf="!isLoading && otherUser" (click)="goToOtherUserProfile()">
       <ion-avatar *ngIf="otherUser.profilePhotoUrl" class="other-user-avatar">
         <img [src]="otherUser.profilePhotoUrl" alt="Immagine profilo">
       </ion-avatar>

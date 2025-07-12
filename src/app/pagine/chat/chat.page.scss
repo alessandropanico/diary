@@ -78,25 +78,21 @@ ion-footer {
   min-height: 60px;
 }
 
-/* src/app/pagine/chat/chat.page.scss */
 
 ion-header {
   ion-toolbar {
-    // Stili per il contenitore personalizzato dell'header
     .chat-custom-header {
       display: flex;
-      align-items: center; // Allinea verticalmente avatar e testo
-      margin-inline-start: var(--ion-safe-area-left, 16px); // Regola il padding iniziale
-      margin-left: 16px; // Fallback per browser che non supportano margin-inline-start
-      // Considera di usare 'position: absolute' o 'margin-left' maggiori se l'icona 'back' è molto vicina
-      // Potrebbe essere necessario un 'gap' o 'margin-right' sull'avatar per spaziatura
-      gap: 8px; // Spazio tra avatar e testo
+      align-items: center;
+      margin-inline-start: var(--ion-safe-area-left, 16px);
+      margin-left: 16px;
+      gap: 8px;
+      cursor: pointer;
 
-      // Stili per l'avatar dell'altro utente
       .other-user-avatar {
-        --border-radius: 50%; // Rendi l'avatar circolare
-        width: 36px; // Dimensione dell'avatar
-        height: 36px; // Dimensione dell'avatar
+        --border-radius: 50%;
+        width: 36px;
+        height: 36px;
         overflow: hidden;
         display: flex;
         justify-content: center;
@@ -109,13 +105,12 @@ ion-header {
         }
       }
 
-      // Stili per il nome utente
       .username {
         font-weight: bold;
-        white-space: nowrap; // Evita che il nome si rompa su più righe
-        overflow: hidden; // Nasconde il testo che supera il contenitore
-        text-overflow: ellipsis; // Aggiunge i puntini di sospensione (...) se il testo è troppo lungo
-        max-width: calc(100vw - 150px); /* Regola questa larghezza in base ad altri elementi (es. back button) */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: calc(100vw - 150px); 
       }
     }
 

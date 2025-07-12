@@ -354,4 +354,15 @@ export class ChatPage implements OnInit, OnDestroy {
     });
     await alert.present();
   }
+
+  goToOtherUserProfile() {
+    if (this.otherUser && this.otherUser.uid) {
+      // CORREZIONE QUI: Usa il percorso corretto dal tuo app.routing.ts
+      this.router.navigate(['/profilo-altri-utenti', this.otherUser.uid]);
+    } else {
+      console.warn('Impossibile navigare al profilo: UID dell\'altro utente non disponibile.');
+      // Opzionale: Mostra un alert all'utente
+      // this.presentFF7Alert('Impossibile visualizzare il profilo di questo utente.');
+    }
+  }
 }
