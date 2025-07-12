@@ -1,19 +1,20 @@
 // src/app/services/chat-notification.service.ts
 
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Subscription, Observable, forkJoin, from, of } from 'rxjs';
+import { Router } from '@angular/router';
+import { PushNotifications } from '@capacitor/push-notifications'; // Non utilizzato in questo servizio specifico, potresti rimuoverlo se non necessario altrove
+import { BehaviorSubject, Observable, Subscription, from, of, forkJoin } from 'rxjs';
 import { getAuth, User as FirebaseUser } from 'firebase/auth';
-import { ChatService, ConversationDocument } from './chat.service';
-import { map, switchMap, tap, catchError, distinctUntilChanged } from 'rxjs/operators';
-import { Timestamp } from 'firebase/firestore';
+import { doc, getFirestore, setDoc } from 'firebase/firestore'; // Non utilizzati in questo servizio specifico, potresti rimuoverli se non necessari altrove
+import { switchMap, tap, map, catchError, distinctUntilChanged } from 'rxjs/operators';
+import { ChatService, ConversationDocument } from './chat.service'; // Assicurati che il percorso sia corretto e che ChatService sia iniettabile
 
-interface UnreadMessagesMap {
-  [chatId: string]: number;
-}
-
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class ChatNotificationService implements OnDestroy {
-  private unreadMessages: UnreadMessagesMap = {};
+
+  private unreadMessages: { [chatId: string]: number } = {};
   private unreadCount$ = new BehaviorSubject<number>(0);
 
   private authSubscription: Subscription | undefined;
@@ -23,14 +24,17 @@ export class ChatNotificationService implements OnDestroy {
   private lastSoundPlayedTimestamp: number = 0;
   private minSoundInterval: number = 2000; // Intervallo minimo tra i suoni (2 secondi)
 
-  // Variabile per tenere traccia dello stato precedente delle conversazioni per la riproduzione del suono
-  private lastKnownConversations: { [chatId: string]: ConversationDocument } = {};
+  private lastKnownConversations = new Map<string, ConversationDocument>();
+  private lastNotifiedTimestamp: Map<string, number> = new Map(); // Tiene traccia dell'ultimo timestamp notificato per chat
 
-  // NUOVA VARIABILE: Traccia l'ID della chat attualmente attiva (quella in cui si trova l'utente)
-  private currentActiveChatId: string | null = null; // <--- AGGIUNTA QUESTA LINEA
+  // Chiave per localStorage per la persistenza
+  private readonly LOCAL_STORAGE_KEY = 'chatNotificationLastNotifiedTimestamps';
 
-  constructor(private chatService: ChatService) {
+  private currentActiveChatId: string | null = null;
+
+  constructor(private chatService: ChatService, private router: Router) {
     this.audio = new Audio('assets/sound/notification.mp3');
+    this.loadLastNotifiedTimestamps(); // **Carica lo stato precedente all'avvio del servizio**
     this.init();
   }
 
@@ -38,57 +42,52 @@ export class ChatNotificationService implements OnDestroy {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
+    this.saveLastNotifiedTimestamps(); // **Salva lo stato quando il servizio viene distrutto (es. app chiusa)**
+    this.setCurrentActiveChat(null); // Assicurati di pulire lo stato della chat attiva
   }
 
-  // NUOVO METODO: Per impostare la chat attiva
-  public setCurrentActiveChat(chatId: string | null) { // <--- AGGIUNTA QUESTO METODO
+  public setCurrentActiveChat(chatId: string | null) {
     this.currentActiveChatId = chatId;
     console.log(`ChatNotificationService: Chat attiva impostata a: ${chatId}`);
 
-    // Se l'utente entra in una chat, forziamo un aggiornamento dello stato "letto"
-    // per quella conversazione, nel caso ci fossero messaggi non letti.
-    // Questo è un buon punto per assicurarsi che i badge di notifica si aggiornino rapidamente.
     if (this.currentUserId && this.currentActiveChatId) {
       this.chatService.markMessagesAsRead(this.currentActiveChatId, this.currentUserId)
-        .catch(error => console.error('Errore nel marcare i messaggi come letti all\'ingresso chat:', error));
+        .catch((error: any) => console.error('Errore nel marcare i messaggi come letti all\'ingresso chat:', error));
+
+      if (chatId) {
+        // Quando entriamo in una chat specifica, "dimentichiamo" l'ultimo messaggio notificato
+        // per quella chat. Questo permette al suono di riattivarsi se arrivano nuovi messaggi
+        // dopo che siamo usciti e rientrati (o se l'app è in background).
+        this.lastNotifiedTimestamp.delete(chatId);
+        this.saveLastNotifiedTimestamps(); // **Salva subito dopo la modifica**
+      }
     }
   }
 
   private init() {
+    const auth = getAuth();
+
     this.authSubscription = new Observable<FirebaseUser | null>(observer => {
-      const auth = getAuth();
       const unsubscribe = auth.onAuthStateChanged(user => {
         observer.next(user);
       });
       return unsubscribe;
     }).pipe(
-      tap(user => {
+      switchMap((user: FirebaseUser | null) => {
         this.currentUserId = user ? user.uid : null;
-        if (!this.currentUserId) {
-          this.unreadMessages = {};
-          this.unreadCount$.next(0);
-          this.lastKnownConversations = {};
-          this.currentActiveChatId = null; // Reset anche della chat attiva
-        }
-      }),
-      switchMap(user => {
-        if (user && user.uid) {
-          console.log('ChatNotificationService: Ascolto conversazioni per utente:', user.uid);
-          return this.chatService.getUserConversations(user.uid).pipe(
-            // **TAP per la riproduzione del suono:**
-            // Questo `tap` esegue un'azione secondaria (controllare e riprodurre il suono)
-            // ogni volta che l'elenco delle conversazioni cambia.
+
+        if (this.currentUserId) {
+          console.log('ChatNotificationService: Ascolto conversazioni per utente:', this.currentUserId);
+          return this.chatService.getUserConversations(this.currentUserId).pipe(
             tap((conversations: ConversationDocument[]) => this.checkForNewMessagesAndPlaySound(conversations)),
-            // **SWITCHMAP per il calcolo del conteggio totale dei messaggi non letti:**
-            // Dopo aver gestito il suono, passiamo al calcolo effettivo dei messaggi non letti.
             switchMap((conversations: ConversationDocument[]) => {
               if (conversations.length === 0) {
                 return of(0);
               }
 
               const unreadCountsObservables: Observable<number>[] = conversations.map(conv => {
-                const lastReadByMe: Timestamp | null = conv.lastRead?.[user.uid!] ?? null;
-                return from(this.chatService.countUnreadMessages(conv.id, user.uid!, lastReadByMe)).pipe(
+                const lastReadByMe = conv.lastRead?.[this.currentUserId!] ?? null;
+                return from(this.chatService.countUnreadMessages(conv.id, this.currentUserId!, lastReadByMe)).pipe(
                   catchError(err => {
                     console.error(`Errore nel conteggio messaggi non letti per chat ${conv.id}:`, err);
                     return of(0);
@@ -112,6 +111,14 @@ export class ChatNotificationService implements OnDestroy {
             })
           );
         } else {
+          // Utente disconnesso, resetta tutto
+          this.unreadMessages = {};
+          this.unreadCount$.next(0);
+          this.lastKnownConversations.clear();
+          this.currentActiveChatId = null;
+          this.lastNotifiedTimestamp.clear(); // Resetta la mappa al logout
+          this.saveLastNotifiedTimestamps(); // **Salva lo stato vuoto al logout**
+          console.log('User logged out, resetting notification state.');
           return of(0);
         }
       })
@@ -121,7 +128,7 @@ export class ChatNotificationService implements OnDestroy {
         console.log('ChatNotificationService: unreadCount$ aggiornato a:', totalUnread);
       },
       error: (err) => {
-        console.error('ChatNotificationService: Errore nella pipeline principale:', err);
+        console.error('ChatNotificationService: Errore nella pipeline principale (authSubscription):', err);
         this.unreadCount$.next(0);
       }
     });
@@ -129,62 +136,66 @@ export class ChatNotificationService implements OnDestroy {
 
   /**
    * Controlla se ci sono nuovi messaggi dall'altro utente e riproduce un suono.
-   * Viene chiamato ogni volta che l'elenco delle conversazioni viene aggiornato da Firebase.
    * @param currentConversations L'array corrente di ConversationDocument.
    */
   private async checkForNewMessagesAndPlaySound(currentConversations: ConversationDocument[]) {
     if (!this.currentUserId) {
-      this.lastKnownConversations = {};
+      this.lastKnownConversations.clear();
+      this.lastNotifiedTimestamp.clear();
+      this.saveLastNotifiedTimestamps(); // **Salva lo stato vuoto se non c'è utente**
       return;
     }
 
-    let shouldPlaySound = false;
-
-    // Mappa per i nuovi stati delle conversazioni da salvare alla fine
-    const newKnownConversations: { [chatId: string]: ConversationDocument } = {};
+    let shouldPlaySoundForAnyChat = false;
+    const newKnownConversations = new Map<string, ConversationDocument>();
 
     for (const conv of currentConversations) {
-      const lastKnownConv = this.lastKnownConversations[conv.id];
-
-      // Controlla se la conversazione non è quella attiva attualmente
+      const lastKnownConv = this.lastKnownConversations.get(conv.id);
       const isCurrentActiveChat = this.currentActiveChatId && (this.currentActiveChatId === conv.id);
 
-      // Condizione per riprodurre il suono:
-      // 1. Esiste un ultimo messaggio (`conv.lastMessageAt`).
-      // 2. Il mittente dell'ultimo messaggio NON è l'utente attualmente loggato (`conv.lastMessageSenderId !== this.currentUserId`).
-      // 3. La conversazione non è quella attiva (l'utente non è già dentro).
-      // 4. L'ultimo messaggio è più recente rispetto a quello che conoscevamo O è una nuova conversazione.
+      const currentLastMessageTime = conv.lastMessageAt?.toMillis() || 0;
+      const lastKnownMessageTime = lastKnownConv?.lastMessageAt?.toMillis() || 0;
+      const lastNotifiedTime = this.lastNotifiedTimestamp.get(conv.id) || 0;
+
+      // Condizioni per riprodurre il suono:
+      // 1. C'è un ultimo messaggio (timestamp > 0).
+      // 2. L'ultimo messaggio non è stato inviato dall'utente corrente.
+      // 3. L'utente NON è nella chat attiva (per non suonare mentre si sta leggendo).
+      // 4. L'ultimo messaggio è più recente di quello che conoscevamo dalla sessione precedente
+      //    (o è la prima volta che vediamo questa conversazione).
+      // 5. IL MESSAGGIO È PIÙ RECENTE DELL'ULTIMO PER CUI ABBIAMO GIÀ SUONATO (chiave per la persistenza).
       if (
         conv.lastMessageAt &&
         conv.lastMessageSenderId !== this.currentUserId &&
-        !isCurrentActiveChat && // <--- CONDIZIONE CHIAVE: NON SUONARE SE L'UTENTE È NELLA CHAT
-        (
-          !lastKnownConv || // È una nuova conversazione (mai vista prima)
-          conv.lastMessageAt.toMillis() > (lastKnownConv.lastMessageAt?.toMillis() || 0) // L'ultimo messaggio è più recente
-        )
+        !isCurrentActiveChat &&
+        currentLastMessageTime > lastKnownMessageTime &&
+        currentLastMessageTime > lastNotifiedTime
       ) {
-        shouldPlaySound = true;
-        // Non usiamo `break` qui per garantire che `newKnownConversations` venga aggiornato con tutte le conv.
+        shouldPlaySoundForAnyChat = true;
+        // IMPORTANTE: Aggiorna lastNotifiedTimestamp per questa specifica chat
+        // in modo che non suoni più per questo stesso messaggio.
+        this.lastNotifiedTimestamp.set(conv.id, currentLastMessageTime);
+        this.saveLastNotifiedTimestamps(); // **Salva subito dopo aver deciso di suonare**
       }
-      // Aggiorna la mappa temporanea per il prossimo ciclo
-      newKnownConversations[conv.id] = conv;
+      newKnownConversations.set(conv.id, conv);
     }
 
     const currentTime = Date.now();
-    if (shouldPlaySound && (currentTime - this.lastSoundPlayedTimestamp > this.minSoundInterval)) {
+    // Riproduce il suono solo se:
+    // 1. Almeno una chat ha soddisfatto le condizioni di notifica.
+    // 2. È passato un intervallo di tempo minimo dall'ultimo suono globale.
+    if (shouldPlaySoundForAnyChat && (currentTime - this.lastSoundPlayedTimestamp > this.minSoundInterval)) {
       this.playNotificationSound();
       this.lastSoundPlayedTimestamp = currentTime;
     }
 
-    // Aggiorna lo stato delle conversazioni conosciute alla fine del ciclo.
-    // Questo è cruciale per prevenire suoni ripetuti quando i dati di Firebase si rileggono
-    // ma non ci sono effettivamente nuovi messaggi dall'altro utente.
+    // Aggiorna sempre la lastKnownConversations per il prossimo ciclo di controllo
     this.lastKnownConversations = newKnownConversations;
   }
 
   private playNotificationSound() {
-    this.audio.currentTime = 0;
-    this.audio.play().catch(e => console.warn("Errore durante la riproduzione del suono (ChatNotificationService):", e));
+    this.audio.currentTime = 0; // Riproduci dall'inizio
+    this.audio.play().catch((e: any) => console.warn("Errore durante la riproduzione del suono (ChatNotificationService):", e));
   }
 
   getUnreadCount$(): Observable<number> {
@@ -203,5 +214,34 @@ export class ChatNotificationService implements OnDestroy {
   clearUnread(chatId: string) {
     delete this.unreadMessages[chatId];
     console.log(`ChatNotificationService: Azzerato unread per ${chatId}`);
+  }
+
+
+  private saveLastNotifiedTimestamps() {
+    try {
+      // Converte la Map in un array di array per la serializzazione JSON
+      // Esempio: [[chatId1, timestamp1], [chatId2, timestamp2]]
+      const dataToSave = Array.from(this.lastNotifiedTimestamp.entries());
+      localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+      console.log('ChatNotificationService: lastNotifiedTimestamps salvato nel localStorage.');
+    } catch (e) {
+      console.error('ChatNotificationService: Errore nel salvare lastNotifiedTimestamps nel localStorage:', e);
+    }
+  }
+
+  private loadLastNotifiedTimestamps() {
+    try {
+      const savedData = localStorage.getItem(this.LOCAL_STORAGE_KEY);
+      if (savedData) {
+        // Parsa la stringa JSON e la riconverte in una Map
+        const parsedData: [string, number][] = JSON.parse(savedData);
+        this.lastNotifiedTimestamp = new Map(parsedData);
+        console.log('ChatNotificationService: lastNotifiedTimestamps caricato dal localStorage.');
+      }
+    } catch (e) {
+      console.error('ChatNotificationService: Errore nel caricare lastNotifiedTimestamps dal localStorage:', e);
+      // In caso di errore (es. dati corrotti), resetta la mappa per evitare comportamenti anomali
+      this.lastNotifiedTimestamp = new Map();
+    }
   }
 }
