@@ -100,7 +100,7 @@ import { getAuth } from 'firebase/auth'; // Per accedere all'utente loggato
 })
 export class ChatService {
   constructor(
-    private afs: Firestore, // L'istanza di Firestore da @angular/fire
+    public afs: Firestore, // L'istanza di Firestore da @angular/fire
     private userDataService: UserDataService,
     private ngZone: NgZone // Usato per assicurarsi che gli aggiornamenti UI avvengano nella zona di Angular
     // Rimuovi completamente l'iniezione di ChatNotificationService dal costruttore
