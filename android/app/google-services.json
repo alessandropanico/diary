@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "379328633803",
+    "project_id": "diary-5d2b8",
+    "storage_bucket": "diary-5d2b8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:379328633803:android:485ca0d2fed8a26bee344e",
+        "android_client_info": {
+          "package_name": "io.ionic.starter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "379328633803-5hokibe25go5k4vssucavm1rgba3ru6r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.ionic.starter",
+            "certificate_hash": "6b70bcc14399cea92cc843d56d2a776df1e7d8db"
+          }
+        },
+        {
+          "client_id": "379328633803-nq9v84nsipbn5mdctnt3tgn3i9gap8c3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8_-Izvs39OhGWx8Y-2n8SGntrMbAzI7Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "379328633803-nq9v84nsipbn5mdctnt3tgn3i9gap8c3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

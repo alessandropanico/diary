@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services' // Questa riga è corretta qui
 
 android {
     namespace "io.ionic.starter"
@@ -11,8 +12,8 @@ android {
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
-             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
-             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+            // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
@@ -40,6 +41,17 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    
+    // Aggiungi QUESTE DIPENDENZE per Firebase Cloud Messaging
+    // Importa la Firebase BoM (Bill of Materials) per gestire le versioni
+    // Controlla sempre https://firebase.google.com/docs/android/setup per la versione più recente della BoM!
+    implementation(platform("com.google.firebase:firebase-bom:32.9.0")) // Versione attuale al 2025-07-13, controlla sempre per la più recente!
+    // Aggiungi la dipendenza per Firebase Cloud Messaging
+    implementation("com.google.firebase:firebase-messaging")
+    // Facoltativo: aggiungi la dipendenza per Google Analytics (spesso usata con FCM per report)
+    implementation("com.google.firebase:firebase-analytics")
+
 }
 
 apply from: 'capacitor.build.gradle'
@@ -47,6 +59,9 @@ apply from: 'capacitor.build.gradle'
 try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.text) {
+        // Questo blocco ora è ridondante perché hai applicato il plugin in cima al file.
+        // Puoi rimuoverlo, oppure lasciarlo: Gradle non dovrebbe avere problemi.
+        // Se lo rimuovi, il messaggio "google-services.json not found..." non apparirà più se il file manca.
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
