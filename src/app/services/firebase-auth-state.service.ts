@@ -1,4 +1,4 @@
-import { Injectable, NgZone } from '@angular/core'; // Importa NgZone
+import { Injectable, NgZone } from '@angular/core'; 
 import { getAuth, User } from 'firebase/auth';
 import { Observable, BehaviorSubject } from 'rxjs';
 
@@ -8,10 +8,10 @@ import { Observable, BehaviorSubject } from 'rxjs';
 export class FirebaseAuthStateService {
   private _isAuthenticated = new BehaviorSubject<boolean | null>(null);
 
-  constructor(private ngZone: NgZone) { // Inietta NgZone
+  constructor(private ngZone: NgZone) {
     const auth = getAuth();
     auth.onAuthStateChanged(user => {
-      this.ngZone.run(() => { // Esegui all'interno di NgZone per Angular
+      this.ngZone.run(() => {
         this._isAuthenticated.next(!!user);
       });
     });
