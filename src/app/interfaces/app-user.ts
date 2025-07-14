@@ -1,7 +1,9 @@
 export interface AppUser {
-  uid: string;
+uid: string;
+  email: string;
   nickname: string;
-  firstName: string;
-  lastName: string;
-  photo: string | null;
+  firstName?: string;
+  lastName?: string;
+  photo?: string;
+  bio?: string
 }

@@ -7,10 +7,11 @@ import {
   NgZone,
 } from '@angular/core';
 import { IonContent, LoadingController } from '@ionic/angular';
-import { UsersService, AppUser } from 'src/app/services/users.service';
+import { UsersService } from 'src/app/services/users.service';
 import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
+import { AppUser } from 'src/app/interfaces/app-user';
 
 @Component({
   selector: 'app-lista-utenti',
@@ -26,14 +27,17 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
   private isLoading = false;
   private userSub?: Subscription;
   private followingStatusSub?: Subscription;
-  private followingUserIds = new Set<string>();
-  currentUserId: string | null = null;
 
-  initialLoading = true; // Indica se è il caricamento iniziale della pagina
+  // Rimuovi 'private' se vuoi renderlo accessibile in isFollowing direttamente per debug,
+  // ma è già usato dal metodo.
+  followingUserIds = new Set<string>(); // ID degli utenti seguiti - Non private per accesso diretto da isFollowing
+
+  currentUserId: string | null = null;
+  initialLoading = true;
 
   constructor(
     private usersService: UsersService,
-    private loadingCtrl: LoadingController, // Manteniamo il LoadingController nel costruttore nel caso lo usassi altrove
+    private loadingCtrl: LoadingController,
     private ngZone: NgZone
   ) {}
 
@@ -41,21 +45,28 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
     const auth = getAuth();
     this.currentUserId = auth.currentUser?.uid || null;
 
+    // *** Sottoscrizione allo stato dei "following" dal servizio ***
+    // Questo Observable si aggiornerà ogni volta che il servizio emette un nuovo stato.
     this.followingStatusSub = this.usersService
       .getFollowingStatus()
       .subscribe(status => {
-        this.followingUserIds = status;
+        // ngZone.run() è cruciale qui per assicurarsi che l'UI si aggiorni
+        // in risposta ai cambiamenti asincroni dello stato dei following.
+        this.ngZone.run(() => {
+          this.followingUserIds = status;
+          console.log('ListaUtentiPage: Stato following aggiornato:', this.followingUserIds);
+        });
       });
   }
 
   ngAfterViewInit() {
-    // Delay for avoiding ExpressionChangedAfterItHasBeenCheckedError
+    // Delay per evitare ExpressionChangedAfterItHasBeenCheckedError
     setTimeout(() => this.loadUsers(), 0);
   }
 
   ngOnDestroy() {
     this.userSub?.unsubscribe();
-    this.followingStatusSub?.unsubscribe();
+    this.followingStatusSub?.unsubscribe(); // Assicurati di fare l'unsubscribe
   }
 
   async loadUsers(event?: any) {
@@ -65,16 +76,6 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
     }
 
     this.isLoading = true;
-
-    // *** RIMOSSO IL LoadingController DA QUI ***
-    // let loading: HTMLIonLoadingElement | undefined;
-    // if (!event) {
-    //   loading = await this.loadingCtrl.create({
-    //     message: 'Caricamento utenti...',
-    //   });
-    //   await loading.present();
-    // }
-    // *****************************************
 
     this.userSub = this.usersService
       .getPaginatedUsers(this.lastVisible)
@@ -86,26 +87,19 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
             this.users = [...this.users, ...filteredUsers];
             this.lastVisible = lastVisible;
             this.isLoading = false;
-
-            // Imposta initialLoading a false DOPO che i dati sono stati caricati (o meno)
             this.initialLoading = false;
 
             if (event) {
               event.target.complete();
-              // Disabilita lo scroll infinito se non ci sono più elementi da caricare
               event.target.disabled = users.length < this.usersService['pageSize'];
             }
-
-            // loading?.dismiss(); // Rimuovi anche questa riga
           });
         },
         error: (err) => {
           console.error('Errore durante il caricamento utenti:', err);
           this.isLoading = false;
-          // Imposta initialLoading a false anche in caso di errore
           this.initialLoading = false;
           event?.target.complete();
-          // loading?.dismiss(); // Rimuovi anche questa riga
         }
       });
   }
@@ -114,11 +108,12 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
     this.users = [];
     this.lastVisible = null;
     this.isLoading = false;
-    this.initialLoading = true; // Resetta a true per mostrare lo skeleton al refresh
+    this.initialLoading = true;
 
+    // *** Chiamata per ricaricare lo stato dei following al refresh ***
     await this.usersService.refreshFollowingStatus();
 
-    // Reabilita l'infinite scroll, se era stato disabilitato
+    // Reabilita l'infinite scroll
     if (event && event.target && event.target.getNativeElement) {
         const infiniteScrollEl = event.target.getNativeElement().querySelector('ion-infinite-scroll');
         if (infiniteScrollEl) {
@@ -126,20 +121,32 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    event?.target?.complete(); // Completa il refresher
-    this.loadUsers(); // Ricarica gli utenti
+    event?.target?.complete();
+    this.loadUsers();
   }
 
+  // Questo metodo è corretto, si basa sul Set aggiornato
   isFollowing(userId: string): boolean {
     return this.followingUserIds.has(userId);
   }
 
   async toggleFollow(userId: string) {
-    // Se vuoi mostrare un loading specifico solo per l'azione di follow/unfollow,
-    // potresti usare qui il LoadingController:
-    // const loading = await this.loadingCtrl.create({ message: 'Aggiornamento...' });
-    // await loading.present();
-    await this.usersService.toggleFollow(userId);
-    // await loading.dismiss();
+    // Il LoadingController qui è opzionale, se vuoi un feedback visivo sull'azione specifica
+    const loading = await this.loadingCtrl.create({
+        message: this.isFollowing(userId) ? 'Annullamento follow...' : 'Seguendo...',
+        duration: 2000, // Durata massima, verrà dismissato prima in caso di successo/errore
+    });
+    await loading.present();
+
+    try {
+        await this.usersService.toggleFollow(userId);
+        // Lo stato `this.followingUserIds` si aggiornerà automaticamente
+        // grazie alla sottoscrizione a `getFollowingStatus()` nel ngOnInit.
+    } catch (error) {
+        console.error('Errore nell\'operazione di follow/unfollow:', error);
+        // Potresti voler mostrare un Alert qui
+    } finally {
+        await loading.dismiss(); // Assicurati di dismissare il loading
+    }
   }
 }
