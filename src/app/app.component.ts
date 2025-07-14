@@ -1,29 +1,25 @@
-// src/app/app.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AuthService } from './services/auth.service';
 import { MenuController, AlertController, ModalController } from '@ionic/angular';
-import { Subject, Subscription } from 'rxjs'; // Assicurati che Subscription sia importato
+import { Subject, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { UserDataService } from './services/user-data.service';
 import { getAuth } from 'firebase/auth';
 import { SearchModalComponent } from './shared/search-modal/search-modal.component';
 import { ChatNotificationService } from './services/chat-notification.service';
+import { FirebaseAuthStateService } from './services/firebase-auth-state.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
   styleUrls: ['app.component.scss'],
   standalone: false,
-  template: `
-    <button *ngIf="showInstallButton" (click)="installApp()">Installa App</button>
-    <router-outlet></router-outlet>
-  `
 })
 export class AppComponent implements OnInit, OnDestroy {
 
   profile: any = null;
   userSub!: Subscription;
-  unreadCountSub: Subscription | undefined; // <--- AGGIUNTA QUESTA
+  unreadCountSub: Subscription | undefined;
   profilePhotoUrl: string | null = null;
 
   deferredPrompt: any;
@@ -37,7 +33,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private searchTerms = new Subject<string>();
   private searchSubscription: Subscription | undefined;
   unreadCount = 0;
-  // private sub: Subscription | undefined; // <--- QUESTA NON SERVE PIÙ
+
+  firebaseIsLoggedIn: boolean = false;
 
   constructor(
     private menu: MenuController,
@@ -46,7 +43,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private router: Router,
     private userDataService: UserDataService,
     private modalCtrl: ModalController,
-    private chatNotificationService: ChatNotificationService
+    private chatNotificationService: ChatNotificationService,
+    private firebaseAuthStateService: FirebaseAuthStateService,
   ) {
     window.addEventListener('beforeinstallprompt', (e: any) => {
       e.preventDefault();
@@ -69,12 +67,18 @@ export class AppComponent implements OnInit, OnDestroy {
       await this.loadProfilePhoto();
     }
 
-    // <--- MODIFICA QUI
     this.unreadCountSub = this.chatNotificationService.getUnreadCount$().subscribe(count => {
       this.unreadCount = count;
-      console.log('AppComponent: Conteggio notifiche chat:', this.unreadCount); // Aggiunto per debug
+      console.log('AppComponent: Conteggio notifiche chat:', this.unreadCount);
     });
-    // --->
+
+
+    this.firebaseAuthStateService.isAuthenticated$().subscribe(isLoggedIn => {
+      if (isLoggedIn !== null) {
+        this.firebaseIsLoggedIn = isLoggedIn;
+        console.log('AppComponent: Stato login Firebase (aggiornato da service):', this.firebaseIsLoggedIn);
+      }
+    });
 
     setTimeout(() => {
       this.showSplash = false;
@@ -85,8 +89,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.userSub) {
       this.userSub.unsubscribe();
     }
-    this.unreadCountSub?.unsubscribe(); // <--- MODIFICA QUI
-    // this.sub?.unsubscribe(); // <--- QUESTA VA RIMOSSA SE NON UTILIZZATA
+    this.unreadCountSub?.unsubscribe();
   }
 
   toggleMenu() {
@@ -127,16 +130,13 @@ export class AppComponent implements OnInit, OnDestroy {
   async logout() {
     await this.authService.logout();
     this.closeMenu();
-
     const alert = await this.alertCtrl.create({
       header: 'Logout',
       message: 'Logout effettuato con successo.',
       buttons: ['OK'],
       cssClass: 'ff7-alert',
     });
-
     await alert.present();
-
     this.router.navigateByUrl('/home').then(() => {
       window.location.reload();
     });
@@ -163,8 +163,8 @@ export class AppComponent implements OnInit, OnDestroy {
     await this.menu.close('first');
     this.searchQuery = '';
     this.searchResults = [];
-    this.searchPerformed = false;
     this.isSearchingUsers = false;
+    this.searchPerformed = false;
   }
 
   closeSearchMenu() {
@@ -177,12 +177,23 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   async presentSearchModal() {
-    const modal = await this.modalCtrl.create({
-      component: SearchModalComponent,
-      cssClass: 'search-modal'
-    });
-    await modal.present();
-    await this.menu.close('first');
+    if (this.firebaseIsLoggedIn) {
+      const modal = await this.modalCtrl.create({
+        component: SearchModalComponent,
+        cssClass: 'search-modal'
+      });
+      await modal.present();
+      await this.menu.close('first');
+    } else {
+      const alert = await this.alertCtrl.create({
+        header: 'Accesso Necessario',
+        message: 'Devi essere loggato per cercare altri utenti.',
+        buttons: ['OK'],
+        cssClass: 'ff7-alert',
+      });
+      await alert.present();
+      this.router.navigateByUrl('/login');
+      this.closeMenu();
+    }
   }
-
 }
