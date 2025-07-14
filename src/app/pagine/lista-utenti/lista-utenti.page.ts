@@ -29,9 +29,11 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
   private followingUserIds = new Set<string>();
   currentUserId: string | null = null;
 
+  initialLoading = true; // Indica se è il caricamento iniziale della pagina
+
   constructor(
     private usersService: UsersService,
-    private loadingCtrl: LoadingController,
+    private loadingCtrl: LoadingController, // Manteniamo il LoadingController nel costruttore nel caso lo usassi altrove
     private ngZone: NgZone
   ) {}
 
@@ -63,14 +65,16 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
     }
 
     this.isLoading = true;
-    let loading: HTMLIonLoadingElement | undefined;
 
-    if (!event) {
-      loading = await this.loadingCtrl.create({
-        message: 'Caricamento utenti...',
-      });
-      await loading.present();
-    }
+    // *** RIMOSSO IL LoadingController DA QUI ***
+    // let loading: HTMLIonLoadingElement | undefined;
+    // if (!event) {
+    //   loading = await this.loadingCtrl.create({
+    //     message: 'Caricamento utenti...',
+    //   });
+    //   await loading.present();
+    // }
+    // *****************************************
 
     this.userSub = this.usersService
       .getPaginatedUsers(this.lastVisible)
@@ -83,19 +87,25 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
             this.lastVisible = lastVisible;
             this.isLoading = false;
 
+            // Imposta initialLoading a false DOPO che i dati sono stati caricati (o meno)
+            this.initialLoading = false;
+
             if (event) {
               event.target.complete();
+              // Disabilita lo scroll infinito se non ci sono più elementi da caricare
               event.target.disabled = users.length < this.usersService['pageSize'];
             }
 
-            loading?.dismiss();
+            // loading?.dismiss(); // Rimuovi anche questa riga
           });
         },
         error: (err) => {
           console.error('Errore durante il caricamento utenti:', err);
           this.isLoading = false;
+          // Imposta initialLoading a false anche in caso di errore
+          this.initialLoading = false;
           event?.target.complete();
-          loading?.dismiss();
+          // loading?.dismiss(); // Rimuovi anche questa riga
         }
       });
   }
@@ -104,11 +114,20 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
     this.users = [];
     this.lastVisible = null;
     this.isLoading = false;
+    this.initialLoading = true; // Resetta a true per mostrare lo skeleton al refresh
 
     await this.usersService.refreshFollowingStatus();
 
-    event?.target?.complete();
-    this.loadUsers();
+    // Reabilita l'infinite scroll, se era stato disabilitato
+    if (event && event.target && event.target.getNativeElement) {
+        const infiniteScrollEl = event.target.getNativeElement().querySelector('ion-infinite-scroll');
+        if (infiniteScrollEl) {
+            infiniteScrollEl.disabled = false;
+        }
+    }
+
+    event?.target?.complete(); // Completa il refresher
+    this.loadUsers(); // Ricarica gli utenti
   }
 
   isFollowing(userId: string): boolean {
@@ -116,6 +135,11 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async toggleFollow(userId: string) {
+    // Se vuoi mostrare un loading specifico solo per l'azione di follow/unfollow,
+    // potresti usare qui il LoadingController:
+    // const loading = await this.loadingCtrl.create({ message: 'Aggiornamento...' });
+    // await loading.present();
     await this.usersService.toggleFollow(userId);
+    // await loading.dismiss();
   }
 }

@@ -8,6 +8,11 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
+  <div class="loading-overlay" *ngIf="initialLoading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Caricamento utenti...</p>
+  </div>
+
   <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
     <ion-refresher-content
       pullingText="Trascina per aggiornare"
@@ -16,25 +21,27 @@
     </ion-refresher-content>
   </ion-refresher>
 
-  <ion-list *ngIf="users.length > 0; else noUsersFound">
-    <ion-item *ngFor="let user of users">
-      <ion-avatar slot="start">
-        <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
-      </ion-avatar>
-      <ion-label>
-        <h2>{{ user.nickname }}</h2>
-        <p>{{ user.firstName }} {{ user.lastName }}</p>
-      </ion-label>
-      <ion-buttons slot="end">
-        <ion-button
-          *ngIf="user.uid !== currentUserId"
-          [color]="isFollowing(user.uid) ? 'medium' : 'primary'"
-          (click)="toggleFollow(user.uid)">
-          {{ isFollowing(user.uid) ? 'Segui già' : 'Segui' }}
-        </ion-button>
-      </ion-buttons>
-    </ion-item>
-  </ion-list>
+  <ng-container *ngIf="!initialLoading">
+    <ion-list *ngIf="users.length > 0; else noUsersFound">
+      <ion-item *ngFor="let user of users">
+        <ion-avatar slot="start">
+          <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
+        </ion-avatar>
+        <ion-label>
+          <h2>{{ user.nickname }}</h2>
+          <p>{{ user.firstName }} {{ user.lastName }}</p>
+        </ion-label>
+        <ion-buttons slot="end">
+          <ion-button
+            *ngIf="user.uid !== currentUserId"
+            [color]="isFollowing(user.uid) ? 'medium' : 'primary'"
+            (click)="toggleFollow(user.uid)">
+            {{ isFollowing(user.uid) ? 'Segui già' : 'Segui' }}
+          </ion-button>
+        </ion-buttons>
+      </ion-item>
+    </ion-list>
+  </ng-container>
 
   <ion-infinite-scroll (ionInfinite)="loadUsers($event)">
     <ion-infinite-scroll-content
