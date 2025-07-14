@@ -1,11 +1,10 @@
-// src/app/pagine/following-list/following-list.page.ts
 import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FollowService } from 'src/app/services/follow.service';
 import { UserDataService } from 'src/app/services/user-data.service';
 import { AlertController } from '@ionic/angular';
 import { Subscription, forkJoin, of, from } from 'rxjs';
-import { switchMap, map, catchError, tap, take } from 'rxjs/operators'; // Assicurati che 'take' sia importato
+import { switchMap, map, catchError, tap, take } from 'rxjs/operators';
 import { getAuth, User, onAuthStateChanged } from 'firebase/auth';
 
 @Component({
@@ -103,12 +102,18 @@ export class FollowingListPage implements OnInit, OnDestroy {
     this.usersSubscription = this.followService.getFollowingIds(this.userId!).pipe(
       tap(followingIds => console.log('FLL: getFollowingIds emitted:', followingIds)),
       switchMap(followingIds => {
-        if (followingIds.length === 0) {
-          console.log('FLL: Nessun ID seguito trovato. Restituisco lista vuota.');
+        // --- INIZIO MODIFICA QUI ---
+        // Filtra l'ID dell'utente loggato dalla lista di followingIds, se presente
+        const filteredFollowingIds = followingIds.filter(id => id !== this.loggedInUserId);
+        console.log('FLL: followingIds filtrati (escluso loggedInUserId):', filteredFollowingIds);
+        // --- FINE MODIFICA QUI ---
+
+        if (filteredFollowingIds.length === 0) { // Usa la lista filtrata
+          console.log('FLL: Nessun ID seguito (dopo il filtro) trovato. Restituisco lista vuota.');
           return of([]);
         }
 
-        const userObservables = followingIds.map(id => {
+        const userObservables = filteredFollowingIds.map(id => { // Usa la lista filtrata
           console.log('FLL: Mappatura ID:', id);
           const userDataObservable = from(this.userDataService.getUserDataById(id)).pipe(
             tap(data => console.log(`FLL: UserData for ${id}:`, data)),
@@ -120,8 +125,7 @@ export class FollowingListPage implements OnInit, OnDestroy {
 
           const isFollowingObservable = this.loggedInUserId
             ? this.followService.isFollowing(this.loggedInUserId, id).pipe(
-                // *** QUESTA È LA MODIFICA CHIAVE ***
-                take(1), // Prendi il primo valore e completa l'observable
+                take(1),
                 tap(isF => console.log(`FLL: isFollowing (${this.loggedInUserId} following ${id}):`, isF)),
                 catchError(err => {
                   console.error(`FLL: Errore isFollowing per ${this.loggedInUserId} -> ${id}:`, err);
@@ -229,6 +233,7 @@ export class FollowingListPage implements OnInit, OnDestroy {
       await this.presentFF7Alert('Devi essere loggato per eseguire questa azione.');
       return;
     }
+    // Prevenire il follow/unfollow di se stessi
     if (this.loggedInUserId === targetUserId) {
       await this.presentFF7Alert('Non puoi modificare lo stato di follow per te stesso qui.');
       return;
@@ -247,7 +252,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
         console.log('FLL: followUser completato.');
       }
       // La lista si aggiornerà automaticamente grazie all'onSnapshot nel servizio e alla reattività del pipe
-      // Non è necessario ricaricare l'intera lista qui se il followService gestisce le snapshot in tempo reale
     } catch (error) {
       console.error('FLL: Errore durante l\'operazione di follow/unfollow:', error);
       await this.presentFF7Alert('Si è verificato un errore. Riprova.');
