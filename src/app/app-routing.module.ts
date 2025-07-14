@@ -78,7 +78,11 @@ const routes: Routes = [
   {
     path: 'following-altro-list/:id', // :id è l'UID dell'utente target
     loadChildren: () => import('./pagine/following-altro-list/following-altro-list.module').then( m => m.FollowingAltroListPageModule)
+  },  {
+    path: 'lista-utenti',
+    loadChildren: () => import('./pagine/lista-utenti/lista-utenti.module').then( m => m.ListaUtentiPageModule)
   },
+
 
 
 

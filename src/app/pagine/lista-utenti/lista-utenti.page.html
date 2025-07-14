@@ -1,0 +1,62 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Lista Utenti</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content
+      pullingText="Trascina per aggiornare"
+      refreshingSpinner="circular"
+      refreshingText="Aggiornamento...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <ion-list *ngIf="users.length > 0; else noUsersFound">
+    <ion-item *ngFor="let user of users">
+      <ion-avatar slot="start">
+        <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ user.nickname }}</h2>
+        <p>{{ user.firstName }} {{ user.lastName }}</p>
+      </ion-label>
+      <ion-buttons slot="end">
+        <ion-button
+          *ngIf="user.uid !== currentUserId"
+          [color]="isFollowing(user.uid) ? 'medium' : 'primary'"
+          (click)="toggleFollow(user.uid)">
+          {{ isFollowing(user.uid) ? 'Segui già' : 'Segui' }}
+        </ion-button>
+      </ion-buttons>
+    </ion-item>
+  </ion-list>
+
+  <ion-infinite-scroll (ionInfinite)="loadUsers($event)">
+    <ion-infinite-scroll-content
+      loadingSpinner="bubbles"
+      loadingText="Caricamento altri utenti...">
+    </ion-infinite-scroll-content>
+  </ion-infinite-scroll>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="content.scrollToTop(500)">
+      <ion-icon name="arrow-up"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <ng-template #noUsersFound>
+    <ion-card class="ion-text-center ion-margin">
+      <ion-card-header>
+        <ion-card-title>Nessun Utente Trovato</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        Sembra che non ci siano utenti disponibili al momento.
+      </ion-card-content>
+    </ion-card>
+  </ng-template>
+</ion-content>
