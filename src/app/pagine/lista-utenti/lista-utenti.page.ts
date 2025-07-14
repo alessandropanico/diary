@@ -12,6 +12,7 @@ import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
 import { AppUser } from 'src/app/interfaces/app-user';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-lista-utenti',
@@ -38,7 +39,8 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private usersService: UsersService,
     private loadingCtrl: LoadingController,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -147,6 +149,17 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
         // Potresti voler mostrare un Alert qui
     } finally {
         await loading.dismiss(); // Assicurati di dismissare il loading
+    }
+  }
+
+   goToUserProfile(userId: string) {
+    console.log('ListaUtentiPage: Navigazione a profilo utente:', userId);
+    if (userId === this.currentUserId) {
+      // Se l'utente clicca sul proprio profilo nella lista (anche se filtrato, per sicurezza)
+      this.router.navigate(['/profilo']);
+    } else {
+      // Naviga al profilo di un altro utente
+      this.router.navigate(['/profilo-altri-utenti', userId]);
     }
   }
 }

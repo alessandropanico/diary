@@ -3,7 +3,7 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>Lista Utenti</ion-title>
+    <ion-title class="ff7-title">Lista Utenti</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -23,21 +23,22 @@
       </ion-refresher-content>
     </ion-refresher>
 
-    <ion-list *ngIf="users.length > 0; else noUsersFound">
-      <ion-item *ngFor="let user of users">
-        <ion-avatar slot="start">
+    <ion-list *ngIf="users.length > 0; else noUsersFound" class="ff7-list">
+      <ion-item *ngFor="let user of users" class="ff7-list-item">
+        <ion-avatar slot="start" (click)="goToUserProfile(user.uid)">
           <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
         </ion-avatar>
-        <ion-label>
+        <ion-label (click)="goToUserProfile(user.uid)">
           <h2>{{ user.nickname }}</h2>
           <p>{{ user.firstName }} {{ user.lastName }}</p>
         </ion-label>
         <ion-buttons slot="end">
           <ion-button
             *ngIf="user.uid !== currentUserId"
-            [color]="isFollowing(user.uid) ? 'medium' : 'primary'"
+            [class.follow-button]="!isFollowing(user.uid)"
+            [class.unfollow-button]="isFollowing(user.uid)"
             (click)="toggleFollow(user.uid)">
-            {{ isFollowing(user.uid) ? 'Segui già' : 'Segui' }}
+            {{ isFollowing(user.uid) ? 'Non seguire più' : 'Segui' }}
           </ion-button>
         </ion-buttons>
       </ion-item>
