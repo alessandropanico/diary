@@ -114,7 +114,7 @@ export class ChatService {
 
   async getOrCreateConversation(user1Id: string, user2Id: string): Promise<string> {
     const chatId = this.generateConversationId(user1Id, user2Id);
-    const conversationDocRef = doc(this.afs, 'conversations', chatId); // Usa this.afs
+    const conversationDocRef = doc(this.afs, 'conversations', chatId);
 
     try {
       const docSnap = await getDoc(conversationDocRef);
@@ -122,15 +122,14 @@ export class ChatService {
       if (docSnap.exists()) {
         return docSnap.id;
       } else {
-        const newConversationData = {
+        const newConversationData: any = { // Usa `any` temporaneamente per la flessibilità o definisci meglio l'interfaccia
           participants: [user1Id, user2Id].sort(),
           createdAt: serverTimestamp(),
-          lastMessageAt: serverTimestamp(), // Impostato al momento della creazione
+          // ✅ Rimosso lastMessageAt e lastMessageSenderId da qui
           lastMessage: '', // Messaggio iniziale vuoto
           chatId: chatId,
-          // IMPORTANTISSIMO: Inizializza `lastRead` per entrambi gli utenti al momento della creazione!
           lastRead: {
-            [user1Id]: serverTimestamp(),
+            [user1Id]: serverTimestamp(), // Marca come letto al momento della creazione
             [user2Id]: serverTimestamp()
           }
         };
@@ -413,21 +412,19 @@ export class ChatService {
  * @param userId ID dell'utente attuale
  * @param lastRead Timestamp dell'ultimo messaggio letto
  */
-async countUnreadMessages(conversationId: string, userId: string, lastRead: Timestamp | null): Promise<number> {
-  const messagesRef = collection(this.afs, `conversations/${conversationId}/messages`);
+  async countUnreadMessages(conversationId: string, userId: string, lastRead: Timestamp | null): Promise<number> {
+    const messagesRef = collection(this.afs, `conversations/${conversationId}/messages`);
 
-  let q;
-  if (lastRead) {
-    q = query(messagesRef, where('timestamp', '>', lastRead));
-  } else {
-    // Se non ha mai letto nulla, contali tutti
-    q = query(messagesRef);
+    let q;
+    if (lastRead) {
+      q = query(messagesRef, where('timestamp', '>', lastRead));
+    } else {
+      // Se non ha mai letto nulla, contali tutti
+      q = query(messagesRef);
+    }
+
+    const snapshot = await getDocs(q);
+    return snapshot.size;
   }
-
-  const snapshot = await getDocs(q);
-  return snapshot.size;
-}
-
-
 
 }

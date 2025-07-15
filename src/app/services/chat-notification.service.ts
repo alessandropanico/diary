@@ -169,7 +169,9 @@ export class ChatNotificationService implements OnDestroy {
         conv.lastMessageSenderId !== this.currentUserId &&
         !isCurrentActiveChat &&
         currentLastMessageTime > lastKnownMessageTime &&
-        currentLastMessageTime > lastNotifiedTime
+        currentLastMessageTime > lastNotifiedTime &&
+        // ✅ AGGIUNGI QUESTA CONDIZIONE: Assicurati che ci sia un messaggio reale
+        conv.lastMessage && conv.lastMessage.trim() !== ''
       ) {
         shouldPlaySoundForAnyChat = true;
         this.lastNotifiedTimestamp.set(conv.id, currentLastMessageTime);
@@ -186,6 +188,7 @@ export class ChatNotificationService implements OnDestroy {
 
     this.lastKnownConversations = newKnownConversations;
   }
+
 
   private playNotificationSound() {
     this.audio.currentTime = 0;
