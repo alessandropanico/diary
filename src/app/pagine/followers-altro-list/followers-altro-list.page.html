@@ -15,14 +15,14 @@
 
   <ion-list *ngIf="!isLoading && followers.length > 0" class="ff7-list">
     <ion-item *ngFor="let follower of followers" class="ff7-list-item">
-      <ion-avatar slot="start">
+      <ion-avatar slot="start" (click)="goToUserProfile(follower.uid)">
         <img [src]="follower.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo">
       </ion-avatar>
-      <ion-label>
+      <ion-label (click)="goToUserProfile(follower.uid)">
         <h2>{{ follower.nickname || follower.name || 'Utente sconosciuto' }}</h2>
         <p>{{ follower.name || '' }}</p>
       </ion-label>
-      <ion-button slot="end" fill="clear" [routerLink]="['/profilo-altri-utenti', follower.uid]">
+      <ion-button slot="end" fill="clear" (click)="goToUserProfile(follower.uid)">
         Vedi Profilo
       </ion-button>
     </ion-item>
