@@ -14,8 +14,8 @@
     <p>Caricamento chat...</p>
   </div>
 
-  <ion-list *ngIf="!isLoading && conversations.length > 0">
-    <ion-item *ngFor="let conv of conversations" (click)="openChat(conv.id)" detail lines="none">
+  <ion-list *ngIf="!isLoading && conversations.length > 0" class="ff7-list">
+    <ion-item *ngFor="let conv of conversations" (click)="openChat(conv.id)" class="ff7-list-item">
       <ion-avatar slot="start">
         <img [src]="conv.otherParticipantPhoto" alt="Foto Profilo">
       </ion-avatar>
