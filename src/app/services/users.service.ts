@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, doc, getDoc, getDocs, query, limit, startAfter, orderBy, updateDoc, arrayUnion, arrayRemove, setDoc } from '@angular/fire/firestore';
+import { Firestore, collection, doc, getDoc, getDocs, query, limit, startAfter, orderBy, updateDoc, setDoc, deleteDoc } from '@angular/fire/firestore'; // Aggiunto deleteDoc
 import { getAuth } from 'firebase/auth';
 import { BehaviorSubject, from, Observable, of } from 'rxjs';
 import { map, switchMap, catchError, tap } from 'rxjs/operators';
@@ -9,48 +9,45 @@ import { AppUser } from '../interfaces/app-user';
   providedIn: 'root'
 })
 export class UsersService {
-  private pageSize = 10; // Quanti utenti caricare per pagina
+  private pageSize = 10;
 
-  // *** Gestione dello stato dei Following: Usiamo BehaviorSubject per reattività ***
   private _followingStatus = new BehaviorSubject<Set<string>>(new Set<string>());
 
-  // Observable per ottenere lo stato corrente dei following
   getFollowingStatus(): Observable<Set<string>> {
     return this._followingStatus.asObservable();
   }
 
   constructor(private firestore: Firestore) {
-    // Carica lo stato dei following all'avvio del servizio e ogni volta che cambia lo stato di autenticazione
     getAuth().onAuthStateChanged(user => {
       if (user) {
         this.loadFollowingStatus(user.uid);
       } else {
-        this._followingStatus.next(new Set<string>()); // Resetta se non loggato
+        this._followingStatus.next(new Set<string>());
       }
     });
   }
 
-  // Carica gli ID degli utenti che l'utente corrente segue
+  // AGGIORNATO: Carica gli ID degli utenti che l'utente corrente segue
   private async loadFollowingStatus(userId: string) {
     try {
-      const docRef = doc(this.firestore, `users/${userId}/following/${userId}`); // Doc specifico per gli ID seguiti
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const followingIds = new Set<string>(data ? data['ids'] || [] : []);
-        this._followingStatus.next(followingIds);
-        console.log('UsersService: Stato following caricato:', followingIds);
-      } else {
-        this._followingStatus.next(new Set<string>()); // Nessun following ancora
-        console.log('UsersService: Nessun documento following trovato. Inizializzato a vuoto.');
-      }
+      const followingCollectionRef = collection(this.firestore, `users/${userId}/following`);
+      const q = query(followingCollectionRef); // Non serve ordinare o limitare se si vogliono tutti
+      const querySnapshot = await getDocs(q); // Ottieni tutti i documenti nella sottocollezione
+
+      const followingIds = new Set<string>();
+      querySnapshot.forEach(doc => {
+        followingIds.add(doc.id); // L'ID del documento è l'ID dell'utente seguito
+      });
+
+      this._followingStatus.next(followingIds);
+      console.log('UsersService: Stato following caricato:', followingIds);
+
     } catch (error) {
       console.error('Errore nel caricare lo stato dei following:', error);
-      this._followingStatus.next(new Set<string>()); // Resetta in caso di errore
+      this._followingStatus.next(new Set<string>());
     }
   }
 
-  // Metodo per ricaricare forzatamente lo stato dei following (usato per refresh)
   async refreshFollowingStatus() {
     const auth = getAuth();
     if (auth.currentUser) {
@@ -60,10 +57,10 @@ export class UsersService {
     }
   }
 
-  // Metodo per ottenere utenti paginati
+  // Metodo per ottenere utenti paginati (nessun cambiamento qui)
   getPaginatedUsers(lastVisible: any = null): Observable<{ users: AppUser[], lastVisible: any }> {
     const usersCollection = collection(this.firestore, 'users');
-    let q = query(usersCollection, orderBy('nickname'), limit(this.pageSize)); // Ordina per nickname
+    let q = query(usersCollection, orderBy('nickname'), limit(this.pageSize));
 
     if (lastVisible) {
       q = query(usersCollection, orderBy('nickname'), startAfter(lastVisible), limit(this.pageSize));
@@ -80,12 +77,12 @@ export class UsersService {
       }),
       catchError(error => {
         console.error('Errore nel recupero utenti paginati:', error);
-        return of({ users: [], lastVisible: null }); // Restituisci un Observable vuoto in caso di errore
+        return of({ users: [], lastVisible: null });
       })
     );
   }
 
-  // Metodo per fare/togliere il follow
+  // AGGIORNATO: Metodo per fare/togliere il follow
   async toggleFollow(targetUserId: string): Promise<void> {
     const auth = getAuth();
     const currentUserId = auth.currentUser?.uid;
@@ -97,43 +94,45 @@ export class UsersService {
 
     // Aggiorna localmente lo stato per reattività immediata
     const currentFollowingIds = this._followingStatus.getValue();
-    const newFollowingIds = new Set(currentFollowingIds); // Crea una copia
-
+    const newFollowingIds = new Set(currentFollowingIds);
     const isCurrentlyFollowing = currentFollowingIds.has(targetUserId);
 
-    if (isCurrentlyFollowing) {
-      newFollowingIds.delete(targetUserId);
-      console.log(`Unfollowing: ${targetUserId}`);
-    } else {
-      newFollowingIds.add(targetUserId);
-      console.log(`Following: ${targetUserId}`);
-    }
-    this._followingStatus.next(newFollowingIds); // Aggiorna lo stato locale immediatamente
-
     try {
-      // 1. Aggiorna la lista 'following' dell'utente corrente
-      const currentUserFollowingRef = doc(this.firestore, `users/${currentUserId}/following/${currentUserId}`);
-      // Usa setDoc con merge per creare il documento se non esiste, o aggiornarlo
-      await setDoc(currentUserFollowingRef, {
-        ids: isCurrentlyFollowing ? arrayRemove(targetUserId) : arrayUnion(targetUserId)
-      }, { merge: true });
+      if (isCurrentlyFollowing) {
+        newFollowingIds.delete(targetUserId); // Rimuovi localmente
+        // Rimuovi il documento dalla lista 'following' dell'utente corrente
+        const currentUserFollowingDocRef = doc(this.firestore, `users/${currentUserId}/following/${targetUserId}`);
+        await deleteDoc(currentUserFollowingDocRef);
 
-      // 2. Aggiorna la lista 'followers' dell'utente target
-      const targetUserFollowersRef = doc(this.firestore, `users/${targetUserId}/followers/${targetUserId}`);
-      await setDoc(targetUserFollowersRef, {
-        ids: isCurrentlyFollowing ? arrayRemove(currentUserId) : arrayUnion(currentUserId)
-      }, { merge: true });
+        // Rimuovi il documento dalla lista 'followers' dell'utente target
+        const targetUserFollowersDocRef = doc(this.firestore, `users/${targetUserId}/followers/${currentUserId}`);
+        await deleteDoc(targetUserFollowersDocRef);
 
-      console.log(`Operazione ${isCurrentlyFollowing ? 'unfollow' : 'follow'} completata per ${targetUserId}`);
+        console.log(`Unfollowing completato: ${targetUserId}`);
+
+      } else {
+        newFollowingIds.add(targetUserId); // Aggiungi localmente
+        // Aggiungi il documento alla lista 'following' dell'utente corrente
+        const currentUserFollowingDocRef = doc(this.firestore, `users/${currentUserId}/following/${targetUserId}`);
+        await setDoc(currentUserFollowingDocRef, { timestamp: new Date().toISOString() }); // Puoi mettere data o vuoto
+
+        // Aggiungi il documento alla lista 'followers' dell'utente target
+        const targetUserFollowersDocRef = doc(this.firestore, `users/${targetUserId}/followers/${currentUserId}`);
+        await setDoc(targetUserFollowersDocRef, { timestamp: new Date().toISOString() }); // Puoi mettere data o vuoto
+
+        console.log(`Following completato: ${targetUserId}`);
+      }
+      this._followingStatus.next(newFollowingIds); // Aggiorna lo stato locale
+
     } catch (error) {
       console.error(`Errore durante l'operazione ${isCurrentlyFollowing ? 'unfollow' : 'follow'} per ${targetUserId}:`, error);
       // In caso di errore, ripristina lo stato precedente
       this._followingStatus.next(currentFollowingIds);
-      throw error; // Propaga l'errore se vuoi gestirlo nel componente
+      throw error; // Propaga l'errore per gestirlo nel componente
     }
   }
 
-  // Metodi per i dati utente
+  // Metodi per i dati utente (nessun cambiamento qui)
   async getUserData(): Promise<AppUser | null> {
     const auth = getAuth();
     const userId = auth.currentUser?.uid;
