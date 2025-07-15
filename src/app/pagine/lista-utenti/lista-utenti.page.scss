@@ -150,6 +150,7 @@ ion-fab-button {
   --background: var(--primary-glow);
   --color: black; /* Lasciamo il testo nero per il fab button */
   box-shadow: 0 0 15px var(--primary-glow);
+  border-radius: 50%;
 }
 
 ion-card {
