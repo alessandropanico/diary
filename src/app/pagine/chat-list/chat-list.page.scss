@@ -1,5 +1,22 @@
 ion-item{
   cursor: pointer;
+  border: solid 1px #00ffe0
+}
+
+.list-md {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    background: transparent !important;
+}
+
+ion-list{
+    background: transparent !important;
 }
 
 .dot-unread-icon {
