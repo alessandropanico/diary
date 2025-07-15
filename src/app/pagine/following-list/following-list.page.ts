@@ -199,7 +199,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
     });
   }
 
-  // --- AGGIUNGI QUESTA FUNZIONE ALLA TUA CLASSE ---
   /**
    * Restituisce l'URL della foto profilo, usando un avatar di default
    * se l'URL fornito è nullo, vuoto, o un URL generico di Google.
@@ -324,4 +323,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
       console.log('FLL: authSubscription annullata.');
     }
   }
+
+
 }
