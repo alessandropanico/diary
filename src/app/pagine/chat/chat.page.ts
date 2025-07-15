@@ -1,29 +1,24 @@
-// src/app/pagine/chat/chat.page.ts
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ChatService, ExtendedConversation, Message, UserProfile } from 'src/app/services/chat.service'; // <-- Importa tutto dal chat.service
+import { ChatService, ExtendedConversation, Message, UserProfile } from 'src/app/services/chat.service';
 import { getAuth } from 'firebase/auth';
-import { Subscription, firstValueFrom } from 'rxjs'; // Importa firstValueFrom
+import { Subscription, firstValueFrom } from 'rxjs';
 import { IonContent, AlertController } from '@ionic/angular';
 import { UserDataService } from 'src/app/services/user-data.service';
-import { QueryDocumentSnapshot } from 'firebase/firestore'; // Importa QueryDocumentSnapshot
-import * as dayjs from 'dayjs'; // Importa dayjs
+import { QueryDocumentSnapshot } from 'firebase/firestore';
+import * as dayjs from 'dayjs';
 
-// Importa i plugin dayjs necessari
-import 'dayjs/locale/it'; // Importa la locale italiana
+import 'dayjs/locale/it';
 import isToday from 'dayjs/plugin/isToday';
 import isYesterday from 'dayjs/plugin/isYesterday';
 import updateLocale from 'dayjs/plugin/updateLocale';
 
-// Estendi dayjs con i plugin e imposta la locale
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
 dayjs.extend(updateLocale);
 
-// Imposta la locale a italiano
 dayjs.locale('it');
 
-// Opzionale: Aggiorna le impostazioni di 'relativeTime' per un output più pulito in italiano
 dayjs.updateLocale('it', {
   months: [
     "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -37,8 +32,6 @@ dayjs.updateLocale('it', {
   ]
 });
 
-// L'interfaccia OtherUserChatData è equivalente a UserProfile.
-// La manteniamo per ora come nel tuo codice, ma è una ridondanza che potresti eliminare.
 interface OtherUserChatData {
   uid: string;
   username: string;
@@ -82,7 +75,7 @@ export class ChatPage implements OnInit, OnDestroy {
 
   async ngOnInit() {
     this.isLoading = true;
-    this.initialScrollDone = false; // Reset del flag
+    this.initialScrollDone = false;
 
     const auth = getAuth();
     this.loggedInUserId = auth.currentUser ? auth.currentUser.uid : null;
@@ -98,8 +91,8 @@ export class ChatPage implements OnInit, OnDestroy {
       this.conversationId = params.get('conversationId');
 
       if (this.conversationId) {
-        await this.loadOtherUserDetails(); // Carica i dettagli dell'altro utente
-        this.loadInitialMessages(); // Carica i primi N messaggi (i più recenti)
+        await this.loadOtherUserDetails();
+        this.loadInitialMessages();
       } else {
         await this.presentFF7Alert('ID conversazione mancante.');
         this.router.navigateByUrl('/home');
@@ -112,8 +105,7 @@ export class ChatPage implements OnInit, OnDestroy {
     if (this.messagesSubscription) {
       this.messagesSubscription.unsubscribe();
     }
-    // IMPORTANTE: Quando si esce dalla chat, si marca come letta.
-    // Questo è il momento ideale per farlo, poiché l'utente ha "visto" i messaggi.
+
     if (this.loggedInUserId && this.conversationId) {
         this.chatService.markMessagesAsRead(this.conversationId, this.loggedInUserId)
             .catch(error => console.error('Errore nel marcare i messaggi come letti in ngOnDestroy:', error));
@@ -126,7 +118,6 @@ export class ChatPage implements OnInit, OnDestroy {
   private async loadOtherUserDetails() {
     if (!this.conversationId || !this.loggedInUserId) return;
 
-    // Sottoscrivi l'Observable per ottenere i dettagli della conversazione
     const conversationDetails = await firstValueFrom(this.chatService.getConversationDetails(this.conversationId));
 
     if (conversationDetails && conversationDetails.participants) {
@@ -137,7 +128,7 @@ export class ChatPage implements OnInit, OnDestroy {
 
         if (userDataFromService) {
           this.otherUser = {
-            uid: userDataFromService.uid || '', // Assicurati che uid non sia undefined
+            uid: userDataFromService.uid || '',
             username: userDataFromService.nickname || userDataFromService.name || 'Utente Sconosciuto',
             displayName: userDataFromService.name || userDataFromService.nickname || 'Utente',
             profilePhotoUrl: userDataFromService.photo || 'assets/immaginiGenerali/default-avatar.jpg',
@@ -172,25 +163,19 @@ export class ChatPage implements OnInit, OnDestroy {
    */
   private loadInitialMessages() {
     if (this.messagesSubscription) {
-      this.messagesSubscription.unsubscribe(); // Rimuovi la vecchia sottoscrizione se esiste
+      this.messagesSubscription.unsubscribe();
     }
-
-    // Sottoscriviti ai messaggi recenti tramite il servizio
     this.messagesSubscription = this.chatService.getMessages(this.conversationId!, this.messagesLimit).subscribe(data => {
-      // Dato che il servizio restituisce i messaggi più recenti ordinati in decrescente
-      // (dal più recente al più vecchio), li invertiamo per visualizzarli cronologicamente.
       this.messages = data.messages.reverse();
-      this.lastVisibleMessageDoc = data.lastVisibleDoc; // Il documento più vecchio di questo batch
-      this.hasMoreMessages = data.hasMore; // Ci sono altri messaggi più vecchi da caricare?
+      this.lastVisibleMessageDoc = data.lastVisibleDoc;
+      this.hasMoreMessages = data.hasMore;
       this.isLoading = false;
 
-      // Scrolla in basso solo la prima volta (dopo il caricamento iniziale)
       if (!this.initialScrollDone) {
         setTimeout(() => {
           this.scrollToBottom();
           this.initialScrollDone = true;
 
-          // Marca i messaggi come letti dopo il caricamento iniziale e lo scroll
           if (this.loggedInUserId && this.conversationId) {
             this.chatService.markMessagesAsRead(this.conversationId, this.loggedInUserId)
               .catch(error => console.error('Errore nel marcare i messaggi come letti dopo caricamento iniziale:', error));
@@ -210,10 +195,8 @@ export class ChatPage implements OnInit, OnDestroy {
    * @param event L'evento di infinite scroll.
    */
   async loadMoreMessages(event: any) {
-    // Non caricare se non ci sono più messaggi o se un caricamento è già in corso,
-    // o se non c'è un documento da cui iniziare (nel caso sia il primo caricamento).
     if (!this.hasMoreMessages || this.isLoadingMoreMessages || !this.lastVisibleMessageDoc) {
-      event.target.complete(); // Completa immediatamente lo spinner
+      event.target.complete();
       return;
     }
 
@@ -221,23 +204,16 @@ export class ChatPage implements OnInit, OnDestroy {
 
     try {
       const oldScrollHeight = (await this.content.getScrollElement()).scrollHeight;
-
-      // Chiamiamo il metodo del servizio per ottenere i messaggi precedenti
       const data = await this.chatService.getOlderMessages(this.conversationId!, this.messagesLimit, this.lastVisibleMessageDoc);
-
-      // Invertiamo i messaggi perché li riceviamo dal più nuovo al più vecchio
-      // e li aggiungiamo all'inizio dell'array esistente
       this.messages = [...data.messages.reverse(), ...this.messages];
-      this.lastVisibleMessageDoc = data.lastVisibleDoc; // Aggiorna il punto di partenza per il prossimo caricamento
-      this.hasMoreMessages = data.hasMore; // Aggiorna lo stato per l'infinite scroll
+      this.lastVisibleMessageDoc = data.lastVisibleDoc;
+      this.hasMoreMessages = data.hasMore;
 
       this.isLoadingMoreMessages = false;
-      event.target.complete(); // Completa lo spinner dell'infinite scroll
+      event.target.complete();
 
-      // Mantiene la posizione dello scroll dopo aver aggiunto i messaggi in alto
-      // Questo impedisce che lo scroll "salti" in cima.
+
       this.content.getScrollElement().then(newEl => {
-        // La nuova altezza sarà maggiore, quindi scrolliamo verso il basso della differenza
         this.content.scrollToPoint(0, newEl.scrollHeight - oldScrollHeight, 0);
       });
 
@@ -249,50 +225,22 @@ export class ChatPage implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Invia un nuovo messaggio nella conversazione.
-   */
  async sendMessage() {
-  // Aggiungiamo un controllo per otherUserId, che è essenziale per getOrCreateConversation
   if (!this.newMessageText.trim() || !this.loggedInUserId || !this.otherUser!.uid!) {
     console.warn('SENDMESSAGE - Impossibile inviare: testo vuoto, utente loggato o destinatario mancante.');
     return;
   }
 
   try {
-    // PASSO 1: Assicurati di avere un conversationId
     if (!this.conversationId) {
       console.log('SENDMESSAGE - conversationId non presente. Tentativo di creare/ottenere la conversazione...');
-      // Questo chiama getOrCreateConversation che gestisce sia la creazione che il recupero
       this.conversationId = await this.chatService.getOrCreateConversation(this.loggedInUserId!, this.otherUser!.uid!);
       console.log(`SENDMESSAGE - conversationId ottenuto: ${this.conversationId}`);
-
-      // ✅ Importante: Dopo aver creato la conversazione, devi iniziare ad ascoltare i messaggi
-      // per questa nuova conversazione. La logica di `loadInitialMessages` si occupa di questo.
-      // Dobbiamo assicurarci che questa sottoscrizione avvenga SOLO quando la conversazione esiste.
-      // E questo `loadInitialMessages` deve essere robusto contro i `serverTimestamp()` non committati.
-      // Data la tua esperienza con l'errore del timestamp, è meglio chiamarlo dopo un breve delay
-      // o assicurarsi che la sottoscrizione sia già attiva e si aggiorni reattivamente.
-      // Se loadInitialMessages è già gestito da ngOnInit che si riattiva quando conversationId cambia
-      // (magari tramite un Subject o simile), allora non servirebbe qui.
-      // Ma il tuo ngOnInit chiama loadInitialMessages solo se conversationId *esiste all'avvio*.
-      // Quindi, se lo creiamo qui, dobbiamo avviarne l'ascolto.
-      // La soluzione più sicura è una sottoscrizione reattiva nell'ngOnInit che reagisca a this.conversationId.
-      // PER ORA, lo mettiamo qui, ma con la consapevolezza dell'errore timestamp.
-      // L'errore del timestamp si presenta se la query cerca di ordinare un campo che è ancora serverTimestamp().
-      // Firebase alla fine lo risolve automaticamente, ma la prima query fallisce.
-      // La soluzione è ignorare questo errore o fare un piccolo ritardo qui.
-      // Per adesso, lo chiamiamo e l'errore "Invalid query" sarà solo al primo invio.
-      this.loadInitialMessages(); // ✅ Ri-attiviamo l'ascolto per la nuova chat ID
+      this.loadInitialMessages();
     }
 
-    // PASSO 2: Invia il messaggio ora che conversationId è garantito esistere
     await this.chatService.sendMessage(this.conversationId, this.loggedInUserId, this.newMessageText.trim());
     this.newMessageText = '';
-
-    // Poiché la sottoscrizione ai messaggi è attiva (grazie a loadInitialMessages),
-    // il nuovo messaggio apparirà automaticamente.
-    // Aspettiamo un breve timeout per permettere al DOM di aggiornarsi e poi scrolliamo in basso.
     setTimeout(() => this.scrollToBottom(), 100);
 
   } catch (error) {
@@ -301,12 +249,9 @@ export class ChatPage implements OnInit, OnDestroy {
   }
 }
 
-  /**
-   * Scorre la chat fino all'ultimo messaggio.
-   */
   scrollToBottom() {
     if (this.content) {
-      this.content.scrollToBottom(300); // Scorrimento animato di 300ms
+      this.content.scrollToBottom(300);
     }
   }
 
@@ -328,16 +273,15 @@ export class ChatPage implements OnInit, OnDestroy {
    */
   shouldShowDate(message: Message, index: number): boolean {
     if (!message || !message.timestamp) {
-      return false; // Gestisci il caso di messaggio o timestamp null
+      return false;
     }
-    // Mostra sempre la data per il primo messaggio
     if (index === 0) {
       return true;
     }
     const currentMessageDate = dayjs(message.timestamp).startOf('day');
     const previousMessage = this.messages[index - 1];
     if (!previousMessage || !previousMessage.timestamp) {
-      return true; // Se il messaggio precedente è problematico o non ha timestamp, mostra la data
+      return true;
     }
     const previousMessageDate = dayjs(previousMessage.timestamp).startOf('day');
     return !currentMessageDate.isSame(previousMessageDate, 'day');
@@ -370,31 +314,29 @@ export class ChatPage implements OnInit, OnDestroy {
    */
   async presentFF7Alert(message: string) {
     const alert = await this.alertCtrl.create({
-      cssClass: 'ff7-alert', // Assicurati di avere questo CSS definito globalmente
+      cssClass: 'ff7-alert',
       header: 'Attenzione',
       message,
       buttons: [
         {
           text: 'OK',
-          cssClass: 'ff7-alert-button', // Assicurati di avere questo CSS definito
+          cssClass: 'ff7-alert-button',
           role: 'cancel'
         }
       ],
       backdropDismiss: true,
       animated: true,
-      mode: 'ios' // O 'md' per Android
+      mode: 'ios'
     });
     await alert.present();
   }
 
   goToOtherUserProfile() {
     if (this.otherUser && this.otherUser.uid) {
-      // CORREZIONE QUI: Usa il percorso corretto dal tuo app.routing.ts
       this.router.navigate(['/profilo-altri-utenti', this.otherUser.uid]);
     } else {
       console.warn('Impossibile navigare al profilo: UID dell\'altro utente non disponibile.');
-      // Opzionale: Mostra un alert all'utente
-      // this.presentFF7Alert('Impossibile visualizzare il profilo di questo utente.');
+      this.presentFF7Alert('Impossibile visualizzare il profilo di questo utente.');
     }
   }
 }
