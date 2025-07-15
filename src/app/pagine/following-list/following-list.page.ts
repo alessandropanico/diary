@@ -102,18 +102,21 @@ export class FollowingListPage implements OnInit, OnDestroy {
     this.usersSubscription = this.followService.getFollowingIds(this.userId!).pipe(
       tap(followingIds => console.log('FLL: getFollowingIds emitted:', followingIds)),
       switchMap(followingIds => {
-        // --- INIZIO MODIFICA QUI ---
-        // Filtra l'ID dell'utente loggato dalla lista di followingIds, se presente
+        // --- QUI NON SERVE PIÙ FILTRARE! ---
+        // Il tuo UsersService (ora FollowService) non dovrebbe più salvare l'ID dell'utente stesso.
+        // Se c'è ancora un documento errato, è un residuo che va pulito dal DB.
+        // Quindi, la riga qui sotto la potresti anche togliere, ma non fa male averla per sicurezza.
         const filteredFollowingIds = followingIds.filter(id => id !== this.loggedInUserId);
         console.log('FLL: followingIds filtrati (escluso loggedInUserId):', filteredFollowingIds);
         // --- FINE MODIFICA QUI ---
 
-        if (filteredFollowingIds.length === 0) { // Usa la lista filtrata
+
+        if (filteredFollowingIds.length === 0) {
           console.log('FLL: Nessun ID seguito (dopo il filtro) trovato. Restituisco lista vuota.');
           return of([]);
         }
 
-        const userObservables = filteredFollowingIds.map(id => { // Usa la lista filtrata
+        const userObservables = filteredFollowingIds.map(id => {
           console.log('FLL: Mappatura ID:', id);
           const userDataObservable = from(this.userDataService.getUserDataById(id)).pipe(
             tap(data => console.log(`FLL: UserData for ${id}:`, data)),
@@ -196,6 +199,23 @@ export class FollowingListPage implements OnInit, OnDestroy {
     });
   }
 
+  // --- AGGIUNGI QUESTA FUNZIONE ALLA TUA CLASSE ---
+  /**
+   * Restituisce l'URL della foto profilo, usando un avatar di default
+   * se l'URL fornito è nullo, vuoto, o un URL generico di Google.
+   * @param photoUrl L'URL della foto profilo dell'utente.
+   * @returns L'URL effettivo dell'immagine da visualizzare.
+   */
+  getUserPhoto(photoUrl: string | null | undefined): string {
+    const defaultGoogleProfilePicture = 'https://lh3.googleusercontent.com/a/ACg8ocK-pW1q9zsWi1DHCcamHuNOTLOvotU44G2v2qtMUtWu3LI0FOE=s96-c';
+
+    if (!photoUrl || photoUrl === '' || photoUrl === defaultGoogleProfilePicture) {
+      return 'assets/immaginiGenerali/default-avatar.jpg';
+    }
+    return photoUrl;
+  }
+  // --- FINE FUNZIONE DA AGGIUNGERE ---
+
   async confirmToggleFollow(targetUserId: string, nickname: string, isCurrentlyFollowing: boolean) {
     console.log(`FLL: confirmToggleFollow chiamato per ${nickname}. isCurrentlyFollowing: ${isCurrentlyFollowing}`);
     const alert = await this.alertCtrl.create({
@@ -242,16 +262,20 @@ export class FollowingListPage implements OnInit, OnDestroy {
     try {
       if (isCurrentlyFollowing) {
         console.log(`FLL: Chiamando unfollowUser(${this.loggedInUserId}, ${targetUserId})`);
+        // Assumendo che followService.unfollowUser ora utilizzi la nuova logica per rimuovere il documento specifico.
         await this.followService.unfollowUser(this.loggedInUserId, targetUserId);
         await this.presentFF7Alert(`Hai smesso di seguire ${this.users.find(u => u.uid === targetUserId)?.nickname || 'Utente'}.`);
         console.log('FLL: unfollowUser completato.');
       } else {
         console.log(`FLL: Chiamando followUser(${this.loggedInUserId}, ${targetUserId})`);
+        // Assumendo che followService.followUser ora utilizzi la nuova logica per creare il documento specifico.
         await this.followService.followUser(this.loggedInUserId, targetUserId);
         await this.presentFF7Alert(`Hai iniziato a seguire ${this.users.find(u => u.uid === targetUserId)?.nickname || 'Utente'}!`);
         console.log('FLL: followUser completato.');
       }
-      // La lista si aggiornerà automaticamente grazie all'onSnapshot nel servizio e alla reattività del pipe
+      // Dopo un follow/unfollow, ricarica la lista per assicurare la coerenza
+      // Anche se l'onSnapshot del servizio potrebbe farlo, un refresh esplicito è più sicuro.
+      this.loadFollowing(); // <-- Aggiunto questo per forzare il ricaricamento
     } catch (error) {
       console.error('FLL: Errore durante l\'operazione di follow/unfollow:', error);
       await this.presentFF7Alert('Si è verificato un errore. Riprova.');
