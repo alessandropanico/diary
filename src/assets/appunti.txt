@@ -7,21 +7,21 @@ Aggiungere chat;
 //METTERE CHE SI ELIMIANO I MESSAGGI,
 //GIORNI IN CUI I MESSAGGI SONO STATI INIVATI (OGGI SE OGGI)
 
-Utilizzare notifiche per mobile;
+Utilizzare notifiche per mobile (Piano blaze...)
 
 Tag e ricerca intelligente per note/task: cerca per parola chiave, categoria, tag;
 Task intelligenti: suggerimenti basati sull’ora/giorno (es. "Hai dimenticato di completare una task ieri");
 
 Tracking umore/giornata: aggiungi una sezione per annotare come ci si sente ogni giorno (magari emoji + breve nota);
+
 Dashboard giornaliera/settimanale: mostra attività completate, note salvate, sveglie usate;
+
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
 Integrazione con AI (anche semplice):
 [suggerimenti per ottimizzare la giornata;
 sintesi delle note;
 generazione automatica di to-do da note vocali.];
-
-Fixare nickname alla registrazione iniziale;
 
 
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
