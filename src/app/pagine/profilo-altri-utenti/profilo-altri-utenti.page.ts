@@ -323,4 +323,19 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
     // L'approccio attuale con `loadedCount` e `checkCompletion` gestirà questo implicitamente
     // quando `subscribeToFollowData` viene chiamato di nuovo.
   }
+
+    /**
+   * Restituisce l'URL della foto profilo, usando un avatar di default
+   * se l'URL fornito è nullo, vuoto, o un URL generico di Google.
+   * @param photoUrl L'URL della foto profilo dell'utente.
+   * @returns L'URL effettivo dell'immagine da visualizzare.
+   */
+  getUserPhoto(photoUrl: string | null | undefined): string {
+    const defaultGoogleProfilePicture = 'https://lh3.googleusercontent.com/a/ACg8ocK-pW1q9zsWi1DHCcamHuNOTLOvotU44G2v2qtMUtWu3LI0FOE=s96-c'; // L'URL che hai identificato
+
+    if (!photoUrl || photoUrl === '' || photoUrl === defaultGoogleProfilePicture) {
+      return 'assets/immaginiGenerali/default-avatar.jpg';
+    }
+    return photoUrl;
+  }
 }

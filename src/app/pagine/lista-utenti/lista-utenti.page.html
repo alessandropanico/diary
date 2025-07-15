@@ -16,9 +16,7 @@
 
   <ng-container *ngIf="!initialLoading">
     <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
-      <ion-refresher-content
-        pullingText="Trascina per aggiornare"
-        refreshingSpinner="circular"
+      <ion-refresher-content pullingText="Trascina per aggiornare" refreshingSpinner="circular"
         refreshingText="Aggiornamento...">
       </ion-refresher-content>
     </ion-refresher>
@@ -26,18 +24,15 @@
     <ion-list *ngIf="users.length > 0; else noUsersFound" class="ff7-list">
       <ion-item *ngFor="let user of users" class="ff7-list-item">
         <ion-avatar slot="start" (click)="goToUserProfile(user.uid)">
-          <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
+          <img [src]="getUserPhoto(user.photo)" alt="Foto profilo" />
         </ion-avatar>
         <ion-label (click)="goToUserProfile(user.uid)">
           <h2>{{ user.nickname }}</h2>
           <p>{{ user.firstName }} {{ user.lastName }}</p>
         </ion-label>
         <ion-buttons slot="end">
-          <ion-button
-            *ngIf="user.uid !== currentUserId"
-            [class.follow-button]="!isFollowing(user.uid)"
-            [class.unfollow-button]="isFollowing(user.uid)"
-            (click)="toggleFollow(user.uid)">
+          <ion-button *ngIf="user.uid !== currentUserId" [class.follow-button]="!isFollowing(user.uid)"
+            [class.unfollow-button]="isFollowing(user.uid)" (click)="toggleFollow(user.uid)">
             {{ isFollowing(user.uid) ? 'Non seguire più' : 'Segui' }}
           </ion-button>
         </ion-buttons>
@@ -45,9 +40,7 @@
     </ion-list>
 
     <ion-infinite-scroll (ionInfinite)="loadUsers($event)">
-      <ion-infinite-scroll-content
-        loadingSpinner="bubbles"
-        loadingText="Caricamento altri utenti...">
+      <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Caricamento altri utenti...">
       </ion-infinite-scroll-content>
     </ion-infinite-scroll>
 

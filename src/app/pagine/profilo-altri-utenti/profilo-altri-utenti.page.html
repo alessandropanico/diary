@@ -21,7 +21,7 @@
     </div>
 
     <ion-avatar class="profile-avatar">
-      <img [src]="profileData.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
+      <img [src]="getUserPhoto(profileData.photo)" alt="Foto profilo" />
     </ion-avatar>
 
     <div class="profile-view">
