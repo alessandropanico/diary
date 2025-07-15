@@ -1,12 +1,10 @@
 import { Component, NgZone, OnInit } from '@angular/core';
 import { AlertController } from '@ionic/angular';
-
+import { Router } from '@angular/router';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCredential, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { getAuth, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { environment } from 'src/environments/environment';
-
 import { UserDataService } from 'src/app/services/user-data.service';
-
 
 const app = initializeApp(environment.firebaseConfig);
 const auth = getAuth(app);
@@ -27,13 +25,26 @@ export class LoginPage implements OnInit {
     private ngZone: NgZone,
     private alertCtrl: AlertController,
     private userDataService: UserDataService,
+    private router: Router,
   ) { }
 
-   ngOnInit() {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      this.user = JSON.parse(storedUser);
-    }
+  ngOnInit() {
+    onAuthStateChanged(auth, firebaseUser => {
+      this.ngZone.run(() => {
+        if (firebaseUser) {
+          this.user = {
+            name: firebaseUser.displayName,
+            email: firebaseUser.email,
+            photoURL: firebaseUser.photoURL,
+            uid: firebaseUser.uid
+          };
+          localStorage.setItem('user', JSON.stringify(this.user));
+        } else {
+          this.user = null;
+          localStorage.removeItem('user');
+        }
+      });
+    });
 
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
@@ -52,42 +63,47 @@ export class LoginPage implements OnInit {
         { theme: 'outline', size: 'large' }
       );
 
-      google.accounts.id.prompt();
+      if (!auth.currentUser) {
+        google.accounts.id.prompt();
+      }
     };
   }
 
-   async handleCredentialResponse(response: any) {
+  async handleCredentialResponse(response: any) {
     try {
       const credential = GoogleAuthProvider.credential(response.credential);
       const userCredential = await signInWithCredential(auth, credential);
       const firebaseUser = userCredential.user;
 
-      this.user = {
-        name: firebaseUser.displayName,
-        email: firebaseUser.email,
-        photoURL: firebaseUser.photoURL,
-        uid: firebaseUser.uid
-      };
+      const fullName = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Nuovo Utente';
+      const nameParts = fullName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      const initialNickname = fullName;
 
-      localStorage.setItem('user', JSON.stringify(this.user));
-
-      // Salva i dati utente su Firestore usando il servizio
       await this.userDataService.saveUserData({
-        name: firebaseUser.displayName,
+        name: fullName,
         email: firebaseUser.email,
-        photoURL: firebaseUser.photoURL,
-        lastLogin: new Date().toISOString() // Esempio: aggiungi la data dell'ultimo login
+        photo: firebaseUser.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
+        nickname: initialNickname,
+        firstName: firstName,
+        lastName: lastName,
+        lastLogin: new Date().toISOString(),
+        createdAt: new Date().toISOString()
       });
 
       const alert = await this.alertCtrl.create({
         header: 'Accesso riuscito',
-        message: `Benvenuto ${this.user.name}`,
+        message: `Benvenuto ${firebaseUser.displayName || firebaseUser.email}`,
         buttons: ['OK'],
         cssClass: 'ff7-alert',
       });
       await alert.present();
 
-      window.location.href = '/profilo';
+      this.ngZone.run(() => {
+        this.router.navigateByUrl('/profilo', { replaceUrl: true });
+      });
+
     } catch (error: any) {
       console.error('Errore durante login Firebase:', error);
       const alert = await this.alertCtrl.create({
@@ -115,13 +131,12 @@ export class LoginPage implements OnInit {
     }
   }
 
- async logout() {
+  async logout() {
     await signOut(auth);
-    this.user = null;
-    localStorage.removeItem('user');
-
-    // Potresti voler anche pulire i dati utente locali se necessario
-    // this.userDataService.clearUserData(); // Se avessi una funzione del genere nel servizio
+    // onAuthStateChanged gestirà l'aggiornamento di this.user e la rimozione dal localStorage.
+    // Non c'è bisogno di farlo manualmente qui.
+    // this.user = null;
+    // localStorage.removeItem('user');
 
     const alert = await this.alertCtrl.create({
       header: 'Logout',
@@ -132,10 +147,7 @@ export class LoginPage implements OnInit {
 
     await alert.present();
 
-    setTimeout(() => {
-      this.renderGoogleButton();
-      window.location.reload();
-    }, 0);
+    this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 
 

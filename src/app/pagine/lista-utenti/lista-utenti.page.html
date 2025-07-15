@@ -24,7 +24,7 @@
     <ion-list *ngIf="users.length > 0; else noUsersFound" class="ff7-list">
       <ion-item *ngFor="let user of users" class="ff7-list-item">
         <ion-avatar slot="start" (click)="goToUserProfile(user.uid)">
-          <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
+        <img [src]="getUserPhoto(user.photo)" alt="Foto profilo" />
         </ion-avatar>
         <ion-label (click)="goToUserProfile(user.uid)">
           <h2>{{ user.nickname }}</h2>

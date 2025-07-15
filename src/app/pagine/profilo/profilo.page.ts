@@ -283,4 +283,6 @@ export class ProfiloPage implements OnInit, OnDestroy {
       this.followingCountSubscription.unsubscribe();
     }
   }
+
+  
 }
