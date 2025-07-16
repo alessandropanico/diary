@@ -279,13 +279,16 @@ export class SvegliePage implements OnInit {
       date.setDate(date.getDate() + 7);
     }
 
+     const relevantAlarm = this.alarms.find(a => a.ids && a.ids.includes(id));
+     const alarmNoteToDisplay = relevantAlarm ? relevantAlarm.note : (message || 'È ora di svegliarsi!');
+
     if (this.isMobile()) {
       try {
         await LocalNotifications.schedule({
           notifications: [{
             id,
             title: "⏰ Sveglia",
-            body: message || "È ora di svegliarsi!",
+            body: alarmNoteToDisplay,
             schedule: { at: date },
             sound: 'assets/sound/lofiAlarm.mp3',
           }]
@@ -297,9 +300,9 @@ export class SvegliePage implements OnInit {
       // Per desktop/browser fallback con setTimeout e audio
       const diff = date.getTime() - Date.now();
       if (diff <= 0) {
-        this.startRinging(dayLabel, message);
+        this.startRinging(dayLabel, alarmNoteToDisplay);
       } else {
-        setTimeout(() => this.startRinging(dayLabel, message), diff);
+        setTimeout(() => this.startRinging(dayLabel, alarmNoteToDisplay), diff);
       }
     }
   }
