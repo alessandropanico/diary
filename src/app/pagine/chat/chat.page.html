@@ -16,7 +16,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content #content class="chat-page-content">
+<ion-content #content class="chat-page-content" [scrollEvents]="true" >
   <div *ngIf="isLoading" class="loading-overlay">
     <ion-spinner name="crescent" color="primary"></ion-spinner>
     <p>Caricamento chat...</p>
@@ -58,4 +58,14 @@
       </ion-item>
     </ion-toolbar>
   </ion-footer>
+
+<ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="showScrollToBottom">
+  <ion-fab-button (click)="scrollToBottom()">
+    <ion-icon name="arrow-down-outline"></ion-icon>
+  </ion-fab-button>
+</ion-fab>
+
+
+
+
 </ion-content>

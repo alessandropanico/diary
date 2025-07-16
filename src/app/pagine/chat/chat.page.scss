@@ -110,7 +110,7 @@ ion-header {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: calc(100vw - 150px); 
+        max-width: calc(100vw - 150px);
       }
     }
 
@@ -193,4 +193,13 @@ ion-header {
 
 .date-divider{
   text-align: center;
+}
+
+ion-fab-button {
+  margin-bottom: 120px;
+  margin-right: 16px;
+  --background: var(--primary-glow);
+  --color: black;
+  box-shadow: 0 0 15px var(--primary-glow);
+  border-radius: 50%;
 }

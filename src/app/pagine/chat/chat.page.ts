@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, AfterViewInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ChatService, ExtendedConversation, Message, UserProfile } from 'src/app/services/chat.service';
 import { getAuth } from 'firebase/auth';
@@ -49,7 +49,7 @@ interface OtherUserChatData {
   styleUrls: ['./chat.page.scss'],
   standalone: false,
 })
-export class ChatPage implements OnInit, OnDestroy {
+export class ChatPage implements OnInit, OnDestroy, AfterViewInit {
 
   @ViewChild(IonContent) content!: IonContent;
   conversationId: string | null = null;
@@ -64,6 +64,8 @@ export class ChatPage implements OnInit, OnDestroy {
   private messagesLimit: number = 20;
   public hasMoreMessages: boolean = true;
   private initialScrollDone: boolean = false;
+  showScrollToBottom: boolean = false;
+  private lastScrollTop = 0;
 
   constructor(
     private route: ActivatedRoute,
@@ -155,6 +157,30 @@ export class ChatPage implements OnInit, OnDestroy {
       this.otherUser = null;
     }
   }
+
+observeScroll() {
+  this.content.ionScroll.subscribe(async () => {
+    const scrollElement = await this.content.getScrollElement();
+    const currentScrollTop = scrollElement.scrollTop;
+    const maxScrollTop = scrollElement.scrollHeight - scrollElement.clientHeight;
+
+    const threshold = 100;
+    const isAtBottom = maxScrollTop - currentScrollTop < threshold;
+    const isScrollingUp = currentScrollTop < this.lastScrollTop;
+
+    if (isScrollingUp && !isAtBottom) {
+      this.showScrollToBottom = true;
+    } else if (isAtBottom) {
+      this.showScrollToBottom = false;
+    }
+
+    this.lastScrollTop = currentScrollTop <= 0 ? 0 : currentScrollTop;
+  });
+}
+
+ngAfterViewInit() {
+  this.observeScroll();
+}
 
 
   /**
