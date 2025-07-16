@@ -1,5 +1,3 @@
-// src/app/pagine/list-task/list-task.page.ts
-
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { TaskService } from 'src/app/services/task.service';
 import { Task } from 'src/app/interfaces/task';
@@ -18,8 +16,7 @@ export class ListTaskPage implements OnInit, OnDestroy {
   tasks: Task[] = [];
   isLoadingTasks = true;
   private tasksSubscription: Subscription | undefined;
-  private authUnsubscribe: (() => void) | undefined; // Per disiscriversi dall'observable di autenticazione
-
+  private authUnsubscribe: (() => void) | undefined;
   constructor(
     private taskService: TaskService,
     private modalCtrl: ModalController,
@@ -27,18 +24,13 @@ export class ListTaskPage implements OnInit, OnDestroy {
   ) { }
 
 async ngOnInit() {
-    // Sottoscrivi alla stream di task dal servizio.
-    // Questo aggiornerà `this.tasks` ogni volta che il BehaviorSubject nel servizio emette un nuovo valore.
     this.tasksSubscription = this.taskService.tasks$.subscribe(tasks => {
-      // Se 'tasks' è null, significa che il caricamento iniziale da Firestore non è ancora completato
-      // o che non c'è un utente autenticato e le task sono in uno stato iniziale non definito.
       if (tasks === null) {
-        this.isLoadingTasks = true; // Mantieni il loading spinner attivo
-        this.tasks = []; // Assicurati che l'array sia vuoto per non visualizzare dati obsoleti
+        this.isLoadingTasks = true;
+        this.tasks = [];
       } else {
-        // Se 'tasks' non è null (è un Task[]), allora i dati sono stati caricati (anche se vuoti).
-        this.tasks = tasks; // Aggiorna le task visualizzate
-        this.isLoadingTasks = false; // Spegni il loading spinner
+        this.tasks = tasks;
+        this.isLoadingTasks = false;
       }
     });
   }
@@ -88,10 +80,8 @@ async ngOnInit() {
 
     } catch (error) {
       console.error('Errore nel caricamento o processamento delle task:', error);
-      this.tasks = []; // Svuota le task in caso di errore grave
+      this.tasks = [];
     } finally {
-      // this.isLoadingTasks viene impostato a false dalla sottoscrizione a `tasks$`
-      // una volta che i dati sono stati emessi.
     }
   }
 
@@ -109,8 +99,6 @@ async ngOnInit() {
       return;
     }
     try {
-      // Il servizio aggiornerà Firestore e poi emetterà il nuovo array di task,
-      // che sarà catturato dalla sottoscrizione in ngOnInit.
       await this.taskService.toggleCompletion(task.id, !task.completed);
     } catch (error) {
       console.error('Errore durante il cambio stato della task:', error);
@@ -138,7 +126,6 @@ async ngOnInit() {
           text: 'Elimina',
           handler: async () => {
             try {
-              // Il servizio aggiornerà Firestore e poi emetterà il nuovo array di task.
               await this.taskService.deleteTask(task.id!);
             } catch (error) {
               console.error('Errore durante l\'eliminazione della task:', error);
