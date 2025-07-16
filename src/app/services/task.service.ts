@@ -20,16 +20,13 @@ import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
   providedIn: 'root'
 })
 export class TaskService {
-  // Inizializziamo con 'null' per indicare che lo stato delle task non è ancora noto.
-  // Solo dopo il primo caricamento (o svuotamento esplicito se non autenticato)
-  // emetteremo un array vuoto o le task caricate.
   private tasksSubject = new BehaviorSubject<Task[] | null>(null);
   tasks$: Observable<Task[] | null> = this.tasksSubject.asObservable();
 
   private db = getFirestore();
   private authStateSubscription: Subscription;
+  private currentTasksSubscription: Subscription | undefined; // Per la sottoscrizione alle task in tempo reale se la aggiungiamo
 
-  // Aggiungi una flag per sapere se il caricamento iniziale è già avvenuto
   private initialLoadCompleted: boolean = false;
 
   constructor() {
@@ -39,11 +36,11 @@ export class TaskService {
     this.authStateSubscription.add(
       onAuthStateChanged(auth, async (user: User | null) => {
         if (user) {
-          await this.loadTasks();
-          this.initialLoadCompleted = true; // Imposta a true dopo il primo caricamento
+          await this.loadTasks(); // Carica le task e processa quelle scadute
+          this.initialLoadCompleted = true;
         } else {
-          this.tasksSubject.next([]); // Solo qui emettiamo un array vuoto se non autenticato
-          this.initialLoadCompleted = true; // Anche se svuotiamo, il caricamento iniziale è "completato"
+          this.tasksSubject.next([]);
+          this.initialLoadCompleted = true;
         }
       })
     );
@@ -52,6 +49,9 @@ export class TaskService {
   ngOnDestroy() {
     if (this.authStateSubscription) {
       this.authStateSubscription.unsubscribe();
+    }
+    if (this.currentTasksSubscription) { // Annulla la sottoscrizione se l'hai aggiunta
+      this.currentTasksSubscription.unsubscribe();
     }
   }
 
@@ -64,28 +64,63 @@ export class TaskService {
     const uid = this.getUserUid();
     if (!uid) {
       console.warn('TaskService: Nessun utente autenticato. Impossibile caricare le task.');
-      // Se non autenticato e non è stato fatto un caricamento iniziale, emetti null, altrimenti svuota
       if (!this.initialLoadCompleted) {
-        this.tasksSubject.next(null); // Mantieni lo stato "non caricato"
+        this.tasksSubject.next(null);
       } else {
-        this.tasksSubject.next([]); // Se già caricato e poi disconnesso, svuota
+        this.tasksSubject.next([]);
       }
       return;
     }
 
     try {
       const tasksCollectionRef = collection(this.db, `users/${uid}/tasks`);
-      const querySnapshot = await getDocs(tasksCollectionRef);
-      const loadedTasks: Task[] = [];
+      const querySnapshot = await getDocs(tasksCollectionRef); // Usa getDocs per un caricamento singolo
+
+      let loadedTasks: Task[] = [];
       querySnapshot.forEach(docSnap => {
         loadedTasks.push({ id: docSnap.id, ...docSnap.data() as Task });
       });
+
+      // ✅ NUOVA LOGICA: Processa le task scadute SUBITO dopo il caricamento
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const tasksToUpdate: Task[] = [];
+      loadedTasks.forEach(task => {
+        if (task.id && !task.completed) {
+          // Assicurati che dueDate sia una stringa di data valida o un oggetto Date
+          const dueDate = new Date(task.dueDate);
+          dueDate.setHours(0, 0, 0, 0); // Normalizza per confronto solo sulla data
+
+          if (dueDate < today) {
+            tasksToUpdate.push(task);
+          }
+        }
+      });
+
+      for (const task of tasksToUpdate) {
+        try {
+          // Chiama direttamente l'update del documento, non usare toggleCompletion qui
+          // per evitare un'emissione aggiuntiva dal BehaviorSubject per ogni task.
+          // toggleCompletion aggiorna il BehaviorSubject, qui vogliamo solo il write.
+          const taskDocRef = doc(this.db, `users/${uid}/tasks`, task.id!);
+          await updateDoc(taskDocRef, { completed: true });
+          // Aggiorna l'oggetto task direttamente in loadedTasks per riflettere il cambiamento prima dell'emissione
+          const index = loadedTasks.findIndex(t => t.id === task.id);
+          if (index !== -1) {
+            loadedTasks[index].completed = true;
+          }
+        } catch (error) {
+          console.error(`Errore durante il marcare la task "${task.name}" scaduta nel servizio:`, error);
+        }
+      }
+
       loadedTasks.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      this.tasksSubject.next(loadedTasks);
+      this.tasksSubject.next(loadedTasks); // Emetti le task aggiornate (incluse quelle appena completate)
+
     } catch (error) {
       console.error('TaskService: Errore durante il caricamento delle task da Firestore:', error);
-      // In caso di errore nel caricamento, potresti voler svuotare le task o gestire l'errore
-      this.tasksSubject.next([]); // Svuota le task in caso di errore di caricamento
+      this.tasksSubject.next([]);
     }
   }
 
@@ -100,7 +135,7 @@ export class TaskService {
       const tasksCollectionRef = collection(this.db, `users/${uid}/tasks`);
       const docRef = await addDoc(tasksCollectionRef, task);
 
-      const currentTasks = this.tasksSubject.value || []; // Gestisce il caso in cui sia ancora null
+      const currentTasks = this.tasksSubject.value || [];
       this.tasksSubject.next([...currentTasks, { id: docRef.id, ...task }]);
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiunta della task a Firestore:', error);
