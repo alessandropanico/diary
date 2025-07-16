@@ -317,32 +317,35 @@ export class SvegliePage implements OnInit {
 
   this.playRingingAudio(fileName);
 
-    const overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100vw';
-    overlay.style.height = '100vh';
-    overlay.style.background = 'rgba(0,0,0,0.7)';
-    overlay.style.display = 'flex';
-    overlay.style.alignItems = 'center';
-    overlay.style.justifyContent = 'center';
-    overlay.style.zIndex = '9999';
+  // Crea l'overlay e il modale con gli stili inline originali
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100vw';
+  overlay.style.height = '100vh';
+  overlay.style.background = 'rgba(0,0,0,0.7)';
+  overlay.style.display = 'flex';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.zIndex = '9999';
+  overlay.classList.add('ff7-alarm-overlay'); // Nuova classe per l'overlay, per override
 
-    const modal = document.createElement('div');
-    modal.style.background = '#222';
-    modal.style.color = '#0ff';
-    modal.style.padding = '20px';
-    modal.style.borderRadius = '10px';
-    modal.style.textAlign = 'start';
-    modal.style.fontFamily = "'Courier New', Courier, monospace";
-    modal.style.width = '300px';
+  const modal = document.createElement('div');
+  modal.style.background = '#222';
+  modal.style.color = '#0ff';
+  modal.style.padding = '20px';
+  modal.style.borderRadius = '10px';
+  modal.style.textAlign = 'start';
+  modal.style.fontFamily = "'Courier New', Courier, monospace";
+  modal.style.width = '300px';
+  modal.classList.add('ff7-alarm-modal'); // Nuova classe per il modale, per override
 
-    modal.innerHTML = `
-    <h2>Sveglia!</h2>
-    <h3>${dayLabel}</h3>
-    <p>${message || 'È ora di svegliarsi!'}</p>
-    <button>Ferma</button>
+  modal.innerHTML = `
+    <h2 class="ff7-alarm-title">Sveglia!</h2>
+    <h3 class="ff7-alarm-subtitle">${dayLabel}</h3>
+    <p class="ff7-alarm-message">${message || 'È ora di svegliarsi!'}</p>
+    <button class="ff7-alarm-button">Ferma</button>
   `;
 
     overlay.appendChild(modal);
