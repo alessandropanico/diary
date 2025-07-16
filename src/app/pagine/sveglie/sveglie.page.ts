@@ -88,7 +88,6 @@ export class SvegliePage {
     if (this.alarmSoundFile) {
       try {
         await this.saveSound(this.alarmSoundFile);
-        console.log('File audio salvato:', this.alarmSoundFile.name);
       } catch (error) {
         console.warn('Errore salvataggio file audio:', error);
       }
@@ -117,7 +116,6 @@ export class SvegliePage {
             time: this.alarmTime,
             note: this.alarmNote || 'Sveglia!',
           });
-          console.log('Sveglia nativa Android impostata');
         } catch (error) {
           console.warn('Errore sveglia nativa, uso notifiche locali', error);
           await this.scheduleNotification(id, alarmDate, this.alarmNote || 'Sveglia!', this.weekDays[i]);
@@ -156,7 +154,6 @@ export class SvegliePage {
     if (this.alarmSoundFile) {
       try {
         await this.saveSound(this.alarmSoundFile);
-        console.log('File audio salvato:', this.alarmSoundFile.name);
       } catch (error) {
         console.warn('Errore salvataggio file audio:', error);
       }
@@ -350,8 +347,6 @@ export class SvegliePage {
         overlay.remove();
       });
     }
-
-    console.log('Modal mostrato');
   }
 
   stopRingingAudio() {

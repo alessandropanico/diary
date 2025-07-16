@@ -137,7 +137,6 @@ export class ChatPage implements OnInit, OnDestroy {
             name: userDataFromService.name,
             photo: userDataFromService.photo
           };
-          console.log('ChatPage: Dettagli altro utente caricati:', this.otherUser);
         } else {
           console.warn('ChatPage: Dati utente non trovati per ID:', otherParticipantId);
           this.otherUser = {
@@ -233,9 +232,7 @@ export class ChatPage implements OnInit, OnDestroy {
 
   try {
     if (!this.conversationId) {
-      console.log('SENDMESSAGE - conversationId non presente. Tentativo di creare/ottenere la conversazione...');
       this.conversationId = await this.chatService.getOrCreateConversation(this.loggedInUserId!, this.otherUser!.uid!);
-      console.log(`SENDMESSAGE - conversationId ottenuto: ${this.conversationId}`);
       this.loadInitialMessages();
     }
 

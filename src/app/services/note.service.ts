@@ -46,7 +46,6 @@ export class NoteService {
     user(this.auth).subscribe(firebaseUser => {
       this.userId = firebaseUser ? firebaseUser.uid : null;
       if (this.userId) {
-        console.log('NoteService: Utente autenticato con UID:', this.userId);
         this.initializeDataListeners();
       } else {
         console.warn('NoteService: Utente non autenticato. Tentativo di accesso anonimo.');
@@ -80,7 +79,6 @@ export class NoteService {
       }),
       tap(playlists => {
         this._playlistsSubject.next(playlists);
-        console.log('Playlists caricate:', playlists);
       }),
       catchError(error => {
         console.error('Errore nel caricamento delle playlist da Firestore:', error);
@@ -95,7 +93,6 @@ export class NoteService {
       map(notes => notes as Note[]),
       tap(notes => {
         this._notesSubject.next(notes);
-        console.log('Note caricate:', notes);
         this._isLoading.next(false);
       }),
       catchError(error => {
@@ -259,7 +256,6 @@ export class NoteService {
   async signInAnonymously(): Promise<void> {
     try {
       const userCredential = await signInAnonymously(this.auth);
-      console.log('Accesso anonimo riuscito:', userCredential.user.uid);
     } catch (error) {
       console.error('Errore accesso anonimo:', error);
       throw error;
@@ -269,7 +265,6 @@ export class NoteService {
   async signOut(): Promise<void> {
     try {
       await signOut(this.auth);
-      console.log('Logout effettuato.');
       this.userId = null;
       this._notesSubject.next([]);
       this._playlistsSubject.next([]);

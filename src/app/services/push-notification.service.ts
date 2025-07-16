@@ -48,8 +48,6 @@ export class ChatNotificationService implements OnDestroy {
 
   public setCurrentActiveChat(chatId: string | null) {
     this.currentActiveChatId = chatId;
-    console.log(`ChatNotificationService: Chat attiva impostata a: ${chatId}`);
-
     if (this.currentUserId && this.currentActiveChatId) {
       this.chatService.markMessagesAsRead(this.currentActiveChatId, this.currentUserId)
         .catch((error: any) => console.error('Errore nel marcare i messaggi come letti all\'ingresso chat:', error));
@@ -69,7 +67,6 @@ export class ChatNotificationService implements OnDestroy {
         this.currentUserId = user ? user.uid : null;
 
         if (this.currentUserId) {
-          console.log('ChatNotificationService: Ascolto conversazioni per utente:', this.currentUserId);
           return this.chatService.getUserConversations(this.currentUserId).pipe(
             tap((conversations: ConversationDocument[]) => this.checkForNewMessagesAndPlaySound(conversations)),
             switchMap((conversations: ConversationDocument[]) => {
@@ -78,7 +75,6 @@ export class ChatNotificationService implements OnDestroy {
               }
 
               const unreadCountsObservables: Observable<number>[] = conversations.map(conv => {
-                // Assumi che Timestamp sia un tipo di Firebase o un oggetto con toMillis()
                 const lastReadByMe = conv.lastRead?.[this.currentUserId!] ?? null;
                 return from(this.chatService.countUnreadMessages(conv.id, this.currentUserId!, lastReadByMe)).pipe(
                   catchError(err => {
@@ -108,14 +104,12 @@ export class ChatNotificationService implements OnDestroy {
           this.unreadCount$.next(0);
           this.lastKnownConversations = {};
           this.currentActiveChatId = null;
-          console.log('User logged out, resetting notification state.');
           return of(0);
         }
       })
     ).subscribe({
       next: (totalUnread: number) => {
         this.unreadCount$.next(totalUnread);
-        console.log('ChatNotificationService: unreadCount$ aggiornato a:', totalUnread);
       },
       error: (err) => {
         console.error('ChatNotificationService: Errore nella pipeline principale (authSubscription):', err);
@@ -176,11 +170,9 @@ export class ChatNotificationService implements OnDestroy {
 
   incrementUnread(chatId: string) {
     this.unreadMessages[chatId] = (this.unreadMessages[chatId] || 0) + 1;
-    console.log(`ChatNotificationService: Incrementato unread per ${chatId} a ${this.unreadMessages[chatId]}`);
   }
 
   clearUnread(chatId: string) {
     delete this.unreadMessages[chatId];
-    console.log(`ChatNotificationService: Azzerato unread per ${chatId}`);
   }
 }

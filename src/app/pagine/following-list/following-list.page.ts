@@ -30,12 +30,9 @@ export class FollowingListPage implements OnInit, OnDestroy {
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef
   ) {
-    console.log('FLL: Costruttore chiamato.');
   }
 
   ngOnInit() {
-    console.log('FLL: ngOnInit chiamato.');
-
     this.authSubscription = from(
       new Promise<User | null>(resolve => {
         const unsubscribe = onAuthStateChanged(getAuth(), user => {
@@ -47,7 +44,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
       take(1),
       tap(user => {
         this.loggedInUserId = user ? user.uid : null;
-        console.log('FLL: onAuthStateChanged (via from/take(1)) - loggedInUserId:', this.loggedInUserId);
         this.cdr.detectChanges();
       }),
       catchError(err => {
@@ -61,7 +57,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
     ).subscribe(() => {
       this.route.paramMap.subscribe(params => {
         this.userId = params.get('id');
-        console.log('FLL: paramMap subscription - userId dal parametro:', this.userId);
         if (this.userId) {
           this.loadFollowing();
         } else {
@@ -77,11 +72,9 @@ export class FollowingListPage implements OnInit, OnDestroy {
   }
 
   loadFollowing() {
-    console.log('FLL: loadFollowing() chiamato. Current userId:', this.userId, 'loggedInUserId:', this.loggedInUserId);
     this.ngZone.run(() => {
       this.isLoading = true;
       this.users = [];
-      console.log('FLL: isLoading impostato a true, users resettati.');
       this.cdr.detectChanges();
     });
 
@@ -96,7 +89,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
 
     if (this.usersSubscription) {
       this.usersSubscription.unsubscribe();
-      console.log('FLL: Sottoscrizione precedente annullata.');
     }
 
     this.usersSubscription = this.followService.getFollowingIds(this.userId!).pipe(
@@ -107,17 +99,14 @@ export class FollowingListPage implements OnInit, OnDestroy {
         // Se c'è ancora un documento errato, è un residuo che va pulito dal DB.
         // Quindi, la riga qui sotto la potresti anche togliere, ma non fa male averla per sicurezza.
         const filteredFollowingIds = followingIds.filter(id => id !== this.loggedInUserId);
-        console.log('FLL: followingIds filtrati (escluso loggedInUserId):', filteredFollowingIds);
         // --- FINE MODIFICA QUI ---
 
 
         if (filteredFollowingIds.length === 0) {
-          console.log('FLL: Nessun ID seguito (dopo il filtro) trovato. Restituisco lista vuota.');
           return of([]);
         }
 
         const userObservables = filteredFollowingIds.map(id => {
-          console.log('FLL: Mappatura ID:', id);
           const userDataObservable = from(this.userDataService.getUserDataById(id)).pipe(
             tap(data => console.log(`FLL: UserData for ${id}:`, data)),
             catchError(err => {
@@ -149,7 +138,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
           );
         });
 
-        console.log('FLL: Combinando tutti gli userObservables con forkJoin...');
         return forkJoin(userObservables).pipe(
           map(results => results.filter(user => user !== null)),
           tap(finalUsers => console.log('FLL: Risultato finale forkJoin (utenti filtrati):', finalUsers))
@@ -161,7 +149,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
         this.ngZone.run(() => {
           this.isLoading = false;
           this.users = [];
-          console.log('FLL: isLoading impostato a false a causa di errore principale, users resettati.');
           this.cdr.detectChanges();
         });
         this.presentFF7Alert('Errore nel caricamento dei seguiti. Riprova.');
@@ -172,8 +159,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
         this.ngZone.run(() => {
           this.users = users;
           this.isLoading = false;
-          console.log('FLL: Sottoscrizione NEXT: Utenti caricati:', this.users);
-          console.log('FLL: isLoading impostato a false. Fine caricamento.');
           this.cdr.detectChanges();
         });
       },
@@ -181,17 +166,14 @@ export class FollowingListPage implements OnInit, OnDestroy {
         console.error('FLL: Sottoscrizione ERROR: Errore finale:', err);
         this.ngZone.run(() => {
           this.isLoading = false;
-          console.log('FLL: isLoading impostato a false a causa di errore nella sottoscrizione.');
           this.cdr.detectChanges();
         });
         this.presentFF7Alert('Errore grave nel caricamento dei seguiti.');
       },
       complete: () => {
-        console.log('FLL: Sottoscrizione COMPLETA.');
         this.ngZone.run(() => {
           if (this.isLoading) {
             this.isLoading = false;
-            console.log('FLL: Sottoscrizione COMPLETA: isLoading impostato a false (fallback).');
             this.cdr.detectChanges();
           }
         });
@@ -216,7 +198,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
   // --- FINE FUNZIONE DA AGGIUNGERE ---
 
   async confirmToggleFollow(targetUserId: string, nickname: string, isCurrentlyFollowing: boolean) {
-    console.log(`FLL: confirmToggleFollow chiamato per ${nickname}. isCurrentlyFollowing: ${isCurrentlyFollowing}`);
     const alert = await this.alertCtrl.create({
       cssClass: 'ff7-alert',
       header: isCurrentlyFollowing ? 'Smetti di seguire?' : 'Segui utente?',
@@ -232,7 +213,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
           text: isCurrentlyFollowing ? 'Smetti' : 'Segui',
           cssClass: isCurrentlyFollowing ? 'ff7-alert-button danger-button' : 'ff7-alert-button primary-button',
           handler: async () => {
-            console.log(`FLL: Conferma toggle follow per ${nickname}.`);
             await this.toggleFollow(targetUserId, isCurrentlyFollowing);
           },
         },
@@ -245,8 +225,6 @@ export class FollowingListPage implements OnInit, OnDestroy {
   }
 
   async toggleFollow(targetUserId: string, isCurrentlyFollowing: boolean) {
-    console.log(`FLL: toggleFollow chiamato. Target ID: ${targetUserId}, isCurrentlyFollowing: ${isCurrentlyFollowing}`);
-    console.log('FLL: loggedInUserId:', this.loggedInUserId);
 
     if (!this.loggedInUserId) {
       await this.presentFF7Alert('Devi essere loggato per eseguire questa azione.');
@@ -260,20 +238,12 @@ export class FollowingListPage implements OnInit, OnDestroy {
 
     try {
       if (isCurrentlyFollowing) {
-        console.log(`FLL: Chiamando unfollowUser(${this.loggedInUserId}, ${targetUserId})`);
-        // Assumendo che followService.unfollowUser ora utilizzi la nuova logica per rimuovere il documento specifico.
         await this.followService.unfollowUser(this.loggedInUserId, targetUserId);
         await this.presentFF7Alert(`Hai smesso di seguire ${this.users.find(u => u.uid === targetUserId)?.nickname || 'Utente'}.`);
-        console.log('FLL: unfollowUser completato.');
       } else {
-        console.log(`FLL: Chiamando followUser(${this.loggedInUserId}, ${targetUserId})`);
-        // Assumendo che followService.followUser ora utilizzi la nuova logica per creare il documento specifico.
         await this.followService.followUser(this.loggedInUserId, targetUserId);
         await this.presentFF7Alert(`Hai iniziato a seguire ${this.users.find(u => u.uid === targetUserId)?.nickname || 'Utente'}!`);
-        console.log('FLL: followUser completato.');
       }
-      // Dopo un follow/unfollow, ricarica la lista per assicurare la coerenza
-      // Anche se l'onSnapshot del servizio potrebbe farlo, un refresh esplicito è più sicuro.
       this.loadFollowing(); // <-- Aggiunto questo per forzare il ricaricamento
     } catch (error) {
       console.error('FLL: Errore durante l\'operazione di follow/unfollow:', error);
@@ -282,18 +252,14 @@ export class FollowingListPage implements OnInit, OnDestroy {
   }
 
   goToUserProfile(userId: string) {
-    console.log('FLL: goToUserProfile chiamato per ID:', userId);
     if (userId === this.loggedInUserId) {
-      console.log('FLL: Navigazione a /profilo (profilo proprio).');
       this.router.navigate(['/profilo']);
     } else {
-      console.log('FLL: Navigazione a /profilo-altri-utenti/', userId);
       this.router.navigate(['/profilo-altri-utenti', userId]);
     }
   }
 
   async presentFF7Alert(message: string) {
-    console.log('FLL: Presenting FF7 Alert:', message);
     const alert = await this.alertCtrl.create({
       cssClass: 'ff7-alert',
       header: 'Notifica',
@@ -313,14 +279,11 @@ export class FollowingListPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    console.log('FLL: ngOnDestroy chiamato. Annullamento sottoscrizioni.');
     if (this.usersSubscription) {
       this.usersSubscription.unsubscribe();
-      console.log('FLL: usersSubscription annullata.');
     }
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
-      console.log('FLL: authSubscription annullata.');
     }
   }
 

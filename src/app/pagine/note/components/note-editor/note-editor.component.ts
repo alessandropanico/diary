@@ -94,10 +94,8 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       if (this.note) {
         await firstValueFrom(this.noteService.updateNote(noteDataToSend as Note));
-        console.log('Nota aggiornata con successo:', noteDataToSend.id);
       } else {
         await firstValueFrom(this.noteService.addNote(noteDataToSend as Note));
-        console.log('Nota aggiunta con successo:', noteDataToSend.id);
       }
       this.noteAudioBase64 = undefined;
       this.modalCtrl.dismiss({ note: noteDataToSend }, 'save');
@@ -121,7 +119,6 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             if (this.note && this.note.id) {
               try {
                 await firstValueFrom(this.noteService.deleteNote(this.note.id));
-                console.log('Nota eliminata con successo:', this.note.id);
                 this.modalCtrl.dismiss({ note: this.note }, 'delete');
               } catch (error) {
                 console.error('Errore durante l\'eliminazione della nota:', error);
@@ -173,14 +170,12 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
               };
               try {
                 await firstValueFrom(this.noteService.updateNote(updatedNote));
-                console.log(`Nota spostata con successo alla playlist ${selectedPlaylistId}`);
                 this.cdr.detectChanges();
                 this.modalCtrl.dismiss({ note: updatedNote }, 'move');
               } catch (error) {
                 console.error('Errore durante lo spostamento della nota:', error);
               }
             } else if (this.note?.playlistId === selectedPlaylistId) {
-              console.log('La nota è già in questa playlist.');
               return true;
             }
             return true;

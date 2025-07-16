@@ -39,7 +39,6 @@ export class FollowService {
       const followingDocRef = doc(this.firestore, `users/${currentUserId}/following/${followedUserId}`);
       await setDoc(followingDocRef, { timestamp: new Date().toISOString() });
 
-      console.log(`FollowService: Utente ${currentUserId} ha iniziato a seguire ${followedUserId}`);
     } catch (error) {
       console.error(`FollowService: Errore durante followUser tra ${currentUserId} e ${followedUserId}:`, error);
       throw error; // Rilancia l'errore per essere gestito dal componente chiamante
@@ -54,7 +53,6 @@ export class FollowService {
    */
   // All'interno di follow.service.ts
   async unfollowUser(followerId: string, followedId: string): Promise<void> {
-    console.log(`FollowService: unfollowUser - followerId: ${followerId}, followedId: ${followedId}`);
     if (!followerId || !followedId) {
       console.warn('FollowService: unfollowUser chiamato con ID mancanti.');
       throw new Error('ID follower o followed mancanti per unfollow.');
@@ -82,14 +80,12 @@ export class FollowService {
 
         if (followerDoc.exists()) {
           transaction.delete(followerRef);
-          console.log(`FollowService: Eliminato doc: users/${followerId}/following/${followedId}`);
         } else {
           console.warn(`FollowService: Documento users/${followerId}/following/${followedId} non esiste per l'eliminazione.`);
         }
 
         if (followedDoc.exists()) {
           transaction.delete(followedRef);
-          console.log(`FollowService: Eliminato doc: users/${followedId}/followers/${followerId}`);
         } else {
           console.warn(`FollowService: Documento users/${followedId}/followers/${followerId} non esiste per l'eliminazione.`);
         }
@@ -99,17 +95,14 @@ export class FollowService {
           transaction.update(followerUserRef, {
             followingCount: increment(-1)
           });
-          console.log(`FollowService: Decrementato followingCount per ${followerId}`);
         }
 
         if (followedDoc.exists()) { // Contatore "followers" per chi viene smesso di seguire
           transaction.update(followedUserRef, {
             followersCount: increment(-1)
           });
-          console.log(`FollowService: Decrementato followersCount per ${followedId}`);
         }
       });
-      console.log(`FollowService: unfollowUser completato con successo per ${followerId} -> ${followedId}.`);
     } catch (error) {
       console.error(`FollowService: Errore nella transazione unfollowUser per ${followerId} -> ${followedId}:`, error);
       throw error; // Rilancia l'errore affinché il componente lo possa catturare
@@ -133,7 +126,6 @@ export class FollowService {
       const unsubscribe = onSnapshot(docRef, docSnap => {
         // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
-          console.log(`FollowService: isFollowing onSnapshot - ${currentUserId} follows ${targetUserId}: ${docSnap.exists()}`);
           observer.next(docSnap.exists());
         });
       }, error => {
@@ -144,7 +136,6 @@ export class FollowService {
         });
       });
       return () => { // Funzione di cleanup
-        console.log(`FollowService: isFollowing - Unsubscribing from ${currentUserId}/${targetUserId} snapshot.`);
         unsubscribe();
       };
     });
@@ -164,20 +155,16 @@ export class FollowService {
     const q = query(followersCollectionRef);
     return new Observable<number>(observer => {
       const unsubscribe = onSnapshot(q, snapshot => {
-        // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
-          console.log(`FollowService: getFollowersCount onSnapshot per ${userId}: ${snapshot.size}`);
           observer.next(snapshot.size);
         });
       }, error => {
-        // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
           console.error(`FollowService: Errore in getFollowersCount onSnapshot per ${userId}:`, error);
           observer.error(error);
         });
       });
       return () => {
-        console.log(`FollowService: getFollowersCount - Unsubscribing from ${userId} followers snapshot.`);
         unsubscribe();
       };
     });
@@ -199,7 +186,6 @@ export class FollowService {
       const unsubscribe = onSnapshot(q, snapshot => {
         // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
-          console.log(`FollowService: getFollowingCount onSnapshot per ${userId}: ${snapshot.size}`);
           observer.next(snapshot.size);
         });
       }, error => {
@@ -210,7 +196,6 @@ export class FollowService {
         });
       });
       return () => {
-        console.log(`FollowService: getFollowingCount - Unsubscribing from ${userId} following snapshot.`);
         unsubscribe();
       };
     });
@@ -233,7 +218,6 @@ export class FollowService {
         // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
           const ids = snapshot.docs.map(doc => doc.id);
-          console.log(`FollowService: getFollowersIds onSnapshot per ${userId}:`, ids);
           observer.next(ids);
         });
       }, error => {
@@ -244,7 +228,6 @@ export class FollowService {
         });
       });
       return () => {
-        console.log(`FollowService: getFollowersIds - Unsubscribing from ${userId} followers snapshot.`);
         unsubscribe();
       };
     });
@@ -267,7 +250,6 @@ export class FollowService {
         // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
           const ids = snapshot.docs.map(doc => doc.id);
-          console.log(`FollowService: getFollowingIds onSnapshot per ${userId}:`, ids);
           observer.next(ids);
         });
       }, error => {
@@ -278,7 +260,6 @@ export class FollowService {
         });
       });
       return () => {
-        console.log(`FollowService: getFollowingIds - Unsubscribing from ${userId} following snapshot.`);
         unsubscribe();
       };
     });

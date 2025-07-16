@@ -31,11 +31,9 @@ export class FollowersListPage implements OnInit, OnDestroy {
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef // INJECT ChangeDetectorRef
   ) {
-    console.log('FLLW: Costruttore chiamato.'); // Modificato prefisso per chiarezza
   }
 
   ngOnInit() {
-    console.log('FLLW: ngOnInit chiamato.'); // Modificato prefisso
 
     // 1. Ottieni l'ID dell'utente loggato in modo reattivo e una tantum
     this.authSubscription = from(
@@ -49,7 +47,6 @@ export class FollowersListPage implements OnInit, OnDestroy {
       take(1),
       tap(user => {
         this.loggedInUserId = user ? user.uid : null;
-        console.log('FLLW: onAuthStateChanged (via from/take(1)) - loggedInUserId:', this.loggedInUserId); // Modificato prefisso
         this.cdr.detectChanges(); // Forza un tick del change detection
       }),
       catchError(err => {
@@ -64,7 +61,6 @@ export class FollowersListPage implements OnInit, OnDestroy {
       // 2. Iscriviti ai parametri della rotta una volta che loggedInUserId è disponibile.
       this.route.paramMap.subscribe(params => {
         this.userId = params.get('id');
-        console.log('FLLW: paramMap subscription - userId dal parametro:', this.userId); // Modificato prefisso
         if (this.userId) {
           this.loadFollowers();
         } else {
@@ -80,11 +76,9 @@ export class FollowersListPage implements OnInit, OnDestroy {
   }
 
   loadFollowers() {
-    console.log('FLLW: loadFollowers() chiamato. Current userId:', this.userId, 'loggedInUserId:', this.loggedInUserId); // Modificato prefisso
     this.ngZone.run(() => {
       this.isLoading = true;
       this.users = []; // Resetta la lista per mostrare lo spinner
-      console.log('FLLW: isLoading impostato a true, users resettati.'); // Modificato prefisso
       this.cdr.detectChanges(); // Forza aggiornamento UI per mostrare spinner
     });
 
@@ -99,19 +93,16 @@ export class FollowersListPage implements OnInit, OnDestroy {
 
     if (this.usersSubscription) {
       this.usersSubscription.unsubscribe();
-      console.log('FLLW: Sottoscrizione precedente annullata.'); // Modificato prefisso
     }
 
     this.usersSubscription = this.followService.getFollowersIds(this.userId!).pipe(
       tap(followerIds => console.log('FLLW: getFollowersIds emitted:', followerIds)), // Modificato prefisso
       switchMap(followerIds => {
         if (followerIds.length === 0) {
-          console.log('FLLW: Nessun ID follower trovato. Restituisco lista vuota.'); // Modificato prefisso
           return of([]); // Ritorna un Observable di un array vuoto
         }
 
         const userObservables = followerIds.map(id => {
-          console.log('FLLW: Mappatura ID:', id); // Modificato prefisso
           const userDataObservable = from(this.userDataService.getUserDataById(id)).pipe(
             tap(data => console.log(`FLLW: UserData for ${id}:`, data)), // Modificato prefisso
             catchError(err => {
@@ -145,7 +136,6 @@ export class FollowersListPage implements OnInit, OnDestroy {
           );
         });
 
-        console.log('FLLW: Combinando tutti gli userObservables con forkJoin...'); // Modificato prefisso
         return forkJoin(userObservables).pipe(
           map(results => results.filter(user => user !== null)),
           tap(finalUsers => console.log('FLLW: Risultato finale forkJoin (utenti filtrati):', finalUsers)) // Modificato prefisso
@@ -157,7 +147,6 @@ export class FollowersListPage implements OnInit, OnDestroy {
         this.ngZone.run(() => {
           this.isLoading = false;
           this.users = [];
-          console.log('FLLW: isLoading impostato a false a causa di errore principale, users resettati.'); // Modificato prefisso
           this.cdr.detectChanges();
         });
         this.presentFF7Alert('Errore nel caricamento dei follower. Riprova.');
@@ -168,8 +157,6 @@ export class FollowersListPage implements OnInit, OnDestroy {
         this.ngZone.run(() => {
           this.users = users;
           this.isLoading = false;
-          console.log('FLLW: Sottoscrizione NEXT: Utenti caricati:', this.users); // Modificato prefisso
-          console.log('FLLW: isLoading impostato a false. Fine caricamento.'); // Modificato prefisso
           this.cdr.detectChanges();
         });
       },
@@ -177,17 +164,14 @@ export class FollowersListPage implements OnInit, OnDestroy {
         console.error('FLLW: Sottoscrizione ERROR: Errore finale:', err); // Modificato prefisso
         this.ngZone.run(() => {
           this.isLoading = false;
-          console.log('FLLW: isLoading impostato a false a causa di errore nella sottoscrizione.'); // Modificato prefisso
           this.cdr.detectChanges();
         });
         this.presentFF7Alert('Errore grave nel caricamento dei follower.');
       },
       complete: () => {
-        console.log('FLLW: Sottoscrizione COMPLETA.'); // Modificato prefisso
         this.ngZone.run(() => {
           if (this.isLoading) {
             this.isLoading = false;
-            console.log('FLLW: Sottoscrizione COMPLETA: isLoading impostato a false (fallback).'); // Modificato prefisso
             this.cdr.detectChanges();
           }
         });
@@ -196,7 +180,6 @@ export class FollowersListPage implements OnInit, OnDestroy {
   }
 
   async confirmRemoveFollower(followerId: string, nickname: string) {
-    console.log(`FLLW: confirmRemoveFollower chiamato per ${nickname}.`); // Modificato prefisso
     const alert = await this.alertCtrl.create({
       cssClass: 'ff7-alert',
       header: 'Conferma Rimozione',
@@ -212,7 +195,6 @@ export class FollowersListPage implements OnInit, OnDestroy {
           text: 'Rimuovi',
           cssClass: 'ff7-alert-button danger-button',
           handler: async () => {
-            console.log(`FLLW: Conferma rimozione follower per ${nickname}.`); // Modificato prefisso
             await this.removeFollower(followerId);
           },
         },
@@ -225,8 +207,6 @@ export class FollowersListPage implements OnInit, OnDestroy {
   }
 
   async removeFollower(followerId: string) {
-    console.log(`FLLW: removeFollower chiamato. Follower ID da rimuovere: ${followerId}.`); // Modificato prefisso
-    console.log('FLLW: loggedInUserId (tuo ID):', this.loggedInUserId); // Modificato prefisso
 
     if (!this.loggedInUserId) {
       await this.presentFF7Alert('Devi essere loggato per eseguire questa azione.');
@@ -245,13 +225,11 @@ export class FollowersListPage implements OnInit, OnDestroy {
 
 
      try {
-    console.log(`FLLW: Chiamando unfollowUser(${followerId}, ${this.loggedInUserId}) per rimuovere il follower.`);
     await this.followService.unfollowUser(followerId, this.loggedInUserId);
     // Se arriviamo qui, la Promise di unfollowUser si è risolta senza lanciare un errore.
     // Tuttavia, il tuo log precedente mostra un errore catturato.
     // Dobbiamo capire DOVE avviene l'errore.
     await this.presentFF7Alert(`${this.users.find(u => u.uid === followerId)?.nickname || 'Utente'} rimosso dai tuoi follower.`);
-    console.log('FLLW: unfollowUser per rimozione follower completato.');
   } catch (error) {
     // QUESTO È IL PUNTO CRUCIALE: STAMPA L'OGGETTO ERRORE COMPLETO
     console.error('FLLW: Errore CATTURATO durante la rimozione del follower:', error);
@@ -265,7 +243,6 @@ export class FollowersListPage implements OnInit, OnDestroy {
 
   // Nuova funzione per gestire il toggle di follow da questa pagina (se presente in UI)
   async toggleFollowFromFollowersList(targetUserId: string, isCurrentlyFollowing: boolean) {
-    console.log(`FLLW: toggleFollowFromFollowersList chiamato per ${targetUserId}. isCurrentlyFollowing: ${isCurrentlyFollowing}`);
     if (!this.loggedInUserId) {
         await this.presentFF7Alert('Devi essere loggato per eseguire questa azione.');
         return;
@@ -277,17 +254,12 @@ export class FollowersListPage implements OnInit, OnDestroy {
 
     try {
         if (isCurrentlyFollowing) {
-            console.log(`FLLW: Chiamando unfollowUser(${this.loggedInUserId}, ${targetUserId})`);
             await this.followService.unfollowUser(this.loggedInUserId, targetUserId);
             await this.presentFF7Alert(`Hai smesso di seguire ${this.users.find(u => u.uid === targetUserId)?.nickname || 'Utente'}.`);
-            console.log('FLLW: unfollowUser completato.');
         } else {
-            console.log(`FLLW: Chiamando followUser(${this.loggedInUserId}, ${targetUserId})`);
             await this.followService.followUser(this.loggedInUserId, targetUserId);
             await this.presentFF7Alert(`Hai iniziato a seguire ${this.users.find(u => u.uid === targetUserId)?.nickname || 'Utente'}!`);
-            console.log('FLLW: followUser completato.');
         }
-        // La lista si aggiornerà automaticamente grazie all'onSnapshot e alla reattività del pipe
     } catch (error) {
         console.error('FLLW: Errore durante l\'operazione di follow/unfollow dal followers list:', error);
         await this.presentFF7Alert('Si è verificato un errore. Riprova.');
@@ -296,18 +268,14 @@ export class FollowersListPage implements OnInit, OnDestroy {
 
 
   goToUserProfile(userId: string) {
-    console.log('FLLW: goToUserProfile chiamato per ID:', userId); // Modificato prefisso
     if (userId === this.loggedInUserId) {
-      console.log('FLLW: Navigazione a /profilo (profilo proprio).'); // Modificato prefisso
       this.router.navigate(['/profilo']);
     } else {
-      console.log('FLLW: Navigazione a /profilo-altri-utenti/', userId); // Modificato prefisso
       this.router.navigate(['/profilo-altri-utenti', userId]);
     }
   }
 
   async presentFF7Alert(message: string) {
-    console.log('FLLW: Presenting FF7 Alert:', message); // Modificato prefisso
     const alert = await this.alertCtrl.create({
       cssClass: 'ff7-alert',
       header: 'Notifica',
@@ -327,18 +295,14 @@ export class FollowersListPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    console.log('FLLW: ngOnDestroy chiamato. Annullamento sottoscrizioni.'); // Modificato prefisso
     if (this.usersSubscription) {
       this.usersSubscription.unsubscribe();
-      console.log('FLLW: usersSubscription annullata.'); // Modificato prefisso
     }
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
-      console.log('FLLW: authSubscription annullata.'); // Modificato prefisso
     }
   }
 
-  // All'interno della classe FollowersListPage, dopo il costruttore o altri metodi esistenti:
 
   /**
    * Restituisce l'URL della foto profilo, usando un avatar di default

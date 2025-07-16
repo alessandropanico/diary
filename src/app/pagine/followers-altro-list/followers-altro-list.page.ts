@@ -38,7 +38,6 @@ export class FollowersAltroListPage implements OnInit, OnDestroy {
       // (come this.loggedInUserId) siano rilevati da Angular e aggiornino l'UI.
       this.ngZone.run(() => {
         this.loggedInUserId = user ? user.uid : null;
-        console.log('FollowersAltroListPage: Utente loggato ID:', this.loggedInUserId);
         // Una volta ottenuto l'ID utente loggato, carica la lista dei follower
         this.loadFollowersList();
       });
@@ -48,7 +47,6 @@ export class FollowersAltroListPage implements OnInit, OnDestroy {
   private loadFollowersList() {
     const routeSub = this.route.paramMap.subscribe(async params => {
       this.targetUserId = params.get('id');
-      console.log('FollowersAltroListPage: ID utente del profilo da URL:', this.targetUserId);
 
       if (this.targetUserId) {
         this.isLoading = true; // Resetta isLoading ad ogni cambio di utente target
@@ -56,7 +54,6 @@ export class FollowersAltroListPage implements OnInit, OnDestroy {
         // Aggiungi la sottoscrizione alla lista di gestione per l'unsubscribe in OnDestroy
         this.allSubscriptions.add(
           this.followService.getFollowersIds(this.targetUserId).subscribe(async followerIds => {
-            console.log('FollowersAltroListPage: ID follower raw:', followerIds);
             const loadedFollowers: any[] = []; // Manteniamo any[] come richiesto
             for (const followerId of followerIds) {
               try {
@@ -74,7 +71,6 @@ export class FollowersAltroListPage implements OnInit, OnDestroy {
             this.ngZone.run(() => {
               this.followers = loadedFollowers;
               this.isLoading = false;
-              console.log('FollowersAltroListPage: Follower caricati:', this.followers);
             });
           }, error => {
             console.error('Errore nel recupero degli ID follower:', error);

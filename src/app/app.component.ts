@@ -69,14 +69,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.unreadCountSub = this.chatNotificationService.getUnreadCount$().subscribe(count => {
       this.unreadCount = count;
-      console.log('AppComponent: Conteggio notifiche chat:', this.unreadCount);
     });
 
 
     this.firebaseAuthStateService.isAuthenticated$().subscribe(isLoggedIn => {
       if (isLoggedIn !== null) {
         this.firebaseIsLoggedIn = isLoggedIn;
-        console.log('AppComponent: Stato login Firebase (aggiornato da service):', this.firebaseIsLoggedIn);
       }
     });
 

@@ -172,7 +172,6 @@ ngOnInit() {
     );
     try {
       await Promise.all(deletionPromises);
-      console.log('Note selezionate eliminate con successo.');
     } catch (error) {
       console.error('Errore durante l\'eliminazione delle note selezionate:', error);
     }
@@ -226,8 +225,6 @@ ngOnInit() {
           handler: async () => {
             try {
               await firstValueFrom(this.noteService.deletePlaylist(playlist.id));
-              console.log(`Playlist "${playlist.name}" e le sue note eliminate con successo.`);
-
               this.selectedPlaylistId = 'all';
               this.filterNotes();
 

@@ -64,7 +64,6 @@ export class ProfiloPage implements OnInit, OnDestroy {
       this.ngZone.run(async () => {
         if (user) {
           this.loggedInUserId = user.uid;
-          console.log('ProfiloPage: Utente loggato ID:', this.loggedInUserId);
           await this.loadProfileData(user);
           this.subscribeToFollowCounts(user.uid);
         } else {
@@ -122,11 +121,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
     this.followersCountSubscription = this.followService.getFollowersCount(userId).subscribe(count => {
       this.ngZone.run(() => {
         this.followersCount = count;
-        console.log(`I tuoi follower:`, this.followersCount);
         loadedCount++;
         if (loadedCount === 2) {
           this.isLoadingStats = false; // Entrambe le statistiche sono state caricate
-          console.log('ProfiloPage: Statistiche follower/following caricate.');
         }
       });
     }, error => {
@@ -143,11 +140,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
     this.followingCountSubscription = this.followService.getFollowingCount(userId).subscribe(count => {
       this.ngZone.run(() => {
         this.followingCount = count;
-        console.log(`Persone che segui:`, this.followingCount);
         loadedCount++;
         if (loadedCount === 2) {
           this.isLoadingStats = false; // Entrambe le statistiche sono state caricate
-          console.log('ProfiloPage: Statistiche follower/following caricate.');
         }
       });
     }, error => {
@@ -284,5 +279,5 @@ export class ProfiloPage implements OnInit, OnDestroy {
     }
   }
 
-  
+
 }

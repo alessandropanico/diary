@@ -50,10 +50,8 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
       this.ngZone.run(async () => { // Assicurati che gli aggiornamenti avvengano nell'Angular zone
         if (user) {
           this.loggedInUserId = user.uid;
-          console.log('NGONINIT (onAuthStateChanged) - Utente loggato ID:', this.loggedInUserId);
         } else {
           this.loggedInUserId = null;
-          console.log('NGONINIT (onAuthStateChanged) - Nessun utente loggato.');
         }
         await this.loadUserProfile();
       });
@@ -61,15 +59,11 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
   }
 
   private async loadUserProfile() {
-    // Prima di caricare un nuovo profilo, reimposta isLoadingStats
     this.isLoadingStats = true;
-
-    // Unsubscribe dalle vecchie sottoscrizioni di follow prima di aggiungerne di nuove
     this.unsubscribeFollowCounts();
 
     const routeSub = this.route.paramMap.subscribe(async params => {
       const userId = params.get('id');
-      console.log('loadUserProfile - ID utente profilo da URL:', userId);
 
       if (userId) {
         this.isLoading = true;
@@ -81,7 +75,6 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
             await this.presentFF7Alert('Profilo utente non trovato.');
           } else {
             this.profileData.uid = userId;
-            console.log('loadUserProfile - Dati profilo caricati:', this.profileData);
             this.subscribeToFollowData(userId); // Sottoscriviti ai dati di follow
           }
         } catch (error) {
@@ -114,7 +107,6 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
         // 3 se controlliamo isFollowing, 2 altrimenti
         this.ngZone.run(() => {
           this.isLoadingStats = false;
-          console.log('ProfiloAltriUtentiPage: Statistiche follower/following caricate.');
         });
       }
     };
@@ -123,7 +115,6 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
       const isFollowingSub = this.followService.isFollowing(this.loggedInUserId, targetUserId).subscribe(isFollowing => {
         this.ngZone.run(() => { // Esegui nel contesto di Angular
           this.isFollowingUser = isFollowing;
-          console.log(`L'utente ${this.loggedInUserId} segue ${targetUserId}:`, this.isFollowingUser);
           checkCompletion();
         });
       }, error => {
@@ -132,15 +123,12 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
       });
       this.allSubscriptions.add(isFollowingSub);
     } else {
-      // Se non si controlla isFollowing, il conteggio iniziale sarà 0 o 1 (a seconda di come gestisci isFollowing nel checkCompletion)
-      // Per semplificare, assumiamo che se non c'è loggedInUserId o è lo stesso utente, isFollowing è false e la "sottoscrizione" è completa.
-      checkCompletion(); // Simula il completamento della sottoscrizione isFollowing
+      checkCompletion();
     }
 
     this.followersSub = this.followService.getFollowersCount(targetUserId).subscribe(count => {
       this.ngZone.run(() => {
         this.targetUserFollowersCount = count;
-        console.log(`Follower di ${targetUserId}:`, this.targetUserFollowersCount);
         checkCompletion();
       });
     }, error => {
@@ -155,7 +143,6 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
     this.followingSub = this.followService.getFollowingCount(targetUserId).subscribe(count => {
       this.ngZone.run(() => {
         this.targetUserFollowingCount = count;
-        console.log(`Persone seguite da ${targetUserId}:`, this.targetUserFollowingCount);
         checkCompletion();
       });
     }, error => {
@@ -198,8 +185,6 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
   }
 
   async startChat() {
-    console.log('STARTCHAT - Avvio funzione chat.');
-
     if (!this.loggedInUserId) {
       console.error('STARTCHAT - Errore: Utente non loggato al momento della richiesta di chat.');
       await this.presentFF7Alert('Devi essere loggato per avviare una chat.');
@@ -218,13 +203,10 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('STARTCHAT - Tentativo di avviare chat tra:', this.loggedInUserId, 'e', this.profileData.uid);
-
     try {
       const conversationId = await this.chatService.getOrCreateConversation(this.loggedInUserId, this.profileData.uid);
 
       if (conversationId) {
-        console.log('STARTCHAT - Conversazione ID ottenuta:', conversationId);
         this.router.navigate(['/chat', conversationId]);
       } else {
         console.error('STARTCHAT - getOrCreateConversation ha restituito un ID nullo o indefinito.');

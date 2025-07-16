@@ -39,11 +39,9 @@ export class TaskService {
     this.authStateSubscription.add(
       onAuthStateChanged(auth, async (user: User | null) => {
         if (user) {
-          console.log('TaskService: Utente autenticato, caricamento task iniziali...');
           await this.loadTasks();
           this.initialLoadCompleted = true; // Imposta a true dopo il primo caricamento
         } else {
-          console.log('TaskService: Utente non autenticato, svuoto le task.');
           this.tasksSubject.next([]); // Solo qui emettiamo un array vuoto se non autenticato
           this.initialLoadCompleted = true; // Anche se svuotiamo, il caricamento iniziale è "completato"
         }
@@ -84,7 +82,6 @@ export class TaskService {
       });
       loadedTasks.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       this.tasksSubject.next(loadedTasks);
-      console.log(`TaskService: Caricate ${loadedTasks.length} task da Firestore.`);
     } catch (error) {
       console.error('TaskService: Errore durante il caricamento delle task da Firestore:', error);
       // In caso di errore nel caricamento, potresti voler svuotare le task o gestire l'errore
@@ -105,7 +102,6 @@ export class TaskService {
 
       const currentTasks = this.tasksSubject.value || []; // Gestisce il caso in cui sia ancora null
       this.tasksSubject.next([...currentTasks, { id: docRef.id, ...task }]);
-      console.log('TaskService: Task aggiunta e BehaviorSubject aggiornato.');
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiunta della task a Firestore:', error);
       throw error;
@@ -125,7 +121,6 @@ export class TaskService {
 
       const currentTasks = this.tasksSubject.value || [];
       this.tasksSubject.next(currentTasks.filter(t => t.id !== taskId));
-      console.log('TaskService: Task eliminata e BehaviorSubject aggiornato.');
     } catch (error) {
       console.error('TaskService: Errore durante l\'eliminazione della task da Firestore:', error);
       throw error;
@@ -148,7 +143,6 @@ export class TaskService {
         t.id === taskId ? { ...t, completed: completed } : t
       );
       this.tasksSubject.next(updatedTasks);
-      console.log('TaskService: Stato task aggiornato e BehaviorSubject aggiornato.');
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiornamento della task in Firestore:', error);
       throw error;

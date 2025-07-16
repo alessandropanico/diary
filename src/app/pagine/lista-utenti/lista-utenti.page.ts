@@ -47,8 +47,6 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
     const auth = getAuth();
     this.currentUserId = auth.currentUser?.uid || null;
 
-    // *** Sottoscrizione allo stato dei "following" dal servizio ***
-    // Questo Observable si aggiornerà ogni volta che il servizio emette un nuovo stato.
     this.followingStatusSub = this.usersService
       .getFollowingStatus()
       .subscribe(status => {
@@ -56,13 +54,11 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
         // in risposta ai cambiamenti asincroni dello stato dei following.
         this.ngZone.run(() => {
           this.followingUserIds = status;
-          console.log('ListaUtentiPage: Stato following aggiornato:', this.followingUserIds);
         });
       });
   }
 
   ngAfterViewInit() {
-    // Delay per evitare ExpressionChangedAfterItHasBeenCheckedError
     setTimeout(() => this.loadUsers(), 0);
   }
 
@@ -153,12 +149,9 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
    goToUserProfile(userId: string) {
-    console.log('ListaUtentiPage: Navigazione a profilo utente:', userId);
     if (userId === this.currentUserId) {
-      // Se l'utente clicca sul proprio profilo nella lista (anche se filtrato, per sicurezza)
       this.router.navigate(['/profilo']);
     } else {
-      // Naviga al profilo di un altro utente
       this.router.navigate(['/profilo-altri-utenti', userId]);
     }
   }

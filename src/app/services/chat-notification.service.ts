@@ -59,14 +59,11 @@ export class ChatNotificationService implements OnDestroy {
 
     if (isPlatform('capacitor')) {
       PushNotifications.removeAllListeners();
-      console.log('ChatNotificationService: Rimossi tutti i listener di Push Notifications.');
     }
   }
 
   public setCurrentActiveChat(chatId: string | null) {
     this.currentActiveChatId = chatId;
-    console.log(`ChatNotificationService: Chat attiva impostata a: ${chatId}`);
-
     if (this.currentUserId && this.currentActiveChatId) {
       this.chatService.markMessagesAsRead(this.currentActiveChatId, this.currentUserId)
         .catch((error: any) => console.error('Errore nel marcare i messaggi come letti all\'ingresso chat:', error));
@@ -129,14 +126,12 @@ export class ChatNotificationService implements OnDestroy {
           this.currentActiveChatId = null;
           this.lastNotifiedTimestamp.clear();
           this.saveLastNotifiedTimestamps();
-          console.log('User logged out, resetting notification state.');
           return of(0);
         }
       })
     ).subscribe({
       next: (totalUnread: number) => {
         this.unreadCount$.next(totalUnread);
-        console.log('ChatNotificationService: unreadCount$ aggiornato a:', totalUnread);
       },
       error: (err) => {
         console.error('ChatNotificationService: Errore nella pipeline principale (authSubscription):', err);
@@ -206,19 +201,16 @@ export class ChatNotificationService implements OnDestroy {
 
   incrementUnread(chatId: string) {
     this.unreadMessages[chatId] = (this.unreadMessages[chatId] || 0) + 1;
-    console.log(`ChatNotificationService: Incrementato unread per ${chatId} a ${this.unreadMessages[chatId]}`);
   }
 
   clearUnread(chatId: string) {
     delete this.unreadMessages[chatId];
-    console.log(`ChatNotificationService: Azzerato unread per ${chatId}`);
   }
 
   private saveLastNotifiedTimestamps() {
     try {
       const dataToSave = Array.from(this.lastNotifiedTimestamp.entries());
       localStorage.setItem(this.LOCAL_STORAGE_KEY_TIMESTAMPS, JSON.stringify(dataToSave));
-      console.log('ChatNotificationService: lastNotifiedTimestamps salvato nel localStorage.');
     } catch (e) {
       console.error('ChatNotificationService: Errore nel salvare lastNotifiedTimestamps nel localStorage:', e);
     }
@@ -230,7 +222,6 @@ export class ChatNotificationService implements OnDestroy {
       if (savedData) {
         const parsedData: [string, number][] = JSON.parse(savedData);
         this.lastNotifiedTimestamp = new Map(parsedData);
-        console.log('ChatNotificationService: lastNotifiedTimestamps caricato dal localStorage.');
       }
     } catch (e) {
       console.error('ChatNotificationService: Errore nel caricare lastNotifiedTimestamps dal localStorage:', e);
@@ -239,20 +230,16 @@ export class ChatNotificationService implements OnDestroy {
   }
 
 
-
   async initPushNotifications() {
     if (!isPlatform('capacitor') || this.pushNotificationsInitialized) {
-      console.log('ChatNotificationService: Notifiche push non disponibili (non su Capacitor) o già inizializzate.');
       return;
     }
 
     this.pushNotificationsInitialized = true;
 
-    console.log('ChatNotificationService: Inizializzazione notifiche push...');
 
     let permStatus = await PushNotifications.requestPermissions();
     if (permStatus.receive === 'prompt') {
-      console.log('ChatNotificationService: Permessi di notifica in sospeso.');
     }
     if (permStatus.receive !== 'granted') {
       console.warn('ChatNotificationService: Permessi di notifica non concessi. Impossibile ricevere push.');
@@ -260,12 +247,10 @@ export class ChatNotificationService implements OnDestroy {
     }
 
     await PushNotifications.register();
-    console.log('ChatNotificationService: Dispositivo registrato per notifiche push.');
 
     PushNotifications.addListener('registration', token => {
       this.ngZone.run(() => {
         this.fcmToken = token.value;
-        console.log('ChatNotificationService: FCM Token ottenuto:', this.fcmToken);
         if (this.currentUserId && this.fcmToken) {
           this.saveFcmTokenToFirestore(this.currentUserId, this.fcmToken);
         } else {
@@ -282,26 +267,20 @@ export class ChatNotificationService implements OnDestroy {
 
     PushNotifications.addListener('pushNotificationReceived', notification => {
       this.ngZone.run(() => {
-        console.log('ChatNotificationService: Notifica push ricevuta:', notification);
         if (notification.data && notification.data['chatId'] && this.router.url !== `/chat/${notification.data['chatId']}`) {
-          console.log(`Notifica per chat ${notification.data['chatId']}. Titolo: ${notification.title}, Body: ${notification.body}`);
         }
       });
     });
 
     PushNotifications.addListener('pushNotificationActionPerformed', action => {
       this.ngZone.run(() => {
-        console.log('ChatNotificationService: Notifica push TAPpata:', action);
         const data = action.notification.data;
         if (data && data['chatId']) {
-          console.log(`Navigazione alla chat: /chat/${data['chatId']}`);
           this.router.navigateByUrl(`/chat/${data['chatId']}`);
         }
       });
     });
-
     App.addListener('appStateChange', ({ isActive }) => {
-      console.log('ChatNotificationService: App in foreground:', isActive);
     });
   }
 

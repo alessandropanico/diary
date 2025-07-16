@@ -31,9 +31,6 @@ export class SearchModalComponent implements OnInit, OnDestroy {
   ngOnInit() {
     const auth = getAuth();
     this.loggedInUserId = auth.currentUser ? auth.currentUser.uid : null;
-    console.log('SearchModalComponent: Utente loggato ID:', this.loggedInUserId);
-
-
     this.searchSubscription = this.searchTerms.pipe(
       debounceTime(500),
       distinctUntilChanged(),

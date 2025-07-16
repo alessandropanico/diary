@@ -35,78 +35,38 @@ async ngOnInit() {
       if (tasks === null) {
         this.isLoadingTasks = true; // Mantieni il loading spinner attivo
         this.tasks = []; // Assicurati che l'array sia vuoto per non visualizzare dati obsoleti
-        console.log('ListTaskPage: TaskService ha emesso NULL, mantenendo il loader...');
       } else {
         // Se 'tasks' non è null (è un Task[]), allora i dati sono stati caricati (anche se vuoti).
         this.tasks = tasks; // Aggiorna le task visualizzate
         this.isLoadingTasks = false; // Spegni il loading spinner
-        console.log('ListTaskPage: Task aggiornate ricevute dal servizio.', this.tasks.length);
       }
     });
-
-    // L'ascoltatore di onAuthStateChanged nel componente non è più strettamente necessario per
-    // "caricare le task iniziali" perché il TaskService stesso si occupa di questo nel suo costruttore
-    // quando rileva un utente autenticato.
-    // Tuttavia, se hai una logica specifica da eseguire qui quando l'utente cambia stato, puoi mantenerla.
-    // Per il caricamento delle task, il TaskService lo gestisce già internamente.
-    // Se la rimuovi, assicurati che il TaskService gestisca anche il caso di utenti non autenticati
-    // e l'emissione di [] o null al BehaviorSubject.
-    // La logica attuale del TaskService è robusta, quindi questo blocco qui è ridondante per il solo caricamento.
-    /*
-    this.authUnsubscribe = onAuthStateChanged(getAuth(), async (user: User | null) => {
-      if (user) {
-        console.log('ListTaskPage: Utente autenticato, il TaskService dovrebbe già aver caricato le task.');
-        // Non chiamare loadAndProcessTasks() direttamente qui, il servizio lo fa già.
-        // Se lo chiami, rischi di fare doppie chiamate o di sovrascrivere lo stato.
-      } else {
-        console.log('ListTaskPage: Utente non autenticato, il TaskService ha svuotato le task.');
-        // this.tasks = []; // Il BehaviorSubject del servizio dovrebbe già aver emesso [] o null
-        // this.isLoadingTasks = false; // Gestito dalla sottoscrizione principale
-      }
-    });
-    */
   }
 
-  // Hook del ciclo di vita di Ionic: chiamato ogni volta che la pagina sta per diventare attiva.
-  // Utile per ricaricare i dati se l'utente naviga avanti e indietro o se ci sono stati
-  // cambiamenti esterni che il BehaviorSubject potrebbe non aver catturato (meno probabile con il tuo servizio).
   ionViewWillEnter() {
-    // Se le task non sono ancora state caricate o se l'utente è loggato e non stiamo già caricando,
-    // assicurati che loadAndProcessTasks venga chiamato.
-    // Questo è un fallback, il `tasks$` subscription dovrebbe gestire la maggior parte degli aggiornamenti.
     if ((!this.tasks.length && !this.isLoadingTasks) && getAuth().currentUser) {
-      console.log('ListTaskPage: ionViewWillEnter triggerato, ricarico/processo le task.');
       this.loadAndProcessTasks();
     }
   }
 
   ngOnDestroy() {
-    // È cruciale disiscriversi per prevenire memory leaks.
     if (this.tasksSubscription) {
       this.tasksSubscription.unsubscribe();
-      console.log('ListTaskPage: tasksSubscription unsubscription');
     }
     if (this.authUnsubscribe) {
       this.authUnsubscribe();
-      console.log('ListTaskPage: authUnsubscribe unsubscription');
     }
   }
 
-  /**
-   * Carica le task dal servizio e aggiorna lo stato di completamento per quelle scadute.
-   */
+
   private async loadAndProcessTasks() {
-    this.isLoadingTasks = true; // Imposta lo stato di caricamento
+    this.isLoadingTasks = true;
 
     try {
-      await this.taskService.loadTasks(); // Questo triggererà il `tasks$` subscription
-
-      // La logica per marcare le task scadute viene applicata dopo il caricamento
-      // delle task iniziali o di un ricaricamento completo.
+      await this.taskService.loadTasks();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Esegui la logica solo sul set di task attuale
       const tasksToUpdate: Task[] = [];
       this.tasks.forEach(task => {
         if (task.id && !task.completed) {
@@ -118,8 +78,6 @@ async ngOnInit() {
         }
       });
 
-      // Aggiorna le task scadute. Ogni `toggleCompletion` aggiornerà il BehaviorSubject
-      // e quindi la `this.tasks` verrà aggiornata automaticamente dalla sottoscrizione.
       for (const task of tasksToUpdate) {
         try {
           await this.taskService.toggleCompletion(task.id!, true);
@@ -204,17 +162,8 @@ async ngOnInit() {
       cssClass: 'ff7-modal-glow'
     });
     await modal.present();
-
     const { data } = await modal.onDidDismiss();
-    // Se la modale ha indicato che una task è stata aggiunta/modificata,
-    // il servizio `TaskService` avrà già aggiornato il suo `BehaviorSubject`.
-    // Non è necessario chiamare `this.taskService.loadTasks()` qui,
-    // perché la sottoscrizione in `ngOnInit` (di ListTaskPage e HomePage)
-    // riceverà automaticamente l'aggiornamento.
     if (data && data.refreshTasks) {
-      console.log('ListTaskPage: Modale chiusa con refreshTasks. Tasks aggiornate tramite BehaviorSubject.');
-      // Non richiamare loadTasks() qui per evitare ridondanza/inefficienza.
-      // La sottoscrizione in ngOnInit gestirà l'aggiornamento.
     }
   }
 }

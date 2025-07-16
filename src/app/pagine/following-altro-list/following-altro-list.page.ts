@@ -38,7 +38,6 @@ export class FollowingAltroListPage implements OnInit, OnDestroy {
       // (come this.loggedInUserId) siano rilevati da Angular e aggiornino l'UI.
       this.ngZone.run(() => {
         this.loggedInUserId = user ? user.uid : null;
-        console.log('FollowingAltroListPage: Utente loggato ID:', this.loggedInUserId);
         // Una volta ottenuto l'ID utente loggato, carica la lista dei seguiti
         this.loadFollowingList();
       });
@@ -48,19 +47,15 @@ export class FollowingAltroListPage implements OnInit, OnDestroy {
   private loadFollowingList() {
     const routeSub = this.route.paramMap.subscribe(async params => {
       this.targetUserId = params.get('id');
-      console.log('FollowingAltroListPage: ID utente del profilo da URL:', this.targetUserId);
 
       if (this.targetUserId) {
-        this.isLoading = true; // Resetta isLoading ad ogni cambio di utente target
+        this.isLoading = true;
 
-        // Aggiungi la sottoscrizione alla lista di gestione per l'unsubscribe in OnDestroy
         this.allSubscriptions.add(
           this.followService.getFollowingIds(this.targetUserId).subscribe(async followingIds => {
-            console.log('FollowingAltroListPage: ID persone seguite raw:', followingIds);
-            const loadedFollowing: any[] = []; // Manteniamo any[] come richiesto
+            const loadedFollowing: any[] = [];
             for (const followingId of followingIds) {
               try {
-                // Recupera i dati di ogni utente seguito
                 const userData = await this.userDataService.getUserDataById(followingId);
                 if (userData) {
                   // Aggiungi l'uid all'oggetto utente, dato che getUserDataById potrebbe non includerlo
@@ -74,7 +69,6 @@ export class FollowingAltroListPage implements OnInit, OnDestroy {
             this.ngZone.run(() => {
               this.following = loadedFollowing;
               this.isLoading = false;
-              console.log('FollowingAltroListPage: Persone seguite caricate:', this.following);
             });
           }, error => {
             console.error('Errore nel recupero degli ID persone seguite:', error);
@@ -109,12 +103,9 @@ export class FollowingAltroListPage implements OnInit, OnDestroy {
    * @param userId L'ID dell'utente di cui visualizzare il profilo.
    */
   goToUserProfile(userId: string) {
-    console.log('goToUserProfile chiamato per ID:', userId, 'Utente loggato ID:', this.loggedInUserId);
     if (userId && this.loggedInUserId && userId === this.loggedInUserId) {
-      // Se l'utente clicca sul proprio ID, va al proprio profilo
       this.router.navigate(['/profilo']);
     } else if (userId) {
-      // Altrimenti, va al profilo dell'utente specifico
       this.router.navigate(['/profilo-altri-utenti', userId]);
     } else {
       console.warn('goToUserProfile: ID utente non valido o mancante.');

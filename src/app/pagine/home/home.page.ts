@@ -15,7 +15,6 @@ export class HomePage implements OnInit, OnDestroy {
 
   greetingMessage: string = '';
   todayTasks: Task[] = [];
-  // Inizializza a true per mostrare il loading. Sarà false solo dopo aver ricevuto un array (anche vuoto)
   isLoadingTasks: boolean = true;
   private tasksSubscription!: Subscription;
 
@@ -25,15 +24,12 @@ export class HomePage implements OnInit, OnDestroy {
     this.greetingMessage = this.getGreetingMessage();
 
     this.tasksSubscription = this.taskService.tasks$.subscribe(tasks => {
-      // Se tasks è null, significa che il caricamento iniziale non è ancora avvenuto
       if (tasks === null) {
-        this.isLoadingTasks = true; // Mantieni il loader attivo
-        this.todayTasks = []; // Assicurati che l'array sia vuoto per non mostrare dati vecchi/errati
+        this.isLoadingTasks = true;
+        this.todayTasks = [];
       } else {
-        // Se tasks non è null (quindi è Task[] o []), allora il caricamento è terminato.
-        console.log('HomePage: Ricevute task aggiornate dal servizio. Filtering for today...');
         this.todayTasks = tasks.filter(task => this.isToday(task.dueDate) && !task.completed);
-        this.isLoadingTasks = false; // Nascondi il loader
+        this.isLoadingTasks = false;
       }
     });
   }
@@ -44,7 +40,6 @@ export class HomePage implements OnInit, OnDestroy {
     }
   }
 
-  // ... (restanti metodi come getGreetingMessage, isToday rimangono invariati)
   getGreetingMessage(): string {
     const currentHour = new Date().getHours();
     const now = new Date();
@@ -63,10 +58,8 @@ export class HomePage implements OnInit, OnDestroy {
   isToday(dateString: string): boolean {
     const today = new Date();
     const taskDate = new Date(dateString);
-
     today.setHours(0, 0, 0, 0);
     taskDate.setHours(0, 0, 0, 0);
-
     return taskDate.getTime() === today.getTime();
   }
 }

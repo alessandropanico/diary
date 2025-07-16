@@ -40,7 +40,6 @@ export class UsersService {
       });
 
       this._followingStatus.next(followingIds);
-      console.log('UsersService: Stato following caricato:', followingIds);
 
     } catch (error) {
       console.error('Errore nel caricare lo stato dei following:', error);
@@ -107,9 +106,6 @@ export class UsersService {
         // Rimuovi il documento dalla lista 'followers' dell'utente target
         const targetUserFollowersDocRef = doc(this.firestore, `users/${targetUserId}/followers/${currentUserId}`);
         await deleteDoc(targetUserFollowersDocRef);
-
-        console.log(`Unfollowing completato: ${targetUserId}`);
-
       } else {
         newFollowingIds.add(targetUserId); // Aggiungi localmente
         // Aggiungi il documento alla lista 'following' dell'utente corrente
@@ -119,8 +115,6 @@ export class UsersService {
         // Aggiungi il documento alla lista 'followers' dell'utente target
         const targetUserFollowersDocRef = doc(this.firestore, `users/${targetUserId}/followers/${currentUserId}`);
         await setDoc(targetUserFollowersDocRef, { timestamp: new Date().toISOString() }); // Puoi mettere data o vuoto
-
-        console.log(`Following completato: ${targetUserId}`);
       }
       this._followingStatus.next(newFollowingIds); // Aggiorna lo stato locale
 

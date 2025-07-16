@@ -382,21 +382,12 @@ export class ChatService {
       await updateDoc(conversationRef, {
         [`lastRead.${userId}`]: serverTimestamp() // Usa serverTimestamp() per coerenza e precisione
       });
-      console.log(`Conversazione ${conversationId} marcata come letta per l'utente ${userId}.`);
-
-      // Rimuovi questa riga! Il ChatNotificationService ora si aggiorna da solo
-      // ascoltando i cambiamenti in Firebase.
-      // this.chatNotificationService.clearUnread(conversationId);
     } catch (error: any) {
       console.error('Errore nel marcare i messaggi come letti:', error);
       throw error;
     }
   }
 
-  // Questo metodo helper è stato spostato qui dal `chat-list.page.ts` per essere un helper
-  // e non è strettamente correlato alla logica di Firebase Firestore.
-  // La ChatListPage deciderà come visualizzare la data.
-  // Se non lo usi altrove, puoi considerarlo superfluo qui e lasciarlo nella ChatListPage.
   private formatTimestamp(timestamp: any): string {
     if (!timestamp) {
       return '';

@@ -46,13 +46,11 @@ export class ChatListPage implements OnInit, OnDestroy {
     this.authStateUnsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         this.loggedInUserId = user.uid;
-        console.log('ChatListPage: Utente loggato ID:', this.loggedInUserId);
         this.loadUserConversations();
       } else {
         this.loggedInUserId = null;
         this.conversations = [];
         this.isLoading = false;
-        console.log('ChatListPage: Nessun utente loggato, reindirizzo al login.');
         this.router.navigateByUrl('/login');
       }
     });
@@ -167,7 +165,6 @@ export class ChatListPage implements OnInit, OnDestroy {
           return dateB - dateA;
         });
         this.isLoading = false;
-        console.log('ChatListPage: Conversazioni finali processate:', this.conversations);
       },
       error: (error) => {
         console.error('Errore nel recupero o elaborazione delle conversazioni:', error);
