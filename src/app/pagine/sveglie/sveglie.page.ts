@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Storage } from '@ionic/storage-angular';
 import { AlarmPlugin } from 'src/app/plugin/alarm-plugin';
@@ -6,6 +6,7 @@ import { Alarm } from 'src/app/interfaces/alarm';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { ViewChild, ElementRef } from '@angular/core';
 import { AlertController } from '@ionic/angular';
+import { UserAlarmDataService } from 'src/app/services/user-alarm-data-service.service';
 
 @Component({
   selector: 'app-sveglie',
@@ -13,7 +14,7 @@ import { AlertController } from '@ionic/angular';
   styleUrls: ['./sveglie.page.scss'],
   standalone: false
 })
-export class SvegliePage {
+export class SvegliePage implements OnInit {
   alarmTime = '';
   alarmNote = '';
   alarms: any[] = [];
@@ -22,20 +23,37 @@ export class SvegliePage {
   alarmInfo = false;
   editingAlarmIndex: number | null = null;
 
-  ringingAudio: HTMLAudioElement | null = null; // AUDIO ATTIVO
+  ringingAudio: HTMLAudioElement | null = null;
 
   alarmSoundFile: File | null = null;
   selectedSoundFileName: string = '';
   @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
 
   selectedSoundUrl: string | null = null;
+  private currentUserId: string | null = null;
 
 
-  constructor(private storage: Storage,
-      private alertController: AlertController
-
+  constructor(
+    private storage: Storage,
+    private alertController: AlertController,
+    private userAlarmDataService: UserAlarmDataService
   ) {
-    this.init();
+    // this.init();
+  }
+
+    async ngOnInit() { // **MODIFICATO / NUOVO**: Assicurati che sia presente e asincrono
+    await this.storage.create(); // Inizializza lo storage
+    // **NUOVO**: Recupera l'ID utente.
+    // ASSUNZIONE FONDAMENTALE: l'ID utente è stato salvato in 'loggedInUserId'
+    // in Ionic Storage al momento del login o dell'inizializzazione della sessione.
+    this.currentUserId = await this.storage.get('loggedInUserId');
+
+    if (!this.currentUserId) {
+      console.warn('ID utente non trovato nella SvegliePage. Le metriche delle sveglie non saranno inviate a Firebase.');
+      // Potresti considerare qui di mostrare un messaggio all'utente
+      // o di disabilitare funzionalità che dipendono dall'invio dati a Firebase.
+    }
+    await this.loadAlarms(); // Carica le sveglie solo dopo aver tentato di ottenere l'ID utente
   }
 
   onOverlayClick(event: MouseEvent) {
@@ -43,10 +61,10 @@ export class SvegliePage {
   }
 
 
-  async init() {
-    await this.storage.create();
-    await this.loadAlarms();
-  }
+  // async init() {
+  //   await this.storage.create();
+  //   await this.loadAlarms();
+  // }
 
   async loadAlarms() {
     const savedAlarms = await this.storage.get('alarms');
@@ -69,7 +87,6 @@ export class SvegliePage {
     alert("⚠️ Per favore abilita le notifiche per usare la sveglia.");
     return false;
   }
-
 
 
   async setAlarm() {
@@ -135,6 +152,7 @@ export class SvegliePage {
     });
 
     await this.saveAlarms();
+    await this.triggerAlarmDataUpdate();
     this.resetForm();
     this.alarmInfo = false;
   }
@@ -194,6 +212,7 @@ export class SvegliePage {
     };
 
     await this.saveAlarms();
+    await this.triggerAlarmDataUpdate(); // **AGGIUNTO**
     this.closeInfo();
   }
 
@@ -238,6 +257,7 @@ export class SvegliePage {
 
     alarm.active = shouldActivate;
     await this.saveAlarms();
+    await this.triggerAlarmDataUpdate(); // **AGGIUNTO**
   }
 
 
@@ -250,6 +270,7 @@ export class SvegliePage {
     }
     this.alarms.splice(index, 1);
     await this.saveAlarms();
+    await this.triggerAlarmDataUpdate(); // **AGGIUNTO**
   }
 
   private async scheduleNotification(id: number, date: Date, message: string, dayLabel: string) {
@@ -318,7 +339,7 @@ export class SvegliePage {
     modal.style.width = '300px';
 
     modal.innerHTML = `
-    <h2>⏰ Sveglia!</h2>
+    <h2>Sveglia!</h2>
     <h3>${dayLabel}</h3>
     <p>${message || 'È ora di svegliarsi!'}</p>
     <button>Ferma</button>
@@ -579,6 +600,7 @@ onSoundFileSelected(event: Event): void {
             }
             this.alarms.splice(index, 1);
             await this.saveAlarms();
+            await this.triggerAlarmDataUpdate(); // **AGGIUNTO**
           } catch (error) {
             console.error("Errore durante l'eliminazione della sveglia:", error);
             const errorAlert = await this.alertController.create({
@@ -596,5 +618,16 @@ onSoundFileSelected(event: Event): void {
   await alert.present();
 }
 
+  private async triggerAlarmDataUpdate() {
+    if (this.currentUserId) {
+      const activeCount = this.alarms.filter(alarm => alarm.active).length;
+      const totalCreated = this.alarms.length; // Puoi modificare questa logica se vuoi un contatore cumulativo che non diminuisce
 
+      await this.userAlarmDataService.updateAlarmData(
+        this.currentUserId,
+        activeCount,
+        totalCreated
+      );
+    }
+  }
 }

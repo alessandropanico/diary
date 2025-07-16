@@ -405,4 +405,25 @@ input:checked+.slider:before {
   background-color: transparent;
 }
 
-
+// Stile per l'alert custom
+.ff7-alert {
+  .alert-wrapper {
+    background: var(--bg-blur);
+    border: 1px solid var(--primary-glow);
+    border-radius: 8px;
+    box-shadow: 0 0 20px var(--primary-glow);
+  }
+  .alert-head, .alert-message {
+    color: var(--text-light);
+    font-family: 'Orbitron', sans-serif;
+  }
+  .alert-button {
+    background: var(--primary-glow) !important;
+    color: black !important;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: bold;
+    border-radius: 4px;
+    margin: 5px;
+    box-shadow: 0 0 8px var(--primary-glow);
+  }
+}
