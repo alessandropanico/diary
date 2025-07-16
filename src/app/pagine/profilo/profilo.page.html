@@ -17,21 +17,28 @@
 
   <div *ngIf="!isLoading">
     <div class="profile-banner-container" [class.editable]="editing" (click)="editing && changeBanner()">
-      <img [src]="(editing ? profileEdit.banner : profile.banner) || 'assets/immaginiGenerali/default-banner.jpg'" alt="Banner Profilo" class="profile-banner" />
+      <img [src]="(editing ? profileEdit.banner : profile.banner) || 'assets/immaginiGenerali/default-banner.jpg'"
+        alt="Banner Profilo" class="profile-banner" />
       <div *ngIf="editing" class="banner-edit-overlay">
         <ion-icon name="camera-outline"></ion-icon>
         <span>Cambia Banner</span>
       </div>
     </div>
-    <ion-button *ngIf="editing && profileEdit.banner && profileEdit.banner !== 'assets/immaginiGenerali/default-banner.jpg'" expand="block" fill="outline" color="medium" (click)="removeBanner()" class="remove-banner-button">
+    <ion-button
+      *ngIf="editing && profileEdit.banner && profileEdit.banner !== 'assets/immaginiGenerali/default-banner.jpg'"
+      expand="block" fill="outline" color="medium" (click)="removeBanner()" class="remove-banner-button">
       Rimuovi banner
     </ion-button>
 
-    <ion-avatar class="profile-avatar" [class.editable]="editing" [style.margin-top]="avatarMarginTop" (click)="editing && changePhoto()">
-      <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
+    <ion-avatar class="profile-avatar" [class.editable]="editing" [style.margin-top]="avatarMarginTop"
+      (click)="editing && changePhoto()">
+      <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'"
+        alt="Foto profilo" />
     </ion-avatar>
 
-    <ion-button *ngIf="editing && profileEdit.photo && profileEdit.photo !== 'assets/immaginiGenerali/default-avatar.jpg'" expand="block" fill="outline" color="medium" (click)="removePhoto()">
+    <ion-button
+      *ngIf="editing && profileEdit.photo && profileEdit.photo !== 'assets/immaginiGenerali/default-avatar.jpg'"
+      expand="block" fill="outline" color="medium" (click)="removePhoto()">
       Rimuovi foto profilo
     </ion-button>
 
@@ -40,21 +47,24 @@
       <h3>{{ profile.name || 'Nome e Cognome' }}</h3>
       <p>{{ profile.bio || 'Descrizione assente' }}</p>
 
-      <div class="follow-stats-wrapper"> <div *ngIf="isLoadingStats" class="loading-stats-local-overlay">
-            <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <div class="follow-stats-wrapper">
+        <div *ngIf="isLoadingStats" class="loading-stats-local-overlay">
+          <ion-spinner name="crescent" color="primary"></ion-spinner>
         </div>
         <div class="follow-stats" [class.hidden]="isLoadingStats" *ngIf="loggedInUserId">
-            <div class="stat-item clickable-stat" (click)="goToFollowersList()">
-                <strong>{{ followersCount }}</strong>
-                <span>Follower</span>
-            </div>
-            <div class="stat-item clickable-stat" (click)="goToFollowingList()">
-                <strong>{{ followingCount }}</strong>
-                <span>Seguiti</span>
-            </div>
+          <div class="stat-item clickable-stat" (click)="goToFollowersList()">
+            <strong>{{ followersCount }}</strong>
+            <span>Follower</span>
+          </div>
+          <div class="stat-item clickable-stat" (click)="goToFollowingList()">
+            <strong>{{ followingCount }}</strong>
+            <span>Seguiti</span>
+          </div>
         </div>
       </div>
-      </div>
+    </div>
+
+    <app-dashboard-utente></app-dashboard-utente>
 
     <form *ngIf="editing" (ngSubmit)="saveProfile()">
       <ion-list lines="none">

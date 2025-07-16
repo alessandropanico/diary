@@ -1,0 +1,80 @@
+<div class="ff7-dashboard-container">
+  <h2 class="ff7-dashboard-title">
+    <i class="icon-user-profile"></i> Riepilogo Utente
+  </h2>
+
+  <div class="ff7-dashboard-section level-1-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-analytics"></i> Panoramica Generale
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultima Attività Globale</div>
+        <div class="ff7-data-value ff7-primary-value">{{ lastAlarmInteraction }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ff7-section-divider"></div> <div class="ff7-dashboard-section level-2-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-alarm"></i> Gestione Sveglie
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Sveglie Attive</div>
+        <div class="ff7-data-value ff7-positive-value">{{ activeAlarmsCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Sveglie Totali</div>
+        <div class="ff7-data-value">{{ totalAlarmsCreated }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultima Modifica</div>
+        <div class="ff7-data-value">{{ lastAlarmInteraction }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ff7-section-divider"></div>
+
+  <div class="ff7-dashboard-section level-2-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-notes"></i> Note & Task
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Note Totali</div>
+        <div class="ff7-data-value">{{ totalNotesCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Liste Totali</div>
+        <div class="ff7-data-value">{{ totalListsCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Task Incompiuti</div>
+        <div class="ff7-data-value ff7-warning-value">{{ incompleteListItems }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultima Modifica</div>
+        <div class="ff7-data-value">{{ lastNoteListInteraction }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ff7-section-divider"></div>
+
+  <div class="ff7-dashboard-section level-3-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-trophy"></i> Obiettivi & Statistiche
+    </h3>
+    <p class="ff7-message">
+      *Sblocca questa sezione completando più task e svegliandoti in orario per
+      ottenere bonus di esperienza e salire di livello!*
+    </p>
+    <div class="ff7-progress-bar-container">
+      <div class="ff7-progress-bar" [style.width]="'60%'"></div>
+      <span class="ff7-progress-text">Progresso al prossimo livello: 60%</span>
+    </div>
+  </div>
+
+</div>

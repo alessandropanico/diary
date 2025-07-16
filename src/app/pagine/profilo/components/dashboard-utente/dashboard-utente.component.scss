@@ -1,0 +1,270 @@
+/* src/app/dashboard-utente/dashboard-utente.component.scss */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+:host {
+  font-family: 'Orbitron', sans-serif;
+  --primary-glow: #00ffee;
+  --secondary-glow: #ff00ff;
+  --bg-blur: rgba(15, 15, 35, 0.8);
+  --text-light: #ffffff;
+  --label-color: #a0cfd8;
+  --success-color: #00ff00;
+  --warning-color: #ffcc00;
+  --danger-color: #ff4e4e;
+}
+
+.ff7-dashboard-container {
+  padding: 25px;
+  color: var(--text-light);
+  font-family: 'Orbitron', sans-serif;
+  border: 2px solid var(--primary-glow);
+  box-shadow: 0 0 20px rgba(0, 255, 238, 0.7);
+  margin: 20px auto;
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+  background-color: rgba(10, 10, 25, 0.85);
+  position: relative;
+  overflow: hidden;
+  animation: dashboard-enter 0.8s ease-out forwards;
+}
+
+@keyframes dashboard-enter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ff7-dashboard-title {
+  text-align: center;
+  color: var(--secondary-glow);
+  margin-bottom: 30px;
+  font-size: 2.2em;
+  font-weight: bold;
+  border-bottom: 3px solid var(--secondary-glow);
+  padding-bottom: 12px;
+  text-shadow: 0 0 10px rgba(255, 0, 255, 0.9);
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  // Stili per le "icone" testuali/classi
+  .icon-user-profile {
+    // Esempio: potresti usare un carattere unicode, un'immagine di sfondo, o una classe di Font Awesome
+    // content: '👤'; /* Esempio con emoji */
+    // background-image: url('/assets/icons/user.svg');
+    // background-size: contain;
+    // width: 1.2em;
+    // height: 1.2em;
+    // display: inline-block;
+    font-size: 1.2em; // Dimensione base
+    margin-right: 10px;
+    color: var(--primary-glow);
+  }
+}
+
+.ff7-dashboard-section {
+  background-color: rgba(25, 25, 45, 0.9);
+  border: 1px solid var(--primary-glow);
+  border-radius: 5px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 0 15px rgba(0, 255, 238, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 20px rgba(0, 255, 238, 0.6);
+  }
+}
+
+.ff7-section-heading {
+  color: var(--primary-glow);
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+  font-weight: 500;
+  text-shadow: 0 0 7px rgba(0, 255, 238, 0.6);
+  border-bottom: 1px dashed var(--label-color);
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+
+  // Stili per le "icone" delle sezioni
+  .icon-analytics,
+  .icon-alarm,
+  .icon-notes,
+  .icon-trophy {
+    // Esempio: potresti usare un carattere unicode, un'immagine di sfondo, o una classe di Font Awesome
+    // content: '📊'; // Esempio per icon-analytics
+    // content: '⏰'; // Esempio per icon-alarm
+    // content: '📝'; // Esempio per icon-notes
+    // content: '🏆'; // Esempio per icon-trophy
+    font-size: 1.1em; // Dimensione base
+    margin-right: 10px;
+    color: var(--primary-glow);
+  }
+}
+
+.ff7-data-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 20px;
+}
+
+.ff7-data-item {
+  text-align: center;
+  padding: 10px;
+  background-color: rgba(30, 30, 60, 0.9);
+  border: 1px solid var(--label-color);
+  border-radius: 3px;
+  box-shadow: inset 0 0 5px rgba(0, 255, 238, 0.1);
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(40, 40, 70, 0.9);
+  }
+}
+
+.ff7-data-label {
+  font-size: 0.85em;
+  color: var(--label-color);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ff7-data-value {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: var(--text-light);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+}
+
+.ff7-primary-value {
+  color: var(--primary-glow);
+  text-shadow: 0 0 8px var(--primary-glow);
+}
+
+.ff7-positive-value {
+  color: var(--success-color);
+  text-shadow: 0 0 8px var(--success-color);
+}
+
+.ff7-warning-value {
+  color: var(--warning-color);
+  text-shadow: 0 0 8px var(--warning-color);
+  animation: pulse-warning 1.5s infinite alternate;
+}
+
+@keyframes pulse-warning {
+  from {
+    text-shadow: 0 0 8px var(--warning-color);
+  }
+  to {
+    text-shadow: 0 0 12px var(--warning-color), 0 0 20px rgba(255, 204, 0, 0.3);
+  }
+}
+
+.ff7-section-divider {
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--primary-glow), transparent);
+  margin: 30px 0;
+  box-shadow: 0 0 10px var(--primary-glow);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: divider-shine 3s infinite linear;
+  }
+}
+
+@keyframes divider-shine {
+  from {
+    left: -100%;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+.ff7-message {
+  font-size: 0.9em;
+  color: var(--label-color);
+  text-align: center;
+  margin-top: 15px;
+  margin-bottom: 20px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.ff7-progress-bar-container {
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--primary-glow);
+  border-radius: 5px;
+  height: 25px;
+  overflow: hidden;
+  position: relative;
+  margin-top: 20px;
+  box-shadow: 0 0 10px rgba(0, 255, 238, 0.4);
+}
+
+.ff7-progress-bar {
+  height: 100%;
+  background: linear-gradient(to right, #007bff, var(--primary-glow));
+  width: 0%;
+  transition: width 0.8s ease-out;
+  box-shadow: inset 0 0 8px rgba(0, 255, 238, 0.7);
+  animation: progress-fill 1.5s ease-out forwards;
+}
+
+@keyframes progress-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    /* La larghezza finale è gestita dal binding in HTML */
+  }
+}
+
+.ff7-progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text-light);
+  font-size: 0.9em;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  z-index: 1;
+}
+
+.level-1-section {
+  border: 2px solid var(--secondary-glow);
+  background-color: rgba(20, 20, 40, 0.95);
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.4);
+}
+
+.level-2-section {
+  border: 1px solid var(--primary-glow);
+  background-color: rgba(25, 25, 45, 0.9);
+}
+
+.level-3-section {
+  border: 1px dashed var(--label-color);
+  background-color: rgba(30, 30, 50, 0.85);
+  filter: grayscale(30%);
+}

@@ -8,13 +8,15 @@ import { ProfiloPageRoutingModule } from './profilo-routing.module';
 
 import { ProfiloPage } from './profilo.page';
 
+import { DashboardUtenteComponent } from './components/dashboard-utente/dashboard-utente.component';
+
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    ProfiloPageRoutingModule
+    ProfiloPageRoutingModule, DashboardUtenteComponent
   ],
-  declarations: [ProfiloPage]
+  declarations: [ProfiloPage, ]
 })
 export class ProfiloPageModule {}
