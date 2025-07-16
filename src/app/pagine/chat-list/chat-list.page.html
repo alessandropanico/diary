@@ -4,6 +4,15 @@
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
     <ion-title class="ff7-title">Le Tue Chat</ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="toggleSelectionMode()">
+        <ion-icon slot="icon-only" [name]="isSelectionMode ? 'close-outline' : 'create-outline'"></ion-icon>
+      </ion-button>
+      <ion-button *ngIf="isSelectionMode && selectedConversations.size > 0" (click)="deleteSelectedConversations()">
+        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -14,29 +23,49 @@
     <p>Caricamento chat...</p>
   </div>
 
-  <ion-list *ngIf="!isLoading && conversations.length > 0" class="ff7-list">
-    <ion-item *ngFor="let conv of conversations" (click)="openChat(conv.id)" class="ff7-list-item">
-      <ion-avatar slot="start">
-        <img [src]="conv.otherParticipantPhoto" alt="Foto Profilo">
-      </ion-avatar>
-      <ion-label>
-        <h2>{{ conv.otherParticipantName }}</h2>
-        <p>
-          {{ getDisplayLastMessage(conv) | slice:0:40 }}{{ conv.lastMessage && conv.lastMessage.length > 40 ? '...' : '' }}
-        </p>
-      </ion-label>
-      <ion-note slot="end">
-        {{ conv.displayLastMessageAt }}
-        <ion-badge color="danger" class="unread-count-badge" *ngIf="conv.unreadMessageCount && conv.unreadMessageCount > 0">
+  <ion-list *ngIf="!isLoading" class="ff7-list">
+    <div *ngIf="conversations.length === 0" class="ion-text-center ion-padding">
+      <ion-icon name="chatbubbles-outline" size="large" color="medium"></ion-icon>
+      <p>Non hai ancora conversazioni attive.</p>
+      <ion-button routerLink="/cerca-utenti" shape="round">Inizia una nuova chat</ion-button>
+    </div>
+
+    <ion-item-sliding *ngFor="let conv of conversations" class="ff7-list-item" #slidingItem>
+      <ion-item
+        (click)="isSelectionMode ? toggleConversationSelection(conv.id) : openChat(conv.id)"
+        [class.selected-item]="isConversationSelected(conv.id)"
+      >
+        <ion-checkbox
+          slot="start"
+          [checked]="isConversationSelected(conv.id)"
+          *ngIf="isSelectionMode"
+          (ionChange)="toggleConversationSelection(conv.id); $event.stopPropagation()"
+        ></ion-checkbox>
+
+        <ion-avatar slot="start" *ngIf="!isSelectionMode">
+          <img [src]="conv.otherParticipantPhoto" alt="Foto Profilo">
+        </ion-avatar>
+        <ion-label>
+          <h2>{{ conv.otherParticipantName }}</h2>
+          <p>
+            {{ getDisplayLastMessage(conv) | slice:0:40 }}{{ conv.lastMessage && conv.lastMessage.length > 40 ? '...' : '' }}
+          </p>
+        </ion-label>
+        <ion-note slot="end">
+          {{ conv.displayLastMessageAt }}
+          <ion-badge color="danger" class="unread-count-badge" *ngIf="conv.unreadMessageCount && conv.unreadMessageCount > 0">
             {{ conv.unreadMessageCount > 99 ? '99+' : conv.unreadMessageCount }}
-        </ion-badge>
-      </ion-note>
-    </ion-item>
+          </ion-badge>
+        </ion-note>
+      </ion-item>
+
+      <ion-item-options side="end" *ngIf="!isSelectionMode">
+        <ion-item-option color="danger" (click)="deleteConversation(conv); slidingItem.close()">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          Elimina
+        </ion-item-option>
+      </ion-item-options>
+    </ion-item-sliding>
   </ion-list>
 
-  <div *ngIf="!isLoading && conversations.length === 0" class="ion-text-center ion-padding">
-    <ion-icon name="chatbubbles-outline" size="large" color="medium"></ion-icon>
-    <p>Non hai ancora conversazioni attive.</p>
-    <ion-button routerLink="/cerca-utenti" shape="round">Inizia una nuova chat</ion-button>
-  </div>
 </ion-content>

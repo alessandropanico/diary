@@ -179,3 +179,16 @@ ion-item {
   --inner-border-width: 0px;
 }
 
+ion-header ion-toolbar ion-buttons ion-button ion-icon {
+  color: var(--primary-glow);
+  font-size: 24px;
+  text-shadow: 0 0 5px rgba(0, 255, 238, 0.5);
+}
+
+ion-item-option[color="danger"] {
+  --background: var(--danger-color);
+  --color: white;
+  ion-icon {
+    color: white;
+  }
+}
