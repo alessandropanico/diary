@@ -31,6 +31,8 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   xpForNextLevel: number = 100;
   progressPercentage: number = 0;
 
+  lastGlobalActivityTimestamp: string = ''; // ⭐ NUOVA PROPRIETÀ
+
   private levelThresholds: { level: number, xpRequired: number }[] = [
     { level: 1, xpRequired: 0 },
     { level: 2, xpRequired: 100 },
@@ -95,6 +97,8 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
         this.followersCount = data.followersCount ?? 0;
         this.followingCount = data.followingCount ?? 0;
 
+        this.lastGlobalActivityTimestamp = data.lastGlobalActivityTimestamp ?? '';
+
         // totalXP è già gestito dalla sottoscrizione a expService.totalXP$,
         // quindi non è necessario aggiornarlo di nuovo qui per evitare ridondanze.
       } else {
@@ -121,6 +125,7 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     this.lastNoteListInteraction = '';
     this.followersCount = 0;
     this.followingCount = 0;
+    this.lastGlobalActivityTimestamp = ''; // ⭐ RESETTA IL NUOVO CAMPO
     // Non resettiamo this.totalXP qui, poiché è gestito direttamente da ExpService.
   }
 

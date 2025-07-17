@@ -13,6 +13,7 @@ export interface UserDashboardCounts {
   lastNoteListInteraction: string;
   followersCount: number;
   followingCount: number;
+  lastGlobalActivityTimestamp?: string; // Ora traccia l'ultima attività generale
 }
 
 @Injectable({
@@ -150,36 +151,52 @@ export class UserDataService {
     return null;
   }
 
-  async getUserData(): Promise<any | null> {
-    const user = this.auth.currentUser;
-    if (user) {
-      const userDocRef = doc(this.firestore, 'users', user.uid);
-      try {
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (typeof data['totalXP'] === 'undefined') {
-            await updateDoc(userDocRef, { totalXP: 0 });
-            return { ...data, totalXP: 0 };
-          }
-          return data;
-        } else {
-          const initialData = { totalXP: 0, activeAlarmsCount: 0, totalAlarmsCreated: 0, lastAlarmInteraction: '',
-                                totalNotesCount: 0, totalListsCount: 0, incompleteListItems: 0, lastNoteListInteraction: '',
-                                followersCount: 0, followingCount: 0 };
-          await setDoc(userDocRef, initialData);
-          console.log("Documento utente creato con dati iniziali per UID:", user.uid);
-          return initialData;
-        }
-      } catch (error) {
-        console.error("Errore nel recupero/creazione dei dati utente:", error);
-        return null;
-      }
-    } else {
-      console.warn("Nessun utente loggato. Impossibile recuperare i dati utente.");
-      return null;
-    }
-  }
+ async getUserData(): Promise<any | null> {
+    const user = this.auth.currentUser;
+    if (user) {
+      const userDocRef = doc(this.firestore, 'users', user.uid);
+      try {
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (typeof data['totalXP'] === 'undefined') {
+            await updateDoc(userDocRef, { totalXP: 0 });
+            return { ...data, totalXP: 0 };
+          }
+           // ⭐ Assicurati che lastGlobalActivityTimestamp sia presente o inizializzato
+           if (typeof data['lastGlobalActivityTimestamp'] === 'undefined') {
+              await updateDoc(userDocRef, { lastGlobalActivityTimestamp: '' }); // O una data predefinita
+              return { ...data, lastGlobalActivityTimestamp: '' };
+           }
+          return data;
+        } else {
+          const initialData = {
+              totalXP: 0,
+              activeAlarmsCount: 0,
+              totalAlarmsCreated: 0,
+              lastAlarmInteraction: '',
+              totalNotesCount: 0,
+              totalListsCount: 0,
+              incompleteListItems: 0,
+              lastNoteListInteraction: '',
+              followersCount: 0,
+              followingCount: 0,
+              // ⭐ AGGIUNGI IL NUOVO CAMPO QUI ALL'INIZIALIZZAZIONE
+              lastGlobalActivityTimestamp: ''
+            };
+          await setDoc(userDocRef, initialData);
+          console.log("Documento utente creato con dati iniziali per UID:", user.uid);
+          return initialData;
+        }
+      } catch (error) {
+        console.error("Errore nel recupero/creazione dei dati utente:", error);
+        return null;
+      }
+    } else {
+      console.warn("Nessun utente loggato. Impossibile recuperare i dati utente.");
+      return null;
+    }
+  }
 
   async getUserDataById(uid: string): Promise<any | null> {
     if (!uid) {
