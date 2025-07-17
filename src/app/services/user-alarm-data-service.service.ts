@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Firestore, collection, doc, setDoc, updateDoc, getDoc } from '@angular/fire/firestore';
 import { ExpService } from './exp.service';
-// Non è necessario importare UserDataService in questo file se non viene usato direttamente per refreshDashboardData qui
-// Se in futuro deciderai di rimettere la notifica alla dashboard da qui, dovrai importarlo.
+import { UserDataService } from './user-data.service'; // Importa UserDataService
 
 @Injectable({
   providedIn: 'root'
@@ -11,12 +10,13 @@ export class UserAlarmDataService {
 
   constructor(
     private firestore: Firestore,
-    private expService: ExpService
+    private expService: ExpService,
+    private userDataService: UserDataService // Inietta UserDataService
   ) { }
 
   /**
-   * Aggiorna i dati delle sveglie per un utente e, se specificato, aggiunge XP.
-   * Questo metodo dovrebbe essere chiamato quando le metriche delle sveglie cambiano.
+   * Aggiorna i dati delle sveglie per un utente, inclusi i conteggi e l'attività globale.
+   * Questo è il metodo principale per tutte le modifiche alle metriche delle sveglie.
    * @param userId L'ID dell'utente.
    * @param activeCount Il numero di sveglie attive.
    * @param totalCreated Il numero totale di sveglie create.
@@ -29,8 +29,8 @@ export class UserAlarmDataService {
     activeCount: number,
     totalCreated: number,
     alarmStreak?: number,
-    completedAlarm: boolean = false, // Questo trigger XP
-    createdNewAlarm: boolean = false // Questo non triggera più XP
+    completedAlarm: boolean = false,
+    createdNewAlarm: boolean = false
   ) {
     if (!userId) {
       console.warn('UserAlarmDataService: Tentativo di aggiornare dati sveglie senza userId.');
@@ -38,10 +38,14 @@ export class UserAlarmDataService {
     }
 
     const userRef = doc(collection(this.firestore, 'users'), userId);
+    const now = new Date().toISOString();
+
     const dataToUpdate: any = {
       activeAlarmsCount: activeCount,
-      totalAlarmsCreated: totalCreated,
-      lastAlarmInteraction: new Date().toISOString()
+      totalAlarmsCount: totalCreated,
+      lastAlarmInteraction: now,
+      // ✨ Questo è il punto chiave! Aggiorna il timestamp globale ad ogni interazione
+      lastGlobalActivityTimestamp: now
     };
 
     if (alarmStreak !== undefined) {
@@ -49,20 +53,22 @@ export class UserAlarmDataService {
     }
 
     try {
-      // Per prima cosa, salva i dati dei contatori su Firebase
+      // 1. Aggiorna i dati su Firebase Firestore
       await setDoc(userRef, dataToUpdate, { merge: true });
-      console.log(`Dati sveglie aggiornati per utente ${userId} su Firebase.`);
+      console.log(`Dati sveglie e attività globale aggiornati per utente ${userId} su Firebase.`);
 
-      // Adesso, aggiungi gli XP SOLO se la sveglia è stata completata
+      // 2. Aggiungi gli XP SOLO se la sveglia è stata completata
       if (completedAlarm) {
-        this.expService.addExperience(20); // XP per sveglia completata
+        this.expService.addExperience(20);
         console.log(`[UserAlarmDataService] XP aggiunti per completamento sveglia.`);
       }
-      // ⭐ RIMOSSA la condizione per createdNewAlarm: gli XP non vengono più dati per la creazione.
-      // if (createdNewAlarm) {
-      //   this.expService.addExperience(5);
-      //   console.log(`[UserAlarmDataService] XP aggiunti per creazione nuova sveglia.`);
-      // }
+
+      // 3. Notifica UserDataService per aggiornare lo stato locale e la dashboard
+      await this.userDataService.saveUserData({
+        activeAlarmsCount: activeCount,
+        totalAlarmsCount: totalCreated,
+        lastGlobalActivityTimestamp: now // Passa il timestamp globale aggiornato
+      });
 
     } catch (error) {
       console.error('Errore aggiornamento dati sveglie su Firebase:', error);
@@ -76,6 +82,11 @@ export class UserAlarmDataService {
    * @param userId L'ID dell'utente.
    */
   async onAlarmSuccessfullyDismissed(userId: string) {
+    if (!userId) {
+      console.warn('onAlarmSuccessfullyDismissed: Tentativo senza userId.');
+      return;
+    }
+
     const userDocRef = doc(collection(this.firestore, 'users'), userId);
     const userDocSnap = await getDoc(userDocRef);
     let currentActiveAlarms = 0;
@@ -83,15 +94,20 @@ export class UserAlarmDataService {
     if (userDocSnap.exists()) {
       const userData = userDocSnap.data();
       currentActiveAlarms = userData['activeAlarmsCount'] || 0;
-      currentTotalAlarms = userData['totalAlarmsCreated'] || 0;
+      currentTotalAlarms = userData['totalAlarmsCount'] || 0;
     }
 
+    // Qui si assume che la sveglia che è stata "dismissed" non sia più attiva.
+    // Quindi, decrementiamo activeAlarmsCount per riflettere questo stato.
+    const newActiveAlarms = Math.max(0, currentActiveAlarms - 1);
+
+    // Chiama il metodo principale per aggiornare i dati e l'attività globale
     await this.updateAlarmData(
       userId,
-      currentActiveAlarms,
+      newActiveAlarms,
       currentTotalAlarms,
       undefined,
-      true, // ⭐ TRUE: assegna XP per il completamento
+      true, // TRUE: assegna XP per il completamento
       false
     );
   }
@@ -102,6 +118,11 @@ export class UserAlarmDataService {
    * @param userId L'ID dell'utente.
    */
   async onAlarmCreated(userId: string) {
+    if (!userId) {
+      console.warn('onAlarmCreated: Tentativo senza userId.');
+      return;
+    }
+
     const userDocRef = doc(collection(this.firestore, 'users'), userId);
     const userDocSnap = await getDoc(userDocRef);
     let currentActiveAlarms = 0;
@@ -109,15 +130,18 @@ export class UserAlarmDataService {
     if (userDocSnap.exists()) {
       const userData = userDocSnap.data();
       currentActiveAlarms = userData['activeAlarmsCount'] || 0;
-      currentTotalAlarms = userData['totalAlarmsCreated'] || 0;
+      currentTotalAlarms = userData['totalAlarmsCount'] || 0;
     }
 
+    // Assumiamo che una sveglia appena creata sia attiva per default.
+    // Incrementiamo sia il conteggio delle attive che delle totali.
+    // Chiama il metodo principale per aggiornare i dati e l'attività globale
     await this.updateAlarmData(
       userId,
       currentActiveAlarms + 1,
       currentTotalAlarms + 1,
       undefined,
-      false, // ⭐ FALSE: non assegna XP per la creazione
+      false, // FALSE: non assegna XP per la creazione
       true
     );
   }

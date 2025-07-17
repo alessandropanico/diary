@@ -5,7 +5,7 @@ import { ExpService } from './exp.service';
 
 export interface UserDashboardCounts {
   activeAlarmsCount: number;
-  totalAlarmsCreated: number;
+  totalAlarmsCount: number;
   lastAlarmInteraction: string;
   totalNotesCount: number;
   totalListsCount: number;
