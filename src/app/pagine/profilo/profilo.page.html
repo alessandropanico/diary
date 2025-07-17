@@ -36,7 +36,11 @@
         <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'"
           alt="Foto profilo" />
       </ion-avatar>
-      <app-emoji-status [status]="profile.status || 'neutral'"></app-emoji-status>
+      <app-emoji-status
+        [status]="(editing ? profileEdit.status : profile.status) || 'neutral'"
+        [editing]="editing"
+        (statusSelected)="onStatusSelected($event)"
+      ></app-emoji-status>
     </div>
 
 

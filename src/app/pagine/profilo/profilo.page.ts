@@ -49,7 +49,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
 
   isLoadingStats: boolean = true;
 
-  private userStatusSubscription: Subscription | undefined; // ⭐ NUOVO: Sottoscrizione per lo status
+  private userStatusSubscription: Subscription | undefined; // Sottoscrizione per lo status
 
 
   constructor(
@@ -60,7 +60,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     private router: Router,
   ) { }
 
-   async ngOnInit() {
+    async ngOnInit() {
     this.isLoading = true;
     this.isLoadingStats = true;
 
@@ -75,27 +75,23 @@ export class ProfiloPage implements OnInit, OnDestroy {
         } else {
           this.loggedInUserId = null;
           // Resetta il profilo se l'utente non è loggato
-          this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '', status: 'neutral' }; // ⭐ AGGIORNATO
+          this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '', status: 'neutral' };
           this.profileEdit = { ...this.profile };
           this.isLoading = false;
           this.isLoadingStats = false;
           console.warn('ProfiloPage: Nessun utente loggato.');
-          // Puoi aggiungere qui un reindirizzamento se la pagina profilo richiede login obbligatorio
-          // this.router.navigateByUrl('/login', { replaceUrl: true });
         }
       });
     });
   }
 
-  // --- MODIFICA CHIAVE QUI ---
- async loadProfileData(user: User) {
+  async loadProfileData(user: User) {
     try {
-      const firestoreData = await this.userDataService.getUserData(); // Leggi i dati da Firestore
+      const firestoreData = await this.userDataService.getUserData();
 
       let initialProfileData: any = {};
 
       if (firestoreData) {
-        // Se i dati esistono in Firestore, usali come base.
         initialProfileData = {
           photo: firestoreData.photo || user.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
           banner: firestoreData.banner || 'assets/immaginiGenerali/default-banner.jpg',
@@ -103,10 +99,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
           name: firestoreData.name || user.displayName || '',
           email: firestoreData.email || user.email || '',
           bio: firestoreData.bio || '',
-          status: firestoreData.status || 'neutral' // ⭐ NUOVO: Carica lo stato
+          status: firestoreData.status || 'neutral'
         };
       } else {
-        // Se non esistono dati in Firestore (primo accesso), usa i dati di Google come base.
         initialProfileData = {
           photo: user.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
           banner: 'assets/immaginiGenerali/default-banner.jpg',
@@ -114,26 +109,23 @@ export class ProfiloPage implements OnInit, OnDestroy {
           name: user.displayName || '',
           email: user.email || '',
           bio: '',
-          status: 'neutral' // ⭐ NUOVO: Imposta stato di default per i nuovi utenti
+          status: 'neutral'
         };
-        // Salva i dati iniziali su Firestore per il prossimo accesso
         await this.userDataService.saveUserData(initialProfileData);
       }
 
       this.profile = { ...initialProfileData };
-      this.profileEdit = { ...this.profile }; // Inizializza profileEdit con i dati caricati
+      this.profileEdit = { ...this.profile };
 
     } catch (error) {
       console.error("Errore durante il caricamento/salvataggio iniziale da Firestore:", error);
       await this.presentFF7Alert('Errore nel caricamento del profilo. Riprova più tardi.');
-      // In caso di errore grave, puoi anche decidere di reindirizzare o impostare valori di fallback puri
-      this.profile = { photo: 'assets/immaginiGenerali/default-avatar.jpg', banner: 'assets/immaginiGenerali/default-banner.jpg', nickname: '', name: '', email: '', bio: '', status: 'neutral' }; // ⭐ AGGIORNATO
+      this.profile = { photo: 'assets/immaginiGenerali/default-avatar.jpg', banner: 'assets/immaginiGenerali/default-banner.jpg', nickname: '', name: '', email: '', bio: '', status: 'neutral' };
       this.profileEdit = { ...this.profile };
     } finally {
-      this.isLoading = false; // Il caricamento generale del profilo è completo qui
+      this.isLoading = false;
     }
   }
-  // --- FINE MODIFICA CHIAVE ---
 
   private subscribeToFollowCounts(userId: string) {
     if (this.followersCountSubscription) this.followersCountSubscription.unsubscribe();
@@ -180,14 +172,12 @@ export class ProfiloPage implements OnInit, OnDestroy {
     });
   }
 
-   private subscribeToUserStatus() {
+    private subscribeToUserStatus() {
     if (this.userStatusSubscription) this.userStatusSubscription.unsubscribe();
 
     this.userStatusSubscription = this.userDataService.userStatus$.subscribe(status => {
       this.ngZone.run(() => {
         this.profile.status = status;
-        // Se siamo in modalità modifica, aggiorna anche profileEdit.status
-        // per mantenere la coerenza visiva nel picker emoji.
         if (this.editing) {
           this.profileEdit.status = status;
         }
@@ -197,52 +187,46 @@ export class ProfiloPage implements OnInit, OnDestroy {
 
   startEdit() {
     this.editing = true;
-    this.profileEdit = { ...this.profile }; // Clona i dati attuali del profilo per la modifica
+    this.profileEdit = { ...this.profile };
     this.avatarMarginTop = '20px';
   }
 
   cancelEdit() {
     this.editing = false;
-    this.profileEdit = { ...this.profile }; // Resetta profileEdit ai dati originali
+    this.profileEdit = { ...this.profile };
     this.avatarMarginTop = '-60px';
   }
 
   async saveProfile() {
-    this.isLoading = true; // Mostra lo spinner durante il salvataggio
+    this.isLoading = true;
 
-    // Aggiorna l'oggetto 'profile' con i dati modificati
     this.profile = {
       photo: this.profileEdit.photo,
       banner: this.profileEdit.banner,
-      nickname: this.profileEdit.nickname || '', // Assicura che non sia null o undefined
+      nickname: this.profileEdit.nickname || '',
       name: this.profileEdit.name || '',
       email: this.profileEdit.email || '',
       bio: this.profileEdit.bio || '',
-      status: this.profileEdit.status || 'neutral' // ⭐ NUOVO: Salva lo stato
+      status: this.profileEdit.status || 'neutral'
     };
 
     try {
-      await this.userDataService.saveUserData(this.profile); // Salva i dati aggiornati su Firestore
+      await this.userDataService.saveUserData(this.profile);
       await this.presentFF7Alert('Profilo aggiornato e salvato!');
     } catch (error) {
       console.error('Errore durante il salvataggio del profilo:', error);
       await this.presentFF7Alert('Errore durante il salvataggio del profilo.');
     } finally {
-      this.editing = false; // Esci dalla modalità di modifica
-      this.profileEdit = { ...this.profile }; // Sincronizza profileEdit con i dati appena salvati
-      this.isLoading = false; // Nascondi lo spinner
-      this.avatarMarginTop = '-60px'; // Riposiziona l'avatar
+      this.editing = false;
+      this.profileEdit = { ...this.profile };
+      this.isLoading = false;
+      this.avatarMarginTop = '-60px';
     }
   }
 
-   // ⭐ NUOVO: Metodo per aggiornare lo status dal picker emoji
   onStatusSelected(newStatus: string) {
     this.ngZone.run(async () => {
-      this.profileEdit.status = newStatus; // Aggiorna il valore nel modello di modifica
-      // Non è necessario chiamare direttamente userDataService.updateUserStatus qui
-      // perché verrà salvato quando chiami saveProfile().
-      // Se volessi un salvataggio istantaneo, decommenteresti la riga sotto:
-      // await this.userDataService.updateUserStatus(newStatus);
+      this.profileEdit.status = newStatus;
     });
   }
 
@@ -293,7 +277,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
   }
 
   removeBanner() {
-    this.profileEdit.banner = 'assets/immaginiGenerali/default-banner.jpg'; // Imposta il default per il prossimo salvataggio
+    this.profileEdit.banner = 'assets/immaginiGenerali/default-banner.jpg';
   }
 
   async changePhoto() {
@@ -312,7 +296,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
   }
 
   removePhoto() {
-    this.profileEdit.photo = 'assets/immaginiGenerali/default-avatar.jpg'; // Imposta il default per il prossimo salvataggio
+    this.profileEdit.photo = 'assets/immaginiGenerali/default-avatar.jpg';
   }
 
   ngOnDestroy(): void {
@@ -324,6 +308,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
     }
     if (this.followingCountSubscription) {
       this.followingCountSubscription.unsubscribe();
+    }
+    if (this.userStatusSubscription) { // ⭐ AGGIUNGI QUESTO!
+      this.userStatusSubscription.unsubscribe();
     }
   }
 }
