@@ -27,22 +27,19 @@ export class UserDataService {
   private auth = getAuth();
 
   constructor(private expService: ExpService) {
-this.auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    const userData = await this.getUserData();
-    console.log("[UserDataService] Dati utente caricati all'autenticazione:", userData);
-    if (userData && typeof userData['totalXP'] === 'number') {
-      this.expService.setTotalXP(userData['totalXP']);
-      console.log(`[UserDataService] totalXP impostato da Firebase: ${userData['totalXP']}`);
-    } else {
-      this.expService.setTotalXP(0);
-      console.log("[UserDataService] totalXP non trovato o non numerico, impostato a 0.");
-    }
-  } else {
-    this.expService.setTotalXP(0);
-    console.log("[UserDataService] Utente disconnesso, totalXP impostato a 0.");
-  }
-});
+
+    this.auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const userData = await this.getUserData();
+        if (userData && typeof userData['totalXP'] === 'number') {
+          this.expService.setTotalXP(userData['totalXP']);
+        } else {
+          this.expService.setTotalXP(0);
+        }
+      } else {
+        this.expService.setTotalXP(0);
+      }
+    });
 
     this.expService.totalXP$.subscribe(async (newTotalXP) => {
       const user = this.auth.currentUser;
@@ -50,9 +47,7 @@ this.auth.onAuthStateChanged(async (user) => {
         const userDocRef = doc(this.firestore, 'users', user.uid);
         try {
           await updateDoc(userDocRef, { totalXP: newTotalXP });
-          console.log(`[UserDataService] totalXP salvato su Firebase: ${newTotalXP}`);
         } catch (error) {
-          console.error("Errore nel salvataggio di totalXP su Firebase:", error);
         }
       }
     });
@@ -157,52 +152,52 @@ this.auth.onAuthStateChanged(async (user) => {
     return null;
   }
 
- async getUserData(): Promise<any | null> {
-    const user = this.auth.currentUser;
-    if (user) {
-      const userDocRef = doc(this.firestore, 'users', user.uid);
-      try {
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (typeof data['totalXP'] === 'undefined') {
-            await updateDoc(userDocRef, { totalXP: 0 });
-            return { ...data, totalXP: 0 };
-          }
-           // ⭐ Assicurati che lastGlobalActivityTimestamp sia presente o inizializzato
-           if (typeof data['lastGlobalActivityTimestamp'] === 'undefined') {
-              await updateDoc(userDocRef, { lastGlobalActivityTimestamp: '' }); // O una data predefinita
-              return { ...data, lastGlobalActivityTimestamp: '' };
-           }
-          return data;
-        } else {
-          const initialData = {
-              totalXP: 0,
-              activeAlarmsCount: 0,
-              totalAlarmsCreated: 0,
-              lastAlarmInteraction: '',
-              totalNotesCount: 0,
-              totalListsCount: 0,
-              incompleteListItems: 0,
-              lastNoteListInteraction: '',
-              followersCount: 0,
-              followingCount: 0,
-              // ⭐ AGGIUNGI IL NUOVO CAMPO QUI ALL'INIZIALIZZAZIONE
-              lastGlobalActivityTimestamp: ''
-            };
-          await setDoc(userDocRef, initialData);
-          console.log("Documento utente creato con dati iniziali per UID:", user.uid);
-          return initialData;
-        }
-      } catch (error) {
-        console.error("Errore nel recupero/creazione dei dati utente:", error);
-        return null;
-      }
-    } else {
-      console.warn("Nessun utente loggato. Impossibile recuperare i dati utente.");
-      return null;
-    }
-  }
+  async getUserData(): Promise<any | null> {
+    const user = this.auth.currentUser;
+    if (user) {
+      const userDocRef = doc(this.firestore, 'users', user.uid);
+      try {
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (typeof data['totalXP'] === 'undefined') {
+            await updateDoc(userDocRef, { totalXP: 0 });
+            return { ...data, totalXP: 0 };
+          }
+          // ⭐ Assicurati che lastGlobalActivityTimestamp sia presente o inizializzato
+          if (typeof data['lastGlobalActivityTimestamp'] === 'undefined') {
+            await updateDoc(userDocRef, { lastGlobalActivityTimestamp: '' }); // O una data predefinita
+            return { ...data, lastGlobalActivityTimestamp: '' };
+          }
+          return data;
+        } else {
+          const initialData = {
+            totalXP: 0,
+            activeAlarmsCount: 0,
+            totalAlarmsCreated: 0,
+            lastAlarmInteraction: '',
+            totalNotesCount: 0,
+            totalListsCount: 0,
+            incompleteListItems: 0,
+            lastNoteListInteraction: '',
+            followersCount: 0,
+            followingCount: 0,
+            // ⭐ AGGIUNGI IL NUOVO CAMPO QUI ALL'INIZIALIZZAZIONE
+            lastGlobalActivityTimestamp: ''
+          };
+          await setDoc(userDocRef, initialData);
+          console.log("Documento utente creato con dati iniziali per UID:", user.uid);
+          return initialData;
+        }
+      } catch (error) {
+        console.error("Errore nel recupero/creazione dei dati utente:", error);
+        return null;
+      }
+    } else {
+      console.warn("Nessun utente loggato. Impossibile recuperare i dati utente.");
+      return null;
+    }
+  }
 
   async getUserDataById(uid: string): Promise<any | null> {
     if (!uid) {
@@ -338,28 +333,28 @@ this.auth.onAuthStateChanged(async (user) => {
   //   throw new Error("getDashboardData non è più implementato in UserDataService per questo scopo. Usare getUserData() per un'unica lettura.");
   // }
 
-// All'interno della classe UserDataService { ... }
+  // All'interno della classe UserDataService { ... }
 
-async incrementTotalPhotosShared(): Promise<void> {
-  const uid = this.getUserUid();
-  if (uid) {
-    await this.updateNumericField(uid, 'totalPhotosShared', 1);
-    await this.setLastGlobalActivityTimestamp(new Date().toISOString());
+  async incrementTotalPhotosShared(): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) {
+      await this.updateNumericField(uid, 'totalPhotosShared', 1);
+      await this.setLastGlobalActivityTimestamp(new Date().toISOString());
+    }
   }
-}
 
-async setLastPhotoSharedInteraction(timestamp: string): Promise<void> {
-  const uid = this.getUserUid();
-  if (uid) {
-    await this.updateStringField(uid, 'lastPhotoSharedInteraction', timestamp);
-    await this.setLastGlobalActivityTimestamp(timestamp);
+  async setLastPhotoSharedInteraction(timestamp: string): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) {
+      await this.updateStringField(uid, 'lastPhotoSharedInteraction', timestamp);
+      await this.setLastGlobalActivityTimestamp(timestamp);
+    }
   }
-}
 
-async setLastGlobalActivityTimestamp(timestamp: string): Promise<void> {
-  const uid = this.getUserUid();
-  if (uid) {
-    await this.updateStringField(uid, 'lastGlobalActivityTimestamp', timestamp);
+  async setLastGlobalActivityTimestamp(timestamp: string): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) {
+      await this.updateStringField(uid, 'lastGlobalActivityTimestamp', timestamp);
+    }
   }
-}
 }

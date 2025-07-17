@@ -9,7 +9,6 @@ Aggiungere chat;
 
 Utilizzare notifiche per mobile (Piano blaze...)
 
-Tag e ricerca intelligente per note/task: cerca per parola chiave, categoria, tag;
 Task intelligenti: suggerimenti basati sull’ora/giorno (es. "Hai dimenticato di completare una task ieri");
 
 Tracking umore/giornata: aggiungi una sezione per annotare come ci si sente ogni giorno (magari emoji + breve nota);
