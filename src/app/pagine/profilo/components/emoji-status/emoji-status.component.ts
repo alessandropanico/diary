@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common'; // Assicurati che CommonModule s
   imports: [CommonModule] // Se il componente è standalone, altrimenti rimuovi questa riga
 })
 export class EmojiStatusComponent implements OnInit {
-  @Input() status: string = ''; // ⭐ Modifica qui: Il default per lo status dovrebbe essere una stringa vuota
+  @Input() status: string = ''; // ⭐ Corretto: Il default per lo status dovrebbe essere una stringa vuota
   @Input() editing: boolean = false;
   @Output() statusSelected = new EventEmitter<string>();
 
@@ -42,9 +42,9 @@ export class EmojiStatusComponent implements OnInit {
 
   // ⭐ Aggiorna la logica per mostrare l'emoji corretta o l'indicatore di "nessuno status" ⭐
   getEmojiByStatus(statusKey: string): string {
-    // Se lo status è vuoto, ritorna una stringa vuota. L'HTML deciderà cosa mostrare.
+    // Se lo status è vuoto, ritorna una stringa vuota. L'HTML deciderà cosa mostrare (es. un carattere X o un'icona).
     if (statusKey === '') {
-      return ''; // Non mostrare un carattere emoji diretto qui, l'HTML gestirà ion-icon
+      return '';
     }
     return this.emojiMap[statusKey] || this.emojiMap['neutral'];
   }

@@ -29,7 +29,7 @@ export class UserDataService {
   private firestore = getFirestore();
   private auth = getAuth();
 
-  private _userStatus = new BehaviorSubject<string>('neutral'); // Default: neutral
+  private _userStatus = new BehaviorSubject<string>(''); // Default: neutral
   public userStatus$ = this._userStatus.asObservable();
 
   constructor(private expService: ExpService) {
@@ -44,7 +44,7 @@ export class UserDataService {
       } else {
         this.expService.setTotalXP(0);
         // ⭐ Resetta lo status al logout
-        this._userStatus.next('neutral');
+        this._userStatus.next('');
       }
     });
 
@@ -86,7 +86,7 @@ export class UserDataService {
 
         // ⭐ Aggiorna il BehaviorSubject dello status se il campo è stato modificato/passato
         if (dataToSave.status !== undefined) {
-          this._userStatus.next(dataToSave.status);
+          this._userStatus.next(dataToSave.status ?? '');
         }
 
       } catch (error) {
@@ -187,7 +187,7 @@ export class UserDataService {
             data.lastGlobalActivityTimestamp = '';
           }
           // ⭐ NUOVO: Assicurati che 'status' sia presente o abbia un default
-          data.status = data.status || 'neutral';
+          data.status = data.status ?? ''; // Se è null/undefined, imposta a ''; altrimenti mantiene il valore esistente (anche '')
 
         } else {
           // Crea il documento con i dati iniziali, inclusi lo status default
@@ -205,7 +205,7 @@ export class UserDataService {
             lastGlobalActivityTimestamp: '',
             totalPhotosShared: 0,
             lastPhotoSharedInteraction: '',
-            status: 'neutral' // ⭐ AGGIUNGI QUI IL VALORE DI DEFAULT PER STATUS AL PRIMO ACCESSO
+            status: '' // ⭐ AGGIUNGI QUI IL VALORE DI DEFAULT PER STATUS AL PRIMO ACCESSO
           };
           await setDoc(userDocRef, initialData);
           console.log("Documento utente creato con dati iniziali per UID:", user.uid);
@@ -219,13 +219,13 @@ export class UserDataService {
       } catch (error) {
         console.error("Errore nel recupero/creazione dei dati utente:", error);
         // ⭐ Resetta il BehaviorSubject dello status in caso di errore
-        this._userStatus.next('neutral');
+        this._userStatus.next('');
         return null;
       }
     } else {
       console.warn("Nessun utente loggato. Impossibile recuperare i dati utente.");
       // ⭐ Resetta il BehaviorSubject dello status se non c'è utente
-      this._userStatus.next('neutral');
+      this._userStatus.next('');
       return null;
     }
   }
