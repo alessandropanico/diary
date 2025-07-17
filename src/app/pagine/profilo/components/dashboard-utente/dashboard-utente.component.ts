@@ -3,7 +3,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ExpService } from 'src/app/services/exp.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
-import { Subscription } from 'rxjs'; // Ancora utile per ExpService
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard-utente',
@@ -52,19 +52,18 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    // Sottoscriviti a totalXP$ per aggiornamenti in tempo reale dell'XP e del livello
-    // Questo è l'unico Observable a cui ci sottoscriviamo per ora.
+    // Sottoscriviti a totalXP$ per aggiornamenti in tempo reale dell'XP e del livello.
+    // Quando gli XP cambiano, ricarica tutti i dati della dashboard.
     this.subscriptions.add(
       this.expService.totalXP$.subscribe((totalXP: number) => {
         this.totalXP = totalXP;
         this.calculateLevelAndProgress();
-        // ⭐ Quando gli XP cambiano (e quindi un'attività è stata completata), ricarica anche i dati della dashboard
+        // ⭐ CHIAMATA CHIAVE: Aggiorna tutti i dati della dashboard quando l'XP cambia.
         this.loadDashboardData();
       })
     );
 
-    // Carica i dati della dashboard al primo caricamento del componente
-    // Questo è il caricamento iniziale. Gli aggiornamenti successivi avverranno tramite la sottoscrizione a totalXP$
+    // Carica i dati della dashboard al primo caricamento del componente.
     this.loadDashboardData();
   }
 
@@ -73,12 +72,14 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Carica i dati della dashboard dal UserDataService.
-   * Questo metodo viene chiamato all'inizializzazione e ogni volta che gli XP cambiano,
-   * per assicurare che tutti i contatori siano aggiornati.
+   * Carica tutti i dati relativi alla dashboard dall'User Data Service.
+   * Questo metodo viene chiamato all'inizializzazione del componente e
+   * ogni volta che il totalXP cambia, per garantire che i dati siano aggiornati.
    */
   async loadDashboardData(): Promise<void> {
     try {
+      // Recupera i dati dal servizio.
+      // Assicurati che i valori siano numeri/stringhe validi usando l'operatore nullish coalescing (??).
       const data = await this.userDataService.getUserData() as UserDashboardCounts | null;
 
       if (data) {
@@ -94,21 +95,21 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
         this.followersCount = data.followersCount ?? 0;
         this.followingCount = data.followingCount ?? 0;
 
-        // totalXP è già gestito dalla sottoscrizione a expService.totalXP$
-        // this.totalXP = data.totalXP ?? 0;
-        // this.calculateLevelAndProgress(); // Non necessario qui se gestito dall'XP sub
+        // totalXP è già gestito dalla sottoscrizione a expService.totalXP$,
+        // quindi non è necessario aggiornarlo di nuovo qui per evitare ridondanze.
       } else {
-        console.warn("Nessun dato dashboard trovato o utente non loggato. Inizializzo a zero.");
+        console.warn("Nessun dato dashboard trovato o utente non loggato. Inizializzazione a zero.");
         this.resetDashboardData();
       }
     } catch (error) {
       console.error("Errore nel caricamento dei dati della dashboard:", error);
-      this.resetDashboardData(); // Resetta in caso di errore per evitare valori indefiniti
+      this.resetDashboardData(); // Resetta i dati in caso di errore per pulizia.
     }
   }
 
   /**
-   * Resetta tutte le proprietà della dashboard a zero o a stringhe vuote.
+   * Resetta tutte le proprietà della dashboard a valori iniziali (zero/stringa vuota).
+   * Utile quando non ci sono dati utente o in caso di errore di caricamento.
    */
   resetDashboardData(): void {
     this.activeAlarmsCount = 0;
@@ -120,9 +121,8 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     this.lastNoteListInteraction = '';
     this.followersCount = 0;
     this.followingCount = 0;
-    // Non resettare totalXP qui, è gestito da ExpService
+    // Non resettiamo this.totalXP qui, poiché è gestito direttamente da ExpService.
   }
-
 
   calculateLevelAndProgress(): void {
     let currentLevel = 1;
@@ -136,8 +136,9 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
         if (i + 1 < this.levelThresholds.length) {
           xpForNextLevelThreshold = this.levelThresholds[i + 1].xpRequired;
         } else {
-          // Se siamo all'ultimo livello, non c'è un "prossimo" livello definito per XP
-          xpForNextLevelThreshold = this.totalXP + 1; // Basta mostrare l'XP attuale
+          // Se siamo all'ultimo livello definito, non c'è un "prossimo" livello per XP.
+          // Imposta un valore che mostri il progresso completato o l'XP attuale.
+          xpForNextLevelThreshold = this.totalXP + 1;
         }
         break;
       }
@@ -150,16 +151,16 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
       this.xpForNextLevel = xpForNextLevelThreshold - xpForCurrentLevel;
       this.progressPercentage = this.xpForNextLevel > 0 ? (this.currentXP / this.xpForNextLevel) * 100 : 100;
     } else {
-      this.xpForNextLevel = 0; // Già al livello massimo o non c'è un prossimo livello definito
-      this.progressPercentage = 100; // Progresso completato
+      this.xpForNextLevel = 0; // Già al livello massimo o non c'è un prossimo livello definito.
+      this.progressPercentage = 100; // Progresso completato.
     }
 
     if (this.progressPercentage > 100) this.progressPercentage = 100;
   }
 
   /**
-   * Helper per formattare le stringhe di data o mostrare 'N/A' se vuote.
-   * @param dateString La stringa di data da formattare (es. ISO string).
+   * Formatta una stringa di data nel formato 'dd/MM/yyyy' o restituisce 'N/A' se non valida.
+   * @param dateString La stringa di data (es. ISO string).
    * @returns La data formattata o 'N/A'.
    */
   getDisplayDate(dateString: string): string {
@@ -168,8 +169,7 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     }
     try {
       const date = new Date(dateString);
-      // Controlla se la data è valida dopo la creazione
-      if (isNaN(date.getTime())) {
+      if (isNaN(date.getTime())) { // Controlla se la data è valida.
         return 'N/A';
       }
       return date.toLocaleDateString('it-IT');

@@ -10,7 +10,7 @@
     <div class="ff7-data-grid">
       <div class="ff7-data-item">
         <div class="ff7-data-label">Ultima Attività Globale</div>
-        <div class="ff7-data-value ff7-primary-value">{{ lastAlarmInteraction | date:'dd/MM/yyyy' }}</div>
+        <div class="ff7-data-value ff7-primary-value">{{ getDisplayDate(lastAlarmInteraction) }}</div>
       </div>
     </div>
   </div>
@@ -31,7 +31,7 @@
       </div>
       <div class="ff7-data-item">
         <div class="ff7-data-label">Ultima Modifica</div>
-        <div class="ff7-data-value">{{ lastAlarmInteraction | date:'dd/MM/yyyy' }}</div>
+        <div class="ff7-data-value">{{ getDisplayDate(lastAlarmInteraction) }}</div>
       </div>
     </div>
   </div>
@@ -57,7 +57,7 @@
       </div>
       <div class="ff7-data-item">
         <div class="ff7-data-label">Ultima Modifica</div>
-        <div class="ff7-data-value">{{ lastNoteListInteraction | date:'dd/MM/yyyy' }}</div>
+        <div class="ff7-data-value">{{ getDisplayDate(lastNoteListInteraction) }}</div>
       </div>
     </div>
   </div>
