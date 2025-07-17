@@ -16,27 +16,6 @@
   </div>
 
   <div class="ff7-section-divider"></div>
-  <div class="ff7-dashboard-section level-2-section">
-    <h3 class="ff7-section-heading">
-      <i class="icon-alarm"></i> Gestione Sveglie
-    </h3>
-    <div class="ff7-data-grid">
-      <div class="ff7-data-item">
-        <div class="ff7-data-label">Sveglie Attive</div>
-        <div class="ff7-data-value ff7-positive-value">{{ activeAlarmsCount }}</div>
-      </div>
-      <div class="ff7-data-item">
-        <div class="ff7-data-label">Sveglie Totali</div>
-        <div class="ff7-data-value">{{ totalAlarmsCount }}</div>
-      </div>
-      <div class="ff7-data-item">
-        <div class="ff7-data-label">Ultima Modifica</div>
-        <div class="ff7-data-value">{{ getDisplayDate(lastAlarmInteraction) }}</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="ff7-section-divider"></div>
 
   <div class="ff7-dashboard-section level-2-section">
     <h3 class="ff7-section-heading">
@@ -62,7 +41,31 @@
     </div>
   </div>
 
+
   <div class="ff7-section-divider"></div>
+
+  <div class="ff7-dashboard-section level-2-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-alarm"></i> Gestione Sveglie
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Sveglie Attive</div>
+        <div class="ff7-data-value ff7-positive-value">{{ activeAlarmsCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Sveglie Totali</div>
+        <div class="ff7-data-value">{{ totalAlarmsCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultima Modifica</div>
+        <div class="ff7-data-value">{{ getDisplayDate(lastAlarmInteraction) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ff7-section-divider"></div>
+
   <div class="ff7-dashboard-section level-2-section">
     <h3 class="ff7-section-heading">
       <i class="icon-camera"></i> Foto Condivise
@@ -76,8 +79,10 @@
         <div class="ff7-data-label">Ultima Condivisione</div>
         <div class="ff7-data-value">{{ getDisplayDate(lastPhotoSharedInteraction) }}</div>
       </div>
-      </div>
+    </div>
   </div>
+
+
   <div class="ff7-section-divider"></div>
 
   <div class="ff7-dashboard-section level-3-section">
@@ -91,7 +96,8 @@
       </div>
       <div class="ff7-data-item">
         <div class="ff7-data-label">XP Totali</div>
-        <div class="ff7-data-value">{{ totalXP }}</div> </div>
+        <div class="ff7-data-value">{{ totalXP }}</div>
+      </div>
       <div class="ff7-data-item">
         <div class="ff7-data-label">XP Attuali</div>
         <div class="ff7-data-value">{{ currentXP }}</div>
