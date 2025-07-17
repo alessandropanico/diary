@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { getAuth, User } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit, getFirestore, updateDoc } from 'firebase/firestore';
 import { ExpService } from './exp.service';
+import { BehaviorSubject, Observable } from 'rxjs';
+
 
 export interface UserDashboardCounts {
   activeAlarmsCount: number;
@@ -22,15 +24,18 @@ export interface UserDashboardCounts {
   providedIn: 'root'
 })
 export class UserDataService {
+
   private db = getFirestore();
   private firestore = getFirestore();
   private auth = getAuth();
 
-  constructor(private expService: ExpService) {
+  private _userStatus = new BehaviorSubject<string>('neutral'); // Default: neutral
+  public userStatus$ = this._userStatus.asObservable();
 
+  constructor(private expService: ExpService) {
     this.auth.onAuthStateChanged(async (user) => {
       if (user) {
-        const userData = await this.getUserData();
+        const userData = await this.getUserData(); // getUserData ora aggiornerà _userStatus
         if (userData && typeof userData['totalXP'] === 'number') {
           this.expService.setTotalXP(userData['totalXP']);
         } else {
@@ -38,6 +43,8 @@ export class UserDataService {
         }
       } else {
         this.expService.setTotalXP(0);
+        // ⭐ Resetta lo status al logout
+        this._userStatus.next('neutral');
       }
     });
 
@@ -48,6 +55,7 @@ export class UserDataService {
         try {
           await updateDoc(userDocRef, { totalXP: newTotalXP });
         } catch (error) {
+          console.error("Errore nell'aggiornamento dell'XP totale:", error);
         }
       }
     });
@@ -75,6 +83,12 @@ export class UserDataService {
       try {
         await setDoc(userDocRef, dataToSave, { merge: true });
         console.log("Dati utente salvati con successo per UID:", user.uid);
+
+        // ⭐ Aggiorna il BehaviorSubject dello status se il campo è stato modificato/passato
+        if (dataToSave.status !== undefined) {
+          this._userStatus.next(dataToSave.status);
+        }
+
       } catch (error) {
         console.error("Errore nel salvataggio dei dati utente:", error);
         throw error;
@@ -84,6 +98,7 @@ export class UserDataService {
       throw new Error("Utente non autenticato.");
     }
   }
+
 
   async searchUsers(searchTerm: string): Promise<any[]> {
     const normalizedSearchTerm = searchTerm.toLowerCase().trim();
@@ -158,19 +173,24 @@ export class UserDataService {
       const userDocRef = doc(this.firestore, 'users', user.uid);
       try {
         const docSnap = await getDoc(userDocRef);
+        let data: any;
+
         if (docSnap.exists()) {
-          const data = docSnap.data();
+          data = docSnap.data();
+          // Assicurati che i campi esistano e abbiano valori di fallback
           if (typeof data['totalXP'] === 'undefined') {
             await updateDoc(userDocRef, { totalXP: 0 });
-            return { ...data, totalXP: 0 };
+            data.totalXP = 0;
           }
-          // ⭐ Assicurati che lastGlobalActivityTimestamp sia presente o inizializzato
           if (typeof data['lastGlobalActivityTimestamp'] === 'undefined') {
-            await updateDoc(userDocRef, { lastGlobalActivityTimestamp: '' }); // O una data predefinita
-            return { ...data, lastGlobalActivityTimestamp: '' };
+            await updateDoc(userDocRef, { lastGlobalActivityTimestamp: '' });
+            data.lastGlobalActivityTimestamp = '';
           }
-          return data;
+          // ⭐ NUOVO: Assicurati che 'status' sia presente o abbia un default
+          data.status = data.status || 'neutral';
+
         } else {
+          // Crea il documento con i dati iniziali, inclusi lo status default
           const initialData = {
             totalXP: 0,
             activeAlarmsCount: 0,
@@ -182,20 +202,39 @@ export class UserDataService {
             lastNoteListInteraction: '',
             followersCount: 0,
             followingCount: 0,
-            // ⭐ AGGIUNGI IL NUOVO CAMPO QUI ALL'INIZIALIZZAZIONE
-            lastGlobalActivityTimestamp: ''
+            lastGlobalActivityTimestamp: '',
+            totalPhotosShared: 0,
+            lastPhotoSharedInteraction: '',
+            status: 'neutral' // ⭐ AGGIUNGI QUI IL VALORE DI DEFAULT PER STATUS AL PRIMO ACCESSO
           };
           await setDoc(userDocRef, initialData);
           console.log("Documento utente creato con dati iniziali per UID:", user.uid);
-          return initialData;
+          data = initialData;
         }
+
+        // ⭐ AGGIORNA IL BEHAVIORSUBJECT DELLO STATUS DOPO AVER CARICATO/INIZIALIZZATO I DATI
+        this._userStatus.next(data.status);
+
+        return data;
       } catch (error) {
         console.error("Errore nel recupero/creazione dei dati utente:", error);
+        // ⭐ Resetta il BehaviorSubject dello status in caso di errore
+        this._userStatus.next('neutral');
         return null;
       }
     } else {
       console.warn("Nessun utente loggato. Impossibile recuperare i dati utente.");
+      // ⭐ Resetta il BehaviorSubject dello status se non c'è utente
+      this._userStatus.next('neutral');
       return null;
+    }
+  }
+
+  async updateUserStatus(status: string): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) {
+      await this.updateStringField(uid, 'status', status);
+      this._userStatus.next(status); // Aggiorna il BehaviorSubject
     }
   }
 

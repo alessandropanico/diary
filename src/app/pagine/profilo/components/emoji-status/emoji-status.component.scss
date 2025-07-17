@@ -1,0 +1,50 @@
+.emoji-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: #1a1a1a;
+  border: 2px solid #00ffee;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px #00ffeeaa;
+  z-index: 99999;
+  cursor: pointer; // Aggiunto per indicare che è cliccabile
+}
+
+/* ⭐ NUOVI STILI PER IL PICKER INLINE */
+.emoji-picker-inline {
+  position: absolute;
+  bottom: 45px; /* Posiziona il picker sopra il badge emoji (36px altezza badge + 9px di spazio) */
+  right: 0;
+  background-color: #2a2a2a; /* Sfondo scuro simile all'app */
+  border: 2px solid #00ffee; /* Bordo luminoso FF7 */
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 0 15px #00ffeecc; /* Ombra luminosa */
+  display: flex;
+  flex-wrap: wrap; /* Permette alle emoji di andare a capo */
+  gap: 8px; /* Spazio tra le emoji */
+  z-index: 100000; /* Assicurati che sia sopra il badge e quasi tutto il resto */
+  width: max-content; /* La larghezza si adatta al contenuto */
+  min-width: 150px; /* Larghezza minima per evitare che sia troppo compatto */
+  max-width: 250px; /* Larghezza massima per evitare che sia troppo esteso */
+  justify-content: center; /* Centra le emoji se non riempiono una riga intera */
+}
+
+.emoji-option {
+  font-size: 2rem; /* Dimensione delle emoji nel picker */
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+
+  &:hover {
+    background-color: #4a4a4a; /* Sfondo leggermente più chiaro al passaggio del mouse */
+    transform: scale(1.1); /* Piccolo effetto di ingrandimento */
+  }
+}

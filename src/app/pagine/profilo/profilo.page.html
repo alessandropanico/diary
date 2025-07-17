@@ -30,11 +30,15 @@
       Rimuovi banner
     </ion-button>
 
-    <ion-avatar class="profile-avatar" [class.editable]="editing" [style.margin-top]="avatarMarginTop"
-      (click)="editing && changePhoto()">
-      <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'"
-        alt="Foto profilo" />
-    </ion-avatar>
+    <div class="avatar-wrapper">
+      <ion-avatar class="profile-avatar" [class.editable]="editing" [style.margin-top]="avatarMarginTop"
+        (click)="editing && changePhoto()">
+        <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'"
+          alt="Foto profilo" />
+      </ion-avatar>
+      <app-emoji-status [status]="profile.status || 'neutral'"></app-emoji-status>
+    </div>
+
 
     <ion-button
       *ngIf="editing && profileEdit.photo && profileEdit.photo !== 'assets/immaginiGenerali/default-avatar.jpg'"
@@ -65,7 +69,7 @@
     </div>
 
     <div *ngIf="!editing">
-    <app-dashboard-utente></app-dashboard-utente>
+      <app-dashboard-utente></app-dashboard-utente>
     </div>
 
     <form *ngIf="editing" (ngSubmit)="saveProfile()">

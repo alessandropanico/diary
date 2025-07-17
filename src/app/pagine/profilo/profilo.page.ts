@@ -21,7 +21,8 @@ export class ProfiloPage implements OnInit, OnDestroy {
     nickname: '',
     name: '',
     email: '',
-    bio: ''
+    bio: '',
+    status: 'neutral'
   };
 
   profileEdit = {
@@ -30,7 +31,8 @@ export class ProfiloPage implements OnInit, OnDestroy {
     nickname: '',
     name: '',
     email: '',
-    bio: ''
+    bio: '',
+    status: 'neutral'
   };
 
   editing = false;
@@ -47,6 +49,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
 
   isLoadingStats: boolean = true;
 
+  private userStatusSubscription: Subscription | undefined; // ⭐ NUOVO: Sottoscrizione per lo status
+
+
   constructor(
     private ngZone: NgZone,
     private alertCtrl: AlertController,
@@ -55,7 +60,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     private router: Router,
   ) { }
 
-  async ngOnInit() {
+   async ngOnInit() {
     this.isLoading = true;
     this.isLoadingStats = true;
 
@@ -66,10 +71,11 @@ export class ProfiloPage implements OnInit, OnDestroy {
           this.loggedInUserId = user.uid;
           await this.loadProfileData(user);
           this.subscribeToFollowCounts(user.uid);
+          this.subscribeToUserStatus(); // ⭐ NUOVO: Sottoscrivi allo status
         } else {
           this.loggedInUserId = null;
           // Resetta il profilo se l'utente non è loggato
-          this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '' };
+          this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '', status: 'neutral' }; // ⭐ AGGIORNATO
           this.profileEdit = { ...this.profile };
           this.isLoading = false;
           this.isLoadingStats = false;
@@ -82,7 +88,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
   }
 
   // --- MODIFICA CHIAVE QUI ---
-  async loadProfileData(user: User) {
+ async loadProfileData(user: User) {
     try {
       const firestoreData = await this.userDataService.getUserData(); // Leggi i dati da Firestore
 
@@ -90,25 +96,25 @@ export class ProfiloPage implements OnInit, OnDestroy {
 
       if (firestoreData) {
         // Se i dati esistono in Firestore, usali come base.
-        // I fallback ai dati di Google o ai default si applicano solo se il campo è vuoto in Firestore.
         initialProfileData = {
           photo: firestoreData.photo || user.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
           banner: firestoreData.banner || 'assets/immaginiGenerali/default-banner.jpg',
           nickname: firestoreData.nickname || user.displayName?.split(' ')[0] || '',
           name: firestoreData.name || user.displayName || '',
           email: firestoreData.email || user.email || '',
-          bio: firestoreData.bio || ''
+          bio: firestoreData.bio || '',
+          status: firestoreData.status || 'neutral' // ⭐ NUOVO: Carica lo stato
         };
       } else {
         // Se non esistono dati in Firestore (primo accesso), usa i dati di Google come base.
-        // E SALVALI subito su Firestore per renderli persistenti.
         initialProfileData = {
           photo: user.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
           banner: 'assets/immaginiGenerali/default-banner.jpg',
           nickname: user.displayName?.split(' ')[0] || '',
           name: user.displayName || '',
           email: user.email || '',
-          bio: ''
+          bio: '',
+          status: 'neutral' // ⭐ NUOVO: Imposta stato di default per i nuovi utenti
         };
         // Salva i dati iniziali su Firestore per il prossimo accesso
         await this.userDataService.saveUserData(initialProfileData);
@@ -121,7 +127,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
       console.error("Errore durante il caricamento/salvataggio iniziale da Firestore:", error);
       await this.presentFF7Alert('Errore nel caricamento del profilo. Riprova più tardi.');
       // In caso di errore grave, puoi anche decidere di reindirizzare o impostare valori di fallback puri
-      this.profile = { photo: 'assets/immaginiGenerali/default-avatar.jpg', banner: 'assets/immaginiGenerali/default-banner.jpg', nickname: '', name: '', email: '', bio: '' };
+      this.profile = { photo: 'assets/immaginiGenerali/default-avatar.jpg', banner: 'assets/immaginiGenerali/default-banner.jpg', nickname: '', name: '', email: '', bio: '', status: 'neutral' }; // ⭐ AGGIORNATO
       this.profileEdit = { ...this.profile };
     } finally {
       this.isLoading = false; // Il caricamento generale del profilo è completo qui
@@ -174,6 +180,21 @@ export class ProfiloPage implements OnInit, OnDestroy {
     });
   }
 
+   private subscribeToUserStatus() {
+    if (this.userStatusSubscription) this.userStatusSubscription.unsubscribe();
+
+    this.userStatusSubscription = this.userDataService.userStatus$.subscribe(status => {
+      this.ngZone.run(() => {
+        this.profile.status = status;
+        // Se siamo in modalità modifica, aggiorna anche profileEdit.status
+        // per mantenere la coerenza visiva nel picker emoji.
+        if (this.editing) {
+          this.profileEdit.status = status;
+        }
+      });
+    });
+  }
+
   startEdit() {
     this.editing = true;
     this.profileEdit = { ...this.profile }; // Clona i dati attuali del profilo per la modifica
@@ -196,7 +217,8 @@ export class ProfiloPage implements OnInit, OnDestroy {
       nickname: this.profileEdit.nickname || '', // Assicura che non sia null o undefined
       name: this.profileEdit.name || '',
       email: this.profileEdit.email || '',
-      bio: this.profileEdit.bio || ''
+      bio: this.profileEdit.bio || '',
+      status: this.profileEdit.status || 'neutral' // ⭐ NUOVO: Salva lo stato
     };
 
     try {
@@ -211,6 +233,17 @@ export class ProfiloPage implements OnInit, OnDestroy {
       this.isLoading = false; // Nascondi lo spinner
       this.avatarMarginTop = '-60px'; // Riposiziona l'avatar
     }
+  }
+
+   // ⭐ NUOVO: Metodo per aggiornare lo status dal picker emoji
+  onStatusSelected(newStatus: string) {
+    this.ngZone.run(async () => {
+      this.profileEdit.status = newStatus; // Aggiorna il valore nel modello di modifica
+      // Non è necessario chiamare direttamente userDataService.updateUserStatus qui
+      // perché verrà salvato quando chiami saveProfile().
+      // Se volessi un salvataggio istantaneo, decommenteresti la riga sotto:
+      // await this.userDataService.updateUserStatus(newStatus);
+    });
   }
 
   goToFollowersList() {
