@@ -1,13 +1,18 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { AuthService } from './services/auth.service';
 import { MenuController, AlertController, ModalController } from '@ionic/angular';
 import { Subject, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { UserDataService } from './services/user-data.service';
-import { getAuth } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
+
 import { SearchModalComponent } from './shared/search-modal/search-modal.component';
 import { ChatNotificationService } from './services/chat-notification.service';
 import { FirebaseAuthStateService } from './services/firebase-auth-state.service';
+
+import { environment } from 'src/environments/environment';
+const app = initializeApp(environment.firebaseConfig);
+
 
 @Component({
   selector: 'app-root',
@@ -18,7 +23,6 @@ import { FirebaseAuthStateService } from './services/firebase-auth-state.service
 export class AppComponent implements OnInit, OnDestroy {
 
   profile: any = null;
-  userSub!: Subscription;
   unreadCountSub: Subscription | undefined;
   profilePhotoUrl: string | null = null;
 
@@ -34,11 +38,11 @@ export class AppComponent implements OnInit, OnDestroy {
   private searchSubscription: Subscription | undefined;
   unreadCount = 0;
 
-  firebaseIsLoggedIn: boolean = false;
+  // *** MODIFICA QUI: ACCETTA boolean O null ***
+  firebaseIsLoggedIn: boolean | null = null;
 
   constructor(
     private menu: MenuController,
-    private authService: AuthService,
     private alertCtrl: AlertController,
     private router: Router,
     private userDataService: UserDataService,
@@ -54,28 +58,14 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
-    this.userSub = this.authService.getUserObservable().subscribe(user => {
-      if (user) {
-        this.loadProfilePhoto();
-      } else {
-        this.profilePhotoUrl = 'assets/immaginiGenerali/default-avatar.jpg';
-      }
-    });
-
-    const currentUser = getAuth().currentUser;
-    if (currentUser) {
+    this.firebaseAuthStateService.isAuthenticated$().subscribe(async isLoggedIn => {
+      // TypeScript ora accetta l'assegnazione di boolean | null a firebaseIsLoggedIn
+      this.firebaseIsLoggedIn = isLoggedIn;
       await this.loadProfilePhoto();
-    }
+    });
 
     this.unreadCountSub = this.chatNotificationService.getUnreadCount$().subscribe(count => {
       this.unreadCount = count;
-    });
-
-
-    this.firebaseAuthStateService.isAuthenticated$().subscribe(isLoggedIn => {
-      if (isLoggedIn !== null) {
-        this.firebaseIsLoggedIn = isLoggedIn;
-      }
     });
 
     setTimeout(() => {
@@ -84,10 +74,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    if (this.userSub) {
-      this.userSub.unsubscribe();
-    }
     this.unreadCountSub?.unsubscribe();
+    this.searchSubscription?.unsubscribe();
   }
 
   toggleMenu() {
@@ -112,21 +100,20 @@ export class AppComponent implements OnInit, OnDestroy {
     this.showInstallButton = false;
   }
 
+  // Questo metodo ora legge lo stato da firebaseIsLoggedIn, che può essere boolean o null
   isLoggedIn(): boolean {
-    return this.authService.isLoggedIn();
+    // Restituisce true solo se firebaseIsLoggedIn è true, altrimenti false (gestendo anche null)
+    return !!this.firebaseIsLoggedIn;
   }
 
   getProfilePhoto(): string {
     return this.profilePhotoUrl || 'assets/immaginiGenerali/default-avatar.jpg';
   }
 
-  loadProfile() {
-    const storedProfile = localStorage.getItem('profile');
-    this.profile = storedProfile ? JSON.parse(storedProfile) : null;
-  }
-
   async logout() {
-    await this.authService.logout();
+    const authInstance = getAuth();
+    await signOut(authInstance);
+
     this.closeMenu();
     const alert = await this.alertCtrl.create({
       header: 'Logout',
@@ -135,9 +122,6 @@ export class AppComponent implements OnInit, OnDestroy {
       cssClass: 'ff7-alert',
     });
     await alert.present();
-    this.router.navigateByUrl('/home').then(() => {
-      window.location.reload();
-    });
   }
 
   async loadProfilePhoto() {
@@ -146,9 +130,11 @@ export class AppComponent implements OnInit, OnDestroy {
       const userData = await this.userDataService.getUserData();
       if (userData && userData.photo) {
         this.profilePhotoUrl = userData.photo;
-      } else if (currentUser.photoURL) {
+      }
+      else if (currentUser.photoURL) {
         this.profilePhotoUrl = currentUser.photoURL;
-      } else {
+      }
+      else {
         this.profilePhotoUrl = 'assets/immaginiGenerali/default-avatar.jpg';
       }
     } else {
@@ -175,7 +161,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   async presentSearchModal() {
-    if (this.firebaseIsLoggedIn) {
+    if (this.firebaseIsLoggedIn) { // Controlla lo stato di login Firebase
       const modal = await this.modalCtrl.create({
         component: SearchModalComponent,
         cssClass: 'search-modal'

@@ -10,11 +10,11 @@
     <ion-content class="menu-content">
       <ion-list class="cursor">
 
-        <ion-item [routerLink]="isLoggedIn() ? '/profilo' : '/login'" (click)="closeMenu()">
-          <ion-avatar slot="start" *ngIf="isLoggedIn()">
+        <ion-item [routerLink]="firebaseIsLoggedIn ? '/profilo' : '/login'" (click)="closeMenu()">
+          <ion-avatar slot="start" *ngIf="firebaseIsLoggedIn">
             <img [src]="getProfilePhoto()" />
           </ion-avatar>
-          <ion-icon slot="start" name="person-circle-outline" *ngIf="!isLoggedIn()"></ion-icon>
+          <ion-icon slot="start" name="person-circle-outline" *ngIf="!firebaseIsLoggedIn"></ion-icon>
           <ion-label>Profilo</ion-label>
         </ion-item>
 
@@ -27,7 +27,7 @@
           <ion-label>Cerca Utenti</ion-label>
         </ion-item>
 
-        <ion-item routerLink="/lista-utenti" (click)="closeMenu()" *ngIf="isLoggedIn()">
+        <ion-item routerLink="/lista-utenti" (click)="closeMenu()" *ngIf="firebaseIsLoggedIn">
           <ion-icon slot="start" name="people-outline"></ion-icon> <ion-label>Lista Utenti</ion-label>
         </ion-item>
 
@@ -60,11 +60,11 @@
           <ion-icon slot="start" name="ribbon-outline"></ion-icon> <ion-label>Riconoscimenti</ion-label>
         </ion-item>
 
-        <ion-item routerLink="/login" (click)="closeMenu()" *ngIf="!isLoggedIn()">
+        <ion-item routerLink="/login" (click)="closeMenu()" *ngIf="!firebaseIsLoggedIn">
           <ion-icon slot="start" name="log-in-outline"></ion-icon> <ion-label>Login</ion-label>
         </ion-item>
 
-        <ion-item *ngIf="isLoggedIn()" (click)="logout(); closeMenu()">
+        <ion-item *ngIf="firebaseIsLoggedIn" (click)="logout(); closeMenu()">
           <ion-icon slot="start" name="log-out-outline"></ion-icon>
           <ion-label>Logout</ion-label>
         </ion-item>
