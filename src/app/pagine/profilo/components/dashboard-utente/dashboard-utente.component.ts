@@ -1,4 +1,3 @@
-// src/app/dashboard-utente/dashboard-utente.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ExpService } from 'src/app/services/exp.service';
@@ -28,11 +27,10 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   followersCount: number = 0;
   followingCount: number = 0;
 
-  // ⭐ NUOVE VARIABILI PER LE FOTO CONDIVISE
-  totalPhotosShared: number = 0; // Contatore per il numero totale di foto condivise
-  lastPhotoSharedInteraction: string = ''; // Timestamp o data dell'ultima condivisione di una foto
+  // NUOVE VARIABILI PER LE FOTO CONDIVISE
+  totalPhotosShared: number = 0;
+  lastPhotoSharedInteraction: string = '';
 
-  // Variabili per il sistema di XP/Livello
   userLevel: number = 1;
   currentXP: number = 0;
   xpForNextLevel: number = 100;
@@ -62,13 +60,10 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    console.log("DashboardUtenteComponent: Inizializzazione del componente.");
     this.subscriptions.add(
       this.expService.totalXP$.subscribe((totalXP: number) => {
         this.totalXP = totalXP;
-        console.log(`DashboardUtenteComponent: totalXP aggiornato a ${this.totalXP}`);
         this.calculateLevelAndProgress();
-        console.log(`DashboardUtenteComponent: Dopo calculateLevelAndProgress - userLevel: ${this.userLevel}, currentXP: ${this.currentXP}, xpForNextLevel: ${this.xpForNextLevel}, progressPercentage: ${this.progressPercentage}%`);
       })
     );
     this.loadDashboardData();
@@ -95,17 +90,14 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
         this.followersCount = data.followersCount ?? 0;
         this.followingCount = data.followingCount ?? 0;
 
-        // ⭐ INIZIALIZZA LE NUOVE VARIABILI CON I DATI (o 0/stringa vuota se non esistono ancora)
         this.totalPhotosShared = data.totalPhotosShared ?? 0;
         this.lastPhotoSharedInteraction = data.lastPhotoSharedInteraction ?? '';
 
         this.lastGlobalActivityTimestamp = data.lastGlobalActivityTimestamp ?? '';
       } else {
-        console.warn("Nessun dato dashboard trovato o utente non loggato. Inizializzazione a zero.");
         this.resetDashboardData();
       }
     } catch (error) {
-      console.error("Errore nel caricamento dei dati della dashboard:", error);
       this.resetDashboardData();
     }
   }
@@ -120,7 +112,6 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     this.lastNoteListInteraction = '';
     this.followersCount = 0;
     this.followingCount = 0;
-    // ⭐ RESETTA ANCHE LE NUOVE VARIABILI
     this.totalPhotosShared = 0;
     this.lastPhotoSharedInteraction = '';
 
@@ -128,7 +119,6 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   }
 
   calculateLevelAndProgress(): void {
-    console.log(`calculateLevelAndProgress chiamato con totalXP: ${this.totalXP}`);
     let xpRequiredForCurrentLevel = 0;
     let xpRequiredForNextLevelThreshold = 0;
     let currentLevel = 1;

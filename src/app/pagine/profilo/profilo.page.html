@@ -64,7 +64,9 @@
       </div>
     </div>
 
+    <div *ngIf="!editing">
     <app-dashboard-utente></app-dashboard-utente>
+    </div>
 
     <form *ngIf="editing" (ngSubmit)="saveProfile()">
       <ion-list lines="none">
