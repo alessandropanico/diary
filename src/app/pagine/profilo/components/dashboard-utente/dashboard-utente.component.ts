@@ -9,26 +9,30 @@ import { Subscription } from 'rxjs';
   selector: 'app-dashboard-utente',
   templateUrl: './dashboard-utente.component.html',
   styleUrls: ['./dashboard-utente.component.scss'],
-  imports: [CommonModule],
+  imports: [CommonModule], // Necessario per | number:'1.0-0' pipe se non standalone e non incluso nel modulo padre
 })
 export class DashboardUtenteComponent implements OnInit, OnDestroy {
 
+  // Variabili per le metriche delle sveglie
   activeAlarmsCount: number = 0;
-  totalAlarmsCount: number = 0; // ⭐ CAMBIATO DA 'totalAlarmsCreated'
+  totalAlarmsCount: number = 0;
   lastAlarmInteraction: string = '';
 
+  // Variabili per le metriche di note e liste
   totalNotesCount: number = 0;
   totalListsCount: number = 0;
   incompleteListItems: number = 0;
   lastNoteListInteraction: string = '';
 
+  // Variabili per le metriche di social
   followersCount: number = 0;
   followingCount: number = 0;
 
+  // Variabili per il sistema di XP/Livello
   userLevel: number = 1;
-  currentXP: number = 0;
-  totalXP: number = 0;
-  xpForNextLevel: number = 100;
+  currentXP: number = 0; // **MODIFICATO: XP accumulati all'interno del livello corrente (ex currentXPInLevel)**
+  xpForNextLevel: number = 100; // **MODIFICATO: XP rimanenti per il prossimo livello (ex xpNeededForNextLevel)**
+  totalXP: number = 0; // XP totali accumulati
   progressPercentage: number = 0;
 
   lastGlobalActivityTimestamp: string = '';
@@ -44,6 +48,7 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     { level: 8, xpRequired: 6850 },
     { level: 9, xpRequired: 9850 },
     { level: 10, xpRequired: 13850 },
+    // Aggiungi altri livelli se necessario.
   ];
 
   private subscriptions: Subscription = new Subscription();
@@ -57,11 +62,11 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.expService.totalXP$.subscribe((totalXP: number) => {
         this.totalXP = totalXP;
-        this.calculateLevelAndProgress();
-        this.loadDashboardData();
+        this.calculateLevelAndProgress(); // Ricalcola ogni volta che totalXP cambia
       })
     );
 
+    // Carica i dati iniziali della dashboard (che includono i contatori ma non l'XP, che viene da ExpService)
     this.loadDashboardData();
   }
 
@@ -75,7 +80,7 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
 
       if (data) {
         this.activeAlarmsCount = data.activeAlarmsCount ?? 0;
-        this.totalAlarmsCount = data.totalAlarmsCount ?? 0; // ⭐ CAMBIATO DA 'totalAlarmsCreated'
+        this.totalAlarmsCount = data.totalAlarmsCount ?? 0;
         this.lastAlarmInteraction = data.lastAlarmInteraction ?? '';
 
         this.totalNotesCount = data.totalNotesCount ?? 0;
@@ -99,7 +104,7 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
 
   resetDashboardData(): void {
     this.activeAlarmsCount = 0;
-    this.totalAlarmsCount = 0; // ⭐ CAMBIATO ANCHE QUI
+    this.totalAlarmsCount = 0;
     this.lastAlarmInteraction = '';
     this.totalNotesCount = 0;
     this.totalListsCount = 0;
@@ -111,35 +116,50 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   }
 
   calculateLevelAndProgress(): void {
+    let xpRequiredForCurrentLevel = 0;
+    let xpRequiredForNextLevelThreshold = 0; // Renamed for clarity in this scope
     let currentLevel = 1;
-    let xpForCurrentLevel = 0;
-    let xpForNextLevelThreshold = 0;
 
+    // Trova il livello corrente e le soglie di XP
     for (let i = this.levelThresholds.length - 1; i >= 0; i--) {
       if (this.totalXP >= this.levelThresholds[i].xpRequired) {
         currentLevel = this.levelThresholds[i].level;
-        xpForCurrentLevel = this.levelThresholds[i].xpRequired;
+        xpRequiredForCurrentLevel = this.levelThresholds[i].xpRequired;
+
+        // Determina la soglia del prossimo livello
         if (i + 1 < this.levelThresholds.length) {
-          xpForNextLevelThreshold = this.levelThresholds[i + 1].xpRequired;
+          xpRequiredForNextLevelThreshold = this.levelThresholds[i + 1].xpRequired;
         } else {
-          xpForNextLevelThreshold = this.totalXP + 1;
+          // Se siamo all'ultimo livello definito (o oltre), non c'è un "prossimo livello" per avanzare.
+          // La barra di progresso sarà al 100%.
+          xpRequiredForNextLevelThreshold = this.totalXP; // Imposta la soglia al totale XP per indicare 100%
         }
-        break;
+        break; // Trovato il livello, usciamo dal ciclo
       }
     }
 
     this.userLevel = currentLevel;
-    this.currentXP = this.totalXP - xpForCurrentLevel;
+    // XP accumulati all'interno del livello corrente
+    this.currentXP = this.totalXP - xpRequiredForCurrentLevel;
 
-    if (xpForNextLevelThreshold > xpForCurrentLevel) {
-      this.xpForNextLevel = xpForNextLevelThreshold - xpForCurrentLevel;
-      this.progressPercentage = this.xpForNextLevel > 0 ? (this.currentXP / this.xpForNextLevel) * 100 : 100;
+    // XP totali necessari per completare il livello corrente (la "lunghezza" della barra)
+    const totalXpSpanForCurrentLevel = xpRequiredForNextLevelThreshold - xpRequiredForCurrentLevel;
+
+    if (totalXpSpanForCurrentLevel > 0) {
+      // XP rimanenti per il prossimo livello
+      this.xpForNextLevel = totalXpSpanForCurrentLevel - this.currentXP;
+      // Percentuale di progresso all'interno del livello attuale
+      this.progressPercentage = (this.currentXP / totalXpSpanForCurrentLevel) * 100;
     } else {
-      this.xpForNextLevel = 0;
-      this.progressPercentage = 100;
+      // Se siamo all'ultimo livello definito o non c'è progresso possibile (totalXpSpanForCurrentLevel è 0 o negativo)
+      this.xpForNextLevel = 0; // Non ci sono XP da guadagnare per il prossimo livello
+      this.progressPercentage = 100; // La barra è piena
     }
 
-    if (this.progressPercentage > 100) this.progressPercentage = 100;
+    // Assicurati che la percentuale non superi il 100% (per evitare problemi di floating point)
+    if (this.progressPercentage > 100) {
+      this.progressPercentage = 100;
+    }
   }
 
   getDisplayDate(dateString: string): string {
@@ -151,7 +171,8 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
       if (isNaN(date.getTime())) {
         return 'N/A';
       }
-      return date.toLocaleDateString('it-IT');
+      // Formatta la data e l'ora, ad esempio: "GG/MM/AAAA HH:MM"
+      return date.toLocaleDateString('it-IT', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
     } catch (e) {
       console.error("Errore nel parsing della data:", dateString, e);
       return 'N/A';
