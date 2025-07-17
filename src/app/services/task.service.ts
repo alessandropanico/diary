@@ -1,5 +1,3 @@
-// src/app/services/task.service.ts
-
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { Task } from '../interfaces/task';
@@ -16,6 +14,8 @@ import {
 } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 
+import { ExpService } from './exp.service';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -25,18 +25,20 @@ export class TaskService {
 
   private db = getFirestore();
   private authStateSubscription: Subscription;
-  private currentTasksSubscription: Subscription | undefined; // Per la sottoscrizione alle task in tempo reale se la aggiungiamo
+  private currentTasksSubscription: Subscription | undefined;
 
   private initialLoadCompleted: boolean = false;
 
-  constructor() {
+  constructor(
+    private expService: ExpService
+  ) {
     const auth = getAuth();
     this.authStateSubscription = new Subscription();
 
     this.authStateSubscription.add(
       onAuthStateChanged(auth, async (user: User | null) => {
         if (user) {
-          await this.loadTasks(); // Carica le task e processa quelle scadute
+          await this.loadTasks();
           this.initialLoadCompleted = true;
         } else {
           this.tasksSubject.next([]);
@@ -50,7 +52,7 @@ export class TaskService {
     if (this.authStateSubscription) {
       this.authStateSubscription.unsubscribe();
     }
-    if (this.currentTasksSubscription) { // Annulla la sottoscrizione se l'hai aggiunta
+    if (this.currentTasksSubscription) {
       this.currentTasksSubscription.unsubscribe();
     }
   }
@@ -74,38 +76,35 @@ export class TaskService {
 
     try {
       const tasksCollectionRef = collection(this.db, `users/${uid}/tasks`);
-      const querySnapshot = await getDocs(tasksCollectionRef); // Usa getDocs per un caricamento singolo
+      const querySnapshot = await getDocs(tasksCollectionRef);
 
       let loadedTasks: Task[] = [];
       querySnapshot.forEach(docSnap => {
         loadedTasks.push({ id: docSnap.id, ...docSnap.data() as Task });
       });
 
-      // ✅ NUOVA LOGICA: Processa le task scadute SUBITO dopo il caricamento
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       const tasksToUpdate: Task[] = [];
+      let xpFromExpiredTasks = 0;
+
       loadedTasks.forEach(task => {
         if (task.id && !task.completed) {
-          // Assicurati che dueDate sia una stringa di data valida o un oggetto Date
           const dueDate = new Date(task.dueDate);
-          dueDate.setHours(0, 0, 0, 0); // Normalizza per confronto solo sulla data
+          dueDate.setHours(0, 0, 0, 0);
 
           if (dueDate < today) {
             tasksToUpdate.push(task);
+            xpFromExpiredTasks += 5;
           }
         }
       });
 
       for (const task of tasksToUpdate) {
         try {
-          // Chiama direttamente l'update del documento, non usare toggleCompletion qui
-          // per evitare un'emissione aggiuntiva dal BehaviorSubject per ogni task.
-          // toggleCompletion aggiorna il BehaviorSubject, qui vogliamo solo il write.
           const taskDocRef = doc(this.db, `users/${uid}/tasks`, task.id!);
           await updateDoc(taskDocRef, { completed: true });
-          // Aggiorna l'oggetto task direttamente in loadedTasks per riflettere il cambiamento prima dell'emissione
           const index = loadedTasks.findIndex(t => t.id === task.id);
           if (index !== -1) {
             loadedTasks[index].completed = true;
@@ -116,7 +115,11 @@ export class TaskService {
       }
 
       loadedTasks.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      this.tasksSubject.next(loadedTasks); // Emetti le task aggiornate (incluse quelle appena completate)
+      this.tasksSubject.next(loadedTasks);
+
+      if (xpFromExpiredTasks > 0) {
+        this.expService.addExperience(xpFromExpiredTasks);
+      }
 
     } catch (error) {
       console.error('TaskService: Errore durante il caricamento delle task da Firestore:', error);
@@ -136,7 +139,10 @@ export class TaskService {
       const docRef = await addDoc(tasksCollectionRef, task);
 
       const currentTasks = this.tasksSubject.value || [];
-      this.tasksSubject.next([...currentTasks, { id: docRef.id, ...task }]);
+      const newTaskWithId = { id: docRef.id, ...task };
+      this.tasksSubject.next([...currentTasks, newTaskWithId]);
+
+      this.expService.addExperience(5);
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiunta della task a Firestore:', error);
       throw error;
@@ -156,6 +162,7 @@ export class TaskService {
 
       const currentTasks = this.tasksSubject.value || [];
       this.tasksSubject.next(currentTasks.filter(t => t.id !== taskId));
+
     } catch (error) {
       console.error('TaskService: Errore durante l\'eliminazione della task da Firestore:', error);
       throw error;
@@ -178,6 +185,10 @@ export class TaskService {
         t.id === taskId ? { ...t, completed: completed } : t
       );
       this.tasksSubject.next(updatedTasks);
+
+      if (completed) {
+        this.expService.addExperience(10);
+      }
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiornamento della task in Firestore:', error);
       throw error;
