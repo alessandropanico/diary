@@ -115,6 +115,9 @@ export class AppComponent implements OnInit, OnDestroy {
     await signOut(authInstance);
 
     this.closeMenu();
+
+    this.router.navigateByUrl('/login');
+
     const alert = await this.alertCtrl.create({
       header: 'Logout',
       message: 'Logout effettuato con successo.',
