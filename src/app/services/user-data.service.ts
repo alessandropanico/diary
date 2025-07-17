@@ -14,6 +14,8 @@ export interface UserDashboardCounts {
   followersCount: number;
   followingCount: number;
   lastGlobalActivityTimestamp?: string; // Ora traccia l'ultima attività generale
+  totalPhotosShared?: number; // Nuova proprietà per il conteggio delle foto condivise
+  lastPhotoSharedInteraction?: string; // Nuova proprietà per l'ultima interazi
 }
 
 @Injectable({
@@ -335,4 +337,29 @@ this.auth.onAuthStateChanged(async (user) => {
   //   // Per ora, ci basiamo su chiamate asincrone one-off.
   //   throw new Error("getDashboardData non è più implementato in UserDataService per questo scopo. Usare getUserData() per un'unica lettura.");
   // }
+
+// All'interno della classe UserDataService { ... }
+
+async incrementTotalPhotosShared(): Promise<void> {
+  const uid = this.getUserUid();
+  if (uid) {
+    await this.updateNumericField(uid, 'totalPhotosShared', 1);
+    await this.setLastGlobalActivityTimestamp(new Date().toISOString());
+  }
+}
+
+async setLastPhotoSharedInteraction(timestamp: string): Promise<void> {
+  const uid = this.getUserUid();
+  if (uid) {
+    await this.updateStringField(uid, 'lastPhotoSharedInteraction', timestamp);
+    await this.setLastGlobalActivityTimestamp(timestamp);
+  }
+}
+
+async setLastGlobalActivityTimestamp(timestamp: string): Promise<void> {
+  const uid = this.getUserUid();
+  if (uid) {
+    await this.updateStringField(uid, 'lastGlobalActivityTimestamp', timestamp);
+  }
+}
 }

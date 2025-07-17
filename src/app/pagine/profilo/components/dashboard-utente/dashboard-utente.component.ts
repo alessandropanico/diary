@@ -9,7 +9,7 @@ import { Subscription } from 'rxjs';
   selector: 'app-dashboard-utente',
   templateUrl: './dashboard-utente.component.html',
   styleUrls: ['./dashboard-utente.component.scss'],
-  imports: [CommonModule], // Necessario per | number:'1.0-0' pipe se non standalone e non incluso nel modulo padre
+  imports: [CommonModule],
 })
 export class DashboardUtenteComponent implements OnInit, OnDestroy {
 
@@ -28,11 +28,15 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   followersCount: number = 0;
   followingCount: number = 0;
 
+  // ⭐ NUOVE VARIABILI PER LE FOTO CONDIVISE
+  totalPhotosShared: number = 0; // Contatore per il numero totale di foto condivise
+  lastPhotoSharedInteraction: string = ''; // Timestamp o data dell'ultima condivisione di una foto
+
   // Variabili per il sistema di XP/Livello
   userLevel: number = 1;
-  currentXP: number = 0; // **MODIFICATO: XP accumulati all'interno del livello corrente (ex currentXPInLevel)**
-  xpForNextLevel: number = 100; // **MODIFICATO: XP rimanenti per il prossimo livello (ex xpNeededForNextLevel)**
-  totalXP: number = 0; // XP totali accumulati
+  currentXP: number = 0;
+  xpForNextLevel: number = 100;
+  totalXP: number = 0;
   progressPercentage: number = 0;
 
   lastGlobalActivityTimestamp: string = '';
@@ -48,7 +52,6 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     { level: 8, xpRequired: 6850 },
     { level: 9, xpRequired: 9850 },
     { level: 10, xpRequired: 13850 },
-    // Aggiungi altri livelli se necessario.
   ];
 
   private subscriptions: Subscription = new Subscription();
@@ -58,18 +61,18 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     private userDataService: UserDataService
   ) { }
 
-ngOnInit() {
-  console.log("DashboardUtenteComponent: Inizializzazione del componente.");
-  this.subscriptions.add(
-    this.expService.totalXP$.subscribe((totalXP: number) => {
-      this.totalXP = totalXP;
-      console.log(`DashboardUtenteComponent: totalXP aggiornato a ${this.totalXP}`);
-      this.calculateLevelAndProgress();
-      console.log(`DashboardUtenteComponent: Dopo calculateLevelAndProgress - userLevel: ${this.userLevel}, currentXP: ${this.currentXP}, xpForNextLevel: ${this.xpForNextLevel}, progressPercentage: ${this.progressPercentage}%`);
-    })
-  );
-  this.loadDashboardData();
-}
+  ngOnInit() {
+    console.log("DashboardUtenteComponent: Inizializzazione del componente.");
+    this.subscriptions.add(
+      this.expService.totalXP$.subscribe((totalXP: number) => {
+        this.totalXP = totalXP;
+        console.log(`DashboardUtenteComponent: totalXP aggiornato a ${this.totalXP}`);
+        this.calculateLevelAndProgress();
+        console.log(`DashboardUtenteComponent: Dopo calculateLevelAndProgress - userLevel: ${this.userLevel}, currentXP: ${this.currentXP}, xpForNextLevel: ${this.xpForNextLevel}, progressPercentage: ${this.progressPercentage}%`);
+      })
+    );
+    this.loadDashboardData();
+  }
 
   ngOnDestroy() {
     this.subscriptions.unsubscribe();
@@ -92,6 +95,10 @@ ngOnInit() {
         this.followersCount = data.followersCount ?? 0;
         this.followingCount = data.followingCount ?? 0;
 
+        // ⭐ INIZIALIZZA LE NUOVE VARIABILI CON I DATI (o 0/stringa vuota se non esistono ancora)
+        this.totalPhotosShared = data.totalPhotosShared ?? 0;
+        this.lastPhotoSharedInteraction = data.lastPhotoSharedInteraction ?? '';
+
         this.lastGlobalActivityTimestamp = data.lastGlobalActivityTimestamp ?? '';
       } else {
         console.warn("Nessun dato dashboard trovato o utente non loggato. Inizializzazione a zero.");
@@ -113,52 +120,46 @@ ngOnInit() {
     this.lastNoteListInteraction = '';
     this.followersCount = 0;
     this.followingCount = 0;
+    // ⭐ RESETTA ANCHE LE NUOVE VARIABILI
+    this.totalPhotosShared = 0;
+    this.lastPhotoSharedInteraction = '';
+
     this.lastGlobalActivityTimestamp = '';
   }
 
   calculateLevelAndProgress(): void {
     console.log(`calculateLevelAndProgress chiamato con totalXP: ${this.totalXP}`);
     let xpRequiredForCurrentLevel = 0;
-    let xpRequiredForNextLevelThreshold = 0; // Renamed for clarity in this scope
+    let xpRequiredForNextLevelThreshold = 0;
     let currentLevel = 1;
 
-    // Trova il livello corrente e le soglie di XP
     for (let i = this.levelThresholds.length - 1; i >= 0; i--) {
       if (this.totalXP >= this.levelThresholds[i].xpRequired) {
         currentLevel = this.levelThresholds[i].level;
         xpRequiredForCurrentLevel = this.levelThresholds[i].xpRequired;
 
-        // Determina la soglia del prossimo livello
         if (i + 1 < this.levelThresholds.length) {
           xpRequiredForNextLevelThreshold = this.levelThresholds[i + 1].xpRequired;
         } else {
-          // Se siamo all'ultimo livello definito (o oltre), non c'è un "prossimo livello" per avanzare.
-          // La barra di progresso sarà al 100%.
-          xpRequiredForNextLevelThreshold = this.totalXP; // Imposta la soglia al totale XP per indicare 100%
+          xpRequiredForNextLevelThreshold = this.totalXP;
         }
-        break; // Trovato il livello, usciamo dal ciclo
+        break;
       }
     }
 
     this.userLevel = currentLevel;
-    // XP accumulati all'interno del livello corrente
     this.currentXP = this.totalXP - xpRequiredForCurrentLevel;
 
-    // XP totali necessari per completare il livello corrente (la "lunghezza" della barra)
     const totalXpSpanForCurrentLevel = xpRequiredForNextLevelThreshold - xpRequiredForCurrentLevel;
 
     if (totalXpSpanForCurrentLevel > 0) {
-      // XP rimanenti per il prossimo livello
       this.xpForNextLevel = totalXpSpanForCurrentLevel - this.currentXP;
-      // Percentuale di progresso all'interno del livello attuale
       this.progressPercentage = (this.currentXP / totalXpSpanForCurrentLevel) * 100;
     } else {
-      // Se siamo all'ultimo livello definito o non c'è progresso possibile (totalXpSpanForCurrentLevel è 0 o negativo)
-      this.xpForNextLevel = 0; // Non ci sono XP da guadagnare per il prossimo livello
-      this.progressPercentage = 100; // La barra è piena
+      this.xpForNextLevel = 0;
+      this.progressPercentage = 100;
     }
 
-    // Assicurati che la percentuale non superi il 100% (per evitare problemi di floating point)
     if (this.progressPercentage > 100) {
       this.progressPercentage = 100;
     }
@@ -173,7 +174,6 @@ ngOnInit() {
       if (isNaN(date.getTime())) {
         return 'N/A';
       }
-      // Formatta la data e l'ora, ad esempio: "GG/MM/AAAA HH:MM"
       return date.toLocaleDateString('it-IT', { year: 'numeric', month: '2-digit', day: '2-digit' });
     } catch (e) {
       console.error("Errore nel parsing della data:", dateString, e);

@@ -1,6 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { PhotoService } from 'src/app/services/photo.service';
 import { ExpService } from 'src/app/services/exp.service';
+import { UserDataService } from 'src/app/services/user-data.service'; // ⭐ Importa UserDataService
 
 interface Photo {
   id: number;
@@ -18,6 +19,7 @@ export class GalleriaPage implements OnInit {
   constructor(
     private photoService: PhotoService,
     private expService: ExpService,
+    private userDataService: UserDataService, // ⭐ Iniettalo qui
   ) { }
 
   @ViewChild('video', { static: false }) videoElement!: ElementRef<HTMLVideoElement>;
@@ -167,7 +169,7 @@ export class GalleriaPage implements OnInit {
   }
 
   // Condivisione
-  async sharePhoto(photoSrc: string) {
+ async sharePhoto(photoSrc: string) {
     try {
       const response = await fetch(photoSrc);
       const blob = await response.blob();
@@ -179,8 +181,13 @@ export class GalleriaPage implements OnInit {
           title: 'Condividi foto',
           text: 'Guarda questa foto!',
         });
-         // ✅ AGGIUNGI QUI
+        // ✅ AGGIUNGI QUI
         await this.expService.addExperience(10, 'photoShared'); // Assegna 10 XP per la condivisione
+
+        // ⭐ AGGIORNA LE METRICHE DELLE FOTO CONDIVISE NEL USERDATASERVICE
+        await this.userDataService.incrementTotalPhotosShared();
+        await this.userDataService.setLastPhotoSharedInteraction(new Date().toISOString());
+
       } else {
         alert('La condivisione file non è supportata su questo dispositivo.');
       }
