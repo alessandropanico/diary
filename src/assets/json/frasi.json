@@ -1,0 +1,1407 @@
+[
+  {
+    "id": 1,
+    "frase": "Colui che vince se stesso è il guerriero più potente.",
+    "autore": "Confucio"
+  },
+  {
+    "id": 2,
+    "frase": "Cerca di diventare non un uomo di successo, ma piuttosto un uomo di valore.",
+    "autore": "Albert Einstein"
+  },
+  {
+    "id": 3,
+    "frase": "Il segreto del successo nella vita è di essere pronti ad afferrare le opportunità quando arrivano.",
+    "autore": "Benjamin Disraeli"
+  },
+  {
+    "id": 4,
+    "frase": "L'uomo di successo trarrà profitto dai propri errori e ci riproverà in maniera diversa.",
+    "autore": "Dale Carnegie"
+  },
+  {
+    "id": 5,
+    "frase": "Un uomo saggio non si affanna per ciò che non ha, ma gioisce per ciò che ha.",
+    "autore": "Epitteto"
+  },
+  {
+    "id": 6,
+    "frase": "Devi alzarti dal letto ogni mattina con determinazione se vuoi andare a dormire con soddisfazione.",
+    "autore": "George Horace Lorimer"
+  },
+  {
+    "id": 7,
+    "frase": "L’istruzione è l'arma più potente che si può usare per cambiare il mondo.",
+    "autore": "Nelson Mandela"
+  },
+  {
+    "id": 8,
+    "frase": "La cosa più difficile è la decisione iniziale di agire, il resto è solo tenacia. Le paure sono tigri di carta.",
+    "autore": "Amelia Earhart"
+  },
+  {
+    "id": 9,
+    "frase": "Dietro ogni impresa di successo c’è qualcuno che ha preso una decisione coraggiosa.",
+    "autore": "Peter Ferdinand Drucker"
+  },
+  {
+    "id": 10,
+    "frase": "Sono convinto che circa la metà di quello che separa gli imprenditori di successo da quelli che non hanno successo sia la pura perseveranza.",
+    "autore": "Steve Jobs"
+  },
+  {
+    "id": 11,
+    "frase": "Mai dire mai, perché i limiti, come le paure, spesso sono solo un’illusione.",
+    "autore": "Michael Jordan"
+  },
+  {
+    "id": 12,
+    "frase": "Non conta come cadi. Conta come ti rialzi.",
+    "autore": "Vince Lombardi"
+  },
+  {
+    "id": 13,
+    "frase": "Prima ti ignorano, poi ti deridono, poi ti combattono. Poi vinci.",
+    "autore": "Mahatma Gandhi"
+  },
+  {
+    "id": 14,
+    "frase": "È nel momento delle decisioni che si plasma il tuo destino.",
+    "autore": "Anthony Robbins"
+  },
+  {
+    "id": 15,
+    "frase": "Niente è davvero difficile se lo si divide in tanti piccoli pezzettini.",
+    "autore": "Henry Ford"
+  },
+  {
+    "id": 16,
+    "frase": "Trasforma le tue ferite in saggezza.",
+    "autore": "Oprah Winfrey"
+  },
+  {
+    "id": 17,
+    "frase": "Se perdi qualcuno ma trovi te stessa hai vinto.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 18,
+    "frase": "Non giudicare ogni giorno dal raccolto che raccogli, ma dai semi che pianti.",
+    "autore": "Robert Louis Stevenson"
+  },
+  {
+    "id": 19,
+    "frase": "È duro fallire, ma è ancora peggio non aver cercato di avere successo.",
+    "autore": "Theodore Roosevelt"
+  },
+  {
+    "id": 20,
+    "frase": "Se l’opportunità non bussa, costruisci una porta.",
+    "autore": "Milton Berle"
+  },
+  {
+    "id": 21,
+    "frase": "Ogni volta che il mondo vede una persona di successo, nota solo la gloria pubblica, e mai i sacrifici fatti in privato per raggiungerla.",
+    "autore": "Vaibhav Shah"
+  },
+  {
+    "id": 22,
+    "frase": "E se diventi farfalla nessuno pensa più a ciò che è stato quando strisciavi per terra e non volevi le ali.",
+    "autore": "Alda Merini"
+  },
+  {
+    "id": 23,
+    "frase": "Non giudicatemi per i miei successi ma per tutte quelle volte che sono caduto e sono riuscito a rialzarmi.",
+    "autore": "Nelson Mandela"
+  },
+  {
+    "id": 24,
+    "frase": "Il successo arriva quando l’opportunità incontra la preparazione.",
+    "autore": "Zig Ziglar"
+  },
+  {
+    "id": 25,
+    "frase": "La miglior vendetta è un grande successo.",
+    "autore": "Les Brown"
+  },
+  {
+    "id": 26,
+    "frase": "Il successo non è definitivo, il fallimento non è fatale: ciò che conta è il coraggio di andare avanti.",
+    "autore": "Winston Churchill"
+  },
+  {
+    "id": 27,
+    "frase": "Il successo è tanto misurato dalla posizione che hai raggiunto nella vita quanto dagli ostacoli che hai superato.",
+    "autore": "Booker T. Washington"
+  },
+  {
+    "id": 28,
+    "frase": "Soltanto coloro che hanno il coraggio di affrontare grandi fallimenti possono raggiungere grandi successi.",
+    "autore": "Robert Kennedy"
+  },
+  {
+    "id": 29,
+    "frase": "Credere in se stessi è uno dei mattoni più importanti nella costruzione di ogni impresa di successo.",
+    "autore": "Lydia Maria Child"
+  },
+  {
+    "id": 30,
+    "frase": "Non cercare di diventare un uomo di successo, ma piuttosto un uomo di valore.",
+    "autore": "Albert Einstein"
+  },
+  {
+    "id": 31,
+    "frase": "Un uomo che ha fatto del suo meglio, e che è consapevole di aver fatto del suo meglio, ha avuto successo, anche se il mondo può scrivere di lui che è un fallito.",
+    "autore": "B. C. Forbes"
+  },
+  {
+    "id": 32,
+    "frase": "Un uomo ha successo se si alza la mattina e si mette a letto la sera, e in mezzo fa ciò che vuole fare.",
+    "autore": "Bob Dylan"
+  },
+  {
+    "id": 33,
+    "frase": "Credo che il successo venga conseguito da persone ordinarie con una determinazione straordinaria.",
+    "autore": "Zig Ziglar"
+  },
+  {
+    "id": 34,
+    "frase": "Se volete avere successo, dovete trovare qualcuno che abbia già raggiunto i risultati desiderati e modellare ciò che hanno fatto.",
+    "autore": "Anthony Robbins"
+  },
+  {
+    "id": 35,
+    "frase": "C’è un solo tipo di successo: quello di fare della propria vita ciò che si desidera.",
+    "autore": "Henry David Thoreau"
+  },
+  {
+    "id": 36,
+    "frase": "Ci sono persone che sognano il successo e altre che restano sveglie per ottenerlo.",
+    "autore": "John D. Rockefeller"
+  },
+  {
+    "id": 37,
+    "frase": "Quando i “vorrei” diventano “voglio”, quando i “dovrei” diventano “devo”, quando i “prima o poi” diventano “adesso”, allora e solo allora i desideri iniziano a trasformarsi in realtà.",
+    "autore": "Anthony Robbins"
+  },
+  {
+    "id": 38,
+    "frase": "Oggi non è che un giorno qualunque di tutti i giorni che verranno, ma ciò che farai in tutti i giorni che verranno dipende da quello che farai oggi.",
+    "autore": "Ernest Hemingway"
+  },
+  {
+    "id": 39,
+    "frase": "Non aspettare il momento giusto per fare le cose, l’unico momento giusto è adesso.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 40,
+    "frase": "Come raggiungere un traguardo? Senza fretta ma senza sosta.",
+    "autore": "Johann Wolfgang Goethe"
+  },
+  {
+    "id": 41,
+    "frase": "Qualunque cosa tu possa fare o sognare di fare, incominciala! L’audacia ha in sé genio, potere e magia.",
+    "autore": "Johann Wolfgang Goethe"
+  },
+  {
+    "id": 42,
+    "frase": "La perseveranza è il duro lavoro che fai dopo che ti sei stancato del duro lavoro che hai fatto.",
+    "autore": "Newt Gingrich"
+  },
+  {
+    "id": 43,
+    "frase": "Osa cose straordinarie, trionfa in gloria…",
+    "autore": "Franklin D. Roosevelt"
+  },
+  {
+    "id": 44,
+    "frase": "Non è perché le cose sono difficili che non osiamo farle, è perché non osiamo farle che diventano difficili.",
+    "autore": "Seneca"
+  },
+  {
+    "id": 45,
+    "frase": "Nessun vento è favorevole per il marinaio che non sa a quale porto vuol approdare.",
+    "autore": "Seneca"
+  },
+  {
+    "id": 46,
+    "frase": "È l’animo che devi cambiare, non il cielo sotto cui vivi.",
+    "autore": "Seneca"
+  },
+  {
+    "id": 47,
+    "frase": "Nessun limite eccetto il cielo.",
+    "autore": "Miguel de Cervantes"
+  },
+  {
+    "id": 48,
+    "frase": "Lo scopo della tua vita è dare il meglio di te.",
+    "autore": "Richard Bach"
+  },
+  {
+    "id": 49,
+    "frase": "Il più grande spreco nel mondo è la differenza tra ciò che siamo e ciò che potremmo diventare.",
+    "autore": "Ben Herbster"
+  },
+  {
+    "id": 50,
+    "frase": "Cerco sempre di fare ciò che non sono capace di fare, per imparare come farlo.",
+    "autore": "Pablo Picasso"
+  },
+  {
+    "id": 51,
+    "frase": "Soltanto una cosa rende impossibile un sogno: la paura di fallire.",
+    "autore": "Paulo Coelho"
+  },
+  {
+    "id": 52,
+    "frase": "Tra vent’anni sarai più infastidito dalle cose che non hai fatto che da quelle che hai fatto… Esplora. Sogna. Scopri.",
+    "autore": "Mark Twain"
+  },
+  {
+    "id": 53,
+    "frase": "Mira alla luna, anche se la manchi atterrerai tra le stelle.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 54,
+    "frase": "Ti criticheranno sempre, …quindi vivi intensamente ogni giorno prima che l’opera finisca priva di applausi.",
+    "autore": "Charlie Chaplin"
+  },
+  {
+    "id": 55,
+    "frase": "Sii sempre come il mare che infrangendosi contro gli scogli trova sempre la forza di riprovarci.",
+    "autore": "Jim Morrison"
+  },
+  {
+    "id": 56,
+    "frase": "Se vuoi qualcosa che non hai mai avuto, devi fare qualcosa che non hai mai fatto.",
+    "autore": "Thomas Jefferson"
+  },
+  {
+    "id": 57,
+    "frase": "Il mondo è pieno di persone di successo, alle quali era stato detto che il loro sogno era impossibile…Scelsero di non ascoltare.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 58,
+    "frase": "“Ben fatto” è meglio che “ben detto”.",
+    "autore": "Benjamin Franklin"
+  },
+  {
+    "id": 59,
+    "frase": "Non importa quanto lentamente si va, finché non ti fermi.",
+    "autore": "Confucio"
+  },
+  {
+    "id": 60,
+    "frase": "Devi imparare le regole del gioco. E poi devi giocare meglio di chiunque altro.",
+    "autore": "Albert Einstein"
+  },
+  {
+    "id": 61,
+    "frase": "Fai le cose difficili quando sono facili… Un viaggio di mille miglia deve iniziare con un singolo passo.",
+    "autore": "Lao Tzu"
+  },
+  {
+    "id": 62,
+    "frase": "Le persone che aspettano che tutte le condizioni siano perfette prima di agire, non agiscono mai.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 63,
+    "frase": "Il segreto per andare avanti è iniziare.",
+    "autore": "Sally Berger"
+  },
+  {
+    "id": 64,
+    "frase": "I perdenti vedono dei temporali, i vincenti vedono degli arcobaleni.",
+    "autore": "Denis Waitley"
+  },
+  {
+    "id": 65,
+    "frase": "Fissare degli obiettivi è il primo passo per trasformare l’invisibile nel visibile.",
+    "autore": "Anthony Robbins"
+  },
+  {
+    "id": 66,
+    "frase": "Avrò sbagliato più di novemila tiri… Ed è per questo che alla fine ho vinto tutto.",
+    "autore": "Michael Jordan"
+  },
+  {
+    "id": 67,
+    "frase": "Vi diranno che non siete abbastanza. Non fatevi ingannare.",
+    "autore": "Papa Giovanni Paolo II"
+  },
+  {
+    "id": 68,
+    "frase": "Le persone che progrediscono nella vita sono coloro che si danno da fare… o le creano.",
+    "autore": "George Bernard Shaw"
+  },
+  {
+    "id": 69,
+    "frase": "Scegli un lavoro che ami, e non lavorerai neppure un giorno in vita tua.",
+    "autore": "Confucio"
+  },
+  {
+    "id": 70,
+    "frase": "Cominciare è già metà dell’opera.",
+    "autore": "Orazio"
+  },
+  {
+    "id": 71,
+    "frase": "Le scoperte consistono nel vedere ciò che tutti hanno visto e pensare ciò che nessuno ha pensato.",
+    "autore": "Albert Szent-Györgyi"
+  },
+  {
+    "id": 72,
+    "frase": "Certi uomini vedono le cose come sono e dicono: “Perché”. Io sogno cose mai esistite e dico: “Perché no?”.",
+    "autore": "George Bernard Shaw"
+  },
+  {
+    "id": 73,
+    "frase": "Per avere successo bisogna porsi queste quattro domande: Perché? Perché no? Perché non io? Perché non adesso?",
+    "autore": "James Allen"
+  },
+  {
+    "id": 74,
+    "frase": "Non puoi scoprire nuovi oceani fino a quando non hai il coraggio di perdere di vista la spiaggia.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 75,
+    "frase": "La felicità è un profumo che non puoi versare sugli altri senza ritrovarti con qualche goccia addosso.",
+    "autore": "Og Mandino"
+  },
+  {
+    "id": 76,
+    "frase": "Adotta l’atteggiamento dello studente: non sentirti mai troppo grande per fare domande e imparare qualcosa di nuovo.",
+    "autore": "Og Mandino"
+  },
+  {
+    "id": 77,
+    "frase": "Sii forte che nessuno ti sconfigga, nobile che nessuno ti umili, e te stesso che nessuno ti dimentichi.",
+    "autore": "Paulo Coelho"
+  },
+  {
+    "id": 78,
+    "frase": "Abbiamo quaranta milioni di ragioni per fallire, ma non una sola scusa.",
+    "autore": "Rudyard Kipling"
+  },
+  {
+    "id": 79,
+    "frase": "Fate ciò che potete, con ciò che avete, dove siete.",
+    "autore": "Theodore Roosevelt"
+  },
+  {
+    "id": 80,
+    "frase": "Impossibile non è per sempre.",
+    "autore": "Muhammad Ali"
+  },
+  {
+    "id": 81,
+    "frase": "La felicità non è qualcosa di già pronto. Deriva dalle tue azioni.",
+    "autore": "Dalai Lama"
+  },
+  {
+    "id": 82,
+    "frase": "Non c'è mai stato un giorno come oggi. Fallo contare.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 83,
+    "frase": "Trova la gioia nelle piccole cose: lì si nasconde la felicità.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 84,
+    "frase": "Il tempo che dedichi a te stesso è un investimento, non un lusso.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 85,
+    "frase": "Non aspettare che sia perfetto. Inizia dove sei, con ciò che hai.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 86,
+    "frase": "Ogni giorno è un'opportunità per ricominciare da capo.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 87,
+    "frase": "I tuoi limiti esistono solo se glielo permetti.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 88,
+    "frase": "Fai oggi qualcosa che il tuo futuro te ringrazierà.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 89,
+    "frase": "Il momento migliore per piantare un albero era 20 anni fa. Il secondo miglior momento è ora.",
+    "autore": "Proverbio cinese"
+  },
+  {
+    "id": 90,
+    "frase": "Non è mai troppo tardi per diventare ciò che potresti essere stato.",
+    "autore": "George Eliot"
+  },
+  {
+    "id": 91,
+    "frase": "Fai sempre di più di quello che gli altri si aspettano da te.",
+    "autore": "Larry Page"
+  },
+  {
+    "id": 92,
+    "frase": "Se le tue azioni ispirano gli altri a sognare di più… sei un leader.",
+    "autore": "John Quincy Adams"
+  },
+  {
+    "id": 93,
+    "frase": "Il tuo lavoro occuperà gran parte della tua vita… ama ciò che fai.",
+    "autore": "Steve Jobs"
+  },
+  {
+    "id": 94,
+    "frase": "Se non puoi sfamare il tuo team con due pizze, ci sono troppe persone.",
+    "autore": "Jeff Bezos"
+  },
+  {
+    "id": 95,
+    "frase": "Le stelle non si allineeranno mai […] “Prima o poi” è una malattia che ti porterà a non realizzare mai i tuoi sogni.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 96,
+    "frase": "I tuoi clienti più insoddisfatti sono la tua più grande fonte di apprendimento.",
+    "autore": "Bill Gates"
+  },
+  {
+    "id": 97,
+    "frase": "Se tutti avanziamo insieme, il successo arriverà da solo.",
+    "autore": "Henry Ford"
+  },
+  {
+    "id": 98,
+    "frase": "Cerchiamo tutti di essere i leader che vorremmo avere.",
+    "autore": "Simon Sinek"
+  },
+  {
+    "id": 99,
+    "frase": "Non dubitare che un piccolo gruppo di cittadini può cambiare il mondo.",
+    "autore": "Margaret Mead"
+  },
+  {
+    "id": 100,
+    "frase": "A livello Individuale, siamo una goccia. Insieme, siamo un oceano.",
+    "autore": "Ryunosuke Satoro"
+  },
+  {
+    "id": 101,
+    "frase": "Il successo non è la chiave della felicità. La felicità è la chiave del successo.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 102,
+    "frase": "Non aspettare il momento perfetto, prendi il momento e rendilo perfetto.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 103,
+    "frase": "Credi in te stesso e tutto sarà possibile.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 104,
+    "frase": "La vita è ciò che ne fai, quindi rendila fantastica.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 105,
+    "frase": "Ogni giorno è una nuova opportunità per ricominciare.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 106,
+    "frase": "Il duro lavoro batte il talento quando il talento non lavora duro.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 107,
+    "frase": "L’unico modo di fare un ottimo lavoro è amare quello che fai.",
+    "autore": "Steve Jobs"
+  },
+  {
+    "id": 108,
+    "frase": "Non aver paura di fallire, impara dai tuoi errori e riprova.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 109,
+    "frase": "La perseveranza è la chiave del successo.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 110,
+    "frase": "Ciò che non ti uccide ti fortifica.",
+    "autore": "Friedrich Nietzsche / Proverbio"
+  },
+  {
+    "id": 111,
+    "frase": "Dopo la tempesta c’è sempre il sereno.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 112,
+    "frase": "Non mollare mai, anche quando sembra impossibile.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 113,
+    "frase": "La caduta non è un fallimento, il fallimento è rimanere a terra.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 114,
+    "frase": "Ogni sfida è un’opportunità per crescere.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 115,
+    "frase": "La tua determinazione determina il tuo destino.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 116,
+    "frase": "I tuoi sogni sono la mappa del tuo futuro, seguili con passione.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 117,
+    "frase": "Il segreto del successo è iniziare, il segreto del progresso è continuare.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 118,
+    "frase": "L’unico modo per fallire è smettere di provare.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 119,
+    "frase": "Sii il capitano della tua nave e la guiderai verso acque tranquille.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 120,
+    "frase": "La forza non deriva dalla capacità fisica, ma dalla volontà indomabile.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 121,
+    "frase": "La paura è solo un ostacolo, superala e raggiungerai il tuo scopo.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 122,
+    "frase": "Ogni giorno è un’opportunità per migliorare te stesso.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 123,
+    "frase": "Non importa quanto lentamente vai, fintanto che non ti fermi.",
+    "autore": "Confucio"
+  },
+  {
+    "id": 124,
+    "frase": "La tua mente è il tuo strumento più potente, usala per creare il futuro che desideri.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 125,
+    "frase": "Ricorda sempre perché hai iniziato e rimani fedele a quella motivazione.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 126,
+    "frase": "Non lasciare che il passato definisca il tuo futuro.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 127,
+    "frase": "La fiducia in te stesso è la chiave per sbloccare il tuo potenziale.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 128,
+    "frase": "La pazienza è il ponte tra il sogno e la realtà.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 129,
+    "frase": "Rispetta il processo, i risultati arriveranno.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 130,
+    "frase": "Nessun obiettivo è troppo grande quando si è determinati a raggiungerlo.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 131,
+    "frase": "Il cambiamento è spaventoso, ma è l’unica costante nella vita. Abbraccialo con coraggio.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 132,
+    "frase": "La gratitudine è la chiave per attirare più cose positive nella tua vita.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 133,
+    "frase": "La tua storia non è finita; è solo l’inizio di un nuovo capitolo.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 134,
+    "frase": "Lavora sodo in silenzio e lascia che il tuo successo faccia il rumore.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 135,
+    "frase": "La tua mentalità è ciò che ti farà superare qualsiasi ostacolo.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 136,
+    "frase": "Ogni caduta è un passo in avanti verso la vittoria finale.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 137,
+    "frase": "La resilienza è la capacità di affrontare le avversità con determinazione e speranza.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 138,
+    "frase": "Il tempo è il nostro bene più prezioso. Usa ogni momento al meglio.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 139,
+    "frase": "Non confrontarti con gli altri; la tua unicità è il tuo punto di forza.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 140,
+    "frase": "Non cercare la felicità altrove, trovala dentro di te e diffondila nel mondo.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 141,
+    "frase": "Sogna in grande e lavora duramente per realizzare i tuoi sogni.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 142,
+    "frase": "La tua vita è la tua creazione. Dipende da te renderla straordinaria.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 143,
+    "frase": "La vita è piena di sorprese. Abbracciale con entusiasmo.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 144,
+    "frase": "L’unico momento in cui fallisci è quando smetti di provare.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 145,
+    "frase": "Non importa quante volte cadi, ma quante volte ti rialzi.",
+    "autore": "Vince Lombardi"
+  },
+  {
+    "id": 146,
+    "frase": "La ricchezza arriva a coloro che fanno accadere le cose non a coloro che lasciano che le cose accadano.",
+    "autore": "John M. Capozzi"
+  },
+  {
+    "id": 147,
+    "frase": "Ogni volta che un ostacolo ti sembra insormontabile, girati a guardare tutti quelli che hai già saltato.",
+    "autore": "Rita Calarco"
+  },
+  {
+    "id": 148,
+    "frase": "Le persone che aspettano che tutte le condizioni siano perfette prima di agire, non agiscono mai.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 149,
+    "frase": "Fate ciò che potete, con ciò che avete, dove siete.",
+    "autore": "Theodore Roosevelt"
+  },
+  {
+    "id": 150,
+    "frase": "Sono un grande credente nella fortuna, e ho scoperto che più lavoro duro, più ho fortuna.",
+    "autore": "Thomas Jefferson"
+  },
+  {
+    "id": 151,
+    "frase": "Cadi sette volte, rialzati otto.",
+    "autore": "Proverbio giapponese"
+  },
+  {
+    "id": 152,
+    "frase": "La differenza tra vincere e perdere sta nel… non smettere.",
+    "autore": "Walt Disney"
+  },
+  {
+    "id": 153,
+    "frase": "Mai gettare la spugna. Usala per asciugarti la fronte e poi vai avanti.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 154,
+    "frase": "Anche la notte più buia termina con il sorgere del sole.",
+    "autore": "Victor Hugo"
+  },
+  {
+    "id": 155,
+    "frase": "La nostra gloria più grande non sta nel non cadere mai, bensì nel rialzarci ogni volta che cadiamo.",
+    "autore": "Confucio"
+  },
+  {
+    "id": 156,
+    "frase": "Il dizionario è l’unico posto dove successo viene prima di sudore.",
+    "autore": "Vince Lombardi"
+  },
+  {
+    "id": 157,
+    "frase": "Il segreto per andare avanti è iniziare.",
+    "autore": "Mark Twain"
+  },
+  {
+    "id": 158,
+    "frase": "Sembra sempre impossibile finché non viene realizzato.",
+    "autore": "Nelson Mandela"
+  },
+  {
+    "id": 159,
+    "frase": "Non si può battere una persona che non si arrende mai.",
+    "autore": "Babe Ruth"
+  },
+  {
+    "id": 160,
+    "frase": "Le circostanze della tua vita possono non piacerti, ma non devono restare le stesse se concepisci un ideale e lotti per raggiungerlo.",
+    "autore": "James Allen"
+  },
+  {
+    "id": 161,
+    "frase": "Andrei ovunque, basta che si vada avanti.",
+    "autore": "Dr. Livingstone"
+  },
+  {
+    "id": 162,
+    "frase": "Non contare i giorni, ma fai in modo che i giorni contino.",
+    "autore": "Muhammad Ali"
+  },
+  {
+    "id": 163,
+    "frase": "Affronta la tua strada con coraggio, non avere paura delle critiche…",
+    "autore": "Paulo Coelho"
+  },
+  {
+    "id": 164,
+    "frase": "Non lamentarti mai della tua solitudine o della tua sorte, affrontala con valore e accettala.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 165,
+    "frase": "L’unico modo per fare un buon lavoro è amare quello che fai.",
+    "autore": "Steve Jobs"
+  },
+  {
+    "id": 166,
+    "frase": "Alla fine, ciò che conta non sono gli anni della tua vita, ma la vita che metti in quegli anni.",
+    "autore": "Abraham Lincoln"
+  },
+  {
+    "id": 167,
+    "frase": "Ogni fallimento è un passo verso il successo.",
+    "autore": "William Whewell"
+  },
+  {
+    "id": 168,
+    "frase": "Nessuno può farti sentire inferiore senza il tuo consenso.",
+    "autore": "Eleanor Roosevelt"
+  },
+  {
+    "id": 169,
+    "frase": "Vivi la vita che hai immaginato.",
+    "autore": "Henry David Thoreau"
+  },
+  {
+    "id": 170,
+    "frase": "Non ci sono venti favorevoli per il marinaio che non sa dove andare.",
+    "autore": "Seneca"
+  },
+  {
+    "id": 171,
+    "frase": "Se i tuoi sogni non ti spaventano, non sono abbastanza grandi.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 172,
+    "frase": "Un obiettivo non dev’essere necessariamente raggiunto: spesso serve solo come qualcosa cui mirare.",
+    "autore": "Bruce Lee"
+  },
+  {
+    "id": 173,
+    "frase": "Labor omnia vincit – La fatica vince ogni cosa.",
+    "autore": "Virgilio / proverbio"
+  },
+  {
+    "id": 174,
+    "frase": "Audentes fortuna iuvat – La fortuna aiuta gli audaci.",
+    "autore": "Virgilio / proverbio"
+  },
+  {
+    "id": 175,
+    "frase": "Carpe diem – cogli l’attimo.",
+    "autore": "Orazio / proverbio"
+  },
+  {
+    "id": 176,
+    "frase": "Parla con sicurezza ma ascolta come se non sapessi nulla.",
+    "autore": "Utente Reddit"
+  },
+  {
+    "id": 177,
+    "frase": "È normale perdersi quando si sta ancora cercando la propria strada. Perdersi però ti insegna a vivere.",
+    "autore": "Utente Reddit"
+  },
+  {
+    "id": 178,
+    "frase": "Leggi 100 libri, 99 così così, 1 ti cambia la vita…",
+    "autore": "Utente Reddit"
+  },
+  {
+    "id": 179,
+    "frase": "La consapevolezza è silenziosa. L’ego fa tanto rumore.",
+    "autore": "Utente Reddit"
+  },
+  {
+    "id": 180,
+    "frase": "Non controlli la montagna ma solo la scalata.",
+    "autore": "Utente Reddit"
+  },
+  {
+    "id": 181,
+    "frase": "La ricompensa per lo spirito che prova non è l’obiettivo ma l’esercizio.",
+    "autore": "Utente Reddit"
+  },
+  {
+    "id": 182,
+    "frase": "Non è possibile risolvere un problema con lo stesso livello di pensiero che lo ha generato.",
+    "autore": "Albert Einstein"
+  },
+  {
+    "id": 183,
+    "frase": "Vivi come se dovessi morire domani. Impara come se dovessi vivere per sempre.",
+    "autore": "Mahatma Gandhi"
+  },
+  {
+    "id": 184,
+    "frase": "Stai lontano da chi cerca di frenare le tue ambizioni.",
+    "autore": "Mark Twain"
+  },
+  {
+    "id": 185,
+    "frase": "Non lasciarti abbattere, continua a credere che qualcosa di bello arriverà.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 186,
+    "frase": "Il coraggio lo si trova mentre si inizia il viaggio.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 187,
+    "frase": "Quante cose belle hai fatto finora? Ricordati quanto vali.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 188,
+    "frase": "Abbatterti non ti aiuterà a ottenere ciò che vuoi. Rialzati e lotta.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 189,
+    "frase": "Ciò che non ci uccide ci rende più forti.",
+    "autore": "Friedrich Nietzsche"
+  },
+  {
+    "id": 190,
+    "frase": "Ho sempre tentato. Ho sempre fallito. Prova ancora. Fallisci meglio.",
+    "autore": "Samuel Beckett"
+  },
+  {
+    "id": 191,
+    "frase": "Sei più forte di quanto pensi. Questo momento passerà.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 192,
+    "frase": "Non importa quanto è buio adesso, il sole tornerà a splendere.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 193,
+    "frase": "Anche le tempeste più forti passano. Tieni duro.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 194,
+    "frase": "Sei più forte di quanto pensi.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 195,
+    "frase": "Non arrenderti mai.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 196,
+    "frase": "Ogni giorno è una nuova opportunità.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 197,
+    "frase": "Il cambiamento inizia con un passo.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 198,
+    "frase": "Trova la luce nella tempesta.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 199,
+    "frase": "Sii il tuo coraggio.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 200,
+    "frase": "Il futuro è nelle tue mani.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 201,
+    "frase": "Avanza con fiducia.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 202,
+    "frase": "Rimani fedele a te stesso.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 203,
+    "frase": "La resilienza vince sempre.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 204,
+    "frase": "Niente senza gioia.",
+    "autore": "Loris Malaguzzi"
+  },
+  {
+    "id": 205,
+    "frase": "Vediamo il mondo in maniera errata e diciamo che ci inganna.",
+    "autore": "Rabindranath Tagore"
+  },
+  {
+    "id": 206,
+    "frase": "Chi guarda fuori sogna; chi guarda dentro si desta.",
+    "autore": "Carl Gustav Jung"
+  },
+  {
+    "id": 207,
+    "frase": "Se le porte della percezione fossero pulite, ogni cosa apparirebbe infinita.",
+    "autore": "William Blake"
+  },
+  {
+    "id": 208,
+    "frase": "Con le tue parole crei un mondo intorno a te.",
+    "autore": "Proverbio Navajo"
+  },
+  {
+    "id": 209,
+    "frase": "Non ereditiamo la terra dai nostri antenati, la prendiamo in prestito dai nostri figli.",
+    "autore": "Proverbio dei nativi americani"
+  },
+  {
+    "id": 210,
+    "frase": "Il mondo è pieno di cose ovvie che nessuno si prende la cura di osservare.",
+    "autore": "Arthur Conan Doyle"
+  },
+  {
+    "id": 211,
+    "frase": "Quando cammini, cammina. Quando mangi, mangia.",
+    "autore": "Detto Zen"
+  },
+  {
+    "id": 212,
+    "frase": "Il tetto si è bruciato, ora posso vedere la luna.",
+    "autore": "Mizuta Masahide"
+  },
+  {
+    "id": 213,
+    "frase": "Il carattere è la metà del destino.",
+    "autore": "Raoul La Grasserie"
+  },
+  {
+    "id": 214,
+    "frase": "I pensieri sono fattori efficaci dell’universo.",
+    "autore": "Novalis"
+  },
+  {
+    "id": 215,
+    "frase": "La conoscenza è ciò che rimane quando dimentichi tutto.",
+    "autore": "Édouard Herriot"
+  },
+  {
+    "id": 216,
+    "frase": "La mente è come un paracadute: funziona solo se si apre.",
+    "autore": "Albert Einstein"
+  },
+  {
+    "id": 217,
+    "frase": "L’unica gioia al mondo è cominciare… vivere è cominciare, sempre.",
+    "autore": "Cesare Pavese"
+  },
+  {
+    "id": 218,
+    "frase": "Non aspettare; non sarà mai il tempo opportuno.",
+    "autore": "Napoleon Hill"
+  },
+  {
+    "id": 219,
+    "frase": "Il vostro tempo è limitato, non lo sprecate vivendo la vita di un altro.",
+    "autore": "Steve Jobs"
+  },
+  {
+    "id": 220,
+    "frase": "Sforzati di essere di valore, non solo di successo.",
+    "autore": "Albert Einstein"
+  },
+  {
+    "id": 221,
+    "frase": "Two roads diverged in a wood… I took the one less traveled.",
+    "autore": "Robert Frost"
+  },
+  {
+    "id": 222,
+    "frase": "Il perché no? è spesso più valido del perché.",
+    "autore": "Jeffrey Bezos"
+  },
+  {
+    "id": 223,
+    "frase": "Sbagli il 100% dei colpi che non tiri.",
+    "autore": "Wayne Gretzky"
+  },
+  {
+    "id": 224,
+    "frase": "Se non aspetti, il tempo non sarà mai giusto.",
+    "autore": "Napoleon Hill"
+  },
+  {
+    "id": 225,
+    "frase": "Vincere non è tutto, ma provarci sì.",
+    "autore": "Vince Lombardi"
+  },
+  {
+    "id": 226,
+    "frase": "Io non sono un prodotto delle mie circostanze, ma delle mie decisioni.",
+    "autore": "Stephen Covey"
+  },
+  {
+    "id": 227,
+    "frase": "Ogni bambino è un artista, resta artista da adulto.",
+    "autore": "Pablo Picasso"
+  },
+  {
+    "id": 228,
+    "frase": "Non attraverserai l’oceano se non perdi di vista la riva.",
+    "autore": "Cristoforo Colombo"
+  },
+  {
+    "id": 229,
+    "frase": "Se nessuno vuole farlo, lo farò io.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 230,
+    "frase": "Non è andata così male.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 231,
+    "frase": "Non posso fare tutto, ma posso almeno iniziare.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 232,
+    "frase": "Meno parole, più fatti.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 233,
+    "frase": "Non mi preoccupano le opinioni altrui.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 234,
+    "frase": "Prima ti ignorano, poi ti deridono, poi ti combattono. Poi vinci.",
+    "autore": "Mahatma Gandhi"
+  },
+  {
+    "id": 235,
+    "frase": "È nel momento delle decisioni che si plasma il tuo destino.",
+    "autore": "Anthony Robbins"
+  },
+  {
+    "id": 236,
+    "frase": "Innamorati prima di te, poi della vita.",
+    "autore": "Frida Kahlo"
+  },
+  {
+    "id": 237,
+    "frase": "Il vero amore non aspetta di essere invitato, si offre per primo.",
+    "autore": "Fray Luis de león"
+  },
+  {
+    "id": 238,
+    "frase": "Se vuoi essere amato, ama.",
+    "autore": "Seneca"
+  },
+  {
+    "id": 239,
+    "frase": "Il coraggio è resistere alla paura, non l'assenza della stessa.",
+    "autore": "Mark Twain"
+  },
+  {
+    "id": 240,
+    "frase": "Non sei solo, io sono qui per te.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 241,
+    "frase": "Sei forte, anche quando non ti senti così.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 242,
+    "frase": "La tua forza mi stupisce ogni giorno.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 243,
+    "frase": "Sono orgoglioso di te.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 244,
+    "frase": "La migliore preparazione per domani è fare oggi il tuo meglio.",
+    "autore": "H. Jackson Brown Jr."
+  },
+  {
+    "id": 245,
+    "frase": "Inizia da dove sei, usa ciò che hai, fai quello che puoi.",
+    "autore": "Arthur Ashe"
+  },
+  {
+    "id": 246,
+    "frase": "La vita è un'avventura audace o niente.",
+    "autore": "Helen Keller"
+  },
+  {
+    "id": 247,
+    "frase": "Una cosa rende impossibile un sogno: la paura di fallire.",
+    "autore": "Paulo Coelho"
+  },
+  {
+    "id": 248,
+    "frase": "L’origine della paura è nel futuro.",
+    "autore": "Milan Kundera"
+  },
+  {
+    "id": 249,
+    "frase": "Il pericolo più grande è prendere troppe precauzioni.",
+    "autore": "Alfred Adler"
+  },
+  {
+    "id": 250,
+    "frase": "Sei quello che fai, non quello che dici che farai.",
+    "autore": "Carl Jung"
+  },
+  {
+    "id": 251,
+    "frase": "Agisci come se quello che fai facesse la differenza. Lo fa.",
+    "autore": "William James"
+  },
+  {
+    "id": 252,
+    "frase": "Se progetti di essere meno, sarai infelice per sempre.",
+    "autore": "Abraham Maslow"
+  },
+  {
+    "id": 253,
+    "frase": "L’autostima si costruisce nei momenti difficili.",
+    "autore": "Paolo Crepet"
+  },
+  {
+    "id": 254,
+    "frase": "Le persone normali sono quelle che non conosci bene.",
+    "autore": "Alfred Adler"
+  },
+  {
+    "id": 255,
+    "frase": "Essere normali è il sogno di chi non ha successo.",
+    "autore": "Carl Jung"
+  },
+  {
+    "id": 256,
+    "frase": "Quanti psicologi servono? Uno, ma la lampadina deve voler cambiare.",
+    "autore": "BoJack Horseman"
+  },
+  {
+    "id": 257,
+    "frase": "Quello che la mano fa, la mente ricorda.",
+    "autore": "Maria Montessori"
+  },
+  {
+    "id": 258,
+    "frase": "I bambini sono cemento fresco: tutto ciò che li tocca lascia segno.",
+    "autore": "Haim Ginott"
+  },
+  {
+    "id": 259,
+    "frase": "Non perdere la fiducia in te stesso.",
+    "autore": "Pema Chodron"
+  },
+  {
+    "id": 260,
+    "frase": "Dai a ogni giorno la possibilità di essere il più bello della tua vita.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 261,
+    "frase": "Sbagliando s’impara, sbagliando s’inventa.",
+    "autore": "Gianni Rodari"
+  },
+  {
+    "id": 262,
+    "frase": "Con un po’ di ottimismo si possono inventare le stelle.",
+    "autore": "Gianni Rodari"
+  },
+  {
+    "id": 263,
+    "frase": "Gli errori sono utili come il pane.",
+    "autore": "Gianni Rodari"
+  },
+  {
+    "id": 264,
+    "frase": "Il nostro amore è così grande. C’è spazio per tutti.",
+    "autore": "Cari Tuna"
+  },
+  {
+    "id": 265,
+    "frase": "Cerchiamo di essere i leader che vorremmo avere.",
+    "autore": "Simon Sinek"
+  },
+  {
+    "id": 266,
+    "frase": "Se tutti avanziamo insieme, il successo arriverà da solo.",
+    "autore": "Henry Ford"
+  },
+  {
+    "id": 267,
+    "frase": "Non dubitare che un piccolo gruppo possa cambiare il mondo.",
+    "autore": "Margaret Mead"
+  },
+  {
+    "id": 268,
+    "frase": "Il lavoro di squadra è il carburante dei risultati comuni.",
+    "autore": "Andrew Carnegie"
+  },
+  {
+    "id": 269,
+    "frase": "Un buon team ammette i propri errori senza paura.",
+    "autore": "Patrick Lencioni"
+  },
+  {
+    "id": 270,
+    "frase": "Contribuire è ciò che rende una squadra.",
+    "autore": "Kareem Abdul-Jabbar"
+  },
+  {
+    "id": 271,
+    "frase": "L’impegno individuale in un gruppo fa funzionare una società.",
+    "autore": "Vince Lombardi"
+  },
+  {
+    "id": 272,
+    "frase": "Un team entusiasta può ottenere quasi tutto.",
+    "autore": "Tahir Shah"
+  },
+  {
+    "id": 273,
+    "frase": "Lavorare insieme fa avverare i sogni.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 274,
+    "frase": "La motivazione nasce dal fare ciò che amiamo con chi ammiriamo.",
+    "autore": "Sheryl Sandberg"
+  },
+  {
+    "id": 275,
+    "frase": "Tutto inizia con una buona idea e il lavoro di squadra.",
+    "autore": "Garrett Camp"
+  },
+  {
+    "id": 276,
+    "frase": "Un’azienda vale quanto le persone che ci lavorano.",
+    "autore": "Mary Kay Ash"
+  },
+  {
+    "id": 277,
+    "frase": "L’ascolto efficace è essenziale per il successo.",
+    "autore": "James Cash Penney"
+  },
+  {
+    "id": 278,
+    "frase": "Non puoi cambiare la squadra, ma puoi scegliere come giocare.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 279,
+    "frase": "Il lavoro di squadra trasforma l’ordinario in straordinario.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 280,
+    "frase": "La stessa acqua che indurisce la patata, indurisce anche l’uovo.",
+    "autore": "Anonimo"
+  },
+  {
+    "id": 281,
+    "frase": "Se vivi per piacere agli altri, non piacerai a te.",
+    "autore": "Anonimo"
+  }
+]

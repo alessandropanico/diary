@@ -1,9 +1,8 @@
-// src/app/pagine/home/home.page.ts
-
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { TaskService } from 'src/app/services/task.service';
 import { Task } from 'src/app/interfaces/task';
 import { Subscription } from 'rxjs';
+import { FrasiService } from 'src/app/services/frasi.service';
 
 @Component({
   selector: 'app-home',
@@ -17,8 +16,13 @@ export class HomePage implements OnInit, OnDestroy {
   todayTasks: Task[] = [];
   isLoadingTasks: boolean = true;
   private tasksSubscription!: Subscription;
+  dailyQuote: string = '';
+  dailyAuthor: string = '';
 
-  constructor(private taskService: TaskService) {}
+  constructor(
+    private taskService: TaskService,
+    private frasiService: FrasiService,
+  ) { }
 
   ngOnInit() {
     this.greetingMessage = this.getGreetingMessage();
@@ -32,12 +36,50 @@ export class HomePage implements OnInit, OnDestroy {
         this.isLoadingTasks = false;
       }
     });
+    this.caricaFraseDelGiorno();
   }
 
   ngOnDestroy() {
     if (this.tasksSubscription) {
       this.tasksSubscription.unsubscribe();
     }
+  }
+
+caricaFraseDelGiorno() {
+  this.frasiService.getFrasi().subscribe(frasi => {
+    const oggi = new Date().toDateString();
+    const key = 'lastQuoteIndex';
+    const lastDateKey = 'lastQuoteDate';
+
+    let lastDate = localStorage.getItem(lastDateKey);
+    let lastIndex = localStorage.getItem(key);
+
+    if (lastDate !== oggi) {
+      let newIndex: number;
+      do {
+        newIndex = Math.floor(Math.random() * frasi.length);
+      } while (newIndex.toString() === lastIndex);
+
+      localStorage.setItem(key, newIndex.toString());
+      localStorage.setItem(lastDateKey, oggi);
+
+      this.dailyQuote = frasi[newIndex].frase;
+      this.dailyAuthor = frasi[newIndex].autore;
+
+    } else {
+      const index = lastIndex ? parseInt(lastIndex, 10) : 0;
+      this.dailyQuote = frasi[index].frase;
+      this.dailyAuthor = frasi[index].autore;
+    }
+  });
+}
+
+
+  getDayOfYear(date: Date): number {
+    const start = new Date(date.getFullYear(), 0, 0);
+    const diff = date.getTime() - start.getTime();
+    const oneDay = 1000 * 60 * 60 * 24;
+    return Math.floor(diff / oneDay);
   }
 
   getGreetingMessage(): string {

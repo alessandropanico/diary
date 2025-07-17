@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { HomePage } from './home.page';
+import { HttpClientModule } from '@angular/common/http';
 
 import { HomePageRoutingModule } from './home-routing.module';
 import { RouterModule } from '@angular/router';
@@ -17,7 +18,8 @@ import { ClockComponent } from './components/clock/clock.component';
     IonicModule,
     HomePageRoutingModule,
     ClockComponent,
-    RouterModule
+    RouterModule,
+    HttpClientModule
   ],
   declarations: [HomePage]  // ✅ Aggiungi HeaderComponent alle dichiarazioni
 })

@@ -18,6 +18,11 @@
 
 <app-clock></app-clock>
 
+<div class="daily-quote" *ngIf="dailyQuote">
+  <blockquote>“{{ dailyQuote }}”</blockquote>
+  <p class="quote-author">— {{ dailyAuthor }}</p>
+</div>
+
 <section *ngIf="!isLoadingTasks" class="sectionHome">
   <div class="cont">
     <section *ngIf="todayTasks.length > 0" class="home-reminder">

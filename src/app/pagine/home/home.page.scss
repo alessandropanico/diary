@@ -1,3 +1,12 @@
+:host {
+  --primary-glow: #00f0ff;
+  --bg-blur: rgba(20, 20, 30, 0.75);
+  --text-light: #e0faff;
+  --label-color: #a0cfd8;
+  --danger-color: #ff4e4e;
+}
+
+
 .sectionHome{
   margin-bottom: 2vh;
 }
@@ -72,4 +81,44 @@
   }
 
 
+}
+
+.daily-quote {
+  margin: 24px auto;
+  padding: 16px;
+  max-width: 90%;
+  background: rgba(15, 15, 35, 0.6);
+  border: 1px solid #00ffee50;
+  box-shadow: 0 0 10px #00ffee40;
+  border-radius: 8px;
+  text-align: center;
+  font-family: 'Orbitron', sans-serif;
+  color: var(--text-light);
+  animation: fadeIn 0.8s ease-in-out;
+  margin-top: 0px;
+
+  blockquote {
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--primary-glow);
+    margin-bottom: 10px;
+    text-shadow: 0 0 6px #00ffee50;
+  }
+
+  .quote-author {
+    font-size: 0.95rem;
+    color: var(--label-color);
+    text-shadow: 0 0 4px #00ffee30;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
