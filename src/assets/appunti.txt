@@ -16,6 +16,10 @@ Integrazione con AI (anche semplice):
 sintesi delle note;
 generazione automatica di to-do da note vocali.];
 
+**AGGIUSTA L'EMOJI, METTI ANCHE UNA NOTA**
+**NELLA CHAT, INSERISCI GLI AUDIO (VEDERE SE FATTIBILE SENZA BLAZE)**
+
+
 
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ---------------------------------------------------------
