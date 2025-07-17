@@ -1,0 +1,12 @@
+[
+  {
+    "origin": ["http://localhost:8100"],
+    "method": ["GET", "PUT", "POST", "DELETE"],
+    "maxAgeSeconds": 3600
+  },
+  {
+    "origin": ["https://diary-5d2b8.web.app", "https://diary-5d2b8.firebaseapp.com", "https://diary-virid.vercel.app"],
+    "method": ["GET", "PUT", "POST", "DELETE"],
+    "maxAgeSeconds": 3600
+  }
+]
