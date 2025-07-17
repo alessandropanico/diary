@@ -25,18 +25,22 @@ export class UserDataService {
   private auth = getAuth();
 
   constructor(private expService: ExpService) {
-    this.auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        const userData = await this.getUserData();
-        if (userData && typeof userData['totalXP'] === 'number') {
-          this.expService.setTotalXP(userData['totalXP']);
-        } else {
-          this.expService.setTotalXP(0);
-        }
-      } else {
-        this.expService.setTotalXP(0);
-      }
-    });
+this.auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    const userData = await this.getUserData();
+    console.log("[UserDataService] Dati utente caricati all'autenticazione:", userData);
+    if (userData && typeof userData['totalXP'] === 'number') {
+      this.expService.setTotalXP(userData['totalXP']);
+      console.log(`[UserDataService] totalXP impostato da Firebase: ${userData['totalXP']}`);
+    } else {
+      this.expService.setTotalXP(0);
+      console.log("[UserDataService] totalXP non trovato o non numerico, impostato a 0.");
+    }
+  } else {
+    this.expService.setTotalXP(0);
+    console.log("[UserDataService] Utente disconnesso, totalXP impostato a 0.");
+  }
+});
 
     this.expService.totalXP$.subscribe(async (newTotalXP) => {
       const user = this.auth.currentUser;

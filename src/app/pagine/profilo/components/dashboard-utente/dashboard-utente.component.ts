@@ -58,17 +58,18 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     private userDataService: UserDataService
   ) { }
 
-  ngOnInit() {
-    this.subscriptions.add(
-      this.expService.totalXP$.subscribe((totalXP: number) => {
-        this.totalXP = totalXP;
-        this.calculateLevelAndProgress(); // Ricalcola ogni volta che totalXP cambia
-      })
-    );
-
-    // Carica i dati iniziali della dashboard (che includono i contatori ma non l'XP, che viene da ExpService)
-    this.loadDashboardData();
-  }
+ngOnInit() {
+  console.log("DashboardUtenteComponent: Inizializzazione del componente.");
+  this.subscriptions.add(
+    this.expService.totalXP$.subscribe((totalXP: number) => {
+      this.totalXP = totalXP;
+      console.log(`DashboardUtenteComponent: totalXP aggiornato a ${this.totalXP}`);
+      this.calculateLevelAndProgress();
+      console.log(`DashboardUtenteComponent: Dopo calculateLevelAndProgress - userLevel: ${this.userLevel}, currentXP: ${this.currentXP}, xpForNextLevel: ${this.xpForNextLevel}, progressPercentage: ${this.progressPercentage}%`);
+    })
+  );
+  this.loadDashboardData();
+}
 
   ngOnDestroy() {
     this.subscriptions.unsubscribe();
@@ -116,6 +117,7 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   }
 
   calculateLevelAndProgress(): void {
+    console.log(`calculateLevelAndProgress chiamato con totalXP: ${this.totalXP}`);
     let xpRequiredForCurrentLevel = 0;
     let xpRequiredForNextLevelThreshold = 0; // Renamed for clarity in this scope
     let currentLevel = 1;
@@ -172,7 +174,7 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
         return 'N/A';
       }
       // Formatta la data e l'ora, ad esempio: "GG/MM/AAAA HH:MM"
-      return date.toLocaleDateString('it-IT', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleDateString('it-IT', { year: 'numeric', month: '2-digit', day: '2-digit' });
     } catch (e) {
       console.error("Errore nel parsing della data:", dateString, e);
       return 'N/A';
