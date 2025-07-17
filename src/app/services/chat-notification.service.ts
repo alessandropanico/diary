@@ -1,18 +1,17 @@
+// src/app/services/chat-notification.service.ts
+
 import { Injectable, OnDestroy, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, Subscription, from, of, forkJoin } from 'rxjs';
 import { getAuth, User as FirebaseUser } from 'firebase/auth';
 import { switchMap, tap, map, catchError, distinctUntilChanged } from 'rxjs/operators';
-import { Timestamp } from 'firebase/firestore'; // Importa Timestamp
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'; // Importa per saveFcmTokenToFirestore
+import { Timestamp, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
-// Importa le interfacce necessarie dal tuo chat.service.ts
 import { ChatService, ConversationDocument } from './chat.service';
 
-// --- Importazioni per le Notifiche Push NATIVE (Capacitor) ---
 import { PushNotifications, PushNotificationSchema, PermissionStatus } from '@capacitor/push-notifications';
-import { App } from '@capacitor/app'; // Per rilevare lo stato dell'app (foreground/background)
-import { isPlatform } from '@ionic/angular'; // Per controllare la piattaforma (web vs mobile)
+import { App } from '@capacitor/app';
+import { isPlatform } from '@ionic/angular';
 
 @Injectable({
   providedIn: 'root'
@@ -39,6 +38,8 @@ export class ChatNotificationService implements OnDestroy {
   private fcmToken: string | null = null;
   private pushNotificationsInitialized = false;
 
+  private hasInitialConversationsLoaded = false; // <<< NUOVA VARIABILE DI STATO
+
   constructor(
     private chatService: ChatService,
     private router: Router,
@@ -47,7 +48,7 @@ export class ChatNotificationService implements OnDestroy {
     this.audio = new Audio('assets/sound/notification.mp3');
     this.loadLastNotifiedTimestamps();
     this.init();
-    this.initPushNotifications(); // Chiama il metodo qui
+    this.initPushNotifications();
   }
 
   ngOnDestroy(): void {
@@ -68,6 +69,7 @@ export class ChatNotificationService implements OnDestroy {
       this.chatService.markMessagesAsRead(this.currentActiveChatId, this.currentUserId)
         .catch((error: any) => console.error('Errore nel marcare i messaggi come letti all\'ingresso chat:', error));
 
+      // Se entro in una chat, resetto il timestamp di notifica per quella chat
       this.lastNotifiedTimestamp.delete(this.currentActiveChatId);
       this.saveLastNotifiedTimestamps();
     }
@@ -88,6 +90,22 @@ export class ChatNotificationService implements OnDestroy {
         if (this.currentUserId) {
           console.log('ChatNotificationService: Ascolto conversazioni per utente:', this.currentUserId);
           return this.chatService.getUserConversations(this.currentUserId).pipe(
+            // AGGIUSTAMENTO QUI: Aggiungiamo un tap prima del checkForNewMessagesAndPlaySound
+            tap((conversations: ConversationDocument[]) => {
+              // Se è il primo caricamento dopo il login, inizializziamo lastKnownConversations
+              if (!this.hasInitialConversationsLoaded) {
+                console.log('ChatNotificationService: Inizializzazione lastKnownConversations al primo caricamento.');
+                conversations.forEach(conv => {
+                  this.lastKnownConversations.set(conv.id, conv);
+                  // Opzionalmente, se non vuoi notifiche per messaggi vecchi al primo login,
+                  // puoi aggiornare lastNotifiedTimestamp qui per tutti i messaggi correnti.
+                  // const currentLastMessageTime = (conv.lastMessageAt instanceof Timestamp) ? conv.lastMessageAt.toMillis() : 0;
+                  // this.lastNotifiedTimestamp.set(conv.id, currentLastMessageTime);
+                });
+                this.saveLastNotifiedTimestamps(); // Salva anche i timestamp iniziali se li aggiorni
+                this.hasInitialConversationsLoaded = true;
+              }
+            }),
             tap((conversations: ConversationDocument[]) => this.checkForNewMessagesAndPlaySound(conversations)),
             switchMap((conversations: ConversationDocument[]) => {
               if (conversations.length === 0) {
@@ -120,12 +138,13 @@ export class ChatNotificationService implements OnDestroy {
             })
           );
         } else {
+          // Utente disconnesso o non loggato
           this.unreadMessages = {};
           this.unreadCount$.next(0);
           this.lastKnownConversations.clear();
-          this.currentActiveChatId = null;
           this.lastNotifiedTimestamp.clear();
           this.saveLastNotifiedTimestamps();
+          this.hasInitialConversationsLoaded = false; // Reset dello stato al logout
           return of(0);
         }
       })
@@ -141,11 +160,18 @@ export class ChatNotificationService implements OnDestroy {
   }
 
   private async checkForNewMessagesAndPlaySound(currentConversations: ConversationDocument[]) {
-    if (!this.currentUserId) {
-      this.lastKnownConversations.clear();
-      this.lastNotifiedTimestamp.clear();
-      this.saveLastNotifiedTimestamps();
-      return;
+    // Se non abbiamo ancora caricato le conversazioni iniziali, non facciamo suonare nulla
+    // Questo è un fallback, il tap in init() dovrebbe già gestirlo.
+    if (!this.hasInitialConversationsLoaded || !this.currentUserId) {
+        // Se non ci sono conversazioni iniziali caricate, inizializza le mappe
+        // in modo che il prossimo aggiornamento le veda come "conosciute"
+        currentConversations.forEach(conv => {
+            this.lastKnownConversations.set(conv.id, conv);
+            const currentLastMessageTime = (conv.lastMessageAt instanceof Timestamp) ? conv.lastMessageAt.toMillis() : 0;
+            this.lastNotifiedTimestamp.set(conv.id, currentLastMessageTime);
+        });
+        this.saveLastNotifiedTimestamps();
+        return;
     }
 
     let shouldPlaySoundForAnyChat = false;
@@ -159,18 +185,23 @@ export class ChatNotificationService implements OnDestroy {
       const lastKnownMessageTime = (lastKnownConv?.lastMessageAt instanceof Timestamp) ? lastKnownConv.lastMessageAt.toMillis() : 0;
       const lastNotifiedTime = this.lastNotifiedTimestamp.get(conv.id) || 0;
 
+      // Logica per determinare se è un nuovo messaggio da notificare:
+      // 1. C'è un orario di ultimo messaggio valido
+      // 2. Il mittente non sono io
+      // 3. NON sono nella chat attiva
+      // 4. L'orario dell'ultimo messaggio è più recente dell'ultima volta che lo conoscevo
+      // 5. L'orario dell'ultimo messaggio è più recente dell'ultima volta che l'ho notificato
+      // 6. Il messaggio non è vuoto o solo spazi bianchi
       if (
         currentLastMessageTime > 0 &&
         conv.lastMessageSenderId !== this.currentUserId &&
         !isCurrentActiveChat &&
-        currentLastMessageTime > lastKnownMessageTime &&
-        currentLastMessageTime > lastNotifiedTime &&
-        // ✅ AGGIUNGI QUESTA CONDIZIONE: Assicurati che ci sia un messaggio reale
+        currentLastMessageTime > lastKnownMessageTime && // <<< Cruciale per evitare notifiche su vecchi messaggi
+        currentLastMessageTime > lastNotifiedTime &&     // <<< Cruciale per evitare notifiche duplicate
         conv.lastMessage && conv.lastMessage.trim() !== ''
       ) {
         shouldPlaySoundForAnyChat = true;
         this.lastNotifiedTimestamp.set(conv.id, currentLastMessageTime);
-        this.saveLastNotifiedTimestamps();
       }
       newKnownConversations.set(conv.id, conv);
     }
@@ -181,9 +212,10 @@ export class ChatNotificationService implements OnDestroy {
       this.lastSoundPlayedTimestamp = currentTime;
     }
 
+    // Aggiorna lastKnownConversations solo DOPO aver controllato per i suoni
     this.lastKnownConversations = newKnownConversations;
+    this.saveLastNotifiedTimestamps(); // Salva i timestamp aggiornati dopo il ciclo
   }
-
 
   private playNotificationSound() {
     this.audio.currentTime = 0;
@@ -194,7 +226,6 @@ export class ChatNotificationService implements OnDestroy {
     return this.unreadCount$.asObservable();
   }
 
-  // Metodi legacy per unreadMessages, mantenuti ma non usati per il conteggio totale reattivo
   getUnreadCountForChat(chatId: string): number {
     return this.unreadMessages[chatId] || 0;
   }
@@ -268,6 +299,13 @@ export class ChatNotificationService implements OnDestroy {
     PushNotifications.addListener('pushNotificationReceived', notification => {
       this.ngZone.run(() => {
         if (notification.data && notification.data['chatId'] && this.router.url !== `/chat/${notification.data['chatId']}`) {
+          // Logica per visualizzare una notifica in-app se l'app è in foreground
+          // Ad esempio, potresti usare un toast o un alert
+          console.log('Notifica push ricevuta (foreground):', notification.title, notification.body);
+          // if (isPlatform('web') || !isPlatform('capacitor')) {
+          //   // Solo per web, dato che su mobile le notifiche sono gestite dal sistema
+          //   alert(`Nuovo messaggio da ${notification.title}: ${notification.body}`);
+          // }
         }
       });
     });
@@ -281,24 +319,23 @@ export class ChatNotificationService implements OnDestroy {
       });
     });
     App.addListener('appStateChange', ({ isActive }) => {
+        // Se l'app torna in foreground e abbiamo un utente loggato, possiamo ricaricare le conversazioni
+        // per assicurarci che lo stato delle notifiche sia aggiornato.
+        if (isActive && this.currentUserId) {
+            console.log('App tornata in foreground, ricarico lo stato delle notifiche.');
+            // Il pipe in init() dovrebbe già reagire all'attività dell'observable
+            // this.init(); // NON CHIAMARE INIT QUI, potrebbe creare sottoscrizioni duplicate.
+            // L'Observer in init() si occuperà di reagire al cambiamento di stato di auth.
+        }
     });
   }
 
-  /**
-   * Salva il token FCM di un utente nel documento del suo profilo su Firestore.
-   * Questo token verrà usato dal backend per inviare notifiche push.
-   * @param userId L'ID dell'utente.
-   * @param token Il token FCM del dispositivo.
-   */
   private async saveFcmTokenToFirestore(userId: string, token: string): Promise<void> {
     if (!userId || !token) {
       console.warn('ChatNotificationService: Impossibile salvare token FCM. userId o token sono nulli.');
       return;
     }
     try {
-      // Assumi che this.chatService.afs sia l'istanza di Firestore.
-      // Se non è accessibile, potresti dover iniettare Firestore direttamente in ChatNotificationService
-      // o creare un metodo pubblico in ChatService per salvare il token utente.
       const userDocRef = doc(this.chatService.afs, 'users', userId);
       await updateDoc(userDocRef, {
         fcmTokens: {
