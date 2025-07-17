@@ -1,9 +1,17 @@
 <div class="emoji-badge" (click)="togglePicker($event)" [class.editable-cursor]="editing">
-  {{ getEmojiByStatus(status) }}
+  <ng-container *ngIf="status !== ''; else noStatusBadge">
+    {{ getEmojiByStatus(status) }}
+  </ng-container>
+  <ng-template #noStatusBadge>
+    </ng-template>
 </div>
 
 <div class="emoji-picker-inline" *ngIf="editing && showPicker">
   <span *ngFor="let option of availableEmojis" (click)="selectEmoji(option, $event)" class="emoji-option">
-    {{ getEmojiByStatus(option) }}
+    <ng-container *ngIf="option === ''; else showEmojiOption">
+      <span class="remove-status-icon">✖</span> </ng-container>
+    <ng-template #showEmojiOption>
+      {{ getEmojiByStatus(option) }}
+    </ng-template>
   </span>
 </div>

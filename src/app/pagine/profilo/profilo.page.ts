@@ -22,7 +22,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     name: '',
     email: '',
     bio: '',
-    status: 'neutral'
+    status: ''
   };
 
   profileEdit = {
@@ -32,7 +32,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     name: '',
     email: '',
     bio: '',
-    status: 'neutral'
+    status: ''
   };
 
   editing = false;
@@ -75,7 +75,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
         } else {
           this.loggedInUserId = null;
           // Resetta il profilo se l'utente non è loggato
-          this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '', status: 'neutral' };
+          this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '', status: '' };
           this.profileEdit = { ...this.profile };
           this.isLoading = false;
           this.isLoadingStats = false;
@@ -99,7 +99,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
           name: firestoreData.name || user.displayName || '',
           email: firestoreData.email || user.email || '',
           bio: firestoreData.bio || '',
-          status: firestoreData.status || 'neutral'
+          status: firestoreData.status ?? ''
         };
       } else {
         initialProfileData = {
@@ -109,7 +109,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
           name: user.displayName || '',
           email: user.email || '',
           bio: '',
-          status: 'neutral'
+          status: '' // ⭐ Default a stringa vuota per i nuovi utenti ⭐
         };
         await this.userDataService.saveUserData(initialProfileData);
       }
@@ -120,7 +120,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     } catch (error) {
       console.error("Errore durante il caricamento/salvataggio iniziale da Firestore:", error);
       await this.presentFF7Alert('Errore nel caricamento del profilo. Riprova più tardi.');
-      this.profile = { photo: 'assets/immaginiGenerali/default-avatar.jpg', banner: 'assets/immaginiGenerali/default-banner.jpg', nickname: '', name: '', email: '', bio: '', status: 'neutral' };
+      this.profile = { photo: 'assets/immaginiGenerali/default-avatar.jpg', banner: 'assets/immaginiGenerali/default-banner.jpg', nickname: '', name: '', email: '', bio: '', status: '' };
       this.profileEdit = { ...this.profile };
     } finally {
       this.isLoading = false;
@@ -177,9 +177,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
 
     this.userStatusSubscription = this.userDataService.userStatus$.subscribe(status => {
       this.ngZone.run(() => {
-        this.profile.status = status;
+        this.profile.status = status ?? '';
         if (this.editing) {
-          this.profileEdit.status = status;
+          this.profileEdit.status = this.profile.status;
         }
       });
     });
@@ -207,7 +207,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
       name: this.profileEdit.name || '',
       email: this.profileEdit.email || '',
       bio: this.profileEdit.bio || '',
-      status: this.profileEdit.status || 'neutral'
+      status: this.profileEdit.status ?? ''
     };
 
     try {
