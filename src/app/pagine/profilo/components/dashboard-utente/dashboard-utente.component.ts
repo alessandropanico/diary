@@ -2,7 +2,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ExpService } from 'src/app/services/exp.service';
-import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service'; // Manteniamo l'import di UserDashboardCounts per tipizzare i dati recuperati
+import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Subscription } from 'rxjs'; // Ancora utile per ExpService
 
 @Component({
@@ -52,17 +52,19 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    // Specifica che totalXP è di tipo 'number'
+    // Sottoscriviti a totalXP$ per aggiornamenti in tempo reale dell'XP e del livello
+    // Questo è l'unico Observable a cui ci sottoscriviamo per ora.
     this.subscriptions.add(
       this.expService.totalXP$.subscribe((totalXP: number) => {
         this.totalXP = totalXP;
         this.calculateLevelAndProgress();
+        // ⭐ Quando gli XP cambiano (e quindi un'attività è stata completata), ricarica anche i dati della dashboard
+        this.loadDashboardData();
       })
     );
 
-    // **** CAMBIAMENTO FLESSIBILE QUI ****
-    // Invece di sottoscriverti a un Observable (che non esiste),
-    // carichiamo i dati della dashboard una volta sola all'avvio.
+    // Carica i dati della dashboard al primo caricamento del componente
+    // Questo è il caricamento iniziale. Gli aggiornamenti successivi avverranno tramite la sottoscrizione a totalXP$
     this.loadDashboardData();
   }
 
@@ -70,47 +72,57 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
-  // **** NUOVO METODO PER CARICARE I DATI DELLA DASHBOARD ****
+  /**
+   * Carica i dati della dashboard dal UserDataService.
+   * Questo metodo viene chiamato all'inizializzazione e ogni volta che gli XP cambiano,
+   * per assicurare che tutti i contatori siano aggiornati.
+   */
   async loadDashboardData(): Promise<void> {
     try {
-      // getUserData() nel tuo UserDataService restituisce 'any | null'.
-      // Lo castiamo a UserDashboardCounts per ottenere la tipizzazione.
       const data = await this.userDataService.getUserData() as UserDashboardCounts | null;
 
       if (data) {
-        this.activeAlarmsCount = data.activeAlarmsCount;
-        this.totalAlarmsCreated = data.totalAlarmsCreated;
-        this.lastAlarmInteraction = data.lastAlarmInteraction;
-        this.totalNotesCount = data.totalNotesCount;
-        this.totalListsCount = data.totalListsCount;
-        this.incompleteListItems = data.incompleteListItems;
-        this.lastNoteListInteraction = data.lastNoteListInteraction;
-        this.followersCount = data.followersCount;
-        this.followingCount = data.followingCount;
+        this.activeAlarmsCount = data.activeAlarmsCount ?? 0;
+        this.totalAlarmsCreated = data.totalAlarmsCreated ?? 0;
+        this.lastAlarmInteraction = data.lastAlarmInteraction ?? '';
 
-        // Assicurati di aggiornare totalXP anche da qui se non è già garantito da ExpService
-        // (Il tuo UserDataService già chiama expService.setTotalXP() onAuthStateChanged,
-        // quindi questo potrebbe essere ridondante ma non dannoso)
-        // this.totalXP = (data as any).totalXP || 0;
-        // this.calculateLevelAndProgress();
+        this.totalNotesCount = data.totalNotesCount ?? 0;
+        this.totalListsCount = data.totalListsCount ?? 0;
+        this.incompleteListItems = data.incompleteListItems ?? 0;
+        this.lastNoteListInteraction = data.lastNoteListInteraction ?? '';
+
+        this.followersCount = data.followersCount ?? 0;
+        this.followingCount = data.followingCount ?? 0;
+
+        // totalXP è già gestito dalla sottoscrizione a expService.totalXP$
+        // this.totalXP = data.totalXP ?? 0;
+        // this.calculateLevelAndProgress(); // Non necessario qui se gestito dall'XP sub
       } else {
-        console.warn("Nessun dato dashboard trovato o utente non loggato.");
-        // Puoi resettare i valori qui se preferisci che siano 0 quando non ci sono dati
-        this.activeAlarmsCount = 0;
-        this.totalAlarmsCreated = 0;
-        this.lastAlarmInteraction = '';
-        this.totalNotesCount = 0;
-        this.totalListsCount = 0;
-        this.incompleteListItems = 0;
-        this.lastNoteListInteraction = '';
-        this.followersCount = 0;
-        this.followingCount = 0;
+        console.warn("Nessun dato dashboard trovato o utente non loggato. Inizializzo a zero.");
+        this.resetDashboardData();
       }
     } catch (error) {
       console.error("Errore nel caricamento dei dati della dashboard:", error);
-      // Gestisci l'errore, es. mostra un messaggio all'utente
+      this.resetDashboardData(); // Resetta in caso di errore per evitare valori indefiniti
     }
   }
+
+  /**
+   * Resetta tutte le proprietà della dashboard a zero o a stringhe vuote.
+   */
+  resetDashboardData(): void {
+    this.activeAlarmsCount = 0;
+    this.totalAlarmsCreated = 0;
+    this.lastAlarmInteraction = '';
+    this.totalNotesCount = 0;
+    this.totalListsCount = 0;
+    this.incompleteListItems = 0;
+    this.lastNoteListInteraction = '';
+    this.followersCount = 0;
+    this.followingCount = 0;
+    // Non resettare totalXP qui, è gestito da ExpService
+  }
+
 
   calculateLevelAndProgress(): void {
     let currentLevel = 1;
@@ -124,7 +136,8 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
         if (i + 1 < this.levelThresholds.length) {
           xpForNextLevelThreshold = this.levelThresholds[i + 1].xpRequired;
         } else {
-          xpForNextLevelThreshold = this.totalXP + 1;
+          // Se siamo all'ultimo livello, non c'è un "prossimo" livello definito per XP
+          xpForNextLevelThreshold = this.totalXP + 1; // Basta mostrare l'XP attuale
         }
         break;
       }
@@ -137,10 +150,32 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
       this.xpForNextLevel = xpForNextLevelThreshold - xpForCurrentLevel;
       this.progressPercentage = this.xpForNextLevel > 0 ? (this.currentXP / this.xpForNextLevel) * 100 : 100;
     } else {
-      this.xpForNextLevel = 0;
-      this.progressPercentage = 100;
+      this.xpForNextLevel = 0; // Già al livello massimo o non c'è un prossimo livello definito
+      this.progressPercentage = 100; // Progresso completato
     }
 
     if (this.progressPercentage > 100) this.progressPercentage = 100;
+  }
+
+  /**
+   * Helper per formattare le stringhe di data o mostrare 'N/A' se vuote.
+   * @param dateString La stringa di data da formattare (es. ISO string).
+   * @returns La data formattata o 'N/A'.
+   */
+  getDisplayDate(dateString: string): string {
+    if (!dateString) {
+      return 'N/A';
+    }
+    try {
+      const date = new Date(dateString);
+      // Controlla se la data è valida dopo la creazione
+      if (isNaN(date.getTime())) {
+        return 'N/A';
+      }
+      return date.toLocaleDateString('it-IT');
+    } catch (e) {
+      console.error("Errore nel parsing della data:", dateString, e);
+      return 'N/A';
+    }
   }
 }
