@@ -1,5 +1,5 @@
 // src/app/pagine/chat-list/chat-list.page.ts
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChildren, QueryList } from '@angular/core'; // Aggiunti ViewChildren e QueryList
 import {
   ChatService,
   ConversationDocument,
@@ -13,7 +13,31 @@ import { map, switchMap, catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ChatNotificationService } from 'src/app/services/chat-notification.service';
 import { Timestamp } from 'firebase/firestore';
-import { AlertController } from '@ionic/angular';
+import { AlertController, IonItemSliding } from '@ionic/angular'; // Aggiunto IonItemSliding
+
+import * as dayjs from 'dayjs';
+import 'dayjs/locale/it';
+import isToday from 'dayjs/plugin/isToday';
+import isYesterday from 'dayjs/plugin/isYesterday';
+import updateLocale from 'dayjs/plugin/updateLocale';
+
+dayjs.extend(isToday);
+dayjs.extend(isYesterday);
+dayjs.extend(updateLocale);
+dayjs.locale('it');
+
+dayjs.updateLocale('it', {
+  months: [
+    "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+    "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"
+  ],
+  weekdays: [
+    "Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"
+  ],
+  weekdaysShort: [
+    "Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"
+  ]
+});
 
 @Component({
   selector: 'app-chat-list',
@@ -27,14 +51,16 @@ export class ChatListPage implements OnInit, OnDestroy {
   loggedInUserId: string | null = null;
   isLoading: boolean = true;
 
-  // ✅ NUOVE PROPRIETÀ PER LA SELEZIONE MULTIPLA
-  isSelectionMode: boolean = false; // Indica se la modalità di selezione è attiva
-  selectedConversations: Set<string> = new Set<string>(); // Set degli ID delle conversazioni selezionate
+  isSelectionMode: boolean = false;
+  selectedConversations: Set<string> = new Set<string>();
 
   auth = getAuth();
 
   private authStateUnsubscribe: (() => void) | undefined;
   private conversationsSubscription: Subscription | undefined;
+
+  // Aggiunto ViewChildren per ottenere tutti gli ion-item-sliding
+  @ViewChildren(IonItemSliding) slidingItems!: QueryList<IonItemSliding>;
 
   constructor(
     private chatService: ChatService,
@@ -80,6 +106,7 @@ export class ChatListPage implements OnInit, OnDestroy {
     this.conversationsSubscription = this.chatService.getUserConversations(this.loggedInUserId)
       .pipe(
         map((rawConvs: ConversationDocument[]) => {
+          // Mantieni il filtro basato su deletedBy se è ancora rilevante per la tua logica
           return rawConvs.filter(conv =>
             !(conv.deletedBy && conv.deletedBy.includes(this.loggedInUserId!))
           );
@@ -124,7 +151,9 @@ export class ChatListPage implements OnInit, OnDestroy {
                   lastRead: conv.lastRead || {},
                   hasUnreadMessages: hasUnread,
                   unreadMessageCount: unreadCountForChat,
-                  deletedBy: conv.deletedBy || []
+                  deletedBy: conv.deletedBy || [],
+                  // Non includere 'eliminato' se non vuoi più gestirlo
+                  // eliminato: conv.eliminato || {}
                 };
 
                 if (hasUnread && !(extendedConv.deletedBy && extendedConv.deletedBy.includes(this.loggedInUserId!))) {
@@ -154,7 +183,9 @@ export class ChatListPage implements OnInit, OnDestroy {
                   lastRead: conv.lastRead || {},
                   hasUnreadMessages: false,
                   unreadMessageCount: 0,
-                  deletedBy: conv.deletedBy || []
+                  deletedBy: conv.deletedBy || [],
+                  // Non includere 'eliminato' se non vuoi più gestirlo
+                  // eliminato: conv.eliminato || {}
                 } as ExtendedConversation);
               })
             );
@@ -180,25 +211,21 @@ export class ChatListPage implements OnInit, OnDestroy {
   }
 
   openChat(conversationId: string) {
-    // Non aprire la chat se in modalità selezione
     if (!this.isSelectionMode) {
       this.router.navigate(['/chat', conversationId]);
     }
   }
 
   formatDate(date: Date): string {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (date.toDateString() === yesterday.toDateString()) {
+    const d = dayjs(date);
+    if (d.isToday()) {
+      return d.format('HH:mm');
+    } else if (d.isYesterday()) {
       return 'Ieri';
-    } else if (today.getFullYear() === date.getFullYear()) {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    } else if (d.year() === dayjs().year()) {
+      return d.format('D MMM');
     } else {
-      return date.toLocaleDateString();
+      return d.format('D MMM YYYY');
     }
   }
 
@@ -214,15 +241,10 @@ export class ChatListPage implements OnInit, OnDestroy {
   }
 
   getDisplayLastMessage(conversation: ExtendedConversation): string {
-    const prefix = this.isLastMessageFromMe(conversation) ? 'Io: ' : '';
+    const prefix = this.isLastMessageFromMe(conversation) ? 'Tu: ' : '';
     return prefix + (conversation.lastMessage || '');
   }
 
-  /**
-   * Mostra un alert di conferma e poi "elimina" una conversazione per l'utente corrente.
-   * L'eliminazione aggiunge l'ID dell'utente al campo 'deletedBy' della conversazione.
-   * @param conversation La conversazione da "eliminare".
-   */
   async deleteConversation(conversation: ExtendedConversation) {
     if (!this.loggedInUserId) {
       console.error('Errore: Utente non autenticato per eliminare la chat.');
@@ -238,6 +260,8 @@ export class ChatListPage implements OnInit, OnDestroy {
           text: 'Elimina',
           handler: async () => {
             try {
+              // Rimuovi la chiamata a markConversationAsDeleted se non vuoi più usare il campo 'eliminato'
+              // Se la tua logica di eliminazione è basata su 'deletedBy', mantienila come segue:
               await this.chatService.markConversationAsDeleted(conversation.id, this.loggedInUserId!);
               this.chatNotificationService.clearUnread(conversation.id);
             } catch (error) {
@@ -256,22 +280,34 @@ export class ChatListPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // ✅ NUOVI METODI PER LA SELEZIONE MULTIPLA
-
   /**
    * Attiva o disattiva la modalità di selezione multipla.
    */
   toggleSelectionMode() {
     this.isSelectionMode = !this.isSelectionMode;
     if (!this.isSelectionMode) {
-      // Se si esce dalla modalità di selezione, deseleziona tutto
       this.selectedConversations.clear();
+    } else {
+      // Chiudi tutti gli ion-item-sliding aperti quando si entra in modalità selezione
+      this.closeAllSlidingItems();
+    }
+  }
+
+  /**
+   * Chiude tutti gli ion-item-sliding aperti.
+   * Chiamato quando si entra in modalità selezione.
+   */
+  private async closeAllSlidingItems() {
+    if (this.slidingItems) {
+      this.slidingItems.forEach(async (item: IonItemSliding) => {
+        await item.closeOpened();
+      });
     }
   }
 
   /**
    * Seleziona/deseleziona una conversazione in modalità di selezione.
-   * @param conversationId L'ID della conversazione da selezionare/deselezionare.
+   * @param conversationId L'ID della conversazione.
    */
   toggleConversationSelection(conversationId: string) {
     if (this.isConversationSelected(conversationId)) {
@@ -313,14 +349,16 @@ export class ChatListPage implements OnInit, OnDestroy {
 
             const deletePromises: Promise<void>[] = [];
             for (const convId of this.selectedConversations) {
+              // Rimuovi la chiamata a markConversationAsDeleted se non vuoi più usare il campo 'eliminato'
+              // Se la tua logica di eliminazione è basata su 'deletedBy', mantienila come segue:
               deletePromises.push(this.chatService.markConversationAsDeleted(convId, this.loggedInUserId!));
-              this.chatNotificationService.clearUnread(convId); // Pulisci le notifiche anche qui
+              this.chatNotificationService.clearUnread(convId);
             }
 
             try {
               await Promise.all(deletePromises);
-              this.selectedConversations.clear(); // Pulisci le selezioni
-              this.isSelectionMode = false; // Esci dalla modalità di selezione
+              this.selectedConversations.clear();
+              this.isSelectionMode = false;
               console.log('Chat selezionate eliminate con successo.');
             } catch (error) {
               console.error('Errore durante l\'eliminazione in blocco delle chat:', error);
