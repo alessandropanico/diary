@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
-import { getAuth, User } from 'firebase/auth'; // Importa User da firebase/auth
-import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit, getFirestore, updateDoc } from 'firebase/firestore'; // Aggiungi updateDoc
-import { ExpService } from './exp.service'; // Importa ExpService
+import { getAuth, User } from 'firebase/auth';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit, getFirestore, updateDoc } from 'firebase/firestore';
+import { ExpService } from './exp.service';
 
-// Interfaccia per i dati che il UserDataService gestirà direttamente da Firebase
 export interface UserDashboardCounts {
   activeAlarmsCount: number;
   totalAlarmsCreated: number;
@@ -24,26 +23,20 @@ export class UserDataService {
   private firestore = getFirestore();
   private auth = getAuth();
 
-  constructor(private expService: ExpService) { // Inietta ExpService
-    // Quando l'utente si autentica o rileva un cambiamento nell'autenticazione,
-    // inizializza ExpService con gli XP dell'utente corrente.
-    // Questo è un punto di integrazione cruciale tra i due servizi.
+  constructor(private expService: ExpService) {
     this.auth.onAuthStateChanged(async (user) => {
       if (user) {
         const userData = await this.getUserData();
         if (userData && typeof userData['totalXP'] === 'number') {
           this.expService.setTotalXP(userData['totalXP']);
         } else {
-          // Se l'utente non ha ancora XP, inizializza a 0
           this.expService.setTotalXP(0);
         }
       } else {
-        // Utente disconnesso, resetta gli XP nel servizio ExpService
         this.expService.setTotalXP(0);
       }
     });
 
-    // Sottoscriviti ai cambiamenti di XP in ExpService per salvarli su Firebase
     this.expService.totalXP$.subscribe(async (newTotalXP) => {
       const user = this.auth.currentUser;
       if (user) {
@@ -63,18 +56,17 @@ export class UserDataService {
     return user ? user.uid : null;
   }
 
-  // Metodo esistente, leggermente pulito e tipizzato
-  async saveUserData(data: Partial<any>): Promise<void> { // data: Partial<any> per essere più flessibile
+  async saveUserData(data: Partial<any>): Promise<void> {
     const user = this.auth.currentUser;
     if (user) {
       const userDocRef = doc(this.firestore, 'users', user.uid);
-      const dataToSave: any = { ...data }; // Crea una copia per evitare modifiche dirette all'input
+      const dataToSave: any = { ...data };
 
-      if (dataToSave.nickname !== undefined) { // Controlla se nickname è presente e non null
+      if (dataToSave.nickname !== undefined) {
         dataToSave.nicknameLowercase = (dataToSave.nickname || '').toLowerCase().trim();
       }
 
-      if (dataToSave.name !== undefined) { // Controlla se name è presente e non null
+      if (dataToSave.name !== undefined) {
         dataToSave.nameLowercase = (dataToSave.name || '').toLowerCase().trim();
       }
 
@@ -91,7 +83,6 @@ export class UserDataService {
     }
   }
 
-  // Metodo esistente per la ricerca
   async searchUsers(searchTerm: string): Promise<any[]> {
     const normalizedSearchTerm = searchTerm.toLowerCase().trim();
     if (!normalizedSearchTerm) {
@@ -150,7 +141,6 @@ export class UserDataService {
     return allResults;
   }
 
-  // Metodo esistente, leggermente pulito
   async getUserDataByUid(uid: string): Promise<any | null> {
     const userDocRef = doc(this.db, 'users', uid);
     const userDocSnap = await getDoc(userDocRef);
@@ -160,7 +150,6 @@ export class UserDataService {
     return null;
   }
 
-  // Metodo esistente, aggiornato per recuperare tutti i dati dell'utente, incluso totalXP
   async getUserData(): Promise<any | null> {
     const user = this.auth.currentUser;
     if (user) {
@@ -169,14 +158,12 @@ export class UserDataService {
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          // Assicurati che totalXP esista, altrimenti default a 0
           if (typeof data['totalXP'] === 'undefined') {
-            await updateDoc(userDocRef, { totalXP: 0 }); // Inizializza totalXP se mancante
+            await updateDoc(userDocRef, { totalXP: 0 });
             return { ...data, totalXP: 0 };
           }
           return data;
         } else {
-          // Se il documento utente non esiste, creane uno di base e inizializza totalXP a 0
           const initialData = { totalXP: 0, activeAlarmsCount: 0, totalAlarmsCreated: 0, lastAlarmInteraction: '',
                                 totalNotesCount: 0, totalListsCount: 0, incompleteListItems: 0, lastNoteListInteraction: '',
                                 followersCount: 0, followingCount: 0 };
@@ -194,7 +181,6 @@ export class UserDataService {
     }
   }
 
-  // Metodo esistente
   async getUserDataById(uid: string): Promise<any | null> {
     if (!uid) {
       console.warn("UID utente non fornito per getUserDataById.");
@@ -214,7 +200,7 @@ export class UserDataService {
     }
   }
 
- 
+  // --- Metodi Helper per l'aggiornamento dei campi ---
 
   // Helper per aggiornare un campo numerico incrementandolo o impostandolo
   private async updateNumericField(uid: string, field: string, incrementBy: number = 0, setValue?: number): Promise<void> {
@@ -233,8 +219,11 @@ export class UserDataService {
         await updateDoc(userDocRef, { [field]: newValue });
         console.log(`[UserDataService] Campo '${field}' aggiornato a: ${newValue}`);
       } else {
-        console.warn(`Documento utente per UID ${uid} non trovato per aggiornare il campo '${field}'.`);
-        throw new Error(`Documento utente per UID ${uid} non trovato.`);
+        // Se il documento non esiste, lo crea con il valore iniziale.
+        // Questo è utile se un utente non ha ancora un documento e viene chiamato un metodo come increment.
+        const initialValue = setValue !== undefined ? setValue : incrementBy;
+        await setDoc(userDocRef, { [field]: initialValue }, { merge: true });
+        console.warn(`Documento utente per UID ${uid} non trovato per aggiornare il campo '${field}'. Creato con valore iniziale: ${initialValue}.`);
       }
     } catch (error) {
       console.error(`Errore nell'aggiornamento del campo '${field}' per UID ${uid}:`, error);
@@ -254,6 +243,8 @@ export class UserDataService {
     }
   }
 
+  // --- Metodi Specifici per aggiornare i contatori ---
+
   // Metodi per le Sveglie
   async incrementTotalAlarmsCreated(): Promise<void> {
     const uid = this.getUserUid();
@@ -271,14 +262,16 @@ export class UserDataService {
   }
 
   // Metodi per Note e Liste
-  async incrementTotalNotesCount(): Promise<void> {
+  // Modificato: accetta un parametro 'change' con default 1
+  async incrementTotalNotesCount(change: number = 1): Promise<void> {
     const uid = this.getUserUid();
-    if (uid) await this.updateNumericField(uid, 'totalNotesCount', 1);
+    if (uid) await this.updateNumericField(uid, 'totalNotesCount', change);
   }
 
-  async incrementTotalListsCount(): Promise<void> {
+  // Modificato: accetta un parametro 'change' con default 1
+  async incrementTotalListsCount(change: number = 1): Promise<void> {
     const uid = this.getUserUid();
-    if (uid) await this.updateNumericField(uid, 'totalListsCount', 1);
+    if (uid) await this.updateNumericField(uid, 'totalListsCount', change);
   }
 
   async setIncompleteListItems(count: number): Promise<void> {
@@ -300,6 +293,16 @@ export class UserDataService {
   async incrementFollowingCount(): Promise<void> {
     const uid = this.getUserUid();
     if (uid) await this.updateNumericField(uid, 'followingCount', 1);
+  }
+
+  async setTotalNotesCount(count: number): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) await this.updateNumericField(uid, 'totalNotesCount', 0, count);
+  }
+
+  async setTotalListsCount(count: number): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) await this.updateNumericField(uid, 'totalListsCount', 0, count);
   }
 
   // *** Questo metodo NON è più usato per il dashboard direttamente, ma potresti usarlo in altri contesti ***

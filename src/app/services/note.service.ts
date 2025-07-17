@@ -19,8 +19,11 @@ import {
 
 import { Auth, user, signInAnonymously, signOut } from '@angular/fire/auth';
 
-import { Note } from '../interfaces/note';
+import { Note } from '../interfaces/note'; // L'interfaccia che mi hai fornito
 import { Playlist } from '../interfaces/playlist';
+
+import { ExpService } from './exp.service';
+import { UserDataService } from './user-data.service';
 
 @Injectable({
   providedIn: 'root'
@@ -39,7 +42,9 @@ export class NoteService {
 
   constructor(
     private firestore: Firestore,
-    private auth: Auth
+    private auth: Auth,
+    private expService: ExpService,
+    private userDataService: UserDataService
   ) {
     this._isLoading.next(true);
 
@@ -67,33 +72,33 @@ export class NoteService {
       return;
     }
 
-    // Qui recuperiamo le playlist reali dall'utente
-    const playlistsCollection = collection(this.firestore, `users/${this.userId}/notePlaylists`); // *** MODIFICATO: Usiamo 'notePlaylists'
+    const playlistsCollection = collection(this.firestore, `users/${this.userId}/notePlaylists`);
     collectionData(playlistsCollection, { idField: 'id' }).pipe(
       map(playlists => {
         const typedPlaylists = playlists as Playlist[];
         const allPlaylist: Playlist = { id: 'all', name: 'Tutti' };
-
-        // Aggiungiamo sempre "Tutti" e poi ordiniamo le altre playlist
         return [allPlaylist, ...typedPlaylists.sort((a, b) => a.name.localeCompare(b.name))];
       }),
       tap(playlists => {
         this._playlistsSubject.next(playlists);
+        // Potresti aggiornare totalListsCount qui dopo il caricamento iniziale
+        this.userDataService.setIncompleteListItems(0); // Le note non sono task in questa versione
+        this.userDataService.setTotalListsCount(playlists.length - 1); // -1 per escludere "Tutti"
       }),
       catchError(error => {
         console.error('Errore nel caricamento delle playlist da Firestore:', error);
-        // In caso di errore, garantiamo che "Tutti" sia comunque presente
         return of([{ id: 'all', name: 'Tutti' }]);
       })
     ).subscribe();
 
-    // Qui recuperiamo le note dell'utente
     const notesCollection = collection(this.firestore, `users/${this.userId}/notes`);
     collectionData(notesCollection, { idField: 'id' }).pipe(
       map(notes => notes as Note[]),
       tap(notes => {
         this._notesSubject.next(notes);
         this._isLoading.next(false);
+        // Aggiorna totalNotesCount dopo il caricamento iniziale
+        this.userDataService.setTotalNotesCount(notes.length);
       }),
       catchError(error => {
         console.error('Errore nel caricamento delle note da Firestore:', error);
@@ -108,7 +113,7 @@ export class NoteService {
   }
 
   /**
-   * Aggiunge una nuova nota a Firestore.
+   * Aggiunge una nuova nota a Firestore e aggiunge XP.
    * @param note La nota da aggiungere. L'ID dovrebbe essere generato dal client (es. uuidv4()).
    * @returns Un Observable<void> che si completa quando l'operazione è finita.
    */
@@ -116,19 +121,26 @@ export class NoteService {
     if (!this.userId) return of(console.error('Non autorizzato: utente non loggato per addNote.'));
     if (!note.id) return of(console.error('Errore: ID nota mancante per addNote.'));
 
-    // Se la nota è associata a "Tutti" ('all'), salva null in Firestore
     const playlistIdToSave = note.playlistId === 'all' ? null : note.playlistId;
 
     const noteRef = doc(this.firestore, `users/${this.userId}/notes/${note.id}`);
     const newNote: Note = {
       ...note,
-      playlistId: playlistIdToSave, // Usa il valore corretto per Firestore
+      playlistId: playlistIdToSave,
       createdAt: serverTimestamp() as any,
       updatedAt: serverTimestamp() as any
     };
 
     return from(setDoc(noteRef, newNote)).pipe(
-      tap(() => console.log('Nota aggiunta a Firestore:', newNote.id)),
+      tap(() => {
+        console.log('Nota aggiunta a Firestore:', newNote.id);
+        // Aggiungi XP per la creazione di una nota
+        this.expService.addExperience(5); // Esempio: 5 XP per ogni nuova nota
+        console.log('[NoteService] XP aggiunti per nuova nota.');
+        // Aggiorna il contatore totale delle note
+        this.userDataService.incrementTotalNotesCount();
+        this.userDataService.setLastNoteListInteraction(new Date().toISOString());
+      }),
       catchError(error => {
         console.error('Errore nell\'aggiunta della nota a Firestore:', error);
         throw error;
@@ -137,7 +149,7 @@ export class NoteService {
   }
 
   /**
-   * Aggiorna una nota esistente in Firestore.
+   * Aggiorna una nota esistente in Firestore. Nessun XP per l'aggiornamento.
    * @param updatedNote La nota con i dati aggiornati.
    * @returns Un Observable<void> che si completa quando l'operazione è finita.
    */
@@ -146,18 +158,21 @@ export class NoteService {
       return of(console.error('Non autorizzato o ID nota mancante per aggiornamento.'));
     }
 
-    // Se la nota è associata a "Tutti" ('all'), salva null in Firestore
     const playlistIdToSave = updatedNote.playlistId === 'all' ? null : updatedNote.playlistId;
 
     const noteRef = doc(this.firestore, `users/${this.userId}/notes/${updatedNote.id}`);
     const noteToUpdate: Partial<Note> = {
       ...updatedNote,
-      playlistId: playlistIdToSave, // Usa il valore corretto per Firestore
+      playlistId: playlistIdToSave,
       updatedAt: serverTimestamp() as any
     };
 
     return from(updateDoc(noteRef, noteToUpdate)).pipe(
-      tap(() => console.log('Nota aggiornata in Firestore:', updatedNote.id)),
+      tap(() => {
+        console.log('Nota aggiornata in Firestore:', updatedNote.id);
+        // Nessuna logica XP per il completamento task se i campi non esistono
+        this.userDataService.setLastNoteListInteraction(new Date().toISOString());
+      }),
       catchError(error => {
         console.error('Errore nell\'aggiornamento della nota in Firestore:', error);
         throw error;
@@ -177,7 +192,12 @@ export class NoteService {
     const noteRef = doc(this.firestore, `users/${this.userId}/notes/${id}`);
 
     return from(deleteDoc(noteRef)).pipe(
-      tap(() => console.log('Nota eliminata da Firestore:', id)),
+      tap(() => {
+        console.log('Nota eliminata da Firestore:', id);
+        // Aggiorna il contatore totale delle note
+        this.userDataService.incrementTotalNotesCount(-1); // Decrementa
+        this.userDataService.setLastNoteListInteraction(new Date().toISOString());
+      }),
       catchError(error => {
         console.error('Errore nell\'eliminazione della nota da Firestore:', error);
         throw error;
@@ -185,30 +205,32 @@ export class NoteService {
     );
   }
 
-  /**
-   * Restituisce un'istantanea corrente delle playlist.
-   * Utile per accedere ai dati immediatamente (es. per popolare un prompt radio).
-   */
   getPlaylistsSnapshot(): Playlist[] {
     return this._playlistsSubject.getValue();
   }
 
   /**
-   * Aggiunge una nuova playlist a Firestore.
-   * Firestore genererà automaticamente l'ID per la nuova playlist.
+   * Aggiunge una nuova playlist a Firestore e aggiunge XP.
    * @param name Il nome della playlist.
    * @returns Un Observable<void> che si completa.
    */
   addPlaylist(name: string): Observable<void> {
     if (!this.userId) return of(console.error('Non autorizzato: utente non loggato per addPlaylist.'));
 
-    // *** MODIFICATO: Usiamo 'notePlaylists'
     const playlistCollectionRef = collection(this.firestore, `users/${this.userId}/notePlaylists`);
     const newDocRef = doc(playlistCollectionRef);
     const newPlaylist: Playlist = { id: newDocRef.id, name };
 
     return from(setDoc(newDocRef, newPlaylist)).pipe(
-      tap(() => console.log('Playlist aggiunta a Firestore:', newPlaylist)),
+      tap(() => {
+        console.log('Playlist aggiunta a Firestore:', newPlaylist);
+        // Aggiungi XP per la creazione di una playlist
+        this.expService.addExperience(10); // Esempio: 10 XP per ogni nuova playlist
+        console.log('[NoteService] XP aggiunti per nuova playlist.');
+        // Aggiorna il contatore totale delle liste
+        this.userDataService.incrementTotalListsCount();
+        this.userDataService.setLastNoteListInteraction(new Date().toISOString());
+      }),
       catchError(error => {
         console.error('Errore nell\'aggiunta della playlist a Firestore:', error);
         throw error;
@@ -218,7 +240,7 @@ export class NoteService {
 
   /**
    * Elimina una playlist e tutte le note ad essa associate.
-   * NON permette di eliminare la playlist "Tutti".
+   * NON permette di eliminare la playlist "Tutti". Aggiorna anche i contatori.
    * @param playlistId L'ID della playlist da eliminare.
    * @returns Un Observable<void> che si completa.
    */
@@ -227,7 +249,6 @@ export class NoteService {
       return of(console.error('Non autorizzato o ID playlist non valido (non puoi eliminare "Tutti").'));
     }
 
-    // *** MODIFICATO: Usiamo 'notePlaylists'
     const playlistRef = doc(this.firestore, `users/${this.userId}/notePlaylists/${playlistId}`);
     const notesCollectionRef = collection(this.firestore, `users/${this.userId}/notes`);
     const q = query(notesCollectionRef, where('playlistId', '==', playlistId));
@@ -236,6 +257,8 @@ export class NoteService {
 
     return from(getDocs(q)).pipe(
       switchMap(snapshot => {
+        const deletedNotesCount = snapshot.size;
+
         snapshot.forEach(noteDoc => {
           batch.delete(noteDoc.ref);
         });
@@ -243,7 +266,14 @@ export class NoteService {
         batch.delete(playlistRef);
 
         return from(batch.commit()).pipe(
-          tap(() => console.log(`Playlist "${playlistId}" e ${snapshot.size} note associate eliminate da Firestore.`)),
+          tap(() => {
+            console.log(`Playlist "${playlistId}" e ${deletedNotesCount} note associate eliminate da Firestore.`);
+            this.userDataService.incrementTotalListsCount(-1); // Decrementa
+            if (deletedNotesCount > 0) {
+                 this.userDataService.incrementTotalNotesCount(-deletedNotesCount); // Decrementa il totale delle note
+            }
+            this.userDataService.setLastNoteListInteraction(new Date().toISOString());
+          }),
           catchError(error => {
             console.error('Errore durante l\'eliminazione della playlist e delle note in Firestore:', error);
             throw error;
