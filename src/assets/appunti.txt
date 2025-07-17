@@ -1,11 +1,7 @@
 --TO DO--
 
-Aggiungere FireBase per database su app;
-
-Aggiungere chat;
-**PER LA CHAT**
-//METTERE CHE SI ELIMIANO I MESSAGGI,
-//GIORNI IN CUI I MESSAGGI SONO STATI INIVATI (OGGI SE OGGI)
+**AGGIUSTA L'EMOJI, METTI ANCHE UNA NOTA**
+**NELLA CHAT, INSERISCI GLI AUDIO (VEDERE SE FATTIBILE SENZA BLAZE)**
 
 Tracking umore/giornata: aggiungi una sezione per annotare come ci si sente ogni giorno (magari emoji + breve nota);
 
@@ -15,9 +11,6 @@ Integrazione con AI (anche semplice):
 [suggerimenti per ottimizzare la giornata;
 sintesi delle note;
 generazione automatica di to-do da note vocali.];
-
-**AGGIUSTA L'EMOJI, METTI ANCHE UNA NOTA**
-**NELLA CHAT, INSERISCI GLI AUDIO (VEDERE SE FATTIBILE SENZA BLAZE)**
 
 
 
