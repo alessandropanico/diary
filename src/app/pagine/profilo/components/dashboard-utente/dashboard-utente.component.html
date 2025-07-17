@@ -10,7 +10,7 @@
     <div class="ff7-data-grid">
       <div class="ff7-data-item">
         <div class="ff7-data-label">Ultima Attività Globale</div>
-        <div class="ff7-data-value ff7-primary-value">{{ lastAlarmInteraction }}</div>
+        <div class="ff7-data-value ff7-primary-value">{{ lastAlarmInteraction | date:'dd/MM/yyyy' }}</div>
       </div>
     </div>
   </div>
@@ -31,7 +31,7 @@
       </div>
       <div class="ff7-data-item">
         <div class="ff7-data-label">Ultima Modifica</div>
-        <div class="ff7-data-value">{{ lastAlarmInteraction }}</div>
+        <div class="ff7-data-value">{{ lastAlarmInteraction | date:'dd/MM/yyyy' }}</div>
       </div>
     </div>
   </div>
@@ -57,48 +57,47 @@
       </div>
       <div class="ff7-data-item">
         <div class="ff7-data-label">Ultima Modifica</div>
-        <div class="ff7-data-value">{{ lastNoteListInteraction }}</div>
+        <div class="ff7-data-value">{{ lastNoteListInteraction | date:'dd/MM/yyyy' }}</div>
       </div>
     </div>
   </div>
 
   <div class="ff7-section-divider"></div>
 
-<div class="ff7-dashboard-section level-3-section">
-  <h3 class="ff7-section-heading">
-    <i class="icon-trophy"></i> Obiettivi & Statistiche
-  </h3>
-  <div class="ff7-data-grid">
-    <div class="ff7-data-item">
-      <div class="ff7-data-label">Livello Attuale</div>
-      <div class="ff7-data-value ff7-primary-value">{{ userLevel }}</div>
+  <div class="ff7-dashboard-section level-3-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-trophy"></i> Obiettivi & Statistiche
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Livello Attuale</div>
+        <div class="ff7-data-value ff7-primary-value">{{ userLevel }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">XP Attuali</div>
+        <div class="ff7-data-value">{{ currentXP }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">XP Prossimo Livello</div>
+        <div class="ff7-data-value">{{ xpForNextLevel }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Follower</div>
+        <div class="ff7-data-value">{{ followersCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Seguiti</div>
+        <div class="ff7-data-value">{{ followingCount }}</div>
+      </div>
     </div>
-    <div class="ff7-data-item">
-      <div class="ff7-data-label">XP Attuali</div>
-      <div class="ff7-data-value">{{ currentXP }}</div>
-    </div>
-    <div class="ff7-data-item">
-      <div class="ff7-data-label">XP Prossimo Livello</div>
-      <div class="ff7-data-value">{{ xpForNextLevel }}</div>
-    </div>
-    <div class="ff7-data-item">
-      <div class="ff7-data-label">Follower</div>
-      <div class="ff7-data-value">{{ followersCount }}</div>
-    </div>
-    <div class="ff7-data-item">
-      <div class="ff7-data-label">Seguiti</div>
-      <div class="ff7-data-value">{{ followingCount }}</div>
+
+    <p class="ff7-message">
+      *Continua a completare task, gestire le tue sveglie e interagire per avanzare di livello!*
+    </p>
+
+    <div class="ff7-progress-bar-container">
+      <div class="ff7-progress-bar" [style.width]="progressPercentage + '%'"></div>
+      <span class="ff7-progress-text">Progresso al prossimo livello: {{ progressPercentage | number:'1.0-0' }}%</span>
     </div>
   </div>
-
-  <p class="ff7-message">
-    *Continua a completare task, gestire le tue sveglie e interagire per avanzare di livello!*
-  </p>
-
-  <div class="ff7-progress-bar-container">
-    <div class="ff7-progress-bar" [style.width]="progressPercentage + '%'"></div>
-    <span class="ff7-progress-text">Progresso al prossimo livello: {{ progressPercentage | number:'1.0-0' }}%</span>
-  </div>
-</div>
-
 </div>

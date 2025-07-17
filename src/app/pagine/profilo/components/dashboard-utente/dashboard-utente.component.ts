@@ -1,6 +1,9 @@
 // src/app/dashboard-utente/dashboard-utente.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ExpService } from 'src/app/services/exp.service';
+import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service'; // Manteniamo l'import di UserDashboardCounts per tipizzare i dati recuperati
+import { Subscription } from 'rxjs'; // Ancora utile per ExpService
 
 @Component({
   selector: 'app-dashboard-utente',
@@ -8,65 +11,107 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./dashboard-utente.component.scss'],
   imports: [CommonModule],
 })
-export class DashboardUtenteComponent implements OnInit {
+export class DashboardUtenteComponent implements OnInit, OnDestroy {
 
-  // Dati di default per le sveglie
-  activeAlarmsCount: number = 2;
-  totalAlarmsCreated: number = 5;
-  lastAlarmInteraction: string = 'Oggi, 10:30';
+  activeAlarmsCount: number = 0;
+  totalAlarmsCreated: number = 0;
+  lastAlarmInteraction: string = '';
 
-  // Dati di default per note e liste
-  totalNotesCount: number = 8;
-  totalListsCount: number = 3;
-  incompleteListItems: number = 7;
-  lastNoteListInteraction: string = 'Ieri, 18:00';
+  totalNotesCount: number = 0;
+  totalListsCount: number = 0;
+  incompleteListItems: number = 0;
+  lastNoteListInteraction: string = '';
 
-  // --- Nuovi dati per il sistema di livello ---
+  followersCount: number = 0;
+  followingCount: number = 0;
+
   userLevel: number = 1;
   currentXP: number = 0;
   totalXP: number = 0;
   xpForNextLevel: number = 100;
   progressPercentage: number = 0;
 
-  // --- Nuovi dati per follower e seguiti ---
-  followersCount: number = 0; // Inizializza a 0 o al valore caricato da Firebase
-  followingCount: number = 0; // Inizializza a 0 o al valore caricato da Firebase
-
-  // Mappa delle soglie XP per ogni livello
   private levelThresholds: { level: number, xpRequired: number }[] = [
     { level: 1, xpRequired: 0 },
     { level: 2, xpRequired: 100 },
-    { level: 3, xpRequired: 350 }, // 100 + 250
-    { level: 4, xpRequired: 850 }, // 350 + 500
-    { level: 5, xpRequired: 1650 }, // 850 + 800
-    { level: 6, xpRequired: 2850 }, // 1650 + 1200
-    { level: 7, xpRequired: 4550 }, // 2850 + 1700
-    { level: 8, xpRequired: 6850 }, // 4550 + 2300
-    { level: 9, xpRequired: 9850 }, // 6850 + 3000
-    { level: 10, xpRequired: 13850 }, // 9850 + 4000
-    // Aggiungi altri livelli qui
+    { level: 3, xpRequired: 350 },
+    { level: 4, xpRequired: 850 },
+    { level: 5, xpRequired: 1650 },
+    { level: 6, xpRequired: 2850 },
+    { level: 7, xpRequired: 4550 },
+    { level: 8, xpRequired: 6850 },
+    { level: 9, xpRequired: 9850 },
+    { level: 10, xpRequired: 13850 },
   ];
 
-  constructor() { }
+  private subscriptions: Subscription = new Subscription();
+
+  constructor(
+    private expService: ExpService,
+    private userDataService: UserDataService
+  ) { }
 
   ngOnInit() {
-    // Qui andrebbe la logica per caricare i dati reali da Firebase
-    // Inizializziamo con dati di esempio per mostrare il funzionamento
-    this.totalXP = 870; // Esempio: tra livello 3 e 4
-    this.followersCount = 5; // Esempio
-    this.followingCount = 12; // Esempio
+    // Specifica che totalXP è di tipo 'number'
+    this.subscriptions.add(
+      this.expService.totalXP$.subscribe((totalXP: number) => {
+        this.totalXP = totalXP;
+        this.calculateLevelAndProgress();
+      })
+    );
 
-    this.calculateLevelAndProgress();
+    // **** CAMBIAMENTO FLESSIBILE QUI ****
+    // Invece di sottoscriverti a un Observable (che non esiste),
+    // carichiamo i dati della dashboard una volta sola all'avvio.
+    this.loadDashboardData();
   }
 
-  // Metodo per aggiungere XP basato su un'azione
-  addExperience(xpAmount: number): void {
-    this.totalXP += xpAmount;
-    this.calculateLevelAndProgress();
-    // Qui dovresti anche salvare this.totalXP su Firebase!
+  ngOnDestroy() {
+    this.subscriptions.unsubscribe();
   }
 
-  // Metodo per calcolare il livello e il progresso
+  // **** NUOVO METODO PER CARICARE I DATI DELLA DASHBOARD ****
+  async loadDashboardData(): Promise<void> {
+    try {
+      // getUserData() nel tuo UserDataService restituisce 'any | null'.
+      // Lo castiamo a UserDashboardCounts per ottenere la tipizzazione.
+      const data = await this.userDataService.getUserData() as UserDashboardCounts | null;
+
+      if (data) {
+        this.activeAlarmsCount = data.activeAlarmsCount;
+        this.totalAlarmsCreated = data.totalAlarmsCreated;
+        this.lastAlarmInteraction = data.lastAlarmInteraction;
+        this.totalNotesCount = data.totalNotesCount;
+        this.totalListsCount = data.totalListsCount;
+        this.incompleteListItems = data.incompleteListItems;
+        this.lastNoteListInteraction = data.lastNoteListInteraction;
+        this.followersCount = data.followersCount;
+        this.followingCount = data.followingCount;
+
+        // Assicurati di aggiornare totalXP anche da qui se non è già garantito da ExpService
+        // (Il tuo UserDataService già chiama expService.setTotalXP() onAuthStateChanged,
+        // quindi questo potrebbe essere ridondante ma non dannoso)
+        // this.totalXP = (data as any).totalXP || 0;
+        // this.calculateLevelAndProgress();
+      } else {
+        console.warn("Nessun dato dashboard trovato o utente non loggato.");
+        // Puoi resettare i valori qui se preferisci che siano 0 quando non ci sono dati
+        this.activeAlarmsCount = 0;
+        this.totalAlarmsCreated = 0;
+        this.lastAlarmInteraction = '';
+        this.totalNotesCount = 0;
+        this.totalListsCount = 0;
+        this.incompleteListItems = 0;
+        this.lastNoteListInteraction = '';
+        this.followersCount = 0;
+        this.followingCount = 0;
+      }
+    } catch (error) {
+      console.error("Errore nel caricamento dei dati della dashboard:", error);
+      // Gestisci l'errore, es. mostra un messaggio all'utente
+    }
+  }
+
   calculateLevelAndProgress(): void {
     let currentLevel = 1;
     let xpForCurrentLevel = 0;
@@ -79,8 +124,7 @@ export class DashboardUtenteComponent implements OnInit {
         if (i + 1 < this.levelThresholds.length) {
           xpForNextLevelThreshold = this.levelThresholds[i + 1].xpRequired;
         } else {
-          // Se siamo all'ultimo livello definito, non c'è un prossimo livello specifico
-          xpForNextLevelThreshold = this.totalXP; // O un valore molto alto per indicare "max level"
+          xpForNextLevelThreshold = this.totalXP + 1;
         }
         break;
       }
@@ -91,37 +135,12 @@ export class DashboardUtenteComponent implements OnInit {
 
     if (xpForNextLevelThreshold > xpForCurrentLevel) {
       this.xpForNextLevel = xpForNextLevelThreshold - xpForCurrentLevel;
-      this.progressPercentage = (this.currentXP / this.xpForNextLevel) * 100;
+      this.progressPercentage = this.xpForNextLevel > 0 ? (this.currentXP / this.xpForNextLevel) * 100 : 100;
     } else {
-      // Caso in cui si è raggiunto il livello massimo o non c'è un prossimo livello definito
       this.xpForNextLevel = 0;
       this.progressPercentage = 100;
     }
 
     if (this.progressPercentage > 100) this.progressPercentage = 100;
-  }
-
-  // Esempio di come potresti chiamare addExperience da altri servizi o eventi
-  // (Questi metodi dovrebbero essere chiamati da dove avvengono le azioni, es. un servizio)
-  onAlarmCompleted(): void {
-    this.addExperience(20);
-    // Aggiorna anche activeAlarmsCount, totalAlarmsCreated, etc.
-  }
-
-  onTaskCompleted(): void {
-    this.addExperience(15);
-    // Aggiorna anche incompleteListItems, etc.
-  }
-
-  onNewFollower(): void {
-    this.followersCount++;
-    this.addExperience(25);
-    // Salva this.followersCount su Firebase
-  }
-
-  onNewFollowing(): void {
-    this.followingCount++;
-    this.addExperience(10);
-    // Salva this.followingCount su Firebase
   }
 }
