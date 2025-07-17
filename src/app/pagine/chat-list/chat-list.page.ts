@@ -231,7 +231,7 @@ export class ChatListPage implements OnInit, OnDestroy {
 
     const alert = await this.alertController.create({
       header: 'Elimina Chat',
-      message: `Sei sicuro di voler eliminare la conversazione con ${conversation.otherParticipantName}? Questa azione la rimuoverà dalla tua lista e non potrai più vedere i messaggi precedenti se avvierai una nuova chat con questo utente.`,
+      message: `Sei sicuro di voler eliminare la conversazione con ${conversation.otherParticipantName}?`,
       buttons: [
         { text: 'Annulla', role: 'cancel' },
         {
