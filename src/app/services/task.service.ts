@@ -15,6 +15,7 @@ import {
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 
 import { ExpService } from './exp.service';
+import { UserDataService } from './user-data.service'; // ⭐ Importa UserDataService
 
 @Injectable({
   providedIn: 'root'
@@ -30,7 +31,8 @@ export class TaskService {
   private initialLoadCompleted: boolean = false;
 
   constructor(
-    private expService: ExpService
+    private expService: ExpService,
+    private userDataService: UserDataService // ⭐ Inietta UserDataService
   ) {
     const auth = getAuth();
     this.authStateSubscription = new Subscription();
@@ -119,6 +121,10 @@ export class TaskService {
 
       if (xpFromExpiredTasks > 0) {
         this.expService.addExperience(xpFromExpiredTasks);
+        // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE - per task scadute
+        await this.userDataService.saveUserData({
+            lastGlobalActivityTimestamp: new Date().toISOString()
+        });
       }
 
     } catch (error) {
@@ -136,13 +142,20 @@ export class TaskService {
 
     try {
       const tasksCollectionRef = collection(this.db, `users/${uid}/tasks`);
-      const docRef = await addDoc(tasksCollectionRef, task);
+      // Assicurati che 'task' includa 'createdAt' se vuoi ordinarle così in loadTasks
+      const taskToSave = { ...task, createdAt: new Date().toISOString() }; // Aggiungi createdAt
+      const docRef = await addDoc(tasksCollectionRef, taskToSave);
 
       const currentTasks = this.tasksSubject.value || [];
-      const newTaskWithId = { id: docRef.id, ...task };
+      const newTaskWithId = { id: docRef.id, ...taskToSave }; // Usa taskToSave per coerenza
       this.tasksSubject.next([...currentTasks, newTaskWithId]);
 
       this.expService.addExperience(5);
+      // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE - per aggiunta task
+      await this.userDataService.saveUserData({
+        lastGlobalActivityTimestamp: new Date().toISOString()
+      });
+
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiunta della task a Firestore:', error);
       throw error;
@@ -162,6 +175,12 @@ export class TaskService {
 
       const currentTasks = this.tasksSubject.value || [];
       this.tasksSubject.next(currentTasks.filter(t => t.id !== taskId));
+
+      // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE - per eliminazione task (facoltativo, ma consigliato)
+      // Se vuoi che l'eliminazione sia considerata un'attività che aggiorna il timestamp
+      await this.userDataService.saveUserData({
+        lastGlobalActivityTimestamp: new Date().toISOString()
+      });
 
     } catch (error) {
       console.error('TaskService: Errore durante l\'eliminazione della task da Firestore:', error);
@@ -189,6 +208,11 @@ export class TaskService {
       if (completed) {
         this.expService.addExperience(10);
       }
+      // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE - per toggle completamento task
+      await this.userDataService.saveUserData({
+        lastGlobalActivityTimestamp: new Date().toISOString()
+      });
+
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiornamento della task in Firestore:', error);
       throw error;
