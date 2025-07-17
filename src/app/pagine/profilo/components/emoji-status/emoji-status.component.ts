@@ -1,4 +1,6 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core'; // ⭐ AGGIUNGI Output e EventEmitter
+/* src/app/components/emoji-status/emoji-status.component.ts */
+
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -7,19 +9,18 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./emoji-status.component.scss'],
   imports: [CommonModule]
 })
-export class EmojiStatusComponent {
+export class EmojiStatusComponent implements OnInit {
   @Input() status: string = 'neutral';
-  @Input() editing: boolean = false; // ⭐ NUOVO Input: per sapere se il profilo è in modalità modifica
-  @Output() statusSelected = new EventEmitter<string>(); // ⭐ NUOVO Output: emette l'emoji selezionata
+  @Input() editing: boolean = false;
+  @Output() statusSelected = new EventEmitter<string>();
 
-  showPicker: boolean = false; // ⭐ NUOVO: Controlla la visibilità del picker inline
+  showPicker: boolean = false;
 
-  // ⭐ NUOVO: Elenco degli stati disponibili per il picker
   availableEmojis: string[] = [
     'neutral', 'happy', 'sad', 'tired', 'focused', 'stressed', 'angry', 'chill', 'love', 'sick', 'party'
   ];
 
-  private emojiMap: { [key: string]: string } = { // Mappa delle emoji
+  private emojiMap: { [key: string]: string } = {
     happy: '😄',
     sad: '😢',
     tired: '😴',
@@ -33,25 +34,25 @@ export class EmojiStatusComponent {
     neutral: '😐'
   };
 
-  get emoji(): string {
-    return this.emojiMap[this.status] || this.emojiMap['neutral'];
+  ngOnInit() {
+    // Non è necessario fare nulla qui in OnInit
   }
 
-  // ⭐ NUOVO: Metodo per ottenere l'emoji da uno stato specifico
   getEmojiByStatus(statusKey: string): string {
     return this.emojiMap[statusKey] || this.emojiMap['neutral'];
   }
 
-  // ⭐ NUOVO: Toggle la visibilità del picker
-  togglePicker() {
-    if (this.editing) { // Apri il picker solo in modalità modifica
+  // ⭐ MODIFICA QUI: Aggiungi 'event: Event' come parametro ⭐
+  togglePicker(event: Event) {
+    if (this.editing) {
+      event.stopPropagation();
       this.showPicker = !this.showPicker;
     }
   }
 
-  // ⭐ NUOVO: Seleziona un'emoji e la emette
-  selectEmoji(newStatus: string) {
-    this.statusSelected.emit(newStatus); // Emette il nuovo stato al componente padre
-    this.showPicker = false; // Chiudi il picker dopo la selezione
+  selectEmoji(newStatus: string, event: Event) {
+    event.stopPropagation();
+    this.statusSelected.emit(newStatus);
+    this.showPicker = false;
   }
 }

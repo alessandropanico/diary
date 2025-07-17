@@ -1,14 +1,19 @@
+/* src/app/components/emoji-status/emoji-status.component.scss */
+
 :host {
   display: block;
-  position: relative;
+  position: absolute; /* Il componente è posizionato rispetto al .avatar-wrapper */
+  bottom: 0;
+  right: 0;
   width: 36px;
   height: 36px;
+  z-index: 99999; /* Assicurati che l'host del componente sia sopra l'avatar */
 }
 
 .emoji-badge {
   position: absolute;
-  bottom: 41px;
-  right: -78px;
+  bottom: 15px;
+  right: 0px;
   background-color: #1a1a1a;
   border: 2px solid #00ffee;
   border-radius: 50%;
@@ -19,15 +24,26 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 0 8px rgba(0, 255, 238, 0.6666666667);
-  z-index: 99999;
+  /* Rimuovi `cursor: pointer;` da qui! */
 }
 
-/* ⭐ MODIFICHE PER IL PICKER INLINE ⭐ */
+/* ⭐ NUOVA CLASSE: Il cursore cambia solo quando `editing` è true ⭐ */
+.editable-cursor {
+  cursor: pointer;
+}
+
+/* MODIFICHE PER IL PICKER INLINE: CENTRATO SOTTO IL BADGE */
 .emoji-picker-inline {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, 45px);
+  /* Calcoliamo la posizione in base al badge */
+  top: calc(100% + 10px); /* Il 100% si riferisce all'altezza del :host. Aggiungi 10px di margine. */
+                          /* Se il badge è posizionato con bottom: 41px; e right: -78px; rispetto all'host,
+                             allora il picker deve posizionarsi rispetto a questo posizionamento del badge. */
+  left: calc(50% + (-78px + 35px/2)); /* 50% dell'host, meno la metà della larghezza del picker,
+                                         più il 'right' del badge e metà della larghezza del badge per centrarlo sotto il badge stesso.
+                                         Questo potrebbe richiedere un po' di fine-tuning a seconda della larghezza effettiva del picker. */
+  transform: translateX(-50%); /* Centra il picker sulla sua propria larghezza */
+
   background-color: #2a2a2a;
   border: 2px solid #00ffee;
   border-radius: 8px;
@@ -39,7 +55,7 @@
   z-index: 100000;
   width: max-content;
   min-width: unset;
-  max-width: 100vw;
+  max-width: 90vw;
   justify-content: center;
   overflow-x: auto;
   padding-bottom: 5px;
@@ -47,15 +63,11 @@
 
 .emoji-option {
   font-size: 1.5rem;
-  /* ⭐ DIMENSIONE EMOJI RIDOTTA (es. da 2rem a 1.5rem) */
   cursor: pointer;
   padding: 3px;
-  /* ⭐ Padding ridotto attorno alle singole emoji */
   border-radius: 4px;
   transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
   flex-shrink: 0;
-  /* Impedisce alle emoji di restringersi */
-
 
   &:hover {
     background-color: #4a4a4a;
