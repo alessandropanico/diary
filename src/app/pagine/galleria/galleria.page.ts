@@ -1,5 +1,6 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { PhotoService } from 'src/app/services/photo.service';
+import { ExpService } from 'src/app/services/exp.service';
 
 interface Photo {
   id: number;
@@ -14,7 +15,10 @@ interface Photo {
 })
 export class GalleriaPage implements OnInit {
 
-  constructor(private photoService: PhotoService) { }
+  constructor(
+    private photoService: PhotoService,
+    private expService: ExpService,
+  ) { }
 
   @ViewChild('video', { static: false }) videoElement!: ElementRef<HTMLVideoElement>;
   photos: Photo[] = [];
@@ -175,6 +179,8 @@ export class GalleriaPage implements OnInit {
           title: 'Condividi foto',
           text: 'Guarda questa foto!',
         });
+         // ✅ AGGIUNGI QUI
+        await this.expService.addExperience(10, 'photoShared'); // Assegna 10 XP per la condivisione
       } else {
         alert('La condivisione file non è supportata su questo dispositivo.');
       }

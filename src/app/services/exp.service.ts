@@ -52,15 +52,10 @@ export class ExpService {
    * Chiamato quando l'utente compie un'azione che conferisce XP.
    * @param xpAmount La quantità di XP da aggiungere.
    */
-  addExperience(xpAmount: number): void {
+ addExperience(xpAmount: number, reason: string = 'unknown'): void { // <--- Modifica qui!
     const currentTotalXP = this._totalXP.getValue();
     const newTotalXP = currentTotalXP + xpAmount;
-    this._totalXP.next(newTotalXP); // Aggiorna il BehaviorSubject
-
-    // In un'applicazione reale, qui dovresti chiamare UserDataService
-    // per salvare newTotalXP nel database (Firebase).
-    console.log(`[ExpService] XP Aggiunti: ${xpAmount}, Nuovo XP Totale: ${newTotalXP}`);
-    // Esempio: this.userDataService.updateUserExp(newTotalXP);
+    this._totalXP.next(newTotalXP);
   }
 
   /**
@@ -70,7 +65,6 @@ export class ExpService {
    */
   setTotalXP(totalXP: number): void {
     this._totalXP.next(totalXP);
-    console.log(`[ExpService] XP Totali impostati a: ${totalXP}`);
   }
 
   /**
@@ -107,11 +101,9 @@ export class ExpService {
       xpForNextLevel = xpForNextLevelThreshold - xpForCurrentLevel;
       progressPercentage = (currentXP / xpForNextLevel) * 100;
     } else {
-      // Se xpForNextLevelThreshold non è maggiore, significa che siamo all'ultimo livello
       progressPercentage = 100;
     }
 
-    // Assicurati che la percentuale non superi il 100%
     if (progressPercentage > 100) progressPercentage = 100;
 
     return { userLevel, totalXP, currentXP, xpForNextLevel, progressPercentage };
