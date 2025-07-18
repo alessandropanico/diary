@@ -19,6 +19,7 @@ Fare classifica livello
 (magari il podio ha i trofei oro, argento, bronzo!)
 
 Aggiungere link al profilo
+Unificare "carca utenti" in "Lista utenti"
 
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ---------------------------------------------------------
