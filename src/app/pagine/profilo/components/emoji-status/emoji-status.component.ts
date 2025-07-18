@@ -58,6 +58,14 @@ export class EmojiStatusComponent implements OnInit {
     }
   }
 
+    // Nuovo metodo per chiudere il picker
+  closePicker() {
+    if (this.editing) {
+      this.showPicker = false;
+      // console.log('EmojiStatusComponent: closePicker chiamato. showPicker:', this.showPicker);
+    }
+  }
+
   selectEmoji(newStatus: string, event: Event) {
     event.stopPropagation();
     // console.log('EmojiStatusComponent: Emoji selezionata:', newStatus);
