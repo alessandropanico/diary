@@ -77,7 +77,6 @@
 
       <div class="metrics-grid">
 
-        <!-- Energia -->
         <div class="metric-box">
           <div class="metric-header">
             <ion-label class="ff7-label-text orbitron">Energia</ion-label>
@@ -87,7 +86,7 @@
           <div class="range-wrapper">
             <ion-range min="1" max="5" step="1" snaps="true" [(ngModel)]="currentEntry.energyLevel"
               color="primary-accent-calm" (ionChange)="markAsChanged()" class="custom-energy-range">
-              <ion-icon slot="start" name="battery-dead-outline"></ion-icon>
+              <ion-icon slot="start" name="battery-half-outline"></ion-icon>
               <ion-icon slot="end" name="battery-full-outline"></ion-icon>
             </ion-range>
             <div class="range-markers orbitron">
@@ -97,7 +96,6 @@
         </div>
 
 
-        <!-- Sonno -->
         <div class="metric-box">
           <div class="metric-header">
             <ion-label class="ff7-label-text">Sonno</ion-label>
@@ -108,7 +106,7 @@
           <ion-segment [(ngModel)]="currentEntry.sleepQuality" color="primary-accent-calm" mode="md"
             (ionChange)="markAsChanged()">
             <ion-segment-button value="scarso">
-              <ion-icon name="cloudy-night-outline"></ion-icon>
+              <ion-icon name="bed-outline"></ion-icon>
               <p>Scarso</p>
             </ion-segment-button>
             <ion-segment-button value="medio">
@@ -116,13 +114,12 @@
               <p>Medio</p>
             </ion-segment-button>
             <ion-segment-button value="eccellente">
-              <ion-icon name="sunny-outline"></ion-icon>
-              <p>Eccellente</p>
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+              <p>Ottimo</p>
             </ion-segment-button>
           </ion-segment>
         </div>
 
-        <!-- Stress -->
         <div class="metric-box">
           <div class="metric-header">
             <ion-label class="ff7-label-text">Stress</ion-label>
@@ -131,11 +128,9 @@
           <ion-range min="1" max="5" step="1" snaps="true" [(ngModel)]="currentEntry.stressLevel"
             color="secondary-accent-soft" (ionChange)="markAsChanged()">
             <ion-icon slot="start" name="happy-outline"></ion-icon>
-            <ion-icon slot="end" name="sad-outline"></ion-icon>
-          </ion-range>
+            <ion-icon slot="end" name="alert-circle-outline"></ion-icon> </ion-range>
         </div>
 
-        <!-- Focus -->
         <div class="metric-box">
           <div class="metric-header">
             <ion-label class="ff7-label-text">Focus (ore)</ion-label>
