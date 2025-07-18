@@ -168,8 +168,8 @@
       border-color: var(--primary-accent-calm); /* Bordo ciano tenue all'hover */
       box-shadow: inset 0 0 8px rgba(95, 234, 255, 0.1), 0 0 12px rgba(160, 132, 255, 0.1); /* Doppio glow soft */
       &::part(native) {
-         color: var(--secondary-accent-soft); /* Testo diventa viola/lilla all'hover */
-         text-shadow: 0 0 12px var(--secondary-accent-soft), 0 0 20px rgba(160, 132, 255, 0.3);
+        color: var(--secondary-accent-soft); /* Testo diventa viola/lilla all'hover */
+        text-shadow: 0 0 12px var(--secondary-accent-soft), 0 0 20px rgba(160, 132, 255, 0.3);
       }
     }
   }
@@ -430,3 +430,207 @@ ion-spinner {
   }
 }
 
+/* --- Stili per Rilevazioni Quotidiane --- */
+.daily-metrics-section {
+  .metrics-grid {
+    display: grid;
+    gap: 1.2rem;
+    grid-template-columns: 1fr;
+
+    @media (min-width: 600px) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .metric-box {
+    background: var(--panel-solid-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 0 12px rgba(95, 234, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 0 20px rgba(95, 234, 255, 0.2);
+      transform: translateY(-2px);
+    }
+  }
+
+  .metric-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.8rem;
+  }
+
+  .value-display {
+    font-weight: 700;
+    font-size: 1.2em;
+    color: var(--primary-accent-calm);
+    text-shadow: 0 0 6px rgba(95, 234, 255, 0.8);
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  ion-segment-button p {
+    margin: 0;
+    font-size: 0.75rem;
+    color: inherit;
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .ff7-label-text {
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    font-size: 0.9em;
+    color: var(--text-main);
+    letter-spacing: 0.1em;
+    margin-right: 15px;
+  }
+
+  .orbitron {
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .range-wrapper {
+    position: relative;
+    padding-bottom: 1.8rem;
+  }
+
+  .range-markers {
+    display: flex;
+    justify-content: space-between;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 0 0.5rem;
+    font-size: 0.7em;
+    color: var(--text-secondary-subtle);
+    letter-spacing: 0.05em;
+    font-family: 'Orbitron', sans-serif;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Stili generici per ion-range all'interno di metric-box */
+  ion-range {
+    flex-grow: 1;
+    --bar-background: rgba(var(--text-secondary-subtle), 0.15); /* Traccia grigio-bluastra tenue e leggermente trasparente */
+    --bar-border-radius: 4px;
+    --bar-height: 8px; /* Aumentato l'altezza della barra per renderla più visibile */
+    --knob-size: 22px; /* Knob leggermente più grande */
+    --knob-border-radius: 50%; /* Tondo */
+    --knob-box-shadow: 0 0 10px rgba(0, 0, 0, 0.4); /* Ombra più pronunciata sul knob */
+    filter: drop-shadow(0 0 6px rgba(var(--primary-accent-calm), 0.3)); /* Glow per il range intero */
+    transition: all 0.2s ease; /* Transizione per il range */
+
+    /* Stili per il knob specifico (sovrascrive il tema) */
+    &::part(knob) {
+      background: var(--primary-accent-calm); /* Knob sempre ciano per coerenza */
+      border: 2px solid var(--text-main); /* Bordo chiaro sul knob */
+    }
+
+    /* Stili per la barra attiva */
+    &::part(bar-active) {
+      background: linear-gradient(90deg, rgba(var(--primary-accent-calm), 0.3), var(--primary-accent-calm)); /* Gradiente per un effetto più dinamico */
+      box-shadow: 0 0 8px rgba(var(--primary-accent-calm), 0.5); /* Glow sulla barra attiva */
+    }
+
+    /* Icone ai lati del range */
+    ion-icon[slot="start"],
+    ion-icon[slot="end"] {
+      font-size: 1.3em;
+      color: var(--text-secondary-subtle); /* Colore delle icone ai lati del range */
+      filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
+    }
+
+    /* Stili per il range "Energia" (usa colori calmi) */
+    &.custom-energy-range {
+      --knob-background: var(--primary-accent-calm); /* Ciano per il knob */
+      --bar-background-active: var(--primary-accent-calm); /* Ciano per la parte attiva */
+      filter: drop-shadow(0 0 6px rgba(95, 234, 255, 0.5)); /* Glow ciano */
+
+      &::part(bar-active) {
+        background: linear-gradient(90deg, rgba(95, 234, 255, 0.3), var(--primary-accent-calm));
+        box-shadow: 0 0 8px rgba(95, 234, 255, 0.8);
+      }
+    }
+
+    /* Stili per il range "Stress" (usa colori soft) */
+    &[color="secondary-accent-soft"] {
+      --knob-background: var(--secondary-accent-soft); /* Viola per il knob */
+      --bar-background-active: var(--secondary-accent-soft); /* Viola per la parte attiva */
+      filter: drop-shadow(0 0 6px rgba(160, 132, 255, 0.5)); /* Glow viola */
+
+      &::part(bar-active) {
+        background: linear-gradient(90deg, rgba(160, 132, 255, 0.3), var(--secondary-accent-soft));
+        box-shadow: 0 0 8px rgba(160, 132, 255, 0.8);
+      }
+    }
+  }
+
+
+  /* Stili per gli ion-input all'interno di metric-box */
+  .ff7-input-inline {
+    --background: rgba(25, 30, 55, 0.8); /* Sfondo dell'input numero */
+    --color: var(--primary-accent-calm); /* Colore del testo */
+    --placeholder-color: var(--text-placeholder-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: 5px; /* Arrotondato un po' */
+    padding: 12px 15px !important; /* Più padding */
+    font-family: 'Orbitron', sans-serif;
+    text-align: center;
+    width: 80px; /* Larghezza leggermente aumentata */
+    box-shadow: inset 0 0 8px rgba(95, 234, 255, 0.08); /* Ombra interna più visibile */
+    transition: all 0.2s ease;
+
+    &:focus {
+      border-color: var(--secondary-accent-soft);
+      box-shadow: inset 0 0 15px rgba(95, 234, 255, 0.2), 0 0 5px rgba(160, 132, 255, 0.15);
+      background-color: rgba(25, 30, 55, 0.95);
+      color: var(--text-main);
+    }
+  }
+
+  ion-segment {
+    --background: rgba(25, 30, 55, 0.6);
+    border: 1px solid var(--text-secondary-subtle);
+    border-radius: 5px;
+    overflow: hidden;
+    flex-grow: 1;
+    height: auto;
+    box-shadow: inset 0 0 8px rgba(95, 234, 255, 0.05); /* Soft inner shadow */
+
+    ion-segment-button {
+      --color: var(--text-secondary-subtle);
+      --color-checked: var(--bg-dark-deep);
+      --background-checked: var(--primary-accent-calm);
+      --ripple-color: var(--primary-accent-calm);
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 5px; /* Più padding */
+      min-height: 60px; /* Altezza minima aumentata */
+
+      ion-icon {
+        font-size: 1.8em; /* Icone più grandi */
+        margin-bottom: 5px; /* Più spazio */
+      }
+
+      p {
+        font-size: 0.8em; /* Testo leggermente più grande */
+        font-weight: 500;
+      }
+
+      &:hover {
+        --background: rgba(30, 35, 60, 0.8);
+        --color: var(--text-main);
+      }
+      &.selected {
+        filter: drop-shadow(0 0 10px rgba(95, 234, 255, 0.6)); /* Glow più forte per il selezionato */
+      }
+    }
+  }
+}

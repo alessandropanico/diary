@@ -12,6 +12,12 @@ interface DailyEntry {
   date: string; // Formato YYYY-MM-DD
   mood: string;
   note: string;
+  // Nuove proprietà per le rilevazioni quotidiane
+  energyLevel?: number; // Scala da 1 a 5
+  sleepQuality?: 'scarso' | 'medio' | 'eccellente' | ''; // Qualità del sonno
+  stressLevel?: number; // Scala da 1 a 5
+  focusHours?: number; // Ore di focus
+
   timestamp?: number; // Per Firebase Server Timestamp (opzionale)
 }
 
@@ -32,7 +38,12 @@ export class DiarioPage implements OnInit, OnDestroy {
   currentEntry: DailyEntry = {
     date: '',
     mood: '',
-    note: ''
+    note: '',
+    // Inizializza le nuove proprietà
+    energyLevel: undefined, // o un valore di default come 3
+    sleepQuality: '',
+    stressLevel: undefined, // o un valore di default come 3
+    focusHours: undefined // o 0
   };
 
   // Proprietà per tracciare i cambiamenti e abilitare/disabilitare il pulsante Salva
@@ -55,8 +66,16 @@ export class DiarioPage implements OnInit, OnDestroy {
         this.initializeDate();
       } else {
         this.userId = null;
-        // Resetta lo stato se l'utente non è loggato
-        this.currentEntry = { date: '', mood: '', note: '' };
+        // Resetta lo stato se l'utente non è loggato, includendo le nuove proprietà
+        this.currentEntry = {
+            date: '',
+            mood: '',
+            note: '',
+            energyLevel: undefined,
+            sleepQuality: '',
+            stressLevel: undefined,
+            focusHours: undefined
+        };
         this.initialEntryState = null;
         this.hasChanges = false;
       }
@@ -111,8 +130,16 @@ export class DiarioPage implements OnInit, OnDestroy {
   async loadDailyEntry(date: string) {
     if (!this.userId) {
       console.warn('Utente non autenticato. Impossibile caricare la voce del diario.');
-      // Resetta la voce corrente a vuota se non autenticato
-      this.currentEntry = { date: date, mood: '', note: '' };
+      // Resetta la voce corrente a vuota se non autenticato, includendo le nuove proprietà
+      this.currentEntry = {
+          date: date,
+          mood: '',
+          note: '',
+          energyLevel: undefined,
+          sleepQuality: '',
+          stressLevel: undefined,
+          focusHours: undefined
+      };
       this.initialEntryState = null;
       this.hasChanges = false;
       return;
@@ -124,11 +151,24 @@ export class DiarioPage implements OnInit, OnDestroy {
       // const entry = await this.userDataService.getDailyEntry(this.userId, date);
 
       // Per ora, simuliamo il recupero dei dati:
-      const simulatedEntry: DailyEntry = { date: date, mood: '', note: '' }; // Default vuoto
+      // Default vuoto per le nuove proprietà
+      const simulatedEntry: DailyEntry = {
+          date: date,
+          mood: '',
+          note: '',
+          energyLevel: undefined,
+          sleepQuality: '',
+          stressLevel: undefined,
+          focusHours: undefined
+      };
       // Puoi aggiungere qui una logica per dati di test se vuoi vedere qualcosa
       // if (date === '2025-07-17') { // Esempio di dato di test per ieri
       //   simulatedEntry.mood = 'felice';
       //   simulatedEntry.note = 'Oggi è stata una giornata fantastica, ho finito il progetto!';
+      //   simulatedEntry.energyLevel = 4;
+      //   simulatedEntry.sleepQuality = 'eccellente';
+      //   simulatedEntry.stressLevel = 2;
+      //   simulatedEntry.focusHours = 6;
       // }
       const entry = simulatedEntry; // Sostituisci con il risultato del servizio
 
@@ -138,7 +178,16 @@ export class DiarioPage implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Errore nel caricamento della voce del diario:', error);
       this.presentAlert('Errore', 'Impossibile caricare la voce del diario.');
-      this.currentEntry = { date: date, mood: '', note: '' }; // Resetta in caso di errore
+      // Resetta in caso di errore, includendo le nuove proprietà
+      this.currentEntry = {
+          date: date,
+          mood: '',
+          note: '',
+          energyLevel: undefined,
+          sleepQuality: '',
+          stressLevel: undefined,
+          focusHours: undefined
+      };
       this.initialEntryState = null;
       this.hasChanges = false;
     }
@@ -159,7 +208,12 @@ export class DiarioPage implements OnInit, OnDestroy {
   markAsChanged() {
     this.hasChanges =
       this.currentEntry.mood !== (this.initialEntryState?.mood ?? '') ||
-      this.currentEntry.note !== (this.initialEntryState?.note ?? '');
+      this.currentEntry.note !== (this.initialEntryState?.note ?? '') ||
+      // Aggiungi qui il controllo per le nuove metriche
+      this.currentEntry.energyLevel !== (this.initialEntryState?.energyLevel ?? undefined) ||
+      this.currentEntry.sleepQuality !== (this.initialEntryState?.sleepQuality ?? '') ||
+      this.currentEntry.stressLevel !== (this.initialEntryState?.stressLevel ?? undefined) ||
+      this.currentEntry.focusHours !== (this.initialEntryState?.focusHours ?? undefined);
   }
 
   // ⭐ Salva la voce del diario
@@ -178,6 +232,7 @@ export class DiarioPage implements OnInit, OnDestroy {
 
     try {
       // ⭐ QUI DOVRAI CHIAMARE IL TUO UserDataService per salvare i dati reali
+      // Invia l'intero oggetto currentEntry, che ora include le nuove metriche
       // Esempio (decommenta e implementa quando pronto):
       // await this.userDataService.saveDailyEntry(this.userId, this.currentEntry);
 
