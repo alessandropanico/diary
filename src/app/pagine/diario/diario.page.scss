@@ -9,6 +9,7 @@
   --secondary-glow: #00ff7b; /* Verde-blu per un tocco diverso (opzionale) */
   --bg-dark-primary: #0a1128; /* Blu molto scuro quasi nero */
   --bg-dark-secondary: #0c1a3b; /* Blu scuro */
+  --panel-bg: rgba(10, 20, 40, 0.9); /* Sfondo dei pannelli semi-trasparente */
   --border-color-light: rgba(0, 212, 255, 0.4); /* Bordo leggero per elementi */
   --text-primary: #e0f7fa; /* Testo principale chiaro */
   --text-secondary: #a0c4ff; /* Testo secondario, meno brillante */
@@ -20,6 +21,7 @@
 }
 
 .ff7-background {
+  background: linear-gradient(145deg, var(--bg-dark-primary) 0%, var(--bg-dark-secondary) 100%);
   background-attachment: fixed; /* Per mantenere lo sfondo fisso durante lo scroll */
 }
 
@@ -44,6 +46,7 @@
   position: relative; /* Per elementi con posizione assoluta all'interno */
   overflow: hidden; /* Per mascherare eventuali overflow del contenuto */
 
+  // Manteniamo lo stesso background-color ma intensifichiamo il box-shadow
   &:hover {
     box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
     transform: translateY(-2px);
@@ -62,8 +65,10 @@
     transition: opacity 0.3s ease;
   }
 
+  // Rimuoviamo l'aumento di opacità per non schiarire
   &:hover::before {
-    opacity: 0.6;
+    opacity: 0.2; // Mantiene l'opacità bassa, non la aumenta
+    filter: blur(12px); // Oppure si può aumentare solo il blur per dare feedback
   }
 }
 
@@ -101,13 +106,6 @@
 
 .history-section {
   grid-area: history-section;
-}
-
-/* --- Header e Titolo --- */
-ion-header ion-toolbar {
-  --background: var(--bg-dark-primary);
-  --border-color: transparent;
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
 }
 
 .ff7-title {
@@ -163,6 +161,13 @@ ion-header ion-toolbar {
     margin: 0 10px; /* Spazio dai bottoni freccia */
     --padding-start: 0; /* Rimuove padding interno per centratura */
     --padding-end: 0;
+    transition: all 0.2s ease;
+
+    // Rimuoviamo il cambio di colore e manteniamo un effetto glow più intenso
+    &:hover {
+      color: var(--primary-glow); /* Mantiene lo stesso colore, non lo schiarisce */
+      text-shadow: 0 0 15px rgba(0, 212, 255, 0.9), 0 0 25px rgba(0, 212, 255, 0.5);
+    }
   }
 
   .nav-button {
@@ -170,10 +175,12 @@ ion-header ion-toolbar {
     --padding-end: 12px;
     --color: var(--text-secondary);
     font-size: 1.5em;
-    transition: color 0.2s ease, transform 0.2s ease;
+    transition: color 0.2s ease, transform 0.2s ease, text-shadow 0.2s ease;
 
+    // Rimuoviamo il cambio di colore e manteniamo l'ombra
     &:hover {
-      color: var(--primary-glow);
+      color: var(--text-secondary); /* Mantiene il colore base o un colore scuro, non lo schiarisce */
+      text-shadow: 0 0 10px rgba(0, 212, 255, 0.7), 0 0 20px rgba(0, 212, 255, 0.3);
       transform: scale(1.1);
     }
   }
@@ -185,6 +192,10 @@ ion-modal {
   --backdrop-opacity: 0.7;
   --box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
   --border-radius: 10px;
+
+  .modal-wrapper {
+    background: var(--bg-dark-primary) !important;
+  }
 }
 
 ion-datetime {
@@ -201,6 +212,55 @@ ion-datetime {
       color: var(--primary-glow);
     }
   }
+
+  &::part(calendar-day),
+  &::part(year-button),
+  &::part(month-year-button),
+  &::part(native) {
+    background: black !important;
+    color: var(--text-primary) !important;
+  }
+
+  &::part(calendar-day-header) {
+    background: black !important;
+    color: var(--primary-glow) !important;
+    font-weight: bold;
+  }
+
+  &::part(calendar-day-selected) {
+    background: var(--primary-glow) !important;
+    color: var(--bg-dark-primary) !important;
+  }
+
+  &::part(calendar-body) {
+    background: black !important;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 0 10px rgba(0, 212, 255, 0.1);
+  }
+
+  // --- Regole per prevenire lo schiarimento al HOVER ---
+  &::part(calendar-day):hover {
+    background: rgba(0, 0, 0, 0.8) !important; // Mantiene scuro o leggermente più scuro
+    color: var(--primary-glow) !important; // Mantiene il testo luminoso, ma lo sfondo no
+    border: 1px solid var(--primary-glow); // Aggiunge un bordo luminoso
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5); // Aggiunge una glow
+  }
+
+  &::part(year-button):hover,
+  &::part(month-year-button):hover {
+    background: rgba(0, 0, 0, 0.8) !important; // Mantiene scuro o leggermente più scuro
+    color: var(--primary-glow) !important; // Colore testo glow
+    text-shadow: 0 0 8px var(--primary-glow); // Effetto glow sul testo
+  }
+
+  :host ::ng-deep ion-datetime {
+    --background: black !important;
+    --color: var(--text-primary);
+    --border-color: var(--primary-glow);
+    --highlight-color: var(--primary-glow);
+    --highlight-background: rgba(0, 212, 255, 0.2);
+  }
 }
 
 /* --- Sezione Umore --- */
@@ -213,48 +273,51 @@ ion-datetime {
 
     .mood-button {
       --background: rgba(0, 0, 0, 0.4);
-      --border-color: var(--label-color);
-      --color: var(--label-color);
+      --border-color: var(--border-color-light); // Usiamo un bordo light di default
+      --color: var(--text-secondary); // Impostiamo il colore di base del testo/icona
       --ripple-color: var(--primary-glow);
       border-radius: 4px;
       font-family: 'Orbitron', sans-serif;
       text-transform: uppercase;
       font-weight: 500;
-      padding: 8px; /* Padding ridotto per adattarsi a più bottoni */
-      display: flex; /* Permette icona e testo di stare fianco a fianco */
-      flex-direction: column; /* Icona sopra testo */
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 5px; /* Spazio tra icona e testo */
+      gap: 5px;
       transition: all 0.2s ease;
-      font-size: 0.8em; /* Testo più piccolo */
+      font-size: 0.8em;
 
       ion-icon {
-        font-size: 1.8em; /* Icone più grandi */
+        font-size: 1.8em;
         color: var(--text-secondary);
         transition: color 0.2s ease;
       }
 
       span {
-        white-space: nowrap; /* Evita che il testo vada a capo */
+        white-space: nowrap;
       }
 
       &.selected {
         --background: linear-gradient(135deg, var(--primary-glow), rgba(0, 212, 255, 0.4));
         border: 1px solid var(--primary-glow);
         box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
-        --color: var(--bg-dark-primary); /* Testo scuro su fondo luminoso */
-        transform: scale(1.05); /* Lieve ingrandimento */
+        --color: var(--bg-dark-primary);
+        transform: scale(1.05);
         ion-icon {
-          color: var(--bg-dark-primary); /* Icona scura su fondo luminoso */
+          color: var(--bg-dark-primary);
         }
       }
 
+      // Previene lo schiarimento al hover quando NON è selezionato
       &:hover:not(.selected) {
-        --border-color: var(--primary-glow);
-        --color: var(--primary-glow);
+        --background: rgba(0, 0, 0, 0.5); /* Mantiene scuro o leggermente più scuro */
+        border-color: var(--primary-glow); // Il bordo si illumina
+        --color: var(--text-secondary); // Mantiene il testo/icona scuri
         ion-icon {
-          color: var(--primary-glow);
+          color: var(--text-secondary); // Mantiene l'icona scura
         }
+        box-shadow: 0 0 10px rgba(0, 212, 255, 0.3); // Aggiunge una glow al pannello
       }
     }
   }
@@ -278,11 +341,14 @@ ion-datetime {
     line-height: 1.7;
     caret-color: var(--primary-glow);
     transition: all 0.2s ease;
-    min-height: 200px; /* Altezza minima per la textarea */
+    min-height: 200px;
 
+    // Previene lo schiarimento al focus
     &:focus {
       border-color: var(--primary-glow);
       box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.3), 0 0 15px rgba(0, 212, 255, 0.3);
+      background: rgba(0, 0, 0, 0.7); /* Mantiene scuro o leggermente più scuro */
+      color: var(--text-primary); /* Mantiene il colore del testo */
     }
   }
 }
@@ -310,9 +376,11 @@ ion-datetime {
       margin-bottom: 0;
     }
 
+    // Previene lo schiarimento al hover
     &:hover {
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.5); /* Mantiene scuro o leggermente più scuro */
       box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+      color: var(--text-primary); /* Mantiene il colore del testo */
     }
   }
 
@@ -343,12 +411,3 @@ ion-spinner {
     opacity: 1;
   }
 }
-
-:host ::ng-deep ion-datetime {
-  --background: black !important;
-  --color: var(--text-primary);
-  --border-color: var(--primary-glow);
-  --highlight-color: var(--primary-glow);
-  --highlight-background: rgba(0, 212, 255, 0.2);
-}
-
