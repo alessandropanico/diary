@@ -239,7 +239,7 @@ ion-modal {
 }
 
 ion-datetime {
-  background: var(--panel-solid-bg) !important;
+  background: black !important;
   /* Sfondo datetime solido come pannelli */
   --color: var(--text-main);
   --border-color: var(--primary-accent-calm);
@@ -298,7 +298,7 @@ ion-datetime {
   }
 
   :host ::ng-deep ion-datetime {
-    background: var(--panel-solid-bg) !important;
+    background: black !important;
     --color: var(--text-main);
     --border-color: var(--primary-accent-calm);
     --highlight-color: var(--primary-accent-calm);
