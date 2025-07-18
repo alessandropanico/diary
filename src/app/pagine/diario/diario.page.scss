@@ -129,42 +129,45 @@
     flex-grow: 1;
     text-align: center;
     margin: 0 10px;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease-in-out; // Transizione più morbida
 
-    // IMPORTE: Forza la trasparenza del background del bottone host
-    --background: transparent !important;
-    --background-hover: transparent !important; // Anche lo sfondo all'hover
-    --background-activated: transparent !important; // E quando attivato/cliccato
-    --background-focused: transparent !important; // E quando in focus
-    --box-shadow: none !important; // Rimuove qualsiasi ombra predefinita
-    --border-radius: 0 !important; // Rimuove border-radius predefiniti se ne ha
+    // Nuovo stile per un look da terminale/HUD
+    background: rgba(10, 20, 40, 0.7); // Sfondo scuro semitrasparente
+    border: 1px solid var(--primary-glow); // Bordo sottile che si illumina
+    border-radius: 4px; // Angoli leggermente più netti
+    box-shadow: inset 0 0 8px rgba(0, 212, 255, 0.2), 0 0 5px rgba(0, 212, 255, 0.1); // Leggera ombra interna ed esterna
 
-    // Proprietà Custom per il colore del testo principale
+    // Proprietà Custom per ion-button/ion-datetime-button
     --color: var(--primary-glow);
+    --background: transparent !important;
+    --background-hover: transparent !important;
+    --background-activated: transparent !important;
+    --background-focused: transparent !important;
+    --box-shadow: none !important;
+    --border-radius: 0 !important;
 
-    --padding-start: 0;
-    --padding-end: 0;
-    --padding-top: 0;
-    --padding-bottom: 0;
+    --padding-start: 12px; // Più padding per un look spazioso
+    --padding-end: 12px;
+    --padding-top: 10px;
+    --padding-bottom: 10px;
 
-    // Per il testo interno specifico (attraverso Shadow DOM)
+    // Per il testo interno
     &::part(native) {
-      font-size: 1.4em;
+      font-size: 1.5em; // Dimensione leggermente più grande
       font-weight: 700;
-      text-shadow: 0 0 8px rgba(0, 212, 255, 0.7);
+      text-shadow: 0 0 10px rgba(0, 212, 255, 0.8); // Glow più definito sul testo
       font-family: 'Orbitron', sans-serif;
-      // Forza il background dell'elemento nativo a essere trasparente
       background: transparent !important;
-      // Rimuovi eventuali bordi di default dall'interno del bottone nativo
       border: none !important;
     }
 
     &:hover {
-      // Questi stili si applicano al testo interno tramite ::part(native)
-      // ma il --color sull'host dovrebbe comunque funzionare
-      --color: var(--primary-glow);
+      background: rgba(15, 30, 60, 0.8); // Sfondo leggermente più scuro all'hover
+      border-color: var(--secondary-glow); // Bordo che cambia colore all'hover (es. da ciano a verde Mako)
+      box-shadow: inset 0 0 12px rgba(0, 212, 255, 0.4), 0 0 10px rgba(0, 212, 255, 0.3); // Ombra più accentuata all'hover
+
       &::part(native) {
-         text-shadow: 0 0 15px rgba(0, 212, 255, 0.9), 0 0 25px rgba(0, 212, 255, 0.5);
+         text-shadow: 0 0 20px rgba(0, 212, 255, 1), 0 0 30px rgba(0, 212, 255, 0.6); // Glow del testo più forte
       }
     }
   }
