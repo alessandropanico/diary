@@ -1,22 +1,21 @@
-/* src/app/components/emoji-status/emoji-status.component.ts */
-
+// src/app/components/emoji-status/emoji-status.component.ts
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common'; // Assicurati che CommonModule sia importato se necessario
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-emoji-status',
   templateUrl: './emoji-status.component.html',
-  styleUrls: ['./emoji-status.component.scss'],
-  imports: [CommonModule] // Se il componente è standalone, altrimenti rimuovi questa riga
+  styleUrls: ['./emoji-status.component.scss'], // Assicurati di avere questo file
+  standalone: true, // ⭐ Ricorda di impostare 'standalone: true' se lo usi, altrimenti rimuovilo e importa CommonModule nel modulo padre.
+  imports: [CommonModule]
 })
 export class EmojiStatusComponent implements OnInit {
-  @Input() status: string = ''; // ⭐ Corretto: Il default per lo status dovrebbe essere una stringa vuota
+  @Input() status: string = '';
   @Input() editing: boolean = false;
   @Output() statusSelected = new EventEmitter<string>();
 
   showPicker: boolean = false;
 
-  // ⭐ Aggiungi un'opzione per 'nessuno status' (stringa vuota) all'inizio
   availableEmojis: string[] = [
     '', // Rappresenta 'nessuno status' o 'rimuovi status'
     'neutral', 'happy', 'sad', 'tired', 'focused', 'stressed', 'angry', 'chill', 'love', 'sick', 'party'
@@ -37,27 +36,31 @@ export class EmojiStatusComponent implements OnInit {
   };
 
   ngOnInit() {
-    // Non è necessario fare nulla qui in OnInit
+    // Log di debug (puoi lasciarli o rimuoverli una volta che tutto funziona)
+    // console.log('EmojiStatusComponent: Inizializzato con status:', this.status);
   }
 
-  // ⭐ Aggiorna la logica per mostrare l'emoji corretta o l'indicatore di "nessuno status" ⭐
   getEmojiByStatus(statusKey: string): string {
-    // Se lo status è vuoto, ritorna una stringa vuota. L'HTML deciderà cosa mostrare (es. un carattere X o un'icona).
     if (statusKey === '') {
-      return '';
+      // console.log('EmojiStatusComponent: getEmojiByStatus riceve stringa vuota, restituisce stringa vuota.');
+      return ''; // Importante! Ritorna stringa vuota per la X nel badge
     }
-    return this.emojiMap[statusKey] || this.emojiMap['neutral'];
+    const emoji = this.emojiMap[statusKey] || this.emojiMap['neutral'];
+    // console.log('EmojiStatusComponent: getEmojiByStatus per', statusKey, 'restituisce', emoji);
+    return emoji;
   }
 
   togglePicker(event: Event) {
     if (this.editing) {
       event.stopPropagation();
       this.showPicker = !this.showPicker;
+      // console.log('EmojiStatusComponent: togglePicker. showPicker:', this.showPicker);
     }
   }
 
   selectEmoji(newStatus: string, event: Event) {
     event.stopPropagation();
+    // console.log('EmojiStatusComponent: Emoji selezionata:', newStatus);
     this.statusSelected.emit(newStatus);
     this.showPicker = false;
   }

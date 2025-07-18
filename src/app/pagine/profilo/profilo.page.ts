@@ -1,3 +1,4 @@
+// src/app/profilo/profilo.page.ts
 import { Component, OnInit, NgZone, OnDestroy } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { UserDataService } from 'src/app/services/user-data.service';
@@ -49,8 +50,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
 
   isLoadingStats: boolean = true;
 
-  private userStatusSubscription: Subscription | undefined; // Sottoscrizione per lo status
-
+  private userStatusSubscription: Subscription | undefined;
 
   constructor(
     private ngZone: NgZone,
@@ -60,7 +60,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     private router: Router,
   ) { }
 
-    async ngOnInit() {
+  async ngOnInit() {
     this.isLoading = true;
     this.isLoadingStats = true;
 
@@ -71,10 +71,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
           this.loggedInUserId = user.uid;
           await this.loadProfileData(user);
           this.subscribeToFollowCounts(user.uid);
-          this.subscribeToUserStatus(); // ⭐ NUOVO: Sottoscrivi allo status
+          this.subscribeToUserStatus();
         } else {
           this.loggedInUserId = null;
-          // Resetta il profilo se l'utente non è loggato
           this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '', status: '' };
           this.profileEdit = { ...this.profile };
           this.isLoading = false;
@@ -109,15 +108,15 @@ export class ProfiloPage implements OnInit, OnDestroy {
           name: user.displayName || '',
           email: user.email || '',
           bio: '',
-          status: '' // ⭐ Default a stringa vuota per i nuovi utenti ⭐
+          status: ''
         };
         await this.userDataService.saveUserData(initialProfileData);
       }
 
       this.profile = { ...initialProfileData };
       this.profileEdit = { ...this.profile };
-
-    } catch (error) {
+      console.log('ProfiloPage: Dati profilo caricati. Status corrente:', this.profile.status);
+    } catch (error: unknown) { // ⭐ Qui ho tipizzato 'error' come 'unknown'
       console.error("Errore durante il caricamento/salvataggio iniziale da Firestore:", error);
       await this.presentFF7Alert('Errore nel caricamento del profilo. Riprova più tardi.');
       this.profile = { photo: 'assets/immaginiGenerali/default-avatar.jpg', banner: 'assets/immaginiGenerali/default-banner.jpg', nickname: '', name: '', email: '', bio: '', status: '' };
@@ -141,7 +140,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
           this.isLoadingStats = false;
         }
       });
-    }, error => {
+    }, (error: unknown) => { // ⭐ Qui ho tipizzato 'error' come 'unknown'
       console.error('Errore nel recupero dei follower count:', error);
       this.ngZone.run(() => {
         this.followersCount = 0;
@@ -160,7 +159,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
           this.isLoadingStats = false;
         }
       });
-    }, error => {
+    }, (error: unknown) => { // ⭐ Qui ho tipizzato 'error' come 'unknown'
       console.error('Errore nel recupero del following count:', error);
       this.ngZone.run(() => {
         this.followingCount = 0;
@@ -172,7 +171,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     });
   }
 
-    private subscribeToUserStatus() {
+  private subscribeToUserStatus() {
     if (this.userStatusSubscription) this.userStatusSubscription.unsubscribe();
 
     this.userStatusSubscription = this.userDataService.userStatus$.subscribe(status => {
@@ -181,6 +180,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
         if (this.editing) {
           this.profileEdit.status = this.profile.status;
         }
+        console.log('ProfiloPage: Ricevuto aggiornamento status dal servizio:', this.profile.status);
       });
     });
   }
@@ -189,12 +189,14 @@ export class ProfiloPage implements OnInit, OnDestroy {
     this.editing = true;
     this.profileEdit = { ...this.profile };
     this.avatarMarginTop = '20px';
+    console.log('ProfiloPage: Iniziata modifica. profileEdit.status:', this.profileEdit.status);
   }
 
   cancelEdit() {
     this.editing = false;
     this.profileEdit = { ...this.profile };
     this.avatarMarginTop = '-60px';
+    console.log('ProfiloPage: Modifica annullata. profile.status:', this.profile.status);
   }
 
   async saveProfile() {
@@ -210,10 +212,12 @@ export class ProfiloPage implements OnInit, OnDestroy {
       status: this.profileEdit.status ?? ''
     };
 
+    console.log('ProfiloPage: Tentativo di salvataggio. Status da inviare:', this.profile.status);
     try {
       await this.userDataService.saveUserData(this.profile);
       await this.presentFF7Alert('Profilo aggiornato e salvato!');
-    } catch (error) {
+      console.log('ProfiloPage: Salvataggio riuscito! Nuovo status di profile:', this.profile.status);
+    } catch (error: unknown) { // ⭐ Qui ho tipizzato 'error' come 'unknown'
       console.error('Errore durante il salvataggio del profilo:', error);
       await this.presentFF7Alert('Errore durante il salvataggio del profilo.');
     } finally {
@@ -227,6 +231,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
   onStatusSelected(newStatus: string) {
     this.ngZone.run(async () => {
       this.profileEdit.status = newStatus;
+      console.log('ProfiloPage: Evento onStatusSelected ricevuto. newStatus:', newStatus, 'profileEdit.status:', this.profileEdit.status);
     });
   }
 
@@ -309,7 +314,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     if (this.followingCountSubscription) {
       this.followingCountSubscription.unsubscribe();
     }
-    if (this.userStatusSubscription) { // ⭐ AGGIUNGI QUESTO!
+    if (this.userStatusSubscription) {
       this.userStatusSubscription.unsubscribe();
     }
   }

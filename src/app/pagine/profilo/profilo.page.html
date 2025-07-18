@@ -24,7 +24,7 @@
         <span>Cambia Banner</span>
       </div>
     </div>
-    
+
     <ion-button
       *ngIf="editing && profileEdit.banner && profileEdit.banner !== 'assets/immaginiGenerali/default-banner.jpg'"
       expand="block" fill="outline" color="medium" (click)="removeBanner()" class="remove-banner-button">
@@ -38,8 +38,7 @@
           alt="Foto profilo" />
       </ion-avatar>
       <app-emoji-status
-        [status]="(editing ? profileEdit.status : profile.status) || 'neutral'"
-        [editing]="editing"
+        [status]="(editing ? profileEdit.status : profile.status) || ''" [editing]="editing"
         (statusSelected)="onStatusSelected($event)"
       ></app-emoji-status>
     </div>
