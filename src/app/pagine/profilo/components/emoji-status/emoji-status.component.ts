@@ -18,7 +18,7 @@ export class EmojiStatusComponent implements OnInit {
 
   availableEmojis: string[] = [
     '', // Rappresenta 'nessuno status' o 'rimuovi status'
-    'neutral', 'happy', 'sad', 'tired', 'focused', 'stressed', 'angry', 'chill', 'love', 'sick', 'party'
+    'neutral', 'happy', 'sad', 'tired', 'focused', 'stressed', 'angry', 'chill', 'love', 'sick', 'party', 'fire'
   ];
 
   private emojiMap: { [key: string]: string } = {
@@ -32,7 +32,8 @@ export class EmojiStatusComponent implements OnInit {
     love: '😍',
     sick: '🤒',
     party: '🥳',
-    neutral: '😐'
+    neutral: '😐',
+    fire: '🔥',
   };
 
   ngOnInit() {
