@@ -2,94 +2,98 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
 
-/* --- Variabili e Sfondo Generale --- */
+/* --- Nuove Variabili: Palette Calma e Profonda --- */
 :host {
-  /* Nuovi valori per un glow più freddo e un background più scuro */
-  --primary-glow: #00d4ff; /* Ciano brillante per accenti */
-  --secondary-glow: #00ff7b; /* Verde-blu per un tocco diverso (opzionale) */
-  --bg-dark-primary: #0a1128; /* Blu molto scuro quasi nero */
-  --bg-dark-secondary: #0c1a3b; /* Blu scuro */
-  --panel-bg: rgba(10, 20, 40, 0.9); /* Sfondo dei pannelli semi-trasparente */
-  --border-color-light: rgba(0, 212, 255, 0.4); /* Bordo leggero per elementi */
-  --text-primary: #e0f7fa; /* Testo principale chiaro */
-  --text-secondary: #a0c4ff; /* Testo secondario, meno brillante */
-  --placeholder-color: #7abeff; /* Colore placeholder */
-  --danger-color: #ff4e4e; /* Colore errore */
+  /* Nuovi valori con tonalità blu/violacee profonde e accenti tenui */
+  --primary-accent-calm: #5feaff; /* Ciano molto più tenue e acquatico */
+  --secondary-accent-soft: #a084ff; /* Viola/Lilla morbido e freddo */
+  --bg-dark-deep: #0e122b; /* Blu scurissimo, quasi nero */
+  --bg-dark-medium: #151a3d; /* Blu scuro medio */
+  --panel-solid-bg: rgba(20, 25, 50, 0.95); /* Sfondo pannelli solido, blu violaceo profondo */
+  --border-subtle: rgba(95, 234, 255, 0.2); /* Bordo molto tenue (ciano-blu) */
+  --text-main: #e0e8f0; /* Testo principale, grigio-bluastro molto chiaro */
+  --text-secondary-subtle: #9cb3c7; /* Testo secondario, grigio-bluastro medio */
+  --text-placeholder-subtle: #6c8ea8; /* Placeholder, blu-grigio */
+  --danger-muted: #d46a6a; /* Rosso tenue per errori */
+  --success-muted: #6ad46a; /* Verde tenue per successo */
+  --warning-muted: #d4b16a; /* Giallo/arancio tenue per warning */
 
   font-family: 'Orbitron', sans-serif;
-  color: var(--text-primary);
+  color: var(--text-main);
 }
 
 .ff7-background {
-  background: linear-gradient(145deg, var(--bg-dark-primary) 0%, var(--bg-dark-secondary) 100%);
-  background-attachment: fixed; /* Per mantenere lo sfondo fisso durante lo scroll */
+  background: linear-gradient(145deg, var(--bg-dark-deep) 0%, var(--bg-dark-medium) 100%);
+  background-attachment: fixed;
 }
 
 /* --- Effetti Generali --- */
 .ff7-glow-text {
-  color: var(--primary-glow);
-  text-shadow: 0 0 10px rgba(0, 212, 255, 0.7), 0 0 20px rgba(0, 212, 255, 0.3);
+  color: var(--secondary-accent-soft); /* I titoli usano il viola/lilla morbido */
+  text-shadow: 0 0 8px rgba(160, 132, 255, 0.6); /* Ombra più soffusa per il viola */
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  margin-bottom: 15px; /* Spazio sotto i titoli di sezione */
+  margin-bottom: 15px;
 }
 
 .ff7-panel {
-  background: var(--panel-bg);
-  border: 1px solid var(--border-color-light);
-  border-radius: 8px; /* Leggermente meno squadrato, più ergonomico */
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
-  backdrop-filter: blur(8px); /* Effetto blur più pronunciato */
+  background: var(--panel-solid-bg);
+  border: 1px solid var(--border-subtle); /* Bordo molto sottile e tenue */
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(95, 234, 255, 0.08); /* Ombra ciano/blu molto soft */
+  backdrop-filter: blur(6px); /* Blur leggermente ridotto per chiarezza */
   padding: 20px;
-  transition: all 0.3s ease-in-out;
-  position: relative; /* Per elementi con posizione assoluta all'interno */
-  overflow: hidden; /* Per mascherare eventuali overflow del contenuto */
-  display: flex; // Aggiunto per Flexbox
-  flex-direction: column; // Aggiunto per Flexbox
-  // height: 100%; // Rimosso o gestito diversamente per evitare conflitti con grow dinamica
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 
   &:hover {
-    box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
-    // transform: translateY(-2px); // Rimosso come da richiesta precedente
+    transform: translateY(-2px); /* Spostamento molto sottile all'hover */
+    box-shadow: 0 0 15px rgba(95, 234, 255, 0.15); /* Ombra soft leggermente più visibile all'hover */
   }
 
-  /* Bordo animato per i pannelli */
+  /* Bordo animato sottile (quasi invisibile, solo un accenno) */
   &::before {
     content: '';
     position: absolute;
-    top: -2px; left: -2px; right: -2px; bottom: -2px;
-    background: linear-gradient(45deg, #00d4ff, #00b8ff, #00ff7b);
+    top: -1px; left: -1px; right: -1px; bottom: -1px;
+    background: linear-gradient(45deg, var(--primary-accent-calm), rgba(95, 234, 255, 0.1), var(--secondary-accent-soft));
     z-index: -1;
-    border-radius: 10px;
-    filter: blur(8px);
-    opacity: 0.2;
-    transition: opacity 0.3s ease;
+    border-radius: 6px;
+    filter: blur(3px); /* Blur molto basso per un effetto di "alone" */
+    opacity: 0.05; /* Estremamente basso, quasi impercettibile */
+    transition: opacity 0.3s ease, filter 0.3s ease;
   }
 
   &:hover::before {
-    opacity: 0.2; // Mantiene l'opacità bassa, non la aumenta
-    filter: blur(12px); // Oppure si può aumentare solo il blur per dare feedback
+    opacity: 0.15; /* Leggermente più visibile all'hover */
+    filter: blur(6px); /* Aumenta il blur all'hover */
   }
 }
 
 /* --- Layout Principale (Grid) --- */
 .diario-main-grid {
   display: grid;
-  gap: 20px; /* Spazio tra i pannelli */
-  padding: 20px; /* Padding interno del container */
-  align-items: stretch; /* Importante: allunga gli item per riempire l'altezza della riga */
+  gap: 20px;
+  padding: 25px;
 
-  /* Layout per schermi grandi (desktop/tablet orizzontale) */
+  border: 2px solid rgba(95, 234, 255, 0.4); /* Bordo tenue e semitrasparente */
+  box-shadow: 0 0 18px rgba(95, 234, 255, 0.25); /* Ombra diffusa e soft */
+  margin: 20px auto;
+  border-radius: 8px;
+  background-color: rgba(14, 18, 43, 0.9); /* Sfondo del container, profondo */
+
   @media (min-width: 768px) {
-    grid-template-columns: 1fr 2fr; /* Colonna sinistra più piccola della destra */
-    grid-template-rows: auto 1fr; /* La prima riga è auto (pannelli), la seconda è 1fr (storico) */
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: auto 1fr;
     grid-template-areas:
       "left-panel right-panel"
-      "history-section history-section"; /* Storico sotto a larghezza piena */
+      "history-section history-section";
   }
 
-  /* Layout per schermi piccoli (mobile/tablet verticale) */
   @media (max-width: 767px) {
     grid-template-columns: 1fr;
     grid-template-areas:
@@ -101,15 +105,15 @@
 
 .left-panel {
   grid-area: left-panel;
-  display: flex; /* Transforma in flex container */
-  flex-direction: column; /* Impila gli elementi verticalmente */
-  gap: 20px; /* Spazio tra i pannelli interni (data e umore) */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .right-panel {
   grid-area: right-panel;
-  display: flex; /* Transforma in flex container */
-  flex-direction: column; /* Impila gli elementi verticalmente */
+  display: flex;
+  flex-direction: column;
 }
 
 .history-section {
@@ -129,16 +133,14 @@
     flex-grow: 1;
     text-align: center;
     margin: 0 10px;
-    transition: all 0.2s ease-in-out; // Transizione più morbida
+    transition: all 0.2s ease-in-out;
 
-    // Nuovo stile per un look da terminale/HUD
-    background: rgba(10, 20, 40, 0.7); // Sfondo scuro semitrasparente
-    border: 1px solid var(--primary-glow); // Bordo sottile che si illumina
-    border-radius: 4px; // Angoli leggermente più netti
-    box-shadow: inset 0 0 8px rgba(0, 212, 255, 0.2), 0 0 5px rgba(0, 212, 255, 0.1); // Leggera ombra interna ed esterna
+    background-color: rgba(25, 30, 55, 0.9); /* Sfondo più scuro e discreto */
+    border: 1px solid var(--text-secondary-subtle); /* Bordo usando il colore secondario */
+    border-radius: 3px;
+    box-shadow: inset 0 0 4px rgba(95, 234, 255, 0.05); /* Ombra interna quasi invisibile */
 
-    // Proprietà Custom per ion-button/ion-datetime-button
-    --color: var(--primary-glow);
+    --color: var(--text-main);
     --background: transparent !important;
     --background-hover: transparent !important;
     --background-activated: transparent !important;
@@ -146,28 +148,28 @@
     --box-shadow: none !important;
     --border-radius: 0 !important;
 
-    --padding-start: 12px; // Più padding per un look spazioso
+    --padding-start: 12px;
     --padding-end: 12px;
     --padding-top: 10px;
     --padding-bottom: 10px;
 
-    // Per il testo interno
     &::part(native) {
-      font-size: 1.5em; // Dimensione leggermente più grande
-      font-weight: 700;
-      text-shadow: 0 0 10px rgba(0, 212, 255, 0.8); // Glow più definito sul testo
+      font-size: 1.5em;
+      font-weight: bold;
+      color: var(--primary-accent-calm); /* Testo ciano tenue */
+      text-shadow: 0 0 7px rgba(95, 234, 255, 0.7); /* Glow testo più contenuto */
       font-family: 'Orbitron', sans-serif;
       background: transparent !important;
       border: none !important;
     }
 
     &:hover {
-      background: rgba(15, 30, 60, 0.8); // Sfondo leggermente più scuro all'hover
-      border-color: var(--secondary-glow); // Bordo che cambia colore all'hover (es. da ciano a verde Mako)
-      box-shadow: inset 0 0 12px rgba(0, 212, 255, 0.4), 0 0 10px rgba(0, 212, 255, 0.3); // Ombra più accentuata all'hover
-
+      background-color: rgba(30, 35, 60, 0.9); /* Background hover leggermente più scuro */
+      border-color: var(--primary-accent-calm); /* Bordo ciano tenue all'hover */
+      box-shadow: inset 0 0 8px rgba(95, 234, 255, 0.1), 0 0 12px rgba(160, 132, 255, 0.1); /* Doppio glow soft */
       &::part(native) {
-         text-shadow: 0 0 20px rgba(0, 212, 255, 1), 0 0 30px rgba(0, 212, 255, 0.6); // Glow del testo più forte
+         color: var(--secondary-accent-soft); /* Testo diventa viola/lilla all'hover */
+         text-shadow: 0 0 12px var(--secondary-accent-soft), 0 0 20px rgba(160, 132, 255, 0.3);
       }
     }
   }
@@ -175,13 +177,13 @@
   .nav-button {
     --padding-start: 12px;
     --padding-end: 12px;
-    --color: var(--text-secondary);
+    --color: var(--text-secondary-subtle); /* Colore più discreto per le frecce */
     font-size: 1.5em;
     transition: color 0.2s ease, transform 0.2s ease, text-shadow 0.2s ease;
 
     &:hover {
-      color: var(--text-secondary);
-      text-shadow: 0 0 10px rgba(0, 212, 255, 0.7), 0 0 20px rgba(0, 212, 255, 0.3);
+      color: var(--primary-accent-calm);
+      text-shadow: 0 0 8px var(--primary-accent-calm), 0 0 15px rgba(95, 234, 255, 0.2);
       transform: scale(1.1);
     }
   }
@@ -189,28 +191,28 @@
 
 /* --- Modale Data Time --- */
 ion-modal {
-  --background: var(--bg-dark-primary);
+  --background: var(--bg-dark-deep); /* Sfondo modal come background profondo */
   --backdrop-opacity: 0.7;
-  --box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+  --box-shadow: 0 0 25px rgba(95, 234, 255, 0.3); /* Ombra modal più contenuta */
   --border-radius: 10px;
 
   .modal-wrapper {
-    background: var(--bg-dark-primary) !important;
+    background: var(--bg-dark-deep) !important;
   }
 }
 
 ion-datetime {
-  --background: black;
-  --color: var(--text-primary);
-  --border-color: var(--primary-glow);
-  --highlight-color: var(--primary-glow);
-  --highlight-background: rgba(0, 212, 255, 0.2);
+  background: var(--panel-solid-bg) !important; /* Sfondo datetime solido come pannelli */
+  --color: var(--text-main);
+  --border-color: var(--primary-accent-calm);
+  --highlight-color: var(--primary-accent-calm);
+  --highlight-background: rgba(95, 234, 255, 0.1); /* Highlight molto tenue */
   font-family: 'Orbitron', sans-serif;
 
   .datetime-button {
-    color: var(--text-primary);
+    color: var(--text-main);
     &.datetime-selected {
-      color: var(--primary-glow);
+      color: var(--primary-accent-calm);
     }
   }
 
@@ -218,55 +220,54 @@ ion-datetime {
   &::part(year-button),
   &::part(month-year-button),
   &::part(native) {
-    background: black !important;
-    color: var(--text-primary) !important;
+    background: var(--panel-solid-bg) !important;
+    color: var(--text-main) !important;
   }
 
   &::part(calendar-day-header) {
-    background: black !important;
-    color: var(--primary-glow) !important;
+    background: var(--panel-solid-bg) !important;
+    color: var(--primary-accent-calm) !important;
     font-weight: bold;
   }
 
   &::part(calendar-day-selected) {
-    background: var(--primary-glow) !important;
-    color: var(--bg-dark-primary) !important;
+    background: var(--primary-accent-calm) !important;
+    color: var(--bg-dark-deep) !important; /* Testo scuro su accento chiaro */
   }
 
   &::part(calendar-body) {
-    background: black !important;
+    background: var(--panel-solid-bg) !important;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: inset 0 0 10px rgba(0, 212, 255, 0.1);
+    box-shadow: inset 0 0 8px rgba(95, 234, 255, 0.06);
   }
 
   &::part(calendar-day):hover {
-    background: rgba(0, 0, 0, 0.8) !important;
-    color: var(--primary-glow) !important;
-    border: 1px solid var(--primary-glow);
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    background: rgba(25, 30, 55, 0.8) !important;
+    color: var(--primary-accent-calm) !important;
+    border: 1px solid var(--primary-accent-calm);
+    box-shadow: 0 0 10px rgba(95, 234, 255, 0.2);
   }
 
   &::part(year-button):hover,
   &::part(month-year-button):hover {
-    background: rgba(0, 0, 0, 0.8) !important;
-    color: var(--primary-glow) !important;
-    text-shadow: 0 0 8px var(--primary-glow);
+    background: rgba(25, 30, 55, 0.8) !important;
+    color: var(--primary-accent-calm) !important;
+    text-shadow: 0 0 7px var(--primary-accent-calm);
   }
 
   :host ::ng-deep ion-datetime {
-    --background: black !important;
-    --color: var(--text-primary);
-    --border-color: var(--primary-glow);
-    --highlight-color: var(--primary-glow);
-    --highlight-background: rgba(0, 212, 255, 0.2);
+    background: var(--panel-solid-bg) !important;
+    --color: var(--text-main);
+    --border-color: var(--primary-accent-calm);
+    --highlight-color: var(--primary-accent-calm);
+    --highlight-background: rgba(95, 234, 255, 0.1);
   }
 }
 
 /* --- Sezione Umore --- */
 .mood-tracker-section {
-  flex-grow: 1; /* Permette alla sezione di espandersi per riempire lo spazio rimanente nel left-panel */
-  // Rimosso ion-margin-top nel HTML per una gestione più pulita del gap
+  flex-grow: 1;
 
   .mood-options {
     display: grid;
@@ -274,11 +275,11 @@ ion-datetime {
     gap: 10px;
 
     .mood-button {
-      --background: rgba(0, 0, 0, 0.4);
-      --border-color: var(--border-color-light);
-      --color: var(--text-secondary);
-      --ripple-color: var(--primary-glow);
-      border-radius: 4px;
+      --background: transparent; /* Reso trasparente */
+      border: 1px solid var(--text-secondary-subtle);
+      --color: var(--text-secondary-subtle);
+      --ripple-color: var(--primary-accent-calm);
+      border-radius: 3px;
       font-family: 'Orbitron', sans-serif;
       text-transform: uppercase;
       font-weight: 500;
@@ -289,36 +290,44 @@ ion-datetime {
       gap: 5px;
       transition: all 0.2s ease;
       font-size: 0.8em;
+      box-shadow: inset 0 0 4px rgba(95, 234, 255, 0.05);
 
       ion-icon {
         font-size: 1.8em;
-        color: var(--text-secondary);
+        color: var(--primary-accent-calm);
         transition: color 0.2s ease;
       }
 
       span {
         white-space: nowrap;
+        color: var(--text-secondary-subtle);
       }
 
       &.selected {
-        --background: linear-gradient(135deg, var(--primary-glow), rgba(0, 212, 255, 0.4));
-        border: 1px solid var(--primary-glow);
-        box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
-        --color: var(--bg-dark-primary);
-        transform: scale(1.05);
+        background-color: var(--primary-accent-calm); /* Rimane pieno quando selezionato per chiarezza */
+        border: 1px solid var(--primary-accent-calm);
+        box-shadow: 0 0 12px rgba(95, 234, 255, 0.4);
+        --color: var(--bg-dark-deep);
+        transform: scale(1.03);
         ion-icon {
-          color: var(--bg-dark-primary);
+          color: var(--bg-dark-deep);
+        }
+        span {
+          color: var(--bg-dark-deep);
         }
       }
 
       &:hover:not(.selected) {
-        --background: rgba(0, 0, 0, 0.5);
-        border-color: var(--primary-glow);
-        --color: var(--text-secondary);
+        background-color: rgba(25, 30, 55, 0.5); /* Sfondo semitrasparente solo all'hover */
+        border-color: var(--primary-accent-calm);
+        --color: var(--text-main);
         ion-icon {
-          color: var(--text-secondary);
+          color: var(--secondary-accent-soft);
         }
-        box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        span {
+          color: var(--text-main);
+        }
+        box-shadow: inset 0 0 6px rgba(95, 234, 255, 0.1), 0 0 10px rgba(160, 132, 255, 0.1);
       }
     }
   }
@@ -326,61 +335,59 @@ ion-datetime {
 
 /* --- Sezione Nota --- */
 .note-section {
-  flex-grow: 1; /* Permette a questa sezione di espandersi */
-  display: flex; /* Aggiunto per Flexbox */
-  flex-direction: column; /* Aggiunto per Flexbox */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 
   .ff7-textarea {
-    --background: rgba(0, 0, 0, 0.6);
-    --color: var(--text-primary);
-    --placeholder-color: var(--placeholder-color);
+    background-color: var(--panel-solid-bg);
+    --color: var(--text-main);
+    --placeholder-color: var(--text-placeholder-subtle);
     --padding-start: 15px;
     --padding-end: 15px;
     --padding-top: 15px;
     --padding-bottom: 15px;
-    border: 1px solid var(--border-color-light);
+    border: 1px solid var(--border-subtle);
     border-radius: 5px;
-    box-shadow: inset 0 0 10px rgba(0, 212, 255, 0.08);
+    box-shadow: inset 0 0 8px rgba(95, 234, 255, 0.05);
     font-size: 1rem;
     line-height: 1.7;
-    caret-color: var(--primary-glow);
+    caret-color: var(--primary-accent-calm);
     transition: all 0.2s ease;
-    min-height: 150px; /* Altezza minima, ma flex-grow la estenderà */
-    height: 100%; /* Importante per farla riempire il contenitore flessibile */
-    flex-grow: 1; /* Permette alla textarea di espandersi per riempire lo spazio */
+    min-height: 150px;
+    height: 100%;
+    flex-grow: 1;
 
-    // Allineamento verticale del testo all'inizio
     textarea {
       vertical-align: top;
-      height: 100% !important; // Sovrascrive Ionic per l'altezza
+      height: 100% !important;
     }
 
     &:focus {
-      border-color: var(--primary-glow);
-      box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.3), 0 0 15px rgba(0, 212, 255, 0.3);
-      background: rgba(0, 0, 0, 0.7);
-      color: var(--text-primary);
+      border-color: var(--secondary-accent-soft);
+      box-shadow: inset 0 0 15px rgba(95, 234, 255, 0.2), 0 0 10px rgba(160, 132, 255, 0.1);
+      background-color: rgba(25, 30, 55, 0.98);
+      color: var(--text-main);
     }
   }
 }
 
 /* --- Sezione Storico --- */
 .history-section {
-
   .history-list {
     background: transparent;
     padding-top: 10px;
   }
 
   .ff7-item {
-    --background: rgba(0, 0, 0, 0.4);
+    background-color: var(--panel-solid-bg);
     --inner-border-width: 0px;
-    border-bottom: 1px dashed rgba(0, 212, 255, 0.2);
+    border-bottom: 1px dashed var(--text-secondary-subtle);
     margin-bottom: 10px;
-    border-radius: 4px;
+    border-radius: 5px;
     padding: 15px;
-    box-shadow: 0 0 8px rgba(0, 212, 255, 0.08);
-    transition: all 0.2s ease;
+    box-shadow: 0 0 10px rgba(95, 234, 255, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 
     &:last-child {
       border-bottom: none;
@@ -388,26 +395,27 @@ ion-datetime {
     }
 
     &:hover {
-      background: rgba(0, 0, 0, 0.5);
-      box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
-      color: var(--text-primary);
+      transform: translateY(-1px);
+      background-color: rgba(25, 30, 55, 0.95);
+      box-shadow: 0 0 15px rgba(95, 234, 255, 0.2);
+      color: var(--text-main);
     }
   }
 
   .ff7-label-text {
-    color: var(--text-secondary);
+    color: var(--text-secondary-subtle);
     font-size: 0.9em;
     font-family: 'Orbitron', sans-serif;
     letter-spacing: 0.5px;
   }
 }
 
-/* --- Spinner (già ben fatto) --- */
+/* --- Spinner (adattato alla nuova palette) --- */
 ion-spinner {
   width: 60px;
   height: 60px;
-  color: var(--primary-glow);
-  filter: drop-shadow(0 0 10px var(--primary-glow));
+  color: var(--primary-accent-calm);
+  filter: drop-shadow(0 0 8px var(--primary-accent-calm));
   animation: ff7-pulse 1.2s infinite ease-in-out;
 }
 
@@ -417,7 +425,7 @@ ion-spinner {
     opacity: 0.7;
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.05);
     opacity: 1;
   }
 }
