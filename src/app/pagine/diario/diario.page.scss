@@ -1,0 +1,358 @@
+/* src/app/diario/diario.page.scss */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
+
+/* --- Variabili e Sfondo Generale --- */
+:host {
+  /* Nuovi valori per un glow più freddo e un background più scuro */
+  --primary-glow: #00d4ff; /* Ciano brillante per accenti */
+  --secondary-glow: #00ff7b; /* Verde-blu per un tocco diverso (opzionale) */
+  --bg-dark-primary: #0a1128; /* Blu molto scuro quasi nero */
+  --bg-dark-secondary: #0c1a3b; /* Blu scuro */
+  --panel-bg: rgba(10, 20, 40, 0.9); /* Sfondo dei pannelli semi-trasparente */
+  --border-color-light: rgba(0, 212, 255, 0.4); /* Bordo leggero per elementi */
+  --text-primary: #e0f7fa; /* Testo principale chiaro */
+  --text-secondary: #a0c4ff; /* Testo secondario, meno brillante */
+  --placeholder-color: #7abeff; /* Colore placeholder */
+  --danger-color: #ff4e4e; /* Colore errore */
+
+  font-family: 'Orbitron', sans-serif;
+  color: var(--text-primary);
+}
+
+.ff7-background {
+  background-attachment: fixed; /* Per mantenere lo sfondo fisso durante lo scroll */
+}
+
+/* --- Effetti Generali --- */
+.ff7-glow-text {
+  color: var(--primary-glow);
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.7), 0 0 20px rgba(0, 212, 255, 0.3);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 15px; /* Spazio sotto i titoli di sezione */
+}
+
+.ff7-panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px; /* Leggermente meno squadrato, più ergonomico */
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
+  backdrop-filter: blur(8px); /* Effetto blur più pronunciato */
+  padding: 20px;
+  transition: all 0.3s ease-in-out;
+  position: relative; /* Per elementi con posizione assoluta all'interno */
+  overflow: hidden; /* Per mascherare eventuali overflow del contenuto */
+
+  &:hover {
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
+    transform: translateY(-2px);
+  }
+
+  /* Bordo animato per i pannelli */
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px; left: -2px; right: -2px; bottom: -2px;
+    background: linear-gradient(45deg, #00d4ff, #00b8ff, #00ff7b);
+    z-index: -1;
+    border-radius: 10px;
+    filter: blur(8px);
+    opacity: 0.2;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover::before {
+    opacity: 0.6;
+  }
+}
+
+/* --- Layout Principale (Grid) --- */
+.diario-main-grid {
+  display: grid;
+  gap: 20px; /* Spazio tra i pannelli */
+  padding: 20px 0; /* Padding interno del container per non toccare i bordi */
+
+  /* Layout per schermi grandi (desktop/tablet orizzontale) */
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 2fr; /* Colonna sinistra più piccola della destra */
+    grid-template-areas:
+      "left-panel right-panel"
+      "history-section history-section"; /* Storico sotto a larghezza piena */
+  }
+
+  /* Layout per schermi piccoli (mobile/tablet verticale) */
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "left-panel"
+      "right-panel"
+      "history-section";
+  }
+}
+
+.left-panel {
+  grid-area: left-panel;
+}
+
+.right-panel {
+  grid-area: right-panel;
+}
+
+.history-section {
+  grid-area: history-section;
+}
+
+/* --- Header e Titolo --- */
+ion-header ion-toolbar {
+  --background: var(--bg-dark-primary);
+  --border-color: transparent;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+}
+
+.ff7-title {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--primary-glow);
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.8), 0 0 20px rgba(0, 212, 255, 0.4);
+  font-size: 1.6rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.save-button {
+  --background: linear-gradient(to right, #00d4ff, #00b8ff);
+  --color: black;
+  font-weight: bold;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+  font-family: 'Orbitron', sans-serif;
+  padding: 0 18px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border-radius: 5px;
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.8), 0 0 5px rgba(0, 212, 255, 0.8);
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+  }
+}
+
+/* --- Selettore Data --- */
+.date-section {
+  margin-bottom: 20px; /* Spazio tra il pannello data e umore */
+
+  .date-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .date-display-button {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: var(--primary-glow);
+    text-shadow: 0 0 8px rgba(0, 212, 255, 0.7);
+    flex-grow: 1;
+    text-align: center;
+    margin: 0 10px; /* Spazio dai bottoni freccia */
+    --padding-start: 0; /* Rimuove padding interno per centratura */
+    --padding-end: 0;
+  }
+
+  .nav-button {
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --color: var(--text-secondary);
+    font-size: 1.5em;
+    transition: color 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      color: var(--primary-glow);
+      transform: scale(1.1);
+    }
+  }
+}
+
+/* --- Modale Data Time --- */
+ion-modal {
+  --background: var(--bg-dark-primary);
+  --backdrop-opacity: 0.7;
+  --box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+  --border-radius: 10px;
+}
+
+ion-datetime {
+  --background: var(--bg-dark-secondary);
+  --color: var(--text-primary);
+  --border-color: var(--primary-glow); /* Bordo calendario */
+  --highlight-color: var(--primary-glow); /* Colore selezione */
+  --highlight-background: rgba(0, 212, 255, 0.2); /* Sfondo selezione */
+  font-family: 'Orbitron', sans-serif;
+
+  .datetime-button {
+    color: var(--text-primary);
+    &.datetime-selected {
+      color: var(--primary-glow);
+    }
+  }
+}
+
+/* --- Sezione Umore --- */
+.mood-tracker-section {
+  h3 { /* Già gestito da .ff7-glow-text */ }
+
+  .mood-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Rende i bottoni adattabili */
+    gap: 10px;
+
+    .mood-button {
+      --background: rgba(0, 0, 0, 0.4);
+      --border-color: var(--label-color);
+      --color: var(--label-color);
+      --ripple-color: var(--primary-glow);
+      border-radius: 4px;
+      font-family: 'Orbitron', sans-serif;
+      text-transform: uppercase;
+      font-weight: 500;
+      padding: 8px; /* Padding ridotto per adattarsi a più bottoni */
+      display: flex; /* Permette icona e testo di stare fianco a fianco */
+      flex-direction: column; /* Icona sopra testo */
+      align-items: center;
+      gap: 5px; /* Spazio tra icona e testo */
+      transition: all 0.2s ease;
+      font-size: 0.8em; /* Testo più piccolo */
+
+      ion-icon {
+        font-size: 1.8em; /* Icone più grandi */
+        color: var(--text-secondary);
+        transition: color 0.2s ease;
+      }
+
+      span {
+        white-space: nowrap; /* Evita che il testo vada a capo */
+      }
+
+      &.selected {
+        --background: linear-gradient(135deg, var(--primary-glow), rgba(0, 212, 255, 0.4));
+        border: 1px solid var(--primary-glow);
+        box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+        --color: var(--bg-dark-primary); /* Testo scuro su fondo luminoso */
+        transform: scale(1.05); /* Lieve ingrandimento */
+        ion-icon {
+          color: var(--bg-dark-primary); /* Icona scura su fondo luminoso */
+        }
+      }
+
+      &:hover:not(.selected) {
+        --border-color: var(--primary-glow);
+        --color: var(--primary-glow);
+        ion-icon {
+          color: var(--primary-glow);
+        }
+      }
+    }
+  }
+}
+
+/* --- Sezione Nota --- */
+.note-section {
+  h3 { /* Già gestito da .ff7-glow-text */ }
+
+  .ff7-textarea {
+    --background: rgba(0, 0, 0, 0.6);
+    --color: var(--text-primary);
+    --placeholder-color: var(--placeholder-color);
+    --padding-start: 15px;
+    --padding-end: 15px;
+    --padding-top: 15px;
+    --padding-bottom: 15px;
+    border: 1px solid var(--border-color-light);
+    border-radius: 5px;
+    box-shadow: inset 0 0 10px rgba(0, 212, 255, 0.08);
+    font-size: 1rem;
+    line-height: 1.7;
+    caret-color: var(--primary-glow);
+    transition: all 0.2s ease;
+    min-height: 200px; /* Altezza minima per la textarea */
+
+    &:focus {
+      border-color: var(--primary-glow);
+      box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.3), 0 0 15px rgba(0, 212, 255, 0.3);
+    }
+  }
+}
+
+/* --- Sezione Storico --- */
+.history-section {
+  h3 { /* Già gestito da .ff7-glow-text */ }
+
+  .history-list {
+    background: transparent;
+    padding-top: 10px;
+  }
+
+  .ff7-item {
+    --background: rgba(0, 0, 0, 0.4);
+    --inner-border-width: 0px;
+    border-bottom: 1px dashed rgba(0, 212, 255, 0.2); /* Linea tratteggiata */
+    margin-bottom: 10px;
+    border-radius: 4px;
+    padding: 15px;
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.08);
+    transition: all 0.2s ease;
+
+    &:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.6);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+    }
+  }
+
+  .ff7-label-text {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.5px;
+  }
+}
+
+/* --- Spinner (già ben fatto) --- */
+ion-spinner {
+  width: 60px;
+  height: 60px;
+  color: var(--primary-glow);
+  filter: drop-shadow(0 0 10px var(--primary-glow));
+  animation: ff7-pulse 1.2s infinite ease-in-out;
+}
+
+@keyframes ff7-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+:host ::ng-deep ion-datetime {
+  --background: black !important;
+  --color: var(--text-primary);
+  --border-color: var(--primary-glow);
+  --highlight-color: var(--primary-glow);
+  --highlight-background: rgba(0, 212, 255, 0.2);
+}
+

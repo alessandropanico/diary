@@ -82,6 +82,10 @@ const routes: Routes = [
     path: 'lista-utenti',
     loadChildren: () => import('./pagine/lista-utenti/lista-utenti.module').then( m => m.ListaUtentiPageModule)
   },
+  {
+    path: 'diario',
+    loadChildren: () => import('./pagine/diario/diario.module').then( m => m.DiarioPageModule)
+  },
 
 
 
