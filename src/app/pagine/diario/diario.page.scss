@@ -45,11 +45,13 @@
   transition: all 0.3s ease-in-out;
   position: relative; /* Per elementi con posizione assoluta all'interno */
   overflow: hidden; /* Per mascherare eventuali overflow del contenuto */
+  display: flex; // Aggiunto per Flexbox
+  flex-direction: column; // Aggiunto per Flexbox
+  // height: 100%; // Rimosso o gestito diversamente per evitare conflitti con grow dinamica
 
-  // Manteniamo lo stesso background-color ma intensifichiamo il box-shadow
   &:hover {
     box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
-    transform: translateY(-2px);
+    // transform: translateY(-2px); // Rimosso come da richiesta precedente
   }
 
   /* Bordo animato per i pannelli */
@@ -65,7 +67,6 @@
     transition: opacity 0.3s ease;
   }
 
-  // Rimuoviamo l'aumento di opacità per non schiarire
   &:hover::before {
     opacity: 0.2; // Mantiene l'opacità bassa, non la aumenta
     filter: blur(12px); // Oppure si può aumentare solo il blur per dare feedback
@@ -76,11 +77,13 @@
 .diario-main-grid {
   display: grid;
   gap: 20px; /* Spazio tra i pannelli */
-  padding: 20px 0; /* Padding interno del container per non toccare i bordi */
+  padding: 20px; /* Padding interno del container */
+  align-items: stretch; /* Importante: allunga gli item per riempire l'altezza della riga */
 
   /* Layout per schermi grandi (desktop/tablet orizzontale) */
   @media (min-width: 768px) {
     grid-template-columns: 1fr 2fr; /* Colonna sinistra più piccola della destra */
+    grid-template-rows: auto 1fr; /* La prima riga è auto (pannelli), la seconda è 1fr (storico) */
     grid-template-areas:
       "left-panel right-panel"
       "history-section history-section"; /* Storico sotto a larghezza piena */
@@ -98,52 +101,23 @@
 
 .left-panel {
   grid-area: left-panel;
+  display: flex; /* Transforma in flex container */
+  flex-direction: column; /* Impila gli elementi verticalmente */
+  gap: 20px; /* Spazio tra i pannelli interni (data e umore) */
 }
 
 .right-panel {
   grid-area: right-panel;
+  display: flex; /* Transforma in flex container */
+  flex-direction: column; /* Impila gli elementi verticalmente */
 }
 
 .history-section {
   grid-area: history-section;
 }
 
-.ff7-title {
-  font-family: 'Orbitron', sans-serif;
-  color: var(--primary-glow);
-  text-shadow: 0 0 10px rgba(0, 212, 255, 0.8), 0 0 20px rgba(0, 212, 255, 0.4);
-  font-size: 1.6rem;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-}
-
-.save-button {
-  --background: linear-gradient(to right, #00d4ff, #00b8ff);
-  --color: black;
-  font-weight: bold;
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
-  font-family: 'Orbitron', sans-serif;
-  padding: 0 18px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  border-radius: 5px;
-  transition: all 0.2s ease-in-out;
-
-  &:hover {
-    box-shadow: 0 0 25px rgba(0, 212, 255, 0.8), 0 0 5px rgba(0, 212, 255, 0.8);
-    transform: translateY(-2px) scale(1.02);
-  }
-
-  &:active {
-    transform: scale(0.98);
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-  }
-}
-
 /* --- Selettore Data --- */
 .date-section {
-  margin-bottom: 20px; /* Spazio tra il pannello data e umore */
-
   .date-controls {
     display: flex;
     align-items: center;
@@ -152,21 +126,46 @@
   }
 
   .date-display-button {
-    font-size: 1.4em;
-    font-weight: 700;
-    color: var(--primary-glow);
-    text-shadow: 0 0 8px rgba(0, 212, 255, 0.7);
     flex-grow: 1;
     text-align: center;
-    margin: 0 10px; /* Spazio dai bottoni freccia */
-    --padding-start: 0; /* Rimuove padding interno per centratura */
-    --padding-end: 0;
+    margin: 0 10px;
     transition: all 0.2s ease;
 
-    // Rimuoviamo il cambio di colore e manteniamo un effetto glow più intenso
+    // IMPORTE: Forza la trasparenza del background del bottone host
+    --background: transparent !important;
+    --background-hover: transparent !important; // Anche lo sfondo all'hover
+    --background-activated: transparent !important; // E quando attivato/cliccato
+    --background-focused: transparent !important; // E quando in focus
+    --box-shadow: none !important; // Rimuove qualsiasi ombra predefinita
+    --border-radius: 0 !important; // Rimuove border-radius predefiniti se ne ha
+
+    // Proprietà Custom per il colore del testo principale
+    --color: var(--primary-glow);
+
+    --padding-start: 0;
+    --padding-end: 0;
+    --padding-top: 0;
+    --padding-bottom: 0;
+
+    // Per il testo interno specifico (attraverso Shadow DOM)
+    &::part(native) {
+      font-size: 1.4em;
+      font-weight: 700;
+      text-shadow: 0 0 8px rgba(0, 212, 255, 0.7);
+      font-family: 'Orbitron', sans-serif;
+      // Forza il background dell'elemento nativo a essere trasparente
+      background: transparent !important;
+      // Rimuovi eventuali bordi di default dall'interno del bottone nativo
+      border: none !important;
+    }
+
     &:hover {
-      color: var(--primary-glow); /* Mantiene lo stesso colore, non lo schiarisce */
-      text-shadow: 0 0 15px rgba(0, 212, 255, 0.9), 0 0 25px rgba(0, 212, 255, 0.5);
+      // Questi stili si applicano al testo interno tramite ::part(native)
+      // ma il --color sull'host dovrebbe comunque funzionare
+      --color: var(--primary-glow);
+      &::part(native) {
+         text-shadow: 0 0 15px rgba(0, 212, 255, 0.9), 0 0 25px rgba(0, 212, 255, 0.5);
+      }
     }
   }
 
@@ -177,9 +176,8 @@
     font-size: 1.5em;
     transition: color 0.2s ease, transform 0.2s ease, text-shadow 0.2s ease;
 
-    // Rimuoviamo il cambio di colore e manteniamo l'ombra
     &:hover {
-      color: var(--text-secondary); /* Mantiene il colore base o un colore scuro, non lo schiarisce */
+      color: var(--text-secondary);
       text-shadow: 0 0 10px rgba(0, 212, 255, 0.7), 0 0 20px rgba(0, 212, 255, 0.3);
       transform: scale(1.1);
     }
@@ -201,9 +199,9 @@ ion-modal {
 ion-datetime {
   --background: black;
   --color: var(--text-primary);
-  --border-color: var(--primary-glow); /* Bordo calendario */
-  --highlight-color: var(--primary-glow); /* Colore selezione */
-  --highlight-background: rgba(0, 212, 255, 0.2); /* Sfondo selezione */
+  --border-color: var(--primary-glow);
+  --highlight-color: var(--primary-glow);
+  --highlight-background: rgba(0, 212, 255, 0.2);
   font-family: 'Orbitron', sans-serif;
 
   .datetime-button {
@@ -239,19 +237,18 @@ ion-datetime {
     box-shadow: inset 0 0 10px rgba(0, 212, 255, 0.1);
   }
 
-  // --- Regole per prevenire lo schiarimento al HOVER ---
   &::part(calendar-day):hover {
-    background: rgba(0, 0, 0, 0.8) !important; // Mantiene scuro o leggermente più scuro
-    color: var(--primary-glow) !important; // Mantiene il testo luminoso, ma lo sfondo no
-    border: 1px solid var(--primary-glow); // Aggiunge un bordo luminoso
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5); // Aggiunge una glow
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: var(--primary-glow) !important;
+    border: 1px solid var(--primary-glow);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
   }
 
   &::part(year-button):hover,
   &::part(month-year-button):hover {
-    background: rgba(0, 0, 0, 0.8) !important; // Mantiene scuro o leggermente più scuro
-    color: var(--primary-glow) !important; // Colore testo glow
-    text-shadow: 0 0 8px var(--primary-glow); // Effetto glow sul testo
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: var(--primary-glow) !important;
+    text-shadow: 0 0 8px var(--primary-glow);
   }
 
   :host ::ng-deep ion-datetime {
@@ -265,16 +262,18 @@ ion-datetime {
 
 /* --- Sezione Umore --- */
 .mood-tracker-section {
+  flex-grow: 1; /* Permette alla sezione di espandersi per riempire lo spazio rimanente nel left-panel */
+  // Rimosso ion-margin-top nel HTML per una gestione più pulita del gap
 
   .mood-options {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Rende i bottoni adattabili */
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 10px;
 
     .mood-button {
       --background: rgba(0, 0, 0, 0.4);
-      --border-color: var(--border-color-light); // Usiamo un bordo light di default
-      --color: var(--text-secondary); // Impostiamo il colore di base del testo/icona
+      --border-color: var(--border-color-light);
+      --color: var(--text-secondary);
       --ripple-color: var(--primary-glow);
       border-radius: 4px;
       font-family: 'Orbitron', sans-serif;
@@ -309,15 +308,14 @@ ion-datetime {
         }
       }
 
-      // Previene lo schiarimento al hover quando NON è selezionato
       &:hover:not(.selected) {
-        --background: rgba(0, 0, 0, 0.5); /* Mantiene scuro o leggermente più scuro */
-        border-color: var(--primary-glow); // Il bordo si illumina
-        --color: var(--text-secondary); // Mantiene il testo/icona scuri
+        --background: rgba(0, 0, 0, 0.5);
+        border-color: var(--primary-glow);
+        --color: var(--text-secondary);
         ion-icon {
-          color: var(--text-secondary); // Mantiene l'icona scura
+          color: var(--text-secondary);
         }
-        box-shadow: 0 0 10px rgba(0, 212, 255, 0.3); // Aggiunge una glow al pannello
+        box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
       }
     }
   }
@@ -325,6 +323,9 @@ ion-datetime {
 
 /* --- Sezione Nota --- */
 .note-section {
+  flex-grow: 1; /* Permette a questa sezione di espandersi */
+  display: flex; /* Aggiunto per Flexbox */
+  flex-direction: column; /* Aggiunto per Flexbox */
 
   .ff7-textarea {
     --background: rgba(0, 0, 0, 0.6);
@@ -341,14 +342,21 @@ ion-datetime {
     line-height: 1.7;
     caret-color: var(--primary-glow);
     transition: all 0.2s ease;
-    min-height: 200px;
+    min-height: 150px; /* Altezza minima, ma flex-grow la estenderà */
+    height: 100%; /* Importante per farla riempire il contenitore flessibile */
+    flex-grow: 1; /* Permette alla textarea di espandersi per riempire lo spazio */
 
-    // Previene lo schiarimento al focus
+    // Allineamento verticale del testo all'inizio
+    textarea {
+      vertical-align: top;
+      height: 100% !important; // Sovrascrive Ionic per l'altezza
+    }
+
     &:focus {
       border-color: var(--primary-glow);
       box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.3), 0 0 15px rgba(0, 212, 255, 0.3);
-      background: rgba(0, 0, 0, 0.7); /* Mantiene scuro o leggermente più scuro */
-      color: var(--text-primary); /* Mantiene il colore del testo */
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--text-primary);
     }
   }
 }
@@ -364,7 +372,7 @@ ion-datetime {
   .ff7-item {
     --background: rgba(0, 0, 0, 0.4);
     --inner-border-width: 0px;
-    border-bottom: 1px dashed rgba(0, 212, 255, 0.2); /* Linea tratteggiata */
+    border-bottom: 1px dashed rgba(0, 212, 255, 0.2);
     margin-bottom: 10px;
     border-radius: 4px;
     padding: 15px;
@@ -376,11 +384,10 @@ ion-datetime {
       margin-bottom: 0;
     }
 
-    // Previene lo schiarimento al hover
     &:hover {
-      background: rgba(0, 0, 0, 0.5); /* Mantiene scuro o leggermente più scuro */
+      background: rgba(0, 0, 0, 0.5);
       box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
-      color: var(--text-primary); /* Mantiene il colore del testo */
+      color: var(--text-primary);
     }
   }
 

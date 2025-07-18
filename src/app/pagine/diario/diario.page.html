@@ -3,7 +3,7 @@
     <ion-buttons slot="start">
     </ion-buttons>
     <ion-title>Diario</ion-title> <ion-buttons slot="end">
-      <ion-button *ngIf="hasChanges" (click)="saveEntry()" class="save-button">Salva Dati</ion-button>
+      <ion-button *ngIf="hasChanges" (click)="saveEntry()">Salva</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -32,7 +32,7 @@
     </ion-modal>
 
     <div class="mood-tracker-section ff7-panel ion-margin-top">
-      <h3 class="ff7-glow-text">Stato Emozionale</h3>
+      <h3 class="ff7-glow-text">Stato Emotivo</h3>
       <div class="mood-options">
         <ion-button [class.selected]="currentEntry.mood === 'felice'" (click)="selectMood('felice')"
           class="mood-button">
