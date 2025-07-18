@@ -206,7 +206,6 @@ ion-datetime {
 
 /* --- Sezione Umore --- */
 .mood-tracker-section {
-  h3 { /* Già gestito da .ff7-glow-text */ }
 
   .mood-options {
     display: grid;
@@ -264,7 +263,6 @@ ion-datetime {
 
 /* --- Sezione Nota --- */
 .note-section {
-  h3 { /* Già gestito da .ff7-glow-text */ }
 
   .ff7-textarea {
     --background: rgba(0, 0, 0, 0.6);
@@ -292,7 +290,6 @@ ion-datetime {
 
 /* --- Sezione Storico --- */
 .history-section {
-  h3 { /* Già gestito da .ff7-glow-text */ }
 
   .history-list {
     background: transparent;
