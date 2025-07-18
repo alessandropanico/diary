@@ -14,7 +14,7 @@ interface DailyEntry {
   note: string;
   // Nuove proprietà per le rilevazioni quotidiane
   energyLevel?: number; // Scala da 1 a 5
-  sleepQuality?: 'scarso' | 'medio' | 'eccellente' | ''; // Qualità del sonno
+  sleepQuality?: 'scarso' | 'medio' | 'ottimo' | ''; // Qualità del sonno
   stressLevel?: number; // Scala da 1 a 5
   focusHours?: number; // Ore di focus
 
@@ -32,7 +32,8 @@ export class DiarioPage implements OnInit, OnDestroy {
   // Proprietà per la data selezionata
   selectedDate: Date = new Date();
   selectedDateString: string = ''; // Usato con ion-datetime
-  todayString: string = new Date().toISOString(); // Per limitare il datetime picker al giorno corrente
+  // MODIFICA QUI: Assicurati che todayString sia anche nel formato YYYY-MM-DD locale
+  todayString: string = this.formatDate(new Date()); // Per limitare il datetime picker al giorno corrente
 
   // Proprietà per la voce del diario del giorno selezionato
   currentEntry: DailyEntry = {
@@ -94,28 +95,32 @@ export class DiarioPage implements OnInit, OnDestroy {
   // ⭐ Inizializza la data al giorno corrente e carica la voce
   initializeDate() {
     this.selectedDate = new Date();
-    this.selectedDateString = this.selectedDate.toISOString();
-    this.loadDailyEntry(this.formatDate(this.selectedDate));
+    // MODIFICA QUI: Usa formatDate per selezionare la stringa della data
+    this.selectedDateString = this.formatDate(this.selectedDate);
+    this.loadDailyEntry(this.selectedDateString); // Passa la stringa già formattata
   }
 
   // ⭐ Gestisce il cambio data dal picker
   onDateChange() {
-    this.selectedDate = new Date(this.selectedDateString);
-    this.loadDailyEntry(this.formatDate(this.selectedDate));
+    // Quando selectedDateString viene aggiornato da ion-datetime, sarà già nel formato YYYY-MM-DD
+    this.selectedDate = new Date(this.selectedDateString); // Questo creerà un oggetto Date alla mezzanotte locale del giorno selezionato
+    this.loadDailyEntry(this.selectedDateString); // Passa la stringa già formattata
   }
 
   // ⭐ Passa al giorno precedente
   previousDay() {
     this.selectedDate.setDate(this.selectedDate.getDate() - 1);
-    this.selectedDateString = this.selectedDate.toISOString();
-    this.loadDailyEntry(this.formatDate(this.selectedDate));
+    // MODIFICA QUI: Aggiorna selectedDateString con la nuova data formattata
+    this.selectedDateString = this.formatDate(this.selectedDate);
+    this.loadDailyEntry(this.selectedDateString);
   }
 
   // ⭐ Passa al giorno successivo (senza limiti nel futuro)
   nextDay() {
     this.selectedDate.setDate(this.selectedDate.getDate() + 1);
-    this.selectedDateString = this.selectedDate.toISOString();
-    this.loadDailyEntry(this.formatDate(this.selectedDate));
+    // MODIFICA QUI: Aggiorna selectedDateString con la nuova data formattata
+    this.selectedDateString = this.formatDate(this.selectedDate);
+    this.loadDailyEntry(this.selectedDateString);
   }
 
   // ⭐ Formatta la data in YYYY-MM-DD
@@ -127,7 +132,7 @@ export class DiarioPage implements OnInit, OnDestroy {
   }
 
   // ⭐ Carica la voce del diario per la data selezionata
-  async loadDailyEntry(date: string) {
+  async loadDailyEntry(date: string) { // Il parametro 'date' ora è sempre YYYY-MM-DD
     if (!this.userId) {
       console.warn('Utente non autenticato. Impossibile caricare la voce del diario.');
       // Resetta la voce corrente a vuota se non autenticato, includendo le nuove proprietà

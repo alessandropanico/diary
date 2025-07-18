@@ -15,6 +15,8 @@ generazione automatica di to-do da note vocali.];
 Nella dashboard:
 - Attività supporto creatore App;
 
+Fare classifica livello
+(magari il podio ha i trofei oro, argento, bronzo!)
 
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ---------------------------------------------------------
