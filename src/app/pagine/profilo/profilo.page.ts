@@ -115,7 +115,6 @@ export class ProfiloPage implements OnInit, OnDestroy {
 
       this.profile = { ...initialProfileData };
       this.profileEdit = { ...this.profile };
-      console.log('ProfiloPage: Dati profilo caricati. Status corrente:', this.profile.status);
     } catch (error: unknown) { // ⭐ Qui ho tipizzato 'error' come 'unknown'
       console.error("Errore durante il caricamento/salvataggio iniziale da Firestore:", error);
       await this.presentFF7Alert('Errore nel caricamento del profilo. Riprova più tardi.');
@@ -180,7 +179,6 @@ export class ProfiloPage implements OnInit, OnDestroy {
         if (this.editing) {
           this.profileEdit.status = this.profile.status;
         }
-        console.log('ProfiloPage: Ricevuto aggiornamento status dal servizio:', this.profile.status);
       });
     });
   }
@@ -189,14 +187,12 @@ export class ProfiloPage implements OnInit, OnDestroy {
     this.editing = true;
     this.profileEdit = { ...this.profile };
     this.avatarMarginTop = '20px';
-    console.log('ProfiloPage: Iniziata modifica. profileEdit.status:', this.profileEdit.status);
   }
 
   cancelEdit() {
     this.editing = false;
     this.profileEdit = { ...this.profile };
     this.avatarMarginTop = '-60px';
-    console.log('ProfiloPage: Modifica annullata. profile.status:', this.profile.status);
   }
 
   async saveProfile() {
@@ -212,11 +208,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
       status: this.profileEdit.status ?? ''
     };
 
-    console.log('ProfiloPage: Tentativo di salvataggio. Status da inviare:', this.profile.status);
     try {
       await this.userDataService.saveUserData(this.profile);
       await this.presentFF7Alert('Profilo aggiornato e salvato!');
-      console.log('ProfiloPage: Salvataggio riuscito! Nuovo status di profile:', this.profile.status);
     } catch (error: unknown) { // ⭐ Qui ho tipizzato 'error' come 'unknown'
       console.error('Errore durante il salvataggio del profilo:', error);
       await this.presentFF7Alert('Errore durante il salvataggio del profilo.');
@@ -231,7 +225,6 @@ export class ProfiloPage implements OnInit, OnDestroy {
   onStatusSelected(newStatus: string) {
     this.ngZone.run(async () => {
       this.profileEdit.status = newStatus;
-      console.log('ProfiloPage: Evento onStatusSelected ricevuto. newStatus:', newStatus, 'profileEdit.status:', this.profileEdit.status);
     });
   }
 
