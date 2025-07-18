@@ -3,96 +3,92 @@
     <ion-buttons slot="start">
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
-    <ion-title>Diario Mako</ion-title> <ion-buttons slot="end">
+    <ion-title>Diario</ion-title> <ion-buttons slot="end">
       <ion-button *ngIf="hasChanges" (click)="saveEntry()" class="save-button">Salva Dati</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="ion-padding ff7-background">
-  <div class="diario-main-grid">
+<div class="diario-main-grid">
 
-    <div class="left-panel">
-      <div class="date-section ff7-panel">
-        <div class="date-controls">
-          <ion-button fill="clear" (click)="previousDay()" class="nav-button">
-            <ion-icon name="chevron-back-outline"></ion-icon>
-          </ion-button>
-          <ion-datetime-button datetime="datePicker" class="date-display-button"></ion-datetime-button>
-          <ion-button fill="clear" (click)="nextDay()" class="nav-button">
-            <ion-icon name="chevron-forward-outline"></ion-icon>
-          </ion-button>
-        </div>
-      </div>
-
-      <ion-modal [keepContentsMounted]="true">
-        <ng-template>
-          <ion-datetime
-            id="datePicker"
-            presentation="date"
-            [(ngModel)]="selectedDateString"
-            (ionChange)="onDateChange()"
-            [max]="todayString">
-          </ion-datetime>
-        </ng-template>
-      </ion-modal>
-
-      <div class="mood-tracker-section ff7-panel ion-margin-top">
-        <h3 class="ff7-glow-text">Stato Emozionale</h3>
-        <div class="mood-options">
-          <ion-button [class.selected]="currentEntry.mood === 'felice'" (click)="selectMood('felice')" class="mood-button">
-            <ion-icon name="happy-outline"></ion-icon>
-            <span>Felice</span>
-          </ion-button>
-          <ion-button [class.selected]="currentEntry.mood === 'sereno'" (click)="selectMood('sereno')" class="mood-button">
-            <ion-icon name="leaf-outline"></ion-icon>
-            <span>Sereno</span>
-          </ion-button>
-          <ion-button [class.selected]="currentEntry.mood === 'neutro'" (click)="selectMood('neutro')" class="mood-button">
-            <ion-icon name="square-outline"></ion-icon>
-            <span>Neutro</span>
-          </ion-button>
-          <ion-button [class.selected]="currentEntry.mood === 'stanco'" (click)="selectMood('stanco')" class="mood-button">
-            <ion-icon name="bed-outline"></ion-icon>
-            <span>Stanco</span>
-          </ion-button>
-          <ion-button [class.selected]="currentEntry.mood === 'triste'" (click)="selectMood('triste')" class="mood-button">
-            <ion-icon name="sad-outline"></ion-icon>
-            <span>Triste</span>
-          </ion-button>
-          <ion-button [class.selected]="currentEntry.mood === 'arrabbiato'" (click)="selectMood('arrabbiato')" class="mood-button">
-            <ion-icon name="alert-circle-outline"></ion-icon>
-            <span>Arrabbiato</span>
-          </ion-button>
-          <ion-button [class.selected]="currentEntry.mood === 'ansioso'" (click)="selectMood('ansioso')" class="mood-button">
-            <ion-icon name="flashlight-outline"></ion-icon>
-            <span>Ansioso</span>
-          </ion-button>
-        </div>
+  <div class="left-panel">
+    <div class="date-section ff7-panel">
+      <div class="date-controls">
+        <ion-button fill="clear" (click)="previousDay()" class="nav-button">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </ion-button>
+        <ion-datetime-button datetime="datePicker" class="date-display-button"></ion-datetime-button>
+        <ion-button fill="clear" (click)="nextDay()" class="nav-button">
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </ion-button>
       </div>
     </div>
 
-    <div class="right-panel">
-      <div class="note-section ff7-panel">
-        <h3 class="ff7-glow-text">Registro Eventi</h3>
-        <ion-textarea
-          [(ngModel)]="currentEntry.note"
-          (ionChange)="markAsChanged()"
-          placeholder="Inserisci qui il resoconto della giornata..."
-          rows="12"
-          auto-grow="true"
-          class="ff7-textarea"
-        ></ion-textarea>
-      </div>
-    </div>
+    <ion-modal [keepContentsMounted]="true">
+      <ng-template>
+        <ion-datetime id="datePicker" presentation="date" [(ngModel)]="selectedDateString" (ionChange)="onDateChange()"
+          [max]="todayString">
+        </ion-datetime>
+      </ng-template>
+    </ion-modal>
 
-    <div class="history-section ff7-panel">
-      <h3 class="ff7-glow-text">Accesso Archivi</h3>
-      <ion-list class="history-list">
-        <ion-item class="ff7-item">
-          <ion-label class="ff7-label-text">Nessun dato storico trovato per questo periodo.</ion-label>
-        </ion-item>
-        </ion-list>
+    <div class="mood-tracker-section ff7-panel ion-margin-top">
+      <h3 class="ff7-glow-text">Stato Emozionale</h3>
+      <div class="mood-options">
+        <ion-button [class.selected]="currentEntry.mood === 'felice'" (click)="selectMood('felice')"
+          class="mood-button">
+          <ion-icon name="happy-outline"></ion-icon>
+          <span>Felice</span>
+        </ion-button>
+        <ion-button [class.selected]="currentEntry.mood === 'sereno'" (click)="selectMood('sereno')"
+          class="mood-button">
+          <ion-icon name="leaf-outline"></ion-icon>
+          <span>Sereno</span>
+        </ion-button>
+        <ion-button [class.selected]="currentEntry.mood === 'neutro'" (click)="selectMood('neutro')"
+          class="mood-button">
+          <ion-icon name="square-outline"></ion-icon>
+          <span>Neutro</span>
+        </ion-button>
+        <ion-button [class.selected]="currentEntry.mood === 'stanco'" (click)="selectMood('stanco')"
+          class="mood-button">
+          <ion-icon name="bed-outline"></ion-icon>
+          <span>Stanco</span>
+        </ion-button>
+        <ion-button [class.selected]="currentEntry.mood === 'triste'" (click)="selectMood('triste')"
+          class="mood-button">
+          <ion-icon name="sad-outline"></ion-icon>
+          <span>Triste</span>
+        </ion-button>
+        <ion-button [class.selected]="currentEntry.mood === 'arrabbiato'" (click)="selectMood('arrabbiato')"
+          class="mood-button">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span>Arrabbiato</span>
+        </ion-button>
+        <ion-button [class.selected]="currentEntry.mood === 'ansioso'" (click)="selectMood('ansioso')"
+          class="mood-button">
+          <ion-icon name="flashlight-outline"></ion-icon>
+          <span>Ansioso</span>
+        </ion-button>
+      </div>
     </div>
   </div>
-</ion-content>
+
+  <div class="right-panel">
+    <div class="note-section ff7-panel">
+      <h3 class="ff7-glow-text">Registro Eventi</h3>
+      <ion-textarea [(ngModel)]="currentEntry.note" (ionChange)="markAsChanged()"
+        placeholder="Inserisci qui il resoconto della giornata..." rows="12" auto-grow="true"
+        class="ff7-textarea"></ion-textarea>
+    </div>
+  </div>
+
+  <div class="history-section ff7-panel">
+    <h3 class="ff7-glow-text">Accesso Archivi</h3>
+    <ion-list class="history-list">
+      <ion-item class="ff7-item">
+        <ion-label class="ff7-label-text">Nessun dato storico trovato per questo periodo.</ion-label>
+      </ion-item>
+    </ion-list>
+  </div>
+</div>

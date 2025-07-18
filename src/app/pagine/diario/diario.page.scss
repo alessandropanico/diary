@@ -9,7 +9,6 @@
   --secondary-glow: #00ff7b; /* Verde-blu per un tocco diverso (opzionale) */
   --bg-dark-primary: #0a1128; /* Blu molto scuro quasi nero */
   --bg-dark-secondary: #0c1a3b; /* Blu scuro */
-  --panel-bg: rgba(10, 20, 40, 0.9); /* Sfondo dei pannelli semi-trasparente */
   --border-color-light: rgba(0, 212, 255, 0.4); /* Bordo leggero per elementi */
   --text-primary: #e0f7fa; /* Testo principale chiaro */
   --text-secondary: #a0c4ff; /* Testo secondario, meno brillante */
@@ -189,7 +188,7 @@ ion-modal {
 }
 
 ion-datetime {
-  --background: var(--bg-dark-secondary);
+  --background: black;
   --color: var(--text-primary);
   --border-color: var(--primary-glow); /* Bordo calendario */
   --highlight-color: var(--primary-glow); /* Colore selezione */
