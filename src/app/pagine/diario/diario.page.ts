@@ -166,15 +166,7 @@ export class DiarioPage implements OnInit, OnDestroy {
           stressLevel: undefined,
           focusHours: undefined
       };
-      // Puoi aggiungere qui una logica per dati di test se vuoi vedere qualcosa
-      // if (date === '2025-07-17') { // Esempio di dato di test per ieri
-      //   simulatedEntry.mood = 'felice';
-      //   simulatedEntry.note = 'Oggi è stata una giornata fantastica, ho finito il progetto!';
-      //   simulatedEntry.energyLevel = 4;
-      //   simulatedEntry.sleepQuality = 'eccellente';
-      //   simulatedEntry.stressLevel = 2;
-      //   simulatedEntry.focusHours = 6;
-      // }
+ 
       const entry = simulatedEntry; // Sostituisci con il risultato del servizio
 
       this.currentEntry = { ...entry };
