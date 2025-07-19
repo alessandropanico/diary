@@ -475,44 +475,123 @@ ion-spinner {
 
   .metric-box:nth-child(1) {
 
-   .range-icons-top {
+    .range-icons-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
       width: 100%;
-      margin-bottom: 0.5rem; // Spazio tra icone e range
+      margin-bottom: 0.5rem;
 
       ion-icon {
-        font-size: 1.5em; /* Dimensione delle icone delle batterie, ingrandite per essere più visibili */
+        font-size: 1.5em;
 
         &:first-child {
-          color: var(--text-secondary-subtle); // Colore per la batteria a metà
+          color: var(--text-secondary-subtle);
           filter: drop-shadow(0 0 5px rgba(95, 234, 255, 0.2));
         }
+
         &:last-child {
-          color: var(--primary-accent-calm); // Colore per la batteria piena
+          color: var(--primary-accent-calm);
           filter: drop-shadow(0 0 8px rgba(95, 234, 255, 0.8));
         }
       }
-  }
-  }
-
-  .metric-box:nth-child(3) {
-
-    ion-icon {
-      font-size: 1.2em;
-    }
-
-    ion-icon[slot="start"] {
-      font-size: 2.5em;
-    }
-
-    ion-icon[slot="end"] {
-      font-size: 2.5em;
     }
 
     .value-display {
       font-size: 2.2em;
+    }
+
+    .range-markers span {
+      font-size: 1em;
+    }
+
+    ion-range {
+      --padding-start: 16px;
+      --padding-end: 16px;
+      --knob-size: 15px;
+
+      ion-icon[slot="start"],
+      ion-icon[slot="end"] {
+        display: none;
+      }
+
+      &::part(knob) {
+        transform: translateY(-2px);
+      }
+
+      &.custom-energy-range {
+        --knob-background: var(--primary-accent-calm);
+        --bar-background-active: var(--primary-accent-calm);
+        filter: drop-shadow(0 0 6px rgba(95, 234, 255, 0.5));
+
+        &::part(bar-active) {
+          background: linear-gradient(90deg, rgba(95, 234, 255, 0.3), var(--primary-accent-calm));
+          box-shadow: 0 0 8px rgba(95, 234, 255, 0.8);
+        }
+      }
+    }
+  }
+
+
+  .metric-box:nth-child(3) {
+
+    .range-icons-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 0.5rem;
+
+      ion-icon {
+        font-size: 1.5em;
+
+        &:first-child {
+          color: var(--text-secondary-subtle);
+          filter: drop-shadow(0 0 5px rgba(95, 234, 255, 0.2));
+        }
+
+        &:last-child {
+          color: var(--primary-accent-calm);
+          filter: drop-shadow(0 0 8px rgba(95, 234, 255, 0.8));
+        }
+      }
+    }
+
+    .value-display {
+      font-size: 2.2em;
+    }
+
+    .range-markers span {
+      font-size: 1em;
+    }
+
+    ion-range {
+      --padding-start: 16px;
+      --padding-end: 16px;
+      --knob-size: 15px;
+
+      ion-icon[slot="start"],
+      ion-icon[slot="end"] {
+        display: none;
+      }
+
+      &::part(knob) {
+        background: var(--secondary-accent-soft);
+        border: 2px solid var(--text-main);
+        transform: translateY(-2px);
+      }
+
+      &[color="secondary-accent-soft"] {
+        --knob-background: var(--secondary-accent-soft);
+        --bar-background-active: var(--secondary-accent-soft);
+        filter: drop-shadow(0 0 6px rgba(160, 132, 255, 0.5));
+
+        &::part(bar-active) {
+          background: linear-gradient(90deg, rgba(160, 132, 255, 0.3), var(--secondary-accent-soft));
+          box-shadow: 0 0 8px rgba(160, 132, 255, 0.8);
+          transform: translateY(2px);
+        }
+      }
     }
   }
 
@@ -566,8 +645,8 @@ ion-spinner {
     --knob-box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
     filter: drop-shadow(0 0 6px rgba(var(--primary-accent-calm), 0.3));
     transition: all 0.2s ease;
-         --padding-start: 0px;
-      --padding-end: 0px;
+    --padding-start: 0px;
+    --padding-end: 0px;
 
     &::part(knob) {
       background: var(--primary-accent-calm);

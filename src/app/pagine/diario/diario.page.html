@@ -71,25 +71,25 @@
       <div class="metrics-grid">
 
         <div class="metric-box">
-  <div class="metric-header">
-    <ion-label class="ff7-label-text orbitron">Energia</ion-label>
-    <span class="value-display orbitron">{{ currentEntry.energyLevel ?? '-' }}</span>
-  </div>
+          <div class="metric-header">
+            <ion-label class="ff7-label-text orbitron">Energia</ion-label>
+            <span class="value-display orbitron">{{ currentEntry.energyLevel ?? '-' }}</span>
+          </div>
 
-  <div class="range-wrapper">
-    <div class="range-icons-top">
-      <ion-icon name="battery-half-outline"></ion-icon>
-      <ion-icon name="battery-full-outline"></ion-icon>
-    </div>
+          <div class="range-wrapper">
+            <div class="range-icons-top">
+              <ion-icon name="battery-half-outline"></ion-icon>
+              <ion-icon name="battery-full-outline"></ion-icon>
+            </div>
 
-    <ion-range min="1" max="5" step="1" snaps="true" [(ngModel)]="currentEntry.energyLevel"
-      color="primary-accent-calm" (ionChange)="markAsChanged()" class="custom-energy-range">
-      </ion-range>
-    <div class="range-markers orbitron">
-      <span *ngFor="let n of [1,2,3,4,5]">{{ n }}</span>
-    </div>
-  </div>
-</div>
+            <ion-range min="1" max="5" step="1" snaps="true" [(ngModel)]="currentEntry.energyLevel"
+              color="primary-accent-calm" (ionChange)="markAsChanged()" class="custom-energy-range">
+            </ion-range>
+            <div class="range-markers orbitron">
+              <span *ngFor="let n of [1,2,3,4,5]">{{ n }}</span>
+            </div>
+          </div>
+        </div>
 
 
         <div class="metric-box">
@@ -121,10 +121,12 @@
             <ion-label class="ff7-label-text">Stress</ion-label>
             <span class="value-display">{{ currentEntry.stressLevel ?? '-' }}</span>
           </div>
+          <div class="range-icons-top stress-icons">
+            <ion-icon name="happy-outline"></ion-icon>
+            <ion-icon name="sad-outline"></ion-icon>
+          </div>
           <ion-range min="1" max="5" step="1" snaps="true" [(ngModel)]="currentEntry.stressLevel"
             color="secondary-accent-soft" (ionChange)="markAsChanged()">
-            <ion-icon slot="start" name="happy-outline"></ion-icon>
-            <ion-icon slot="end" name="sad-outline"></ion-icon>
           </ion-range>
         </div>
 
