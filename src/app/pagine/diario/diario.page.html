@@ -30,13 +30,16 @@
         </ion-datetime>
       </ng-template>
     </ion-modal>
-
     <div class="mood-tracker-section ff7-panel ion-margin-top">
       <h3 class="ff7-glow-text">Stato Emotivo</h3>
       <div class="mood-options">
         <ion-button [class.selected]="currentEntry.mood === 'felice'" (click)="selectMood('felice')"
           class="mood-button">
           <span>Felice</span>
+        </ion-button>
+        <ion-button [class.selected]="currentEntry.mood === 'motivato'" (click)="selectMood('motivato')"
+          class="mood-button">
+          <span>Motivato</span>
         </ion-button>
         <ion-button [class.selected]="currentEntry.mood === 'sereno'" (click)="selectMood('sereno')"
           class="mood-button">
