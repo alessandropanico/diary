@@ -8,7 +8,11 @@
   --danger-color: #ff4e4e;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+/* Regola globale per input nativi, spostata e mantenuta per forte specificità */
+input {
+  text-align: left !important;
+  direction: ltr !important;
+}
 
 :host {
   font-family: 'Orbitron', sans-serif;
@@ -18,8 +22,8 @@
   font-family: 'Orbitron', sans-serif;
   color: var(--primary-glow, #00ffee);
   text-shadow: 0 0 8px var(--primary-glow, #00ffee);
+  flex-shrink: 0; /* Impedisce al titolo di restringersi troppo */
 }
-
 
 .loading-overlay {
   display: flex;
@@ -108,23 +112,17 @@
   }
 
   ion-buttons {
-      // Non è più necessario `flex: 1;` qui, dato che il bottone non è `expand="block"`
-      // ma `justify-content: flex-end;` è comunque utile per allineare a destra.
       justify-content: flex-end;
   }
 }
 
-// Rimosso `ion-button { color: black !important; }` qui!
-// I colori del testo saranno gestiti dalle classi specifiche.
-
 .follow-button {
   --background: var(--primary-glow);
-  --color: black; /* Testo nero per "Segui" */
+  --color: black;
   font-weight: bold;
   letter-spacing: 1px;
   box-shadow: 0 0 15px rgba(0, 255, 238, 0.7);
   transition: all 0.3s ease;
-  /* RIMOSSO width: 100%; */
   &:hover {
     box-shadow: 0 0 20px rgba(0, 255, 238, 1);
     transform: translateY(-2px);
@@ -134,12 +132,11 @@
 .unfollow-button {
   --background: var(--danger-color);
   --background-activated: #cc0000;
-  --color: white; /* Testo bianco per "Non seguire più" */
+  --color: white;
   font-weight: bold;
   letter-spacing: 1px;
   box-shadow: 0 0 15px rgba(255, 78, 78, 0.7);
   transition: all 0.3s ease;
-  /* RIMOSSO width: 100%; */
   &:hover {
     box-shadow: 0 0 20px rgba(255, 78, 78, 1);
     transform: translateY(-2px);
@@ -148,7 +145,7 @@
 
 ion-fab-button {
   --background: var(--primary-glow);
-  --color: black; /* Lasciamo il testo nero per il fab button */
+  --color: black;
   box-shadow: 0 0 15px var(--primary-glow);
   border-radius: 50%;
 }
@@ -173,4 +170,81 @@ ion-card-content {
 
 ion-button{
   color: black;
+}
+
+/* ⭐ Nuovo contenitore per l'input e l'icona ⭐ */
+.ff7-search-input-wrapper {
+  position: relative; /* Importante per posizionare l'icona */
+  display: flex; /* Permette all'input di espandersi */
+  align-items: center; /* Centra verticalmente icona e input */
+  flex-grow: 1;
+  max-width: 50%;
+  min-width: 120px;
+  margin-inline-end: 16px; /* Spazio a destra per allinearsi con il bordo della toolbar */
+  margin-inline-start: 10px; /* Spazio a sinistra per separarsi dal titolo */
+  background: rgba(0, 0, 0, 0.6); /* Sfondo semi-trasparente, messo qui sul wrapper */
+  border: 1px solid var(--primary-glow); /* Bordo luminoso, messo qui sul wrapper */
+  border-radius: 5px; /* Angoli arrotondati, messo qui sul wrapper */
+  box-shadow: 0 0 5px rgba(0, 255, 238, 0.4); /* Ombra luminosa, messo qui sul wrapper */
+}
+
+.ff7-search-icon {
+  position: absolute; /* Posiziona l'icona relativamente al wrapper */
+  left: 8px; /* Spazio dal bordo sinistro */
+  color: var(--primary-glow); /* Colore dell'icona */
+  font-size: 1.2rem; /* Dimensione dell'icona */
+  z-index: 1; /* Assicurati che l'icona sia sopra l'input se ci sono sovrapposizioni */
+}
+
+/* ⭐ Stili per l'input personalizzato HTML ⭐ */
+.ff7-custom-search-input {
+  background: transparent; /* Sfondo trasparente per far vedere quello del wrapper */
+  border: none; /* Rimuovi il bordo dall'input, lo ha il wrapper */
+  padding: 8px 12px 8px 35px; /* ⭐ Aumenta il padding a sinistra per l'icona ⭐ */
+  color: var(--text-light);
+  font-size: 1rem;
+  outline: none;
+  width: 100%; /* L'input occupa tutto lo spazio disponibile nel wrapper */
+
+  /* Forza la direzione LTR e l'allineamento del testo */
+  text-align: left !important;
+  direction: ltr !important;
+
+  /* Stile per il placeholder */
+  &::placeholder {
+    color: var(--label-color);
+    opacity: 0.7;
+    text-align: left;
+  }
+
+  /* Stile per il bottone di reset (la X) specifico per input di tipo search */
+  &::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0cfd8"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>') no-repeat center center;
+    background-size: contain;
+    cursor: pointer;
+    filter: drop-shadow(0 0 3px var(--primary-glow));
+    margin-right: 5px;
+  }
+}
+
+
+@media screen and (max-width:600px){
+
+  .ff7-title{
+    display: none;
+  }
+
+  .ff7-search-input-wrapper {
+    max-width: 100%; /* Su schermi piccoli occupa tutta la larghezza rimanente */
+    margin-inline-end: 16px;
+    margin-inline-start: 10px;
+  }
+
+  .ff7-custom-search-input {
+    padding: 8px 12px 8px 35px; /* Adatta il padding anche qui */
+  }
 }

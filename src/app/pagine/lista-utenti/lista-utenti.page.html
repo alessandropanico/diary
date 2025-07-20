@@ -4,8 +4,20 @@
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
     <ion-title class="ff7-title">Lista Utenti</ion-title>
-  </ion-toolbar>
-</ion-header>
+
+    <div class="ff7-search-input-wrapper" slot="end">
+      <ion-icon name="search-outline" class="ff7-search-icon"></ion-icon>
+      <input
+        type="search"
+        placeholder="Cerca utente..."
+        (input)="onSearchInput($event)"
+        [(ngModel)]="searchQuery"
+        class="ff7-custom-search-input"
+      />
+    </div>
+    </ion-toolbar>
+
+  </ion-header>
 
 <ion-content [fullscreen]="true">
 
@@ -15,36 +27,65 @@
   </div>
 
   <ng-container *ngIf="!initialLoading">
-    <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)" *ngIf="searchQuery.length === 0">
       <ion-refresher-content pullingText="Trascina per aggiornare" refreshingSpinner="circular"
         refreshingText="Aggiornamento...">
       </ion-refresher-content>
     </ion-refresher>
 
-    <ion-list *ngIf="users.length > 0; else noUsersFound" class="ff7-list">
-      <ion-item *ngFor="let user of users" class="ff7-list-item">
-        <ion-avatar slot="start" (click)="goToUserProfile(user.uid)">
-          <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Avatar Utente" />
+    <ion-list *ngIf="searchQuery.length > 0 && !isSearchingUsers && searchResults.length > 0" class="ff7-list">
+      <ion-item *ngFor="let user of searchResults" class="ff7-list-item" (click)="goToUserProfile(user.uid)">
+        <ion-avatar slot="start">
+          <img [src]="getUserPhoto(user.photo)" alt="Foto Profilo">
         </ion-avatar>
-        <ion-label (click)="goToUserProfile(user.uid)">
+        <ion-label>
           <h2>{{ user.nickname }}</h2>
           <p>{{ user.firstName }} {{ user.lastName }}</p>
         </ion-label>
         <ion-buttons slot="end">
           <ion-button *ngIf="user.uid !== currentUserId" [class.follow-button]="!isFollowing(user.uid)"
-            [class.unfollow-button]="isFollowing(user.uid)" (click)="toggleFollow(user.uid)">
+            [class.unfollow-button]="isFollowing(user.uid)" (click)="toggleFollow(user.uid); $event.stopPropagation()">
             {{ isFollowing(user.uid) ? 'Non seguire più' : 'Segui' }}
           </ion-button>
         </ion-buttons>
       </ion-item>
     </ion-list>
 
-    <ion-infinite-scroll (ionInfinite)="loadUsers($event)">
+    <div *ngIf="searchQuery.length > 0 && isSearchingUsers" class="ion-text-center ion-padding">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <p class="search-status-text">Ricerca utenti in corso...</p>
+    </div>
+
+    <div *ngIf="searchQuery.length > 0 && !isSearchingUsers && searchPerformed && searchResults.length === 0" class="ion-text-center ion-padding">
+      <p class="search-status-text">Nessun utente trovato per "{{ searchQuery }}".</p>
+    </div>
+
+    <ion-list *ngIf="searchQuery.length === 0" class="ff7-list">
+      <ng-container *ngIf="users.length > 0; else noUsersFound">
+        <ion-item *ngFor="let user of users" class="ff7-list-item">
+          <ion-avatar slot="start" (click)="goToUserProfile(user.uid)">
+            <img [src]="getUserPhoto(user.photo)" alt="Avatar Utente" />
+          </ion-avatar>
+          <ion-label (click)="goToUserProfile(user.uid)">
+            <h2>{{ user.nickname }}</h2>
+            <p>{{ user.firstName }} {{ user.lastName }}</p>
+          </ion-label>
+          <ion-buttons slot="end">
+            <ion-button *ngIf="user.uid !== currentUserId" [class.follow-button]="!isFollowing(user.uid)"
+              [class.unfollow-button]="isFollowing(user.uid)" (click)="toggleFollow(user.uid)">
+              {{ isFollowing(user.uid) ? 'Non seguire più' : 'Segui' }}
+            </ion-button>
+          </ion-buttons>
+        </ion-item>
+      </ng-container>
+    </ion-list>
+
+    <ion-infinite-scroll (ionInfinite)="loadUsers($event)" *ngIf="searchQuery.length === 0">
       <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Caricamento altri utenti...">
       </ion-infinite-scroll-content>
     </ion-infinite-scroll>
 
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="searchQuery.length === 0">
       <ion-fab-button (click)="content.scrollToTop(500)">
         <ion-icon name="arrow-up"></ion-icon>
       </ion-fab-button>
@@ -57,6 +98,7 @@
         </ion-card-header>
         <ion-card-content>
           Sembra che non ci siano utenti disponibili al momento.
+          <p *ngIf="searchQuery.length === 0">Prova ad usare la barra di ricerca in alto.</p>
         </ion-card-content>
       </ion-card>
     </ng-template>
