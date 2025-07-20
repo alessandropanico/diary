@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { getAuth, User } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit, getFirestore, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit, getFirestore, updateDoc, increment } from 'firebase/firestore';
 import { ExpService } from './exp.service';
 import { BehaviorSubject, Observable } from 'rxjs';
 
@@ -18,6 +18,10 @@ export interface UserDashboardCounts {
   lastGlobalActivityTimestamp?: string; // Ora traccia l'ultima attività generale
   totalPhotosShared?: number; // Nuova proprietà per il conteggio delle foto condivise
   lastPhotoSharedInteraction?: string; // Nuova proprietà per l'ultima interazi
+
+  diaryTotalWords?: number; // O diaryTotalCharacters a seconda di come vuoi contare
+  diaryLastInteraction?: string;
+  diaryEntryCount?: number; // Contatore dei giorni distinti con voci del diario
 }
 
 @Injectable({
@@ -205,7 +209,10 @@ export class UserDataService {
             lastGlobalActivityTimestamp: '',
             totalPhotosShared: 0,
             lastPhotoSharedInteraction: '',
-            status: '' // ⭐ AGGIUNGI QUI IL VALORE DI DEFAULT PER STATUS AL PRIMO ACCESSO
+            status: '',
+              diaryTotalWords: 0,
+            diaryLastInteraction: '',
+            diaryEntryCount: 0,
           };
           await setDoc(userDocRef, initialData);
           console.log("Documento utente creato con dati iniziali per UID:", user.uid);
@@ -260,31 +267,45 @@ export class UserDataService {
   // --- Metodi Helper per l'aggiornamento dei campi ---
 
   // Helper per aggiornare un campo numerico incrementandolo o impostandolo
-  private async updateNumericField(uid: string, field: string, incrementBy: number = 0, setValue?: number): Promise<void> {
+    private async updateNumericField(uid: string, field: string, valueToUpdate: number | 'increment', setValue?: number): Promise<void> {
     const userDocRef = doc(this.firestore, 'users', uid);
     try {
-      const docSnap = await getDoc(userDocRef);
-      if (docSnap.exists()) {
-        let currentValue = docSnap.data()?.[field] || 0;
-        let newValue: number;
+      const updateData: { [key: string]: any } = {};
 
-        if (setValue !== undefined) {
-          newValue = setValue;
-        } else {
-          newValue = currentValue + incrementBy;
-        }
-        await updateDoc(userDocRef, { [field]: newValue });
-        console.log(`[UserDataService] Campo '${field}' aggiornato a: ${newValue}`);
+      if (setValue !== undefined) {
+        // Se setValue è fornito, imposta il valore esatto
+        updateData[field] = setValue;
+      } else if (valueToUpdate === 'increment') {
+        // Incrementa di 1
+        updateData[field] = increment(1);
+      } else if (typeof valueToUpdate === 'number') {
+        // Incrementa del valore numerico specificato
+        updateData[field] = increment(valueToUpdate);
       } else {
-        // Se il documento non esiste, lo crea con il valore iniziale.
-        // Questo è utile se un utente non ha ancora un documento e viene chiamato un metodo come increment.
-        const initialValue = setValue !== undefined ? setValue : incrementBy;
-        await setDoc(userDocRef, { [field]: initialValue }, { merge: true });
-        console.warn(`Documento utente per UID ${uid} non trovato per aggiornare il campo '${field}'. Creato con valore iniziale: ${initialValue}.`);
+        console.warn(`[UserDataService] Tipo di 'valueToUpdate' non supportato per il campo '${field}': ${valueToUpdate}`);
+        return;
       }
+
+      await updateDoc(userDocRef, updateData);
+      console.log(`[UserDataService] Campo '${field}' aggiornato.`);
     } catch (error) {
-      console.error(`Errore nell'aggiornamento del campo '${field}' per UID ${uid}:`, error);
-      throw error;
+      // Se il documento non esiste (codice 'not-found'), proviamo a crearlo con il valore iniziale.
+      // Questo è cruciale per i campi che vengono incrementati e potrebbero non esistere ancora.
+      if ((error as any).code === 'not-found') {
+        console.warn(`Documento utente per UID ${uid} non trovato per aggiornare il campo '${field}'. Provando a crearlo.`);
+        let initialValue = 0;
+        if (setValue !== undefined) {
+          initialValue = setValue;
+        } else if (valueToUpdate === 'increment' || typeof valueToUpdate === 'number') {
+          // Se si tenta di incrementare un campo non esistente, lo inizializziamo con il valore di incremento (o 1)
+          initialValue = typeof valueToUpdate === 'number' ? valueToUpdate : 1;
+        }
+        await setDoc(userDocRef, { [field]: initialValue }, { merge: true });
+        console.log(`Documento utente per UID ${uid} creato con valore iniziale per '${field}': ${initialValue}.`);
+      } else {
+        console.error(`Errore nell'aggiornamento del campo '${field}' per UID ${uid}:`, error);
+        throw error;
+      }
     }
   }
 
@@ -394,6 +415,42 @@ export class UserDataService {
     const uid = this.getUserUid();
     if (uid) {
       await this.updateStringField(uid, 'lastGlobalActivityTimestamp', timestamp);
+    }
+  }
+
+   /**
+   * Aggiorna il conteggio delle parole/caratteri totali scritti nel diario.
+   * Utilizza 'increment' per aggiungere la nuova lunghezza del testo.
+   * @param length La lunghezza (parole o caratteri) del testo della voce del diario.
+   */
+  async incrementDiaryTotalWords(length: number): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) {
+      await this.updateNumericField(uid, 'diaryTotalWords', length);
+      await this.setLastGlobalActivityTimestamp(new Date().toISOString());
+    }
+  }
+
+  /**
+   * Imposta il timestamp dell'ultima interazione con il diario.
+   * @param timestamp La stringa ISO del timestamp.
+   */
+  async setDiaryLastInteraction(timestamp: string): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) {
+      await this.updateStringField(uid, 'diaryLastInteraction', timestamp);
+      await this.setLastGlobalActivityTimestamp(timestamp);
+    }
+  }
+
+  /**
+   * Incrementa il contatore dei giorni distinti in cui è stata scritta una voce del diario.
+   * Questo metodo dovrebbe essere chiamato solo quando viene creata una *nuova* voce per un *nuovo* giorno.
+   */
+  async incrementDiaryEntryCount(): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) {
+      await this.updateNumericField(uid, 'diaryEntryCount', 'increment'); // ⭐ Corretto: passa la stringa 'increment'
     }
   }
 }
