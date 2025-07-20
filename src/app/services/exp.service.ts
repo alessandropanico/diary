@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs'; // Rimosso 'combineLatest' che non è usato
 import { map } from 'rxjs/operators';
 
 // Interfaccia per i dati XP e livello
@@ -18,6 +18,7 @@ export class ExpService {
 
   // Questo BehaviorSubject simulerà il caricamento degli XP totali da Firebase.
   // In un'applicazione reale, verrebbe inizializzato dal UserDataService o da un servizio Firebase Auth.
+  // Per ora, lo useremo come fonte di verità temporanea per gli XP.
   private _totalXP = new BehaviorSubject<number>(870); // Valore iniziale di esempio
   readonly totalXP$: Observable<number> = this._totalXP.asObservable();
 
@@ -51,20 +52,25 @@ export class ExpService {
    * Aggiunge Punti Esperienza (XP) all'utente.
    * Chiamato quando l'utente compie un'azione che conferisce XP.
    * @param xpAmount La quantità di XP da aggiungere.
+   * @param reason Una stringa per descrivere la ragione (es. 'Diario Salvato').
    */
- addExperience(xpAmount: number, reason: string = 'unknown'): void { // <--- Modifica qui!
+  addExperience(xpAmount: number, reason: string = 'unknown'): void {
     const currentTotalXP = this._totalXP.getValue();
     const newTotalXP = currentTotalXP + xpAmount;
     this._totalXP.next(newTotalXP);
+    console.log(`ExpService: Aggiunti ${xpAmount} XP per '${reason}'. Nuovo totale: ${newTotalXP}`);
+    // ⭐ Nota: In questa versione, gli XP sono solo nel _totalXP del servizio.
+    // Non vengono ancora salvati su Firebase. Per la persistenza avremo bisogno del UserDataService.
   }
 
   /**
    * Imposta il totale di XP dell'utente.
-   * Utilizzato principalmente al caricamento iniziale dei dati dell'utente da Firebase.
+   * Utilizzato principalmente al caricamento iniziale dei dati dell'utente da Firebase (quando lo implementeremo).
    * @param totalXP Il valore totale di XP da impostare.
    */
   setTotalXP(totalXP: number): void {
     this._totalXP.next(totalXP);
+    console.log(`ExpService: Total XP impostato a: ${totalXP}`);
   }
 
   /**
@@ -101,10 +107,11 @@ export class ExpService {
       xpForNextLevel = xpForNextLevelThreshold - xpForCurrentLevel;
       progressPercentage = (currentXP / xpForNextLevel) * 100;
     } else {
-      progressPercentage = 100;
+      progressPercentage = 100; // Se non c'è un prossimo livello, progresso al 100%
     }
 
     if (progressPercentage > 100) progressPercentage = 100;
+    if (xpForNextLevel < 0) xpForNextLevel = 0; // Assicurati che non sia mai negativo
 
     return { userLevel, totalXP, currentXP, xpForNextLevel, progressPercentage };
   }
