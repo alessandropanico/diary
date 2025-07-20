@@ -85,12 +85,12 @@
               <ion-icon name="battery-full-outline"></ion-icon>
             </div>
 
-            <ion-range min="1" max="5" step="1" snaps="true" [(ngModel)]="currentEntry.energyLevel"
+            <ion-range min="0" max="5" step="1" snaps="true" [(ngModel)]="currentEntry.energyLevel"
               color="primary-accent-calm" (ionChange)="markAsChanged()" class="custom-energy-range">
             </ion-range>
-            <div class="range-markers orbitron">
+            <!-- <div class="range-markers orbitron">
               <span *ngFor="let n of [1,2,3,4,5]">{{ n }}</span>
-            </div>
+            </div> -->
           </div>
         </div>
 
@@ -128,7 +128,7 @@
             <ion-icon name="happy-outline"></ion-icon>
             <ion-icon name="sad-outline"></ion-icon>
           </div>
-          <ion-range min="1" max="5" step="1" snaps="true" [(ngModel)]="currentEntry.stressLevel"
+          <ion-range min="0" max="5" step="1" snaps="true" [(ngModel)]="currentEntry.stressLevel"
             color="secondary-accent-soft" (ionChange)="markAsChanged()">
           </ion-range>
         </div>

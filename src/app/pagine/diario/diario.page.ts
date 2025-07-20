@@ -41,9 +41,9 @@ export class DiarioPage implements OnInit, OnDestroy {
     mood: '',
     note: '',
     // Inizializza le nuove proprietà
-    energyLevel: undefined, // o un valore di default come 3
+    energyLevel: 0, // o un valore di default come 3
     sleepQuality: '',
-    stressLevel: undefined, // o un valore di default come 3
+    stressLevel: 0, // o un valore di default come 3
     focusHours: undefined // o 0
   };
 
@@ -140,9 +140,9 @@ export class DiarioPage implements OnInit, OnDestroy {
           date: date,
           mood: '',
           note: '',
-          energyLevel: undefined,
+          energyLevel: 0,
           sleepQuality: '',
-          stressLevel: undefined,
+          stressLevel: 0,
           focusHours: undefined
       };
       this.initialEntryState = null;
@@ -161,12 +161,12 @@ export class DiarioPage implements OnInit, OnDestroy {
           date: date,
           mood: '',
           note: '',
-          energyLevel: undefined,
+          energyLevel: 0,
           sleepQuality: '',
-          stressLevel: undefined,
+          stressLevel: 0,
           focusHours: undefined
       };
- 
+
       const entry = simulatedEntry; // Sostituisci con il risultato del servizio
 
       this.currentEntry = { ...entry };
@@ -207,9 +207,9 @@ export class DiarioPage implements OnInit, OnDestroy {
       this.currentEntry.mood !== (this.initialEntryState?.mood ?? '') ||
       this.currentEntry.note !== (this.initialEntryState?.note ?? '') ||
       // Aggiungi qui il controllo per le nuove metriche
-      this.currentEntry.energyLevel !== (this.initialEntryState?.energyLevel ?? undefined) ||
+      this.currentEntry.energyLevel !== (this.initialEntryState?.energyLevel ?? 0) ||
       this.currentEntry.sleepQuality !== (this.initialEntryState?.sleepQuality ?? '') ||
-      this.currentEntry.stressLevel !== (this.initialEntryState?.stressLevel ?? undefined) ||
+      this.currentEntry.stressLevel !== (this.initialEntryState?.stressLevel ?? 0) ||
       this.currentEntry.focusHours !== (this.initialEntryState?.focusHours ?? undefined);
   }
 
