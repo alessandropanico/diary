@@ -82,7 +82,27 @@
     </div>
   </div>
 
+  <div class="ff7-section-divider"></div>
 
+  <div class="ff7-dashboard-section level-2-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-book"></i> Il Mio Diario
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Voci Totali</div>
+        <div class="ff7-data-value">{{ diaryEntryCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Parole Scritte</div>
+        <div class="ff7-data-value">{{ diaryTotalWords }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultima Voce</div>
+        <div class="ff7-data-value">{{ getDisplayDate(diaryLastInteraction) }}</div>
+      </div>
+    </div>
+  </div>
   <div class="ff7-section-divider"></div>
 
   <div class="ff7-dashboard-section level-3-section">

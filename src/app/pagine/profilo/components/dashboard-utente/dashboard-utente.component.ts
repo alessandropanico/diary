@@ -31,6 +31,11 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   totalPhotosShared: number = 0;
   lastPhotoSharedInteraction: string = '';
 
+  // ⭐ NUOVE VARIABILI PER IL DIARIO
+  diaryTotalWords: number = 0;
+  diaryLastInteraction: string = '';
+  diaryEntryCount: number = 0;
+
   userLevel: number = 1;
   currentXP: number = 0;
   xpForNextLevel: number = 100;
@@ -94,10 +99,17 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
         this.lastPhotoSharedInteraction = data.lastPhotoSharedInteraction ?? '';
 
         this.lastGlobalActivityTimestamp = data.lastGlobalActivityTimestamp ?? '';
+
+        // ⭐ POPOLA LE NUOVE VARIABILI DEL DIARIO
+        this.diaryTotalWords = data.diaryTotalWords ?? 0;
+        this.diaryLastInteraction = data.diaryLastInteraction ?? '';
+        this.diaryEntryCount = data.diaryEntryCount ?? 0;
+
       } else {
         this.resetDashboardData();
       }
     } catch (error) {
+      console.error("Errore durante il caricamento dei dati della dashboard:", error);
       this.resetDashboardData();
     }
   }
@@ -116,6 +128,10 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     this.lastPhotoSharedInteraction = '';
 
     this.lastGlobalActivityTimestamp = '';
+    // ⭐ RESETTA LE NUOVE VARIABILI DEL DIARIO
+    this.diaryTotalWords = 0;
+    this.diaryLastInteraction = '';
+    this.diaryEntryCount = 0;
   }
 
   calculateLevelAndProgress(): void {

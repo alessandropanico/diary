@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, AlertController } from '@ionic/angular';
 import { DiaryService, DailyEntry } from 'src/app/services/diary.service';
-import { ExpService } from 'src/app/services/exp.service'; // ⭐ Rimosso UserExpData dall'import
-import { Subscription } from 'rxjs'; // Rimosso Observable dall'import
+import { ExpService } from 'src/app/services/exp.service';
+import { UserDataService } from 'src/app/services/user-data.service'; // ⭐ Importa UserDataService
+import { Subscription } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 
 @Component({
@@ -37,15 +38,12 @@ export class DiarioPage implements OnInit, OnDestroy {
   private currentEntrySubscription: Subscription | undefined;
   recentEntries: DailyEntry[] = [];
 
-  // ⭐ Rimosso: userExpData$: Observable<UserExpData>;
-
   constructor(
     private diaryService: DiaryService,
-    private expService: ExpService, // ExpService rimane iniettato
+    private expService: ExpService,
+    private userDataService: UserDataService, // ⭐ Inietta UserDataService
     private alertCtrl: AlertController
-  ) {
-    // ⭐ Rimosso: this.userExpData$ = this.expService.getUserExpData();
-  }
+  ) { }
 
   ngOnInit() {
     this.authStateUnsubscribe = getAuth().onAuthStateChanged(user => {
@@ -53,15 +51,13 @@ export class DiarioPage implements OnInit, OnDestroy {
         this.userId = user.uid;
         this.initializeDate();
         this.loadRecentEntries();
-        // La logica di setTotalXP qui può rimanere, utile per inizializzare ExpService con 0 XP se l'utente non è autenticato.
-        // Se in futuro collegherai il UserDataService per la persistenza, questa sarà la riga dove caricherai gli XP dal DB.
       } else {
         this.userId = null;
         this.resetCurrentEntry();
         this.initialEntryState = null;
         this.hasChanges = false;
         this.recentEntries = [];
-        this.expService.setTotalXP(0); // Resetta XP a 0 al logout
+        this.expService.setTotalXP(0);
       }
     });
   }
@@ -201,8 +197,35 @@ export class DiarioPage implements OnInit, OnDestroy {
         this.hasChanges = false;
         this.loadRecentEntries();
 
+        // ⭐ INIZIO AGGIORNAMENTO CONTATORI DASHBOARD
+        const wordCount = this.currentEntry.note ? this.currentEntry.note.split(/\s+/).filter(word => word.length > 0).length : 0;
+        const currentTimestampISO = new Date().toISOString();
+
+        // Aggiorna parole totali
+        await this.userDataService.incrementDiaryTotalWords(wordCount);
+        console.log(`Aggiornato conteggio parole totali: ${wordCount} parole aggiunte.`);
+
+        // Aggiorna ultima interazione
+        await this.userDataService.setDiaryLastInteraction(currentTimestampISO);
+        console.log(`Ultima interazione diario impostata a: ${currentTimestampISO}.`);
+
+        // Logica per incrementare il contatore delle voci distinte (solo una volta per giorno)
+        // Recupera i dati correnti dell'utente per controllare l'ultima data di interazione salvata
+        const userData = await this.userDataService.getUserData();
+        const lastSavedInteractionDate = userData?.diaryLastInteraction ? new Date(userData.diaryLastInteraction).toDateString() : null;
+        const currentEntryDate = new Date(this.currentEntry.date).toDateString(); // Data della voce che stiamo salvando
+
+        if (lastSavedInteractionDate !== currentEntryDate) {
+          // Se l'ultima interazione salvata non è dello stesso giorno della voce che stiamo salvando,
+          // significa che è una nuova voce per un nuovo giorno (o la primissima voce).
+          await this.userDataService.incrementDiaryEntryCount();
+          console.log("Contatore delle voci del diario incrementato (nuova voce per un giorno distinto).");
+        } else {
+          console.log("Voce del diario aggiornata per lo stesso giorno. Non incremento il contatore delle voci distinte.");
+        }
+        // ⭐ FINE AGGIORNAMENTO CONTATORI DASHBOARD
+
         // ⭐ Aggiunta degli XP dopo il salvataggio del diario
-        // Decidi quanti XP dare. Iniziamo con un valore modesto.
         const xpToAward = 25; // Esempio: 25 XP per aver compilato una voce del diario
         this.expService.addExperience(xpToAward, 'Diario Compilato');
         console.log(`Guadagnati ${xpToAward} XP per aver salvato il diario.`);
