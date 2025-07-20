@@ -16,13 +16,11 @@ Nella dashboard:
 Fare classifica livello
 (magari il podio ha i trofei oro, argento, bronzo!)
 
-Aggiungere link al profilo
-Unificare "carca utenti" in "Lista utenti"
-
 Aggiungere note vocali chat?
 Provare a togliere ion-content da app.component;
 
 Aggiustare la sveglia;
+
 Rendere l'app più "intuitiva";
 
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
