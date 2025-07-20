@@ -14,25 +14,33 @@
 <div class="diario-main-grid">
 
   <div class="left-panel">
-    <div class="date-section ff7-panel">
-      <div class="date-controls">
-        <ion-button fill="clear" (click)="previousDay()" class="nav-button">
-          <ion-icon name="chevron-back-outline"></ion-icon>
-        </ion-button>
-        <ion-datetime-button datetime="datePicker" class="date-display-button"></ion-datetime-button>
-        <ion-button fill="clear" (click)="nextDay()" class="nav-button">
-          <ion-icon name="chevron-forward-outline"></ion-icon>
-        </ion-button>
-      </div>
-    </div>
 
-    <ion-modal [keepContentsMounted]="true">
-      <ng-template>
-        <ion-datetime id="datePicker" presentation="date" [(ngModel)]="selectedDateString" (ionChange)="onDateChange()"
-          [max]="todayString">
-        </ion-datetime>
-      </ng-template>
-    </ion-modal>
+  <div class="date-section ff7-panel">
+  <div class="date-controls">
+    <ion-button fill="clear" (click)="previousDay()" class="nav-button">
+      <ion-icon name="chevron-back-outline"></ion-icon>
+    </ion-button>
+    <ion-datetime-button datetime="datePicker" class="date-display-button"></ion-datetime-button>
+    <ion-button fill="clear" (click)="nextDay()" class="nav-button">
+      <ion-icon name="chevron-forward-outline"></ion-icon>
+    </ion-button>
+  </div>
+</div>
+
+<ion-modal [keepContentsMounted]="true">
+  <ng-template>
+    <ion-datetime
+      id="datePicker"
+      presentation="date"
+      [(ngModel)]="selectedDateString"
+      (ionChange)="onDateChange()"
+      [max]="todayString"
+      [highlightedDates]="highlightedDatesConfig" >
+    </ion-datetime>
+  </ng-template>
+</ion-modal>
+
+
     <div class="mood-tracker-section ff7-panel ion-margin-top">
       <h3 class="ff7-glow-text">Stato Emotivo</h3>
       <div class="mood-options">

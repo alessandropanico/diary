@@ -2,10 +2,11 @@ import { Injectable } from '@angular/core';
 import { Firestore, collection, doc, setDoc, getDoc, query, where, getDocs, orderBy, limit } from '@angular/fire/firestore';
 import { Observable, from, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { User } from 'firebase/auth'; // Importa User se non è già nel tuo global
+// Non è necessario importare 'User' qui a meno che non lo usi direttamente nel servizio,
+// per ora lo lascio commentato se non serve, per pulizia.
+// import { User } from 'firebase/auth';
 
 // Interfaccia per la voce del diario
-// È importante che questa interfaccia sia coerente in tutti i servizi e componenti che la usano.
 export interface DailyEntry {
   date: string; // Formato YYYY-MM-DD (chiave del documento)
   mood: string;
@@ -34,7 +35,7 @@ export class DiaryService {
   saveDailyEntry(userId: string, entry: DailyEntry): Observable<void> {
     if (!userId || !entry || !entry.date) {
       console.error('DiaryService: ID utente o data della voce mancanti per il salvataggio.');
-      return of(undefined); // Ritorna un observable che emette undefined per indicare un'operazione non valida
+      return of(undefined as any); // Ritorna un observable che emette undefined per indicare un'operazione non valida, tipizzato per evitare errori TS
     }
 
     const entryRef = doc(this.firestore, `users/${userId}/diary/${entry.date}`);
@@ -46,7 +47,7 @@ export class DiaryService {
     };
 
     return from(setDoc(entryRef, entryToSave, { merge: true })).pipe(
-      catchError(error => {
+      catchError((error: any) => { // Tipizzato l'errore qui
         console.error('DiaryService: Errore durante il salvataggio della voce del diario:', error);
         throw error; // Rilancia l'errore per essere gestito dal chiamante
       })
@@ -69,13 +70,14 @@ export class DiaryService {
     return from(getDoc(entryRef)).pipe(
       map(snapshot => {
         if (snapshot.exists()) {
-          return snapshot.data() as DailyEntry;
+          // Quando recuperi, aggiungi anche la data dall'ID del documento
+          return { ...snapshot.data() as DailyEntry, date: snapshot.id };
         } else {
           // console.log(`DiaryService: Nessuna voce trovata per la data ${date}`);
           return undefined;
         }
       }),
-      catchError(error => {
+      catchError((error: any) => { // Tipizzato l'errore qui
         console.error('DiaryService: Errore durante il recupero della voce del diario:', error);
         throw error;
       })
@@ -96,18 +98,52 @@ export class DiaryService {
     }
 
     const diaryCollectionRef = collection(this.firestore, `users/${userId}/diary`);
+    // Assicurati che 'timestamp' sia presente nei documenti per ordinamento
     const q = query(diaryCollectionRef, orderBy('timestamp', 'desc'), limit(numEntries));
 
     return from(getDocs(q)).pipe(
       map(snapshot => {
         const entries: DailyEntry[] = [];
         snapshot.forEach(doc => {
-          entries.push(doc.data() as DailyEntry);
+          // Anche qui, aggiungi la data dall'ID del documento al DailyEntry
+          entries.push({ ...doc.data() as DailyEntry, date: doc.id });
         });
         return entries;
       }),
-      catchError(error => {
+      catchError((error: any) => { // Tipizzato l'errore qui
         console.error('DiaryService: Errore durante il recupero delle voci recenti:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Recupera tutte le date per le quali esistono voci del diario per un utente specifico.
+   * Questo metodo è usato per evidenziare i giorni nel calendario.
+   * @param userId L'ID dell'utente autenticato.
+   * @returns Un Observable<string[]> che emette un array di stringhe nel formato 'YYYY-MM-DD'.
+   */
+  getAllDiaryDates(userId: string): Observable<string[]> {
+    if (!userId) {
+      console.warn('DiaryService: ID utente mancante per recupero di tutte le date del diario.');
+      return of([]);
+    }
+
+    const diaryCollection = collection(this.firestore, `users/${userId}/diary`);
+    // Query senza filtri per ottenere tutti i documenti, ci interessa solo l'ID (la data)
+    const q = query(diaryCollection);
+
+    return from(getDocs(q)).pipe(
+      map(snapshot => {
+        const dates: string[] = [];
+        snapshot.forEach(doc => {
+          // L'ID del documento è la data nel tuo caso (es. "2025-07-19")
+          dates.push(doc.id);
+        });
+        return dates;
+      }),
+      catchError((error: any) => { // Tipizzato l'errore qui
+        console.error('DiaryService: Errore durante il recupero di tutte le date del diario:', error);
         throw error;
       })
     );
