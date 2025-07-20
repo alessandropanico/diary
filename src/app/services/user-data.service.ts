@@ -4,7 +4,6 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit,
 import { ExpService } from './exp.service';
 import { BehaviorSubject, Observable } from 'rxjs';
 
-
 export interface UserDashboardCounts {
   activeAlarmsCount: number;
   totalAlarmsCount: number;
@@ -15,13 +14,13 @@ export interface UserDashboardCounts {
   lastNoteListInteraction: string;
   followersCount: number;
   followingCount: number;
-  lastGlobalActivityTimestamp?: string; // Ora traccia l'ultima attività generale
-  totalPhotosShared?: number; // Nuova proprietà per il conteggio delle foto condivise
-  lastPhotoSharedInteraction?: string; // Nuova proprietà per l'ultima interazi
-
-  diaryTotalWords?: number; // O diaryTotalCharacters a seconda di come vuoi contare
+  lastGlobalActivityTimestamp?: string;
+  totalPhotosShared?: number;
+  lastPhotoSharedInteraction?: string;
+  diaryTotalWords?: number;
   diaryLastInteraction?: string;
-  diaryEntryCount?: number; // Contatore dei giorni distinti con voci del diario
+  diaryEntryCount?: number;
+  totalXP?: number;
 }
 
 @Injectable({
@@ -39,19 +38,20 @@ export class UserDataService {
   constructor(private expService: ExpService) {
     this.auth.onAuthStateChanged(async (user) => {
       if (user) {
-        const userData = await this.getUserData(); // getUserData ora aggiornerà _userStatus
+        const userData = await this.getUserData(); // getUserData assicura che totalXP sia caricato e settato
         if (userData && typeof userData['totalXP'] === 'number') {
           this.expService.setTotalXP(userData['totalXP']);
         } else {
+          // Se totalXP non esiste, lo inizializza a 0 anche nel servizio ExpService
           this.expService.setTotalXP(0);
         }
       } else {
         this.expService.setTotalXP(0);
-        // ⭐ Resetta lo status al logout
-        this._userStatus.next('');
+        this._userStatus.next(''); // Resetta lo status al logout
       }
     });
 
+    // Questa sottoscrizione salva gli XP su Firebase ogni volta che cambiano nel servizio ExpService
     this.expService.totalXP$.subscribe(async (newTotalXP) => {
       const user = this.auth.currentUser;
       if (user) {
@@ -181,20 +181,25 @@ export class UserDataService {
 
         if (docSnap.exists()) {
           data = docSnap.data();
-          // Assicurati che i campi esistano e abbiano valori di fallback
+          // ⭐ NOVITÀ: Assicurati che 'totalXP' esista e sia inizializzato a 0 se manca
           if (typeof data['totalXP'] === 'undefined') {
             await updateDoc(userDocRef, { totalXP: 0 });
             data.totalXP = 0;
           }
+          // Assicurati che altri campi esistano o abbiano valori di fallback
           if (typeof data['lastGlobalActivityTimestamp'] === 'undefined') {
             await updateDoc(userDocRef, { lastGlobalActivityTimestamp: '' });
             data.lastGlobalActivityTimestamp = '';
           }
-          // ⭐ NUOVO: Assicurati che 'status' sia presente o abbia un default
-          data.status = data.status ?? ''; // Se è null/undefined, imposta a ''; altrimenti mantiene il valore esistente (anche '')
+          data.status = data.status ?? ''; // Se è null/undefined, imposta a ''; altrimenti mantiene il valore esistente
+
+          // ⭐ NOVITÀ: Assicurati che i campi del diario esistano o abbiano valori di fallback
+          data.diaryTotalWords = data.diaryTotalWords ?? 0;
+          data.diaryLastInteraction = data.diaryLastInteraction ?? '';
+          data.diaryEntryCount = data.diaryEntryCount ?? 0;
 
         } else {
-          // Crea il documento con i dati iniziali, inclusi lo status default
+          // ⭐ NOVITÀ: Crea il documento con i dati iniziali, inclusi totalXP e i campi del diario
           const initialData = {
             totalXP: 0,
             activeAlarmsCount: 0,
@@ -210,7 +215,7 @@ export class UserDataService {
             totalPhotosShared: 0,
             lastPhotoSharedInteraction: '',
             status: '',
-              diaryTotalWords: 0,
+            diaryTotalWords: 0,
             diaryLastInteraction: '',
             diaryEntryCount: 0,
           };
@@ -219,20 +224,17 @@ export class UserDataService {
           data = initialData;
         }
 
-        // ⭐ AGGIORNA IL BEHAVIORSUBJECT DELLO STATUS DOPO AVER CARICATO/INIZIALIZZATO I DATI
-        this._userStatus.next(data.status);
+        this._userStatus.next(data.status); // Aggiorna il BehaviorSubject dello status
 
         return data;
       } catch (error) {
         console.error("Errore nel recupero/creazione dei dati utente:", error);
-        // ⭐ Resetta il BehaviorSubject dello status in caso di errore
-        this._userStatus.next('');
+        this._userStatus.next(''); // Resetta il BehaviorSubject dello status in caso di errore
         return null;
       }
     } else {
       console.warn("Nessun utente loggato. Impossibile recuperare i dati utente.");
-      // ⭐ Resetta il BehaviorSubject dello status se non c'è utente
-      this._userStatus.next('');
+      this._userStatus.next(''); // Resetta il BehaviorSubject dello status se non c'è utente
       return null;
     }
   }
@@ -267,7 +269,7 @@ export class UserDataService {
   // --- Metodi Helper per l'aggiornamento dei campi ---
 
   // Helper per aggiornare un campo numerico incrementandolo o impostandolo
-    private async updateNumericField(uid: string, field: string, valueToUpdate: number | 'increment', setValue?: number): Promise<void> {
+  private async updateNumericField(uid: string, field: string, valueToUpdate: number | 'increment', setValue?: number): Promise<void> {
     const userDocRef = doc(this.firestore, 'users', uid);
     try {
       const updateData: { [key: string]: any } = {};
@@ -418,11 +420,11 @@ export class UserDataService {
     }
   }
 
-   /**
-   * Aggiorna il conteggio delle parole/caratteri totali scritti nel diario.
-   * Utilizza 'increment' per aggiungere la nuova lunghezza del testo.
-   * @param length La lunghezza (parole o caratteri) del testo della voce del diario.
-   */
+  /**
+     * Aggiorna il conteggio delle parole/caratteri totali scritti nel diario.
+     * Utilizza 'increment' per aggiungere la nuova lunghezza del testo.
+     * @param length La lunghezza (parole o caratteri) del testo della voce del diario.
+     */
   async incrementDiaryTotalWords(length: number): Promise<void> {
     const uid = this.getUserUid();
     if (uid) {
@@ -432,9 +434,9 @@ export class UserDataService {
   }
 
   /**
-   * Imposta il timestamp dell'ultima interazione con il diario.
-   * @param timestamp La stringa ISO del timestamp.
-   */
+     * Imposta il timestamp dell'ultima interazione con il diario.
+     * @param timestamp La stringa ISO del timestamp.
+     */
   async setDiaryLastInteraction(timestamp: string): Promise<void> {
     const uid = this.getUserUid();
     if (uid) {
@@ -444,13 +446,13 @@ export class UserDataService {
   }
 
   /**
-   * Incrementa il contatore dei giorni distinti in cui è stata scritta una voce del diario.
-   * Questo metodo dovrebbe essere chiamato solo quando viene creata una *nuova* voce per un *nuovo* giorno.
-   */
+     * Incrementa il contatore dei giorni distinti in cui è stata scritta una voce del diario.
+     * Questo metodo dovrebbe essere chiamato solo quando viene creata una *nuova* voce per un *nuovo* giorno.
+     */
   async incrementDiaryEntryCount(): Promise<void> {
     const uid = this.getUserUid();
     if (uid) {
-      await this.updateNumericField(uid, 'diaryEntryCount', 'increment'); // ⭐ Corretto: passa la stringa 'increment'
+      await this.updateNumericField(uid, 'diaryEntryCount', 'increment');
     }
   }
 }
