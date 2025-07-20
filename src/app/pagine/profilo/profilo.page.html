@@ -54,7 +54,11 @@
       <h2>{{ profile.nickname || 'nickname' }}</h2>
       <h3>{{ profile.name || 'Nome e Cognome' }}</h3>
       <p>{{ profile.bio || 'Descrizione assente' }}</p>
-
+      <p *ngIf="profile.link && !editing">
+        <a [href]="profile.link" target="_blank" rel="noopener noreferrer">
+          {{ profile.linkText || profile.link }}
+        </a>
+      </p>
       <div class="follow-stats-wrapper">
         <div *ngIf="isLoadingStats" class="loading-stats-local-overlay">
           <ion-spinner name="crescent" color="primary"></ion-spinner>
@@ -92,7 +96,17 @@
           <ion-label position="stacked">Descrizione</ion-label>
           <ion-textarea [(ngModel)]="profileEdit.bio" name="bio"></ion-textarea>
         </ion-item>
-      </ion-list>
+
+        <ion-item class="ff7-item">
+          <ion-label position="stacked">Link (URL)</ion-label>
+          <ion-input [(ngModel)]="profileEdit.link" name="link" type="url" placeholder="https://tuosito.com"></ion-input>
+        </ion-item>
+
+        <ion-item class="ff7-item">
+          <ion-label position="stacked">Testo del Link (es. "Canale YouTube")</ion-label>
+          <ion-input [(ngModel)]="profileEdit.linkText" name="linkText" placeholder="Il mio sito web"></ion-input>
+        </ion-item>
+        </ion-list>
 
       <ion-button expand="block" type="submit">Salva</ion-button>
     </form>

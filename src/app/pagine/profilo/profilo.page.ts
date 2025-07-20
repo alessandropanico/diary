@@ -1,4 +1,3 @@
-// src/app/profilo/profilo.page.ts
 import { Component, OnInit, NgZone, OnDestroy } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { UserDataService } from 'src/app/services/user-data.service';
@@ -23,7 +22,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
     name: '',
     email: '',
     bio: '',
-    status: ''
+    status: '',
+    link: '',
+    linkText: '' // ⭐ NOVITÀ: Aggiunto il campo linkText
   };
 
   profileEdit = {
@@ -33,7 +34,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
     name: '',
     email: '',
     bio: '',
-    status: ''
+    status: '',
+    link: '',
+    linkText: '' // ⭐ NOVITÀ: Aggiunto il campo linkText
   };
 
   editing = false;
@@ -74,7 +77,8 @@ export class ProfiloPage implements OnInit, OnDestroy {
           this.subscribeToUserStatus();
         } else {
           this.loggedInUserId = null;
-          this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '', status: '' };
+          // ⭐ Aggiornato con i campi link e linkText
+          this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '', status: '', link: '', linkText: '' };
           this.profileEdit = { ...this.profile };
           this.isLoading = false;
           this.isLoadingStats = false;
@@ -98,7 +102,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
           name: firestoreData.name || user.displayName || '',
           email: firestoreData.email || user.email || '',
           bio: firestoreData.bio || '',
-          status: firestoreData.status ?? ''
+          status: firestoreData.status ?? '',
+          link: firestoreData.link || '',
+          linkText: firestoreData.linkText || '' // ⭐ NOVITÀ: Popola il campo linkText
         };
       } else {
         initialProfileData = {
@@ -108,17 +114,20 @@ export class ProfiloPage implements OnInit, OnDestroy {
           name: user.displayName || '',
           email: user.email || '',
           bio: '',
-          status: ''
+          status: '',
+          link: '',
+          linkText: '' // ⭐ NOVITÀ: Inizializza il campo linkText
         };
         await this.userDataService.saveUserData(initialProfileData);
       }
 
       this.profile = { ...initialProfileData };
       this.profileEdit = { ...this.profile };
-    } catch (error: unknown) { // ⭐ Qui ho tipizzato 'error' come 'unknown'
+    } catch (error: unknown) {
       console.error("Errore durante il caricamento/salvataggio iniziale da Firestore:", error);
       await this.presentFF7Alert('Errore nel caricamento del profilo. Riprova più tardi.');
-      this.profile = { photo: 'assets/immaginiGenerali/default-avatar.jpg', banner: 'assets/immaginiGenerali/default-banner.jpg', nickname: '', name: '', email: '', bio: '', status: '' };
+      // ⭐ Aggiornato con i campi link e linkText
+      this.profile = { photo: 'assets/immaginiGenerali/default-avatar.jpg', banner: 'assets/immaginiGenerali/default-banner.jpg', nickname: '', name: '', email: '', bio: '', status: '', link: '', linkText: '' };
       this.profileEdit = { ...this.profile };
     } finally {
       this.isLoading = false;
@@ -139,7 +148,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
           this.isLoadingStats = false;
         }
       });
-    }, (error: unknown) => { // ⭐ Qui ho tipizzato 'error' come 'unknown'
+    }, (error: unknown) => {
       console.error('Errore nel recupero dei follower count:', error);
       this.ngZone.run(() => {
         this.followersCount = 0;
@@ -158,7 +167,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
           this.isLoadingStats = false;
         }
       });
-    }, (error: unknown) => { // ⭐ Qui ho tipizzato 'error' come 'unknown'
+    }, (error: unknown) => {
       console.error('Errore nel recupero del following count:', error);
       this.ngZone.run(() => {
         this.followingCount = 0;
@@ -205,13 +214,15 @@ export class ProfiloPage implements OnInit, OnDestroy {
       name: this.profileEdit.name || '',
       email: this.profileEdit.email || '',
       bio: this.profileEdit.bio || '',
-      status: this.profileEdit.status ?? ''
+      status: this.profileEdit.status ?? '',
+      link: this.profileEdit.link || '',
+      linkText: this.profileEdit.linkText || '' // ⭐ NOVITÀ: Salva il campo linkText
     };
 
     try {
       await this.userDataService.saveUserData(this.profile);
       await this.presentFF7Alert('Profilo aggiornato e salvato!');
-    } catch (error: unknown) { // ⭐ Qui ho tipizzato 'error' come 'unknown'
+    } catch (error: unknown) {
       console.error('Errore durante il salvataggio del profilo:', error);
       await this.presentFF7Alert('Errore durante il salvataggio del profilo.');
     } finally {
