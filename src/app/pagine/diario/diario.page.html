@@ -4,10 +4,12 @@
     </ion-buttons>
     <ion-title>Diario</ion-title>
     <ion-buttons slot="end">
+      <ion-button *ngIf="hasChanges" (click)="cancelChanges()" color="danger">Annulla</ion-button>
       <ion-button *ngIf="hasChanges" (click)="saveEntry()">Salva</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
+
 
 <div class="diario-main-grid">
 

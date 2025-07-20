@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule, AlertController } from '@ionic/angular';
 import { DiaryService, DailyEntry } from 'src/app/services/diary.service';
 import { ExpService } from 'src/app/services/exp.service';
-import { UserDataService } from 'src/app/services/user-data.service'; // ⭐ Importa UserDataService
+import { UserDataService } from 'src/app/services/user-data.service';
 import { Subscription } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 
@@ -41,7 +41,7 @@ export class DiarioPage implements OnInit, OnDestroy {
   constructor(
     private diaryService: DiaryService,
     private expService: ExpService,
-    private userDataService: UserDataService, // ⭐ Inietta UserDataService
+    private userDataService: UserDataService,
     private alertCtrl: AlertController
   ) { }
 
@@ -81,6 +81,7 @@ export class DiarioPage implements OnInit, OnDestroy {
       stressLevel: 0,
       focusHours: undefined
     };
+    // Non resetta hasChanges qui, lo farà loadDailyEntry o cancelChanges
   }
 
   initializeDate() {
@@ -133,14 +134,15 @@ export class DiarioPage implements OnInit, OnDestroy {
           stressLevel: entry?.stressLevel ?? 0,
           focusHours: entry?.focusHours ?? undefined
         };
-        this.initialEntryState = { ...this.currentEntry };
-        this.hasChanges = false;
+        // Clona deep l'oggetto per initialEntryState
+        this.initialEntryState = JSON.parse(JSON.stringify(this.currentEntry));
+        this.hasChanges = false; // Nessuna modifica all'inizio dopo il caricamento
       },
       error: (error) => {
         console.error('Errore nel caricamento della voce del diario:', error);
         this.presentAlert('Errore', 'Impossibile caricare la voce del diario.');
         this.resetCurrentEntry(date);
-        this.initialEntryState = null;
+        this.initialEntryState = null; // Nessuno stato iniziale se c'è un errore
         this.hasChanges = false;
       }
     });
@@ -163,17 +165,50 @@ export class DiarioPage implements OnInit, OnDestroy {
 
   selectMood(mood: string) {
     if (this.currentEntry.mood === mood) {
-      this.currentEntry.mood = '';
+      this.currentEntry.mood = ''; // Deseleziona l'umore
     } else {
-      this.currentEntry.mood = mood;
+      this.currentEntry.mood = mood; // Seleziona il nuovo umore
     }
     this.markAsChanged();
   }
 
   markAsChanged() {
+    // Se initialEntryState non è ancora stato caricato (ad esempio, alla prima apertura di un nuovo giorno)
+    // considera che ci sono modifiche se la currentEntry non è completamente vuota.
+    if (this.initialEntryState === null) {
+        // Controlla se QUALSIASI campo ha un valore significativo (diverso dai valori di default iniziali)
+        // Questo è per le nuove voci che non sono mai state salvate.
+        const defaultEmptyEntry: DailyEntry = {
+            date: this.currentEntry.date, // La data deve corrispondere per il confronto
+            mood: '',
+            note: '',
+            energyLevel: 0,
+            sleepQuality: '',
+            stressLevel: 0,
+            focusHours: undefined
+        };
+        this.hasChanges = JSON.stringify(this.currentEntry) !== JSON.stringify(defaultEmptyEntry);
+        return;
+    }
+
+    // Per voci esistenti o nuove voci dopo la prima interazione, confronta con initialEntryState
     const current = JSON.stringify(this.currentEntry);
     const initial = JSON.stringify(this.initialEntryState);
     this.hasChanges = current !== initial;
+  }
+
+
+  cancelChanges() {
+    if (this.initialEntryState) {
+      // Ripristina lo stato iniziale clonando per evitare riferimenti
+      this.currentEntry = JSON.parse(JSON.stringify(this.initialEntryState));
+    } else {
+      // Se non c'era uno stato iniziale (nuova voce non ancora salvata),
+      // resetta a uno stato completamente vuoto per il giorno corrente.
+      this.resetCurrentEntry(this.selectedDateString);
+    }
+    this.hasChanges = false; // Nessuna modifica dopo l'annullamento
+    this.presentAlert('Annullato', 'Le modifiche sono state annullate.');
   }
 
   async saveEntry() {
@@ -188,45 +223,39 @@ export class DiarioPage implements OnInit, OnDestroy {
 
     this.currentEntry.date = this.formatDate(this.selectedDate);
 
-    // Salvataggio della voce del diario
     this.diaryService.saveDailyEntry(this.userId, this.currentEntry).subscribe({
       next: async () => {
         console.log('Voce diario salvata con successo:', this.currentEntry);
         await this.presentAlert('Successo', 'Voce del diario salvata!');
-        this.initialEntryState = { ...this.currentEntry };
-        this.hasChanges = false;
+        // Aggiorna initialEntryState DOPO il salvataggio riuscito
+        this.initialEntryState = JSON.parse(JSON.stringify(this.currentEntry));
+        this.hasChanges = false; // Nessuna modifica dopo il salvataggio
         this.loadRecentEntries();
 
-        // ⭐ INIZIO AGGIORNAMENTO CONTATORI DASHBOARD
+        // INIZIO AGGIORNAMENTO CONTATORI DASHBOARD
         const wordCount = this.currentEntry.note ? this.currentEntry.note.split(/\s+/).filter(word => word.length > 0).length : 0;
         const currentTimestampISO = new Date().toISOString();
 
-        // Aggiorna parole totali
         await this.userDataService.incrementDiaryTotalWords(wordCount);
         console.log(`Aggiornato conteggio parole totali: ${wordCount} parole aggiunte.`);
 
-        // Aggiorna ultima interazione
         await this.userDataService.setDiaryLastInteraction(currentTimestampISO);
         console.log(`Ultima interazione diario impostata a: ${currentTimestampISO}.`);
 
-        // Logica per incrementare il contatore delle voci distinte (solo una volta per giorno)
-        // Recupera i dati correnti dell'utente per controllare l'ultima data di interazione salvata
         const userData = await this.userDataService.getUserData();
+        // Utilizziamo solo la data per il confronto, ignorando l'ora
         const lastSavedInteractionDate = userData?.diaryLastInteraction ? new Date(userData.diaryLastInteraction).toDateString() : null;
-        const currentEntryDate = new Date(this.currentEntry.date).toDateString(); // Data della voce che stiamo salvando
+        const currentEntryDate = new Date(this.currentEntry.date).toDateString();
 
         if (lastSavedInteractionDate !== currentEntryDate) {
-          // Se l'ultima interazione salvata non è dello stesso giorno della voce che stiamo salvando,
-          // significa che è una nuova voce per un nuovo giorno (o la primissima voce).
           await this.userDataService.incrementDiaryEntryCount();
           console.log("Contatore delle voci del diario incrementato (nuova voce per un giorno distinto).");
         } else {
           console.log("Voce del diario aggiornata per lo stesso giorno. Non incremento il contatore delle voci distinte.");
         }
-        // ⭐ FINE AGGIORNAMENTO CONTATORI DASHBOARD
+        // FINE AGGIORNAMENTO CONTATORI DASHBOARD
 
-        // ⭐ Aggiunta degli XP dopo il salvataggio del diario
-        const xpToAward = 25; // Esempio: 25 XP per aver compilato una voce del diario
+        const xpToAward = 25;
         this.expService.addExperience(xpToAward, 'Diario Compilato');
         console.log(`Guadagnati ${xpToAward} XP per aver salvato il diario.`);
 
