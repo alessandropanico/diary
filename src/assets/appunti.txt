@@ -3,8 +3,6 @@
 **AGGIUSTA L'EMOJI, METTI ANCHE UNA NOTA**
 **NELLA CHAT, INSERISCI GLI AUDIO (VEDERE SE FATTIBILE SENZA BLAZE)**
 
-Tracking umore/giornata: aggiungi una sezione per annotare come ci si sente ogni giorno (magari emoji + breve nota);
-
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
 Integrazione con AI (anche semplice):
