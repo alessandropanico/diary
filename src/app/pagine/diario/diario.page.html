@@ -149,14 +149,14 @@
 
   </div>
 
-  <div class="right-panel">
-    <div class="note-section ff7-panel">
-      <h3 class="ff7-glow-text">Registro Eventi</h3>
-      <ion-textarea [(ngModel)]="currentEntry.note" (ionChange)="markAsChanged()"
-        placeholder="Cosa è successo di importante oggi?" rows="12" auto-grow="true"
-        class="ff7-textarea"></ion-textarea>
-    </div>
+<div class="right-panel">
+  <div class="note-section ff7-panel">
+    <h3 class="ff7-glow-text">Registro Eventi</h3>
+    <ion-textarea [(ngModel)]="currentEntry.note"
+      (ionInput)="markAsChanged()" placeholder="Cosa è successo di importante oggi?" rows="12" auto-grow="true"
+      class="ff7-textarea"></ion-textarea>
   </div>
+</div>
 
   <div class="history-section ff7-panel">
     <h3 class="ff7-glow-text">Accesso Archivi</h3>

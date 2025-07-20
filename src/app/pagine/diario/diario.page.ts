@@ -223,7 +223,23 @@ export class DiarioPage implements OnInit, OnDestroy {
 
     this.currentEntry.date = this.formatDate(this.selectedDate);
 
-    this.diaryService.saveDailyEntry(this.userId, this.currentEntry).subscribe({
+    // --- INIZIO DELLA MODIFICA ---
+    // Crea una copia dell'oggetto currentEntry per rimuovere i campi undefined
+    const entryToSave: Partial<DailyEntry> = { ...this.currentEntry };
+
+    // Itera sui campi e rimuovi quelli che sono undefined
+    for (const key in entryToSave) {
+        if (entryToSave.hasOwnProperty(key)) {
+            // @ts-ignore
+            if (entryToSave[key] === undefined) {
+                // @ts-ignore
+                delete entryToSave[key];
+            }
+        }
+    }
+    // --- FINE DELLA MODIFICA ---
+
+    this.diaryService.saveDailyEntry(this.userId, entryToSave as DailyEntry).subscribe({ // Usa entryToSave
       next: async () => {
         console.log('Voce diario salvata con successo:', this.currentEntry);
         await this.presentAlert('Successo', 'Voce del diario salvata!');
