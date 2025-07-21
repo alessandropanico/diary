@@ -22,7 +22,8 @@
   <ion-list *ngIf="leaderboardUsers.length > 0" lines="none" class="leaderboard-list">
     <ion-item *ngFor="let user of leaderboardUsers; let i = index" class="leaderboard-item" [ngClass]="{'top-3': i < 3}">
       <ion-avatar slot="start" class="profile-avatar">
-        <img [src]="user.profilePictureUrl || 'assets/images/default-avatar.png'" alt="Avatar utente">
+        <img [src]="user.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo">
+
       </ion-avatar>
 
       <ion-label>
