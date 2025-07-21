@@ -4,6 +4,7 @@ import { IonInfiniteScroll } from '@ionic/angular';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Subscription } from 'rxjs';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { ExpService } from 'src/app/services/exp.service';
 
 @Component({
   selector: 'app-classifica',
@@ -27,7 +28,10 @@ export class ClassificaPage implements OnInit, OnDestroy {
   private pageSize: number = 10; // Quanti utenti caricare per volta
   public allUsersLoaded: boolean = false; // Indica se abbiamo caricato tutti gli utenti disponibili
 
-  constructor(private userDataService: UserDataService) { } // Inietta il servizio
+  constructor(private userDataService: UserDataService,
+    private expService: ExpService  // 👈 Aggiunto
+
+  ) { } // Inietta il servizio
 
   ngOnInit() {
     this.loadLeaderboard(true); // Carica la prima pagina all'inizializzazione
@@ -108,12 +112,20 @@ export class ClassificaPage implements OnInit, OnDestroy {
    */
   getTrophy(index: number): string {
     if (index === 0) {
-      return 'assets/icons/trophy-gold.png';
+      return 'assets/immaginiGenerali/trophy-gold.png';
     } else if (index === 1) {
-      return 'assets/icons/trophy-silver.png';
+      return 'assets/immaginiGenerali/trophy-silver.png';
     } else if (index === 2) {
-      return 'assets/icons/trophy-bronze.png';
+      return 'assets/immaginiGenerali/trophy-bronze.png';
     }
     return '';
   }
+
+
+  getUserLevel(xp?: number): number {
+    return this.expService.getLevelFromXP(xp !== undefined ? xp : 0);
+  }
+
+
+
 }

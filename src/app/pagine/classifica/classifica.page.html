@@ -33,7 +33,7 @@
         </h2>
         <p class="full-name" *ngIf="user.name || user.surname">{{ user.name }} {{ user.surname }}</p>
         <div class="user-stats">
-          <span class="level-badge">Lv. {{ user.totalXP ? (user.totalXP / 1000 | number:'1.0-0') : 0 }}</span>
+        <span class="level-badge">Lv. {{ getUserLevel(user.totalXP) }}</span>
           <span class="exp-points">{{ user.totalXP ?? 0 }} EXP</span>
         </div>
       </ion-label>

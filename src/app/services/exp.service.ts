@@ -145,4 +145,14 @@ export class ExpService {
 
     return { userLevel, totalXP, currentXP, xpForNextLevel, progressPercentage, maxLevelReached };
   }
+
+  /**
+ * Calcola il livello dell'utente a partire dai suoi XP totali.
+ * Usato esternamente (es. nella classifica).
+ */
+getLevelFromXP(totalXP: number): number {
+  return this.calculateLevelAndProgress(totalXP).userLevel;
+}
+
+
 }
