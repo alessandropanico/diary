@@ -465,8 +465,7 @@ getLeaderboardUsers(
         const userData = doc.data(); // Dati grezzi dal documento Firestore
 
         // ⭐ VERIFICA QUI I NOMI DEI CAMPI ESATTI DA FIRESTORE ⭐
-        console.log(`  Utente ID: ${doc.id}`);
-        console.log(`    Contenuto 'photo' in DB: ${userData['photo']}`); // Controlla questo log
+    
         console.log(`    Contenuto 'totalXP' in DB: ${userData['totalXP']} (Tipo: ${typeof userData['totalXP']})`); // Controlla anche questo
 
         users.push({
