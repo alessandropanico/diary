@@ -85,12 +85,6 @@
       </ion-infinite-scroll-content>
     </ion-infinite-scroll>
 
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="searchQuery.length === 0">
-      <ion-fab-button (click)="content.scrollToTop(500)">
-        <ion-icon name="arrow-up"></ion-icon>
-      </ion-fab-button>
-    </ion-fab>
-
     <ng-template #noUsersFound>
       <ion-card class="ion-text-center ion-margin">
         <ion-card-header>
