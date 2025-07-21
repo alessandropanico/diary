@@ -86,6 +86,10 @@ const routes: Routes = [
     path: 'diario',
     loadChildren: () => import('./pagine/diario/diario.module').then( m => m.DiarioPageModule)
   },
+  {
+    path: 'classifica',
+    loadChildren: () => import('./pagine/classifica/classifica.module').then( m => m.ClassificaPageModule)
+  },
 
 
 

@@ -1,0 +1,250 @@
+/* src/app/pagine/classifica/classifica.page.scss */
+
+:host {
+  --primary-glow: #00f0ff;
+  --bg-blur: rgba(20, 20, 30, 0.75);
+  --text-light: #e0faff;
+  --label-color: #a0cfd8;
+  --ff7-gold: #FFD700; // Oro
+  --ff7-silver: #C0C0C0; // Argento
+  --ff7-bronze: #CD7F32; // Bronzo
+  --ff7-blue: #00aaff;
+  --ff7-red: #ff3366;
+}
+
+.ff7-toolbar {
+  --background: #1a1a2e;
+  color: var(--text-light);
+  border-bottom: 2px solid var(--primary-glow);
+  box-shadow: 0 2px 8px rgba(0, 255, 224, 0.2);
+}
+
+.ff7-classifica-background {
+  --background: url('/assets/immaginiGenerali/final-fantasy-background.jpg') no-repeat center center / cover;
+  background-attachment: fixed;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    z-index: 0;
+  }
+
+  .loading-overlay, .empty-leaderboard-message {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    color: var(--text-light);
+    font-size: 1.1rem;
+    text-align: center;
+
+    ion-spinner {
+      color: var(--primary-glow);
+      margin-bottom: 10px;
+    }
+
+    ion-button {
+      margin-top: 20px;
+      --background: var(--ff7-red);
+      --color: var(--text-light);
+    }
+  }
+}
+
+.leaderboard-list {
+  background: transparent;
+  padding: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.leaderboard-item {
+  --background: rgba(15, 15, 35, 0.8);
+  --color: var(--text-light);
+  border-radius: 10px;
+  margin-bottom: 15px;
+  padding: 15px 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 255, 224, 0.3);
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease-in-out;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 255, 224, 0.4);
+  }
+
+  &.top-3 {
+    border-width: 2px;
+    box-shadow: 0 0 20px var(--ff7-gold);
+    animation: pulse-border 1.5s infinite alternate;
+  }
+  &:nth-child(1) {
+    border-color: var(--ff7-gold);
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(15, 15, 35, 0.8) 50%, rgba(255, 215, 0, 0.3) 100%);
+  }
+  &:nth-child(2) {
+    border-color: var(--ff7-silver);
+    background: linear-gradient(135deg, rgba(192, 192, 192, 0.3) 0%, rgba(15, 15, 35, 0.8) 50%, rgba(192, 192, 192, 0.3) 100%);
+  }
+  &:nth-child(3) {
+    border-color: var(--ff7-bronze);
+    background: linear-gradient(135deg, rgba(205, 127, 50, 0.3) 0%, rgba(15, 15, 35, 0.8) 50%, rgba(205, 127, 50, 0.3) 100%);
+  }
+
+  .profile-avatar {
+    width: 60px;
+    height: 60px;
+    margin-right: 15px;
+    border: 2px solid var(--primary-glow);
+    box-shadow: 0 0 8px rgba(0, 255, 224, 0.4);
+    overflow: hidden;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  ion-label {
+    flex-grow: 1;
+
+    h2 {
+      font-size: 1.3rem;
+      margin: 0;
+      color: var(--primary-glow);
+      display: flex;
+      align-items: center;
+      text-shadow: 0 0 5px rgba(0, 255, 224, 0.4);
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .rank-number {
+      font-size: 1.4em;
+      font-weight: bold;
+      margin-right: 10px;
+      min-width: 30px;
+      text-align: right;
+      color: var(--ff7-blue);
+      text-shadow: 0 0 5px var(--ff7-blue);
+    }
+
+    .trophy-icon {
+      width: 28px;
+      height: 28px;
+      margin-right: 8px;
+      animation: bounce-in 0.8s ease-out;
+    }
+
+    .full-name {
+      font-size: 0.9rem;
+      color: var(--label-color);
+      margin-top: 2px;
+    }
+
+    .user-stats {
+      display: flex;
+      gap: 15px;
+      margin-top: 8px;
+
+      span {
+        font-size: 0.85rem;
+        padding: 4px 10px;
+        border-radius: 5px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .level-badge {
+        background-color: var(--ff7-blue);
+        color: #fff;
+        box-shadow: 0 0 8px rgba(0, 170, 255, 0.5);
+      }
+
+      .exp-points {
+        background-color: var(--ff7-red);
+        color: #fff;
+        box-shadow: 0 0 8px rgba(255, 51, 102, 0.5);
+      }
+    }
+  }
+}
+
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 215, 0, 1);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .leaderboard-item {
+    padding: 10px 8px;
+  }
+
+  .profile-avatar {
+    width: 50px;
+    height: 50px;
+    margin-right: 10px;
+  }
+
+  .leaderboard-item ion-label h2 {
+    font-size: 1.1rem;
+  }
+
+  .rank-number {
+    font-size: 1.2em;
+  }
+
+  .trophy-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .full-name {
+    font-size: 0.8rem;
+  }
+
+  .user-stats span {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+  }
+}

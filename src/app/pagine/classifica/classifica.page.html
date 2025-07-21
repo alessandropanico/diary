@@ -1,0 +1,38 @@
+<ion-header>
+  <ion-toolbar class="ff7-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Classifica Utenti</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content fullscreen class="ff7-classifica-background">
+
+  <div *ngIf="isLoading" class="loading-overlay">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Caricamento classifica...</p>
+  </div>
+
+  <ion-list *ngIf="!isLoading" lines="none" class="leaderboard-list">
+    <ion-item *ngFor="let user of leaderboardUsers; let i = index" class="leaderboard-item" [ngClass]="{'top-3': i < 3}">
+      <ion-avatar slot="start" class="profile-avatar">
+        <img [src]="user.profilePictureUrl || 'assets/images/default-avatar.png'" alt="Avatar utente">
+      </ion-avatar>
+
+      <ion-label>
+        <h2>
+          <span class="rank-number">{{ i + 1 }}.</span>
+          <img *ngIf="i < 3" [src]="getTrophy(i)" class="trophy-icon" alt="Trofeo">
+          {{ user.nickname }}
+        </h2>
+        <p class="full-name" *ngIf="user.name || user.surname">{{ user.name }} {{ user.surname }}</p>
+        <div class="user-stats">
+          <span class="level-badge">Lv. {{ user.level }}</span>
+          <span class="exp-points">{{ user.expPoints }} EXP</span>
+        </div>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+</ion-content>
