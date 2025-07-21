@@ -10,10 +10,7 @@ generazione automatica di to-do da note vocali.];
 Nella dashboard:
 - Attività supporto creatore App;
 
-Aggiustare la sveglia;
-
 Rendere l'app più "intuitiva";
-Calendario home task!
 
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ---------------------------------------------------------
