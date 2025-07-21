@@ -37,10 +37,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.8;
   }
+
   50% {
     transform: scale(1.1);
     opacity: 1;
@@ -78,16 +81,33 @@
   }
 
   ion-label {
+    // IMPORTANTE: Aggiungi queste proprietà per troncare il testo
+    display: flex; // Usa flexbox per un migliore controllo
+    flex-direction: column; // Impila h2 e p verticalmente
+    min-width: 0; // Permette al contenuto flex di restringersi
+    overflow: hidden; // Nasconde qualsiasi contenuto che supera il box
+
     h2 {
-      color: var(--text-light, #ffffff);
+      color: var(--text-light);
       font-size: 1.1rem;
       font-weight: 600;
       margin-bottom: 2px;
       font-family: 'Orbitron', sans-serif;
+
+      // ⭐⭐⭐ Aggiungi queste 3 proprietà per il troncamento ⭐⭐⭐
+      white-space: nowrap; // Impedisce al testo di andare a capo
+      overflow: hidden; // Nasconde il testo che supera il box
+      text-overflow: ellipsis; // Aggiunge "..." alla fine del testo troncato
     }
+
     p {
-      color: var(--label-color, #a0cfd8);
+      color: var(--label-color);
       font-size: 0.9rem;
+
+      // ⭐⭐⭐ Aggiungi queste 3 proprietà per il troncamento ⭐⭐⭐
+      white-space: nowrap; // Impedisce al testo di andare a capo
+      overflow: hidden; // Nasconde il testo che supera il box
+      text-overflow: ellipsis; // Aggiunge "..." alla fine del testo troncato
     }
   }
 
