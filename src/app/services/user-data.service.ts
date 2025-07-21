@@ -6,6 +6,7 @@ import { BehaviorSubject, Observable, from } from 'rxjs';
 
 
 export interface UserDashboardCounts {
+  uid: string; // Aggiunto uid per identificare l'utente nella lista
   activeAlarmsCount: number;
   totalAlarmsCount: number;
   lastAlarmInteraction: string;
@@ -27,6 +28,7 @@ export interface UserDashboardCounts {
   name?: string;
   surname?: string;
   profilePictureUrl?: string;
+
 }
 
 @Injectable({
@@ -37,6 +39,7 @@ export class UserDataService {
   private db = getFirestore();
   private firestore = getFirestore();
   private auth = getAuth();
+
 
   private _userStatus = new BehaviorSubject<string>('');
   public userStatus$ = this._userStatus.asObservable();
@@ -183,23 +186,42 @@ export class UserDataService {
 
         if (docSnap.exists()) {
           data = docSnap.data();
+          // Inizializza totalXP se non esiste
           if (typeof data['totalXP'] === 'undefined') {
             await updateDoc(userDocRef, { totalXP: 0 });
             data.totalXP = 0;
           }
+          // ⭐ AGGIORNAMENTO 2: Inizializza profilePictureUrl, nicknameLowercase e nameLowercase ⭐
+          if (typeof data['profilePictureUrl'] === 'undefined' || data['profilePictureUrl'] === '') {
+            await updateDoc(userDocRef, { profilePictureUrl: '' }); // Salva una stringa vuota nel DB
+            data.profilePictureUrl = '';
+          }
+          if (typeof data['nicknameLowercase'] === 'undefined' && data['nickname']) {
+            await updateDoc(userDocRef, { nicknameLowercase: (data['nickname'] || '').toLowerCase().trim() });
+            data.nicknameLowercase = (data['nickname'] || '').toLowerCase().trim();
+          }
+          if (typeof data['nameLowercase'] === 'undefined' && data['name']) {
+            await updateDoc(userDocRef, { nameLowercase: (data['name'] || '').toLowerCase().trim() });
+            data.nameLowercase = (data['name'] || '').toLowerCase().trim();
+          }
+
+          // Inizializzazioni per altri campi (rimangono invariate)
           if (typeof data['lastGlobalActivityTimestamp'] === 'undefined') {
             await updateDoc(userDocRef, { lastGlobalActivityTimestamp: '' });
             data.lastGlobalActivityTimestamp = '';
           }
           data.status = data.status ?? '';
-
           data.diaryTotalWords = data.diaryTotalWords ?? 0;
           data.diaryLastInteraction = data.diaryLastInteraction ?? '';
           data.diaryEntryCount = data.diaryEntryCount ?? 0;
 
         } else {
+          // Dati iniziali per un nuovo utente, inclusi i nuovi campi
           const initialData = {
             totalXP: 0,
+            profilePictureUrl: '', // ⭐ AGGIORNAMENTO 3: Inizializza per i nuovi utenti ⭐
+            nicknameLowercase: '', // ⭐ AGGIORNAMENTO 4: Inizializza per i nuovi utenti ⭐
+            nameLowercase: '',     // ⭐ AGGIORNAMENTO 5: Inizializza per i nuovi utenti ⭐
             activeAlarmsCount: 0,
             totalAlarmsCreated: 0,
             lastAlarmInteraction: '',
@@ -418,9 +440,9 @@ export class UserDataService {
     }
   }
 
- getLeaderboardUsers(
+getLeaderboardUsers(
     pageSize: number,
-    lastDoc?: QueryDocumentSnapshot<DocumentData> // CAMBIATO DA '| null' A '?' (che implica '| undefined')
+    lastDoc?: QueryDocumentSnapshot<DocumentData>
   ): Observable<{ users: UserDashboardCounts[], lastVisible: QueryDocumentSnapshot<DocumentData> | null }> {
     const usersCollection = collection(this.firestore, 'users');
 
@@ -431,7 +453,6 @@ export class UserDataService {
       limit(pageSize)
     );
 
-    // Il controllo resta lo stesso, perché 'undefined' e 'null' sono entrambi falsy
     if (lastDoc) {
       q = query(q, startAfter(lastDoc));
     }
@@ -439,34 +460,37 @@ export class UserDataService {
     return from(getDocs(q).then(snapshot => {
       const users: UserDashboardCounts[] = [];
       snapshot.forEach(doc => {
-        const userData = doc.data() as UserDashboardCounts;
+        const userData = doc.data(); // Ottieni i dati non ancora tipizzati per un recupero più sicuro
         users.push({
-          uid: doc.id,
-          nickname: userData.nickname,
-          name: userData.name,
-          surname: userData.surname,
-          profilePictureUrl: userData.profilePictureUrl,
-          totalXP: userData.totalXP ?? 0,
-          activeAlarmsCount: userData.activeAlarmsCount ?? 0,
-          totalAlarmsCount: userData.totalAlarmsCount ?? 0,
-          lastAlarmInteraction: userData.lastAlarmInteraction ?? '',
-          totalNotesCount: userData.totalNotesCount ?? 0,
-          totalListsCount: userData.totalListsCount ?? 0,
-          incompleteListItems: userData.incompleteListItems ?? 0,
-          lastNoteListInteraction: userData.lastNoteListInteraction ?? '',
-          followersCount: userData.followersCount ?? 0,
-          followingCount: userData.followingCount ?? 0,
-          lastGlobalActivityTimestamp: userData.lastGlobalActivityTimestamp ?? '',
-          totalPhotosShared: userData.totalPhotosShared ?? 0,
-          lastPhotoSharedInteraction: userData.lastPhotoSharedInteraction ?? '',
-          diaryTotalWords: userData.diaryTotalWords ?? 0,
-          diaryLastInteraction: userData.diaryLastInteraction ?? '',
-          diaryEntryCount: userData.diaryEntryCount ?? 0,
-        } as UserDashboardCounts);
+          uid: doc.id, // L'UID è sempre l'ID del documento
+          nickname: userData['nickname'] as string ?? 'N/A',
+          name: userData['name'] as string ?? '',
+          surname: userData['surname'] as string ?? '',
+          // ⭐ AGGIORNAMENTO 6: Assicurati di prelevare 'profilePictureUrl' dal DB ⭐
+          profilePictureUrl: userData['profilePictureUrl'] as string ?? '',
+          totalXP: userData['totalXP'] as number ?? 0, // ⭐ AGGIORNAMENTO 7: Assicurati che totalXP sia un numero valido ⭐
+          // Assicurati che tutti gli altri campi utilizzati nell'interfaccia e nel frontend siano mappati qui
+          activeAlarmsCount: userData['activeAlarmsCount'] as number ?? 0,
+          totalAlarmsCount: userData['totalAlarmsCount'] as number ?? 0,
+          lastAlarmInteraction: userData['lastAlarmInteraction'] as string ?? '',
+          totalNotesCount: userData['totalNotesCount'] as number ?? 0,
+          totalListsCount: userData['totalListsCount'] as number ?? 0,
+          incompleteListItems: userData['incompleteListItems'] as number ?? 0,
+          lastNoteListInteraction: userData['lastNoteListInteraction'] as string ?? '',
+          followersCount: userData['followersCount'] as number ?? 0,
+          followingCount: userData['followingCount'] as number ?? 0,
+          lastGlobalActivityTimestamp: userData['lastGlobalActivityTimestamp'] as string ?? '',
+          totalPhotosShared: userData['totalPhotosShared'] as number ?? 0,
+          lastPhotoSharedInteraction: userData['lastPhotoSharedInteraction'] as string ?? '',
+          diaryTotalWords: userData['diaryTotalWords'] as number ?? 0,
+          diaryLastInteraction: userData['diaryLastInteraction'] as string ?? '',
+          diaryEntryCount: userData['diaryEntryCount'] as number ?? 0,
+        });
       });
       const lastVisible = snapshot.docs[snapshot.docs.length - 1] || null;
       return { users, lastVisible };
     }));
   }
-
 }
+
+
