@@ -1,5 +1,5 @@
 <ion-header>
-  <ion-toolbar class="ff7-toolbar">
+  <ion-toolbar>
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
@@ -7,44 +7,39 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content fullscreen class="ff7-classifica-background">
 
-  <div *ngIf="isLoading && leaderboardUsers.length === 0" class="loading-overlay">
-    <ion-spinner name="crescent"></ion-spinner>
-    <p>Caricamento classifica...</p>
-  </div>
+<div *ngIf="isLoading && leaderboardUsers.length === 0" class="loading-overlay">
+  <ion-spinner name="crescent"></ion-spinner>
+  <p>Caricamento classifica...</p>
+</div>
 
-  <div *ngIf="!isLoading && leaderboardUsers.length === 0 && allUsersLoaded" class="empty-leaderboard-message">
-    <p>Nessun utente nella classifica al momento. Inizia a giocare!</p>
-    <ion-button routerLink="/home" fill="solid" color="primary">Torna alla Home</ion-button>
-  </div>
+<div *ngIf="!isLoading && leaderboardUsers.length === 0 && allUsersLoaded" class="empty-leaderboard-message">
+  <p>Nessun utente nella classifica al momento. Inizia a giocare!</p>
+  <ion-button routerLink="/home" fill="solid" color="primary">Torna alla Home</ion-button>
+</div>
 
-  <ion-list *ngIf="leaderboardUsers.length > 0" lines="none" class="leaderboard-list">
-    <ion-item *ngFor="let user of leaderboardUsers; let i = index" class="leaderboard-item" [ngClass]="{'top-3': i < 3}">
-      <ion-avatar slot="start" class="profile-avatar">
-        <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo">
-      </ion-avatar>
+<ion-list *ngIf="leaderboardUsers.length > 0" lines="none" class="leaderboard-list">
+  <ion-item *ngFor="let user of leaderboardUsers; let i = index" class="leaderboard-item" [ngClass]="{'top-3': i < 3}">
+    <ion-avatar slot="start" class="profile-avatar">
+      <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo">
+    </ion-avatar>
 
-      <ion-label>
-        <h2>
-          <span class="rank-number">{{ i + 1 }}.</span>
-          <img *ngIf="i < 3" [src]="getTrophy(i)" class="trophy-icon" alt="Trofeo">
-          {{ user.nickname }}
-        </h2>
-        <p class="full-name" *ngIf="user.name || user.surname">{{ user.name }} {{ user.surname }}</p>
-        <div class="user-stats">
+    <ion-label>
+      <h2>
+        <span class="rank-number">{{ i + 1 }}.</span>
+        <img *ngIf="i < 3" [src]="getTrophy(i)" class="trophy-icon" alt="Trofeo">
+        {{ user.nickname }}
+      </h2>
+      <p class="full-name" *ngIf="user.name || user.surname">{{ user.name }} {{ user.surname }}</p>
+      <div class="user-stats">
         <span class="level-badge">Lv. {{ getUserLevel(user.totalXP) }}</span>
-          <span class="exp-points">{{ user.totalXP ?? 0 }} EXP</span>
-        </div>
-      </ion-label>
-    </ion-item>
+        <span class="exp-points">{{ user.totalXP ?? 0 }} EXP</span>
+      </div>
+    </ion-label>
+  </ion-item>
 
-    <ion-infinite-scroll (ionInfinite)="loadData($event)" [disabled]="allUsersLoaded">
-      <ion-infinite-scroll-content
-        loadingSpinner="crescent"
-        loadingText="Caricamento altri utenti...">
-      </ion-infinite-scroll-content>
-    </ion-infinite-scroll>
-    </ion-list>
-
-</ion-content>
+  <ion-infinite-scroll (ionInfinite)="loadData($event)" [disabled]="allUsersLoaded">
+    <ion-infinite-scroll-content loadingSpinner="crescent" loadingText="Caricamento altri utenti...">
+    </ion-infinite-scroll-content>
+  </ion-infinite-scroll>
+</ion-list>
