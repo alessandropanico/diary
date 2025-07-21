@@ -9,12 +9,17 @@
 
 <ion-content fullscreen class="ff7-classifica-background">
 
-  <div *ngIf="isLoading" class="loading-overlay">
+  <div *ngIf="isLoading && leaderboardUsers.length === 0" class="loading-overlay">
     <ion-spinner name="crescent"></ion-spinner>
     <p>Caricamento classifica...</p>
   </div>
 
-  <ion-list *ngIf="!isLoading" lines="none" class="leaderboard-list">
+  <div *ngIf="!isLoading && leaderboardUsers.length === 0 && allUsersLoaded" class="empty-leaderboard-message">
+    <p>Nessun utente nella classifica al momento. Inizia a giocare!</p>
+    <ion-button routerLink="/home" fill="solid" color="primary">Torna alla Home</ion-button>
+  </div>
+
+  <ion-list *ngIf="leaderboardUsers.length > 0" lines="none" class="leaderboard-list">
     <ion-item *ngFor="let user of leaderboardUsers; let i = index" class="leaderboard-item" [ngClass]="{'top-3': i < 3}">
       <ion-avatar slot="start" class="profile-avatar">
         <img [src]="user.profilePictureUrl || 'assets/images/default-avatar.png'" alt="Avatar utente">
@@ -33,6 +38,13 @@
         </div>
       </ion-label>
     </ion-item>
-  </ion-list>
+
+    <ion-infinite-scroll (ionInfinite)="loadUsers($event)" [disabled]="allUsersLoaded">
+      <ion-infinite-scroll-content
+        loadingSpinner="crescent"
+        loadingText="Caricamento altri utenti...">
+      </ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+    </ion-list>
 
 </ion-content>
