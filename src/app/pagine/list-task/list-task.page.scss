@@ -141,3 +141,45 @@
 //----------------------------------
 
 
+ion-datetime {
+  background: black !important;
+}
+
+.ff7-today-btn {
+  // Reset di alcuni stili Ionic di default per un maggiore controllo
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+  --color: #ffffff; // Colore del testo bianco
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+
+  font-size: 14px;
+  font-family: 'Orbitron', sans-serif;
+  transition: 0.3s ease;
+  padding: 0 10px; // Aggiunge un po' di padding per distanziare dal bordo
+
+  // Stile per il testo del pulsante (interno al Shadow DOM di ion-button, ma accessibile via ::part)
+  &::part(native) {
+    color: #00ffee; // Colore FF7 standard per il testo
+    font-size: 1.1em; // Leggermente più grande
+    text-shadow: 0 0 5px rgba(0, 255, 255, 0.5); // Effetto glow leggero
+    transition: all 0.3s ease;
+    border: 1px solid #00ffee; // Bordo sottile
+    padding: 8px 12px; // Padding interno per il bordo
+    border-radius: 4px; // Bordi leggermente arrotondati
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+    background: transparent;
+  }
+
+  // Hover effect per il pulsante
+  &:hover::part(native) {
+    color: #ffffff;
+    text-shadow: 0 0 8px #ffffff;
+    box-shadow: 0 0 15px #00ffee;
+    background-color: rgba(0, 255, 255, 0.1);
+  }
+}

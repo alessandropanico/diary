@@ -3,6 +3,7 @@
     <ion-title>Le tue Task</ion-title>
 
     <ion-buttons slot="end">
+      <ion-datetime-button datetime="taskDatePicker" class="ff7-today-btn"></ion-datetime-button>
       <ion-button fill="clear" class="ff7-add-btn" (click)="openTaskModal()">
         ➕ Aggiungi
       </ion-button>
@@ -10,6 +11,25 @@
   </ion-toolbar>
 </ion-header>
 
+<ion-modal [keepContentsMounted]="true">
+  <ng-template>
+    <ion-datetime
+      id="taskDatePicker"
+      presentation="date"
+      [(ngModel)]="selectedCalendarDate"
+      (ionChange)="onCalendarDateChange($event)"
+      [highlightedDates]="highlightedDatesConfig"
+      locale="it-IT"
+      firstDayOfWeek="1"
+      showDefaultButtons="true"
+      doneText="Seleziona"
+      cancelText="Annulla">
+    </ion-datetime>
+  </ng-template>
+</ion-modal>
+
+
+<ion-content class="ion-padding ff7-content">
 
   <div *ngIf="isLoadingTasks" class="loading-overlay">
     <ion-spinner name="crescent"></ion-spinner>
@@ -46,4 +66,4 @@
       </div>
     </div>
   </section>
-
+</ion-content>
