@@ -19,7 +19,7 @@
 </div>
 
 <ion-list *ngIf="leaderboardUsers.length > 0" lines="none" class="leaderboard-list">
-  <ion-item *ngFor="let user of leaderboardUsers; let i = index" class="leaderboard-item" [ngClass]="{'top-3': i < 3}">
+  <ion-item *ngFor="let user of leaderboardUsers; let i = index" class="leaderboard-item" [ngClass]="{'top-3': i < 3}" (click)="goToUserProfile(user.uid)">
     <ion-avatar slot="start" class="profile-avatar">
       <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo">
     </ion-avatar>

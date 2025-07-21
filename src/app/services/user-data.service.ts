@@ -4,9 +4,8 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit,
 import { ExpService } from './exp.service';
 import { BehaviorSubject, Observable, from } from 'rxjs';
 
-
 export interface UserDashboardCounts {
-  uid: string; // Aggiunto uid per identificare l'utente nella lista
+  uid: string;
   activeAlarmsCount: number;
   totalAlarmsCount: number;
   lastAlarmInteraction: string;
@@ -23,12 +22,11 @@ export interface UserDashboardCounts {
   diaryLastInteraction?: string;
   diaryEntryCount?: number;
   totalXP?: number;
-
   nickname?: string;
   name?: string;
   surname?: string;
   profilePictureUrl?: string;
-  photo?: string; // <--- ASSICURATI CHE IL NOME DEL CAMPO SIA ESATTAMENTE QUESTO NEL TUO FIRESTORE
+  photo?: string;
 
 }
 
@@ -441,7 +439,7 @@ export class UserDataService {
     }
   }
 
-getLeaderboardUsers(
+  getLeaderboardUsers(
     pageSize: number,
     lastDoc?: QueryDocumentSnapshot<DocumentData>
   ): Observable<{ users: UserDashboardCounts[], lastVisible: QueryDocumentSnapshot<DocumentData> | null }> {
@@ -462,20 +460,15 @@ getLeaderboardUsers(
       const users: UserDashboardCounts[] = [];
       console.log('*** DEBUG CLASSIFICA: Dati recuperati da Firestore ***');
       snapshot.forEach(doc => {
-        const userData = doc.data(); // Dati grezzi dal documento Firestore
-
-        // ⭐ VERIFICA QUI I NOMI DEI CAMPI ESATTI DA FIRESTORE ⭐
-    
-        console.log(`    Contenuto 'totalXP' in DB: ${userData['totalXP']} (Tipo: ${typeof userData['totalXP']})`); // Controlla anche questo
+        const userData = doc.data();
 
         users.push({
           uid: doc.id,
           nickname: userData['nickname'] as string ?? 'N/A',
           name: userData['name'] as string ?? '',
           surname: userData['surname'] as string ?? '',
-          // ⭐ CAMBIATO QUI: Usa 'photo' se è il nome corretto nel tuo DB ⭐
-          photo: userData['photo'] as string ?? 'assets/immaginiGenerali/default-avatar.jpg', // Default locale se assente
-          totalXP: userData['totalXP'] as number ?? 0, // Assicurati che sia un numero, con fallback a 0
+          photo: userData['photo'] as string ?? 'assets/immaginiGenerali/default-avatar.jpg',
+          totalXP: userData['totalXP'] as number ?? 0,
           activeAlarmsCount: userData['activeAlarmsCount'] as number ?? 0,
           totalAlarmsCount: userData['totalAlarmsCount'] as number ?? 0,
           lastAlarmInteraction: userData['lastAlarmInteraction'] as string ?? '',
@@ -494,7 +487,6 @@ getLeaderboardUsers(
         });
       });
       const lastVisible = snapshot.docs[snapshot.docs.length - 1] || null;
-      console.log('*** DEBUG CLASSIFICA: Utenti mappati per UI:', users.length, '***');
       return { users, lastVisible };
     }));
   }

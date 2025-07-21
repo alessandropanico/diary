@@ -1,10 +1,14 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, NgZone, ChangeDetectorRef } from '@angular/core';
 import { IonInfiniteScroll } from '@ionic/angular';
-// Importa UserDataService e UserDashboardCounts (già corretto)
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Subscription } from 'rxjs';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { ExpService } from 'src/app/services/exp.service';
+import { from, of } from 'rxjs'; // Aggiunto from e of
+import { Router } from '@angular/router'; // ⭐ Importa Router
+import { getAuth, User, onAuthStateChanged } from 'firebase/auth'; // ⭐
+
+
 
 @Component({
   selector: 'app-classifica',
@@ -28,20 +32,43 @@ export class ClassificaPage implements OnInit, OnDestroy {
   private pageSize: number = 10; // Quanti utenti caricare per volta
   public allUsersLoaded: boolean = false; // Indica se abbiamo caricato tutti gli utenti disponibili
 
+
+  private authSubscription!: Subscription; // ⭐ Per la sottoscrizione allo stato di autenticazione
+  private loggedInUserId: string | null = null; // ⭐ Per memorizzare l'ID dell'utente loggato
+
   constructor(private userDataService: UserDataService,
-    private expService: ExpService  // 👈 Aggiunto
+    private expService: ExpService,
+    private router: Router, // ⭐ Inietta Router
+    private ngZone: NgZone, // ⭐ Per gestire l'esecuzione delle zone
+    private cdr: ChangeDetectorRef // 👈 Aggiunto
 
   ) { } // Inietta il servizio
 
   ngOnInit() {
-    this.loadLeaderboard(true); // Carica la prima pagina all'inizializzazione
+    // ⭐ Gestisci lo stato di autenticazione per ottenere loggedInUserId ⭐
+    this.authSubscription = from(
+      new Promise<User | null>(resolve => {
+        const unsubscribe = onAuthStateChanged(getAuth(), user => {
+          unsubscribe(); // Si disiscrive dopo il primo evento per non sprecare risorse
+          resolve(user);
+        });
+      })
+    ).subscribe(user => {
+      this.loggedInUserId = user ? user.uid : null;
+      this.cdr.detectChanges(); // Forza il rilevamento dei cambiamenti se loggedInUserId viene aggiornato
+      this.loadLeaderboard(true); // Carica la classifica solo dopo aver ottenuto l'ID dell'utente loggato
+    });
   }
 
   ngOnDestroy() {
     if (this.usersSubscription) {
-      this.usersSubscription.unsubscribe(); // Pulizia della sottoscrizione
+      this.usersSubscription.unsubscribe();
+    }
+    if (this.authSubscription) { // ⭐ Disiscriviti anche dall'authSubscription
+      this.authSubscription.unsubscribe();
     }
   }
+
 
   /**
    * Gestisce il caricamento degli utenti per la classifica, sia al primo accesso che tramite scroll infinito.
@@ -126,6 +153,21 @@ export class ClassificaPage implements OnInit, OnDestroy {
     return this.expService.getLevelFromXP(xp !== undefined ? xp : 0);
   }
 
-
+  /**
+     * ⭐⭐ NUOVA FUNZIONE: Naviga al profilo utente ⭐⭐
+     * Se l'ID dell'utente cliccato corrisponde all'ID dell'utente loggato,
+     * naviga al proprio profilo (/profilo). Altrimenti, naviga al profilo di altri utenti
+     * passando l'ID dell'utente come parametro (/profilo-altri-utenti/:userId).
+     * @param userId L'ID dell'utente il cui profilo deve essere visualizzato.
+     */
+  goToUserProfile(userId: string) {
+    this.ngZone.run(() => { // Assicurati che la navigazione avvenga all'interno della zona Angular
+      if (userId === this.loggedInUserId) {
+        this.router.navigate(['/profilo']);
+      } else {
+        this.router.navigate(['/profilo-altri-utenti', userId]);
+      }
+    });
+  }
 
 }
