@@ -10,12 +10,10 @@ generazione automatica di to-do da note vocali.];
 Nella dashboard:
 - Attività supporto creatore App;
 
-Fare classifica livello
-(magari il podio ha i trofei oro, argento, bronzo!)
-
 Aggiustare la sveglia;
 
 Rendere l'app più "intuitiva";
+Calendario home task!
 
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ---------------------------------------------------------
