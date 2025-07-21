@@ -46,33 +46,55 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
 caricaFraseDelGiorno() {
-  this.frasiService.getFrasi().subscribe(frasi => {
-    const oggi = new Date().toDateString();
-    const key = 'lastQuoteIndex';
-    const lastDateKey = 'lastQuoteDate';
+    this.frasiService.getFrasi().subscribe((frasi) => {
+      if (!frasi || frasi.length === 0) {
+        console.warn('Nessuna frase disponibile nel JSON.');
+        this.dailyQuote = 'Non ci sono frasi disponibili oggi.';
+        this.dailyAuthor = '';
+        return;
+      }
 
-    let lastDate = localStorage.getItem(lastDateKey);
-    let lastIndex = localStorage.getItem(key);
+      const oggi = new Date();
+      oggi.setHours(0, 0, 0, 0);
 
-    if (lastDate !== oggi) {
-      let newIndex: number;
-      do {
-        newIndex = Math.floor(Math.random() * frasi.length);
-      } while (newIndex.toString() === lastIndex);
+      const key = 'lastQuoteIndex';
+      const lastDateKey = 'lastQuoteDate';
 
-      localStorage.setItem(key, newIndex.toString());
-      localStorage.setItem(lastDateKey, oggi);
+      let lastDateString = localStorage.getItem(lastDateKey);
+      let lastIndexString = localStorage.getItem(key);
 
-      this.dailyQuote = frasi[newIndex].frase;
-      this.dailyAuthor = frasi[newIndex].autore;
+      let lastDate: Date | null = null;
+      if (lastDateString) {
+        lastDate = new Date(lastDateString);
+        lastDate.setHours(0, 0, 0, 0);
+      }
 
-    } else {
-      const index = lastIndex ? parseInt(lastIndex, 10) : 0;
-      this.dailyQuote = frasi[index].frase;
-      this.dailyAuthor = frasi[index].autore;
-    }
-  });
-}
+      if (!lastDate || lastDate.getTime() !== oggi.getTime()) {
+        let newIndex: number;
+        do {
+          newIndex = Math.floor(Math.random() * frasi.length);
+        } while (newIndex.toString() === lastIndexString && frasi.length > 1);
+
+        localStorage.setItem(key, newIndex.toString());
+        localStorage.setItem(lastDateKey, oggi.toISOString());
+
+        this.dailyQuote = frasi[newIndex].frase;
+        this.dailyAuthor = frasi[newIndex].autore;
+      } else {
+        const index = lastIndexString ? parseInt(lastIndexString, 10) : 0;
+        if (index >= 0 && index < frasi.length) {
+          this.dailyQuote = frasi[index].frase;
+          this.dailyAuthor = frasi[index].autore;
+        } else {
+          const newIndex = Math.floor(Math.random() * frasi.length);
+          localStorage.setItem(key, newIndex.toString());
+          localStorage.setItem(lastDateKey, oggi.toISOString());
+          this.dailyQuote = frasi[newIndex].frase;
+          this.dailyAuthor = frasi[newIndex].autore;
+        }
+      }
+    });
+  }
 
 
   getDayOfYear(date: Date): number {
