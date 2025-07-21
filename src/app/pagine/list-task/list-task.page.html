@@ -13,15 +13,10 @@
 
 <ion-modal [keepContentsMounted]="true">
   <ng-template>
-<ion-datetime
-  id="taskDatePicker"
-  presentation="date"
-  [(ngModel)]="selectedCalendarDate"
-  (ionChange)="onCalendarDateChange($event)"
-  [highlightedDates]="highlightedDatesConfig"
-  locale="it-IT"
-  firstDayOfWeek="1">
-</ion-datetime>
+    <ion-datetime id="taskDatePicker" presentation="date" [(ngModel)]="selectedCalendarDate"
+      (ionChange)="onCalendarDateChange($event)" [highlightedDates]="highlightedDatesConfig" locale="it-IT"
+      firstDayOfWeek="1">
+    </ion-datetime>
 
   </ng-template>
 </ion-modal>

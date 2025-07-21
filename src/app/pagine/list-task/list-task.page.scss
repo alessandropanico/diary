@@ -28,7 +28,7 @@
   gap: 16px;
 }
 
-.cont{
+.cont {
   width: 100%;
   display: flex;
   justify-content: center;
@@ -75,7 +75,7 @@
   cursor: pointer;
 }
 
-.task-checkbox input:checked + .checkmark::after {
+.task-checkbox input:checked+.checkmark::after {
   content: '';
   position: absolute;
   left: 4px;
