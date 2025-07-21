@@ -28,6 +28,7 @@ export interface UserDashboardCounts {
   name?: string;
   surname?: string;
   profilePictureUrl?: string;
+  photo?: string; // <--- ASSICURATI CHE IL NOME DEL CAMPO SIA ESATTAMENTE QUESTO NEL TUO FIRESTORE
 
 }
 
@@ -459,17 +460,23 @@ getLeaderboardUsers(
 
     return from(getDocs(q).then(snapshot => {
       const users: UserDashboardCounts[] = [];
+      console.log('*** DEBUG CLASSIFICA: Dati recuperati da Firestore ***');
       snapshot.forEach(doc => {
-        const userData = doc.data(); // Ottieni i dati non ancora tipizzati per un recupero più sicuro
+        const userData = doc.data(); // Dati grezzi dal documento Firestore
+
+        // ⭐ VERIFICA QUI I NOMI DEI CAMPI ESATTI DA FIRESTORE ⭐
+        console.log(`  Utente ID: ${doc.id}`);
+        console.log(`    Contenuto 'photo' in DB: ${userData['photo']}`); // Controlla questo log
+        console.log(`    Contenuto 'totalXP' in DB: ${userData['totalXP']} (Tipo: ${typeof userData['totalXP']})`); // Controlla anche questo
+
         users.push({
-          uid: doc.id, // L'UID è sempre l'ID del documento
+          uid: doc.id,
           nickname: userData['nickname'] as string ?? 'N/A',
           name: userData['name'] as string ?? '',
           surname: userData['surname'] as string ?? '',
-          // ⭐ AGGIORNAMENTO 6: Assicurati di prelevare 'profilePictureUrl' dal DB ⭐
-          profilePictureUrl: userData['profilePictureUrl'] as string ?? '',
-          totalXP: userData['totalXP'] as number ?? 0, // ⭐ AGGIORNAMENTO 7: Assicurati che totalXP sia un numero valido ⭐
-          // Assicurati che tutti gli altri campi utilizzati nell'interfaccia e nel frontend siano mappati qui
+          // ⭐ CAMBIATO QUI: Usa 'photo' se è il nome corretto nel tuo DB ⭐
+          photo: userData['photo'] as string ?? 'assets/immaginiGenerali/default-avatar.jpg', // Default locale se assente
+          totalXP: userData['totalXP'] as number ?? 0, // Assicurati che sia un numero, con fallback a 0
           activeAlarmsCount: userData['activeAlarmsCount'] as number ?? 0,
           totalAlarmsCount: userData['totalAlarmsCount'] as number ?? 0,
           lastAlarmInteraction: userData['lastAlarmInteraction'] as string ?? '',
@@ -488,6 +495,7 @@ getLeaderboardUsers(
         });
       });
       const lastVisible = snapshot.docs[snapshot.docs.length - 1] || null;
+      console.log('*** DEBUG CLASSIFICA: Utenti mappati per UI:', users.length, '***');
       return { users, lastVisible };
     }));
   }
