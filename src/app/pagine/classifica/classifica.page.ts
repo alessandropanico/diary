@@ -1,6 +1,8 @@
-// src/app/pagine/classifica/classifica.page.ts
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { IonInfiniteScroll } from '@ionic/angular'; // Importa IonInfiniteScroll
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { IonInfiniteScroll } from '@ionic/angular';
+import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
+import { Subscription } from 'rxjs';
+import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 @Component({
   selector: 'app-classifica',
@@ -8,110 +10,104 @@ import { IonInfiniteScroll } from '@ionic/angular'; // Importa IonInfiniteScroll
   styleUrls: ['./classifica.page.scss'],
   standalone: false,
 })
-export class ClassificaPage implements OnInit {
+export class ClassificaPage implements OnInit, OnDestroy {
 
-  @ViewChild(IonInfiniteScroll) infiniteScroll!: IonInfiniteScroll; // Riferimento al componente Infinite Scroll
+  @ViewChild(IonInfiniteScroll) infiniteScroll!: IonInfiniteScroll;
 
-  // Dati fittizi COMPLETI (simulano il database)
-  private allFictionalUsers = [
-    { nickname: 'CloudStrife', name: 'Cloud', surname: 'Strife', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 99, expPoints: 999999 },
-    { nickname: 'TifaLockhart', name: 'Tifa', surname: 'Lockhart', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 95, expPoints: 850000 },
-    { nickname: 'BarretWallace', name: 'Barret', surname: 'Wallace', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 90, expPoints: 700000 },
-    { nickname: 'AerithGainsborough', name: 'Aerith', surname: 'Gainsborough', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 88, expPoints: 680000 },
-    { nickname: 'RedXIII', name: 'Red', surname: 'XIII', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 85, expPoints: 600000 },
-    { nickname: 'YuffieKisaragi', name: 'Yuffie', surname: 'Kisaragi', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 82, expPoints: 550000 },
-    { nickname: 'CaitSith', name: 'Cait', surname: 'Sith', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 80, expPoints: 500000 },
-    { nickname: 'VincentValentine', name: 'Vincent', surname: 'Valentine', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 78, expPoints: 480000 },
-    { nickname: 'CidHighwind', name: 'Cid', surname: 'Highwind', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 75, expPoints: 450000 },
-    { nickname: 'Sephiroth', name: 'Sephiroth', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 70, expPoints: 400000 },
-    { nickname: 'ZackFair', name: 'Zack', surname: 'Fair', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 68, expPoints: 380000 },
-    { nickname: 'JessieRasberry', name: 'Jessie', surname: 'Rasberry', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 65, expPoints: 350000 },
-    { nickname: 'Biggs', name: 'Biggs', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 62, expPoints: 320000 },
-    { nickname: 'Wedge', name: 'Wedge', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 60, expPoints: 300000 },
-    { nickname: 'RufusShinra', name: 'Rufus', surname: 'Shinra', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 55, expPoints: 250000 },
-    { nickname: 'Tseng', name: 'Tseng', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 52, expPoints: 220000 },
-    { nickname: 'Reno', name: 'Reno', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 50, expPoints: 200000 },
-    { nickname: 'Rude', name: 'Rude', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 48, expPoints: 180000 },
-    { nickname: 'Elena', name: 'Elena', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 45, expPoints: 150000 },
-    { nickname: 'DonCorneo', name: 'Don', surname: 'Corneo', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 40, expPoints: 100000 },
-    { nickname: 'Johnny', name: 'Johnny', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 35, expPoints: 80000 },
-    { nickname: 'MarleneWallace', name: 'Marlene', surname: 'Wallace', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 30, expPoints: 60000 },
-    { nickname: 'ElmyraGainsborough', name: 'Elmyra', surname: 'Gainsborough', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 25, expPoints: 40000 },
-    { nickname: 'Dyne', name: 'Dyne', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 20, expPoints: 20000 },
-    { nickname: 'Tseng', name: 'Tseng', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 52, expPoints: 220000 },
-    { nickname: 'Reno', name: 'Reno', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 50, expPoints: 200000 },
-    { nickname: 'Rude', name: 'Rude', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 48, expPoints: 180000 },
-    { nickname: 'Elena', name: 'Elena', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 45, expPoints: 150000 },
-    { nickname: 'DonCorneo', name: 'Don', surname: 'Corneo', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 40, expPoints: 100000 },
-    { nickname: 'Johnny', name: 'Johnny', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 35, expPoints: 80000 },
-    { nickname: 'MarleneWallace', name: 'Marlene', surname: 'Wallace', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 30, expPoints: 60000 },
-    { nickname: 'ElmyraGainsborough', name: 'Elmyra', surname: 'Gainsborough', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 25, expPoints: 40000 },
-    { nickname: 'Dyne', name: 'Dyne', surname: '', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 20, expPoints: 20000 },
-    { nickname: 'MrDolphin', name: 'Mr.', surname: 'Dolphin', profilePictureUrl: 'https://ionicframework.com/docs/img/demos/avatar.svg', level: 15, expPoints: 10000 }
-  ];
+  leaderboardUsers: UserDashboardCounts[] = [];
+  isLoading: boolean = false;
+  private usersSubscription!: Subscription;
 
+  // ⭐ MODIFICA QUI: CAMBIAMO 'null' CON 'undefined' ⭐
+  // La variabile ora può essere o un QueryDocumentSnapshot o 'undefined'
+  private lastVisibleDoc: QueryDocumentSnapshot<DocumentData> | undefined = undefined;
 
-  leaderboardUsers: any[] = []; // Gli utenti attualmente visualizzati nella classifica
-  isLoading: boolean = false; // Controlla lo spinner di caricamento
-  private currentIndex: number = 0; // Tiene traccia di quanti utenti abbiamo già caricato
-  private pageSize: number = 10; // Quanti utenti caricare per volta
-  public allUsersLoaded: boolean = false; // Indica se tutti gli utenti fittizi sono stati caricati
+  private pageSize: number = 10;
+  public allUsersLoaded: boolean = false;
 
-  constructor() { }
+  constructor(private userDataService: UserDataService) { }
 
   ngOnInit() {
-    // Ordina i dati fittizi una sola volta all'inizializzazione
-    this.allFictionalUsers.sort((a, b) => {
-      if (b.level !== a.level) {
-        return b.level - a.level;
-      }
-      return b.expPoints - a.expPoints;
-    });
-
-    this.loadUsers(null); // Carica la prima pagina all'inizializzazione
+    this.loadLeaderboard(true);
   }
 
-  // loadUsers gestisce il caricamento iniziale e quello per lo scroll infinito
-  // L'argomento 'event' è opzionale, utilizzato solo da ion-infinite-scroll
-  loadUsers(event: any) {
-    if (this.allUsersLoaded && event) { // Se tutti gli utenti sono già caricati, disabilita l'infinite scroll
-      event.target.complete();
-      event.target.disabled = true;
+  ngOnDestroy() {
+    if (this.usersSubscription) {
+      this.usersSubscription.unsubscribe();
+    }
+  }
+
+  /**
+   * Gestisce il caricamento degli utenti per la classifica, sia al primo accesso che tramite scroll infinito.
+   * @param isInitialLoad Indica se è il caricamento iniziale (true) o successivo (false).
+   * @param event L'evento di scroll, fornito da `ion-infinite-scroll`.
+   */
+  loadLeaderboard(isInitialLoad: boolean, event?: any) {
+    if (this.allUsersLoaded && !isInitialLoad) {
+      if (event) event.target.complete();
       return;
     }
 
-    this.isLoading = true; // Mostra lo spinner
+    this.isLoading = true;
 
-    // Simula un ritardo di rete (come se stessimo recuperando dati)
-    setTimeout(() => {
-      const nextUsers = this.allFictionalUsers.slice(this.currentIndex, this.currentIndex + this.pageSize);
-      this.leaderboardUsers = [...this.leaderboardUsers, ...nextUsers];
-      this.currentIndex += nextUsers.length;
+    // La chiamata qui è ora coerente: passi 'undefined' per il primo caricamento
+    // o un QueryDocumentSnapshot per quelli successivi.
+    this.usersSubscription = this.userDataService.getLeaderboardUsers(this.pageSize, this.lastVisibleDoc)
+      .subscribe({
+        next: (response) => {
+          if (isInitialLoad) {
+            this.leaderboardUsers = response.users;
+          } else {
+            this.leaderboardUsers = [...this.leaderboardUsers, ...response.users];
+          }
 
-      this.isLoading = false; // Nascondi lo spinner
+          // Quando salvi il risultato, potresti ricevere 'null' da Firestore
+          // È importante che la variabile possa accettarlo, ma la coerenza iniziale è con 'undefined'
+          // L'operatore '?? undefined' assicura che se 'response.lastVisible' è null,
+          // la nostra variabile riceva 'undefined', mantenendo la coerenza.
+          this.lastVisibleDoc = response.lastVisible ?? undefined;
+          this.isLoading = false;
 
-      if (event) {
-        event.target.complete(); // Segnala a Infinite Scroll che il caricamento è completato
-      }
+          if (response.users.length < this.pageSize) {
+            this.allUsersLoaded = true;
+          }
 
-      // Se non ci sono più utenti da caricare, imposta il flag
-      if (this.currentIndex >= this.allFictionalUsers.length) {
-        this.allUsersLoaded = true;
-        if (event) {
-          event.target.disabled = true; // Disabilita l'infinite scroll definitivamente
+          if (event) {
+            event.target.complete();
+            if (this.allUsersLoaded) {
+              event.target.disabled = true;
+            }
+          }
+        },
+        error: (err) => {
+          console.error('Errore durante il caricamento della classifica:', err);
+          this.isLoading = false;
+          if (event) event.target.complete();
         }
-      }
-    }, 500); // Ritardo di 0.5 secondi per simulare una chiamata di rete
+      });
   }
 
-  // Funzione per ottenere il percorso del trofeo in base alla posizione
+  /**
+   * Metodo chiamato dall'evento `ionInfinite` del componente IonInfiniteScroll.
+   * Avvia il caricamento dei dati successivi.
+   * @param event L'evento di infinite scroll.
+   */
+  loadData(event: any) {
+    this.loadLeaderboard(false, event);
+  }
+
+  /**
+   * Restituisce il percorso dell'icona del trofeo in base alla posizione nella classifica.
+   * @param index L'indice dell'utente nella lista (0 per il primo, 1 per il secondo, ecc.).
+   * @returns Il percorso dell'immagine del trofeo o una stringa vuota se non è una delle prime tre posizioni.
+   */
   getTrophy(index: number): string {
     if (index === 0) {
-      return 'assets/immaginiGenerali/trophy-gold.png';
+      return 'assets/icons/trophy-gold.png';
     } else if (index === 1) {
-      return 'assets/immaginiGenerali/trophy-silver.png';
+      return 'assets/icons/trophy-silver.png';
     } else if (index === 2) {
-      return 'assets/immaginiGenerali/trophy-bronze.png';
+      return 'assets/icons/trophy-bronze.png';
     }
     return '';
   }

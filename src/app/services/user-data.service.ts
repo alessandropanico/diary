@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { getAuth, User } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit, getFirestore, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit, getFirestore, updateDoc, increment, DocumentData, QueryDocumentSnapshot, startAfter } from 'firebase/firestore'; // Importa DocumentData, QueryDocumentSnapshot, startAfter
 import { ExpService } from './exp.service';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, from } from 'rxjs';
+
 
 export interface UserDashboardCounts {
   activeAlarmsCount: number;
@@ -21,6 +22,11 @@ export interface UserDashboardCounts {
   diaryLastInteraction?: string;
   diaryEntryCount?: number;
   totalXP?: number;
+
+  nickname?: string;
+  name?: string;
+  surname?: string;
+  profilePictureUrl?: string;
 }
 
 @Injectable({
@@ -411,4 +417,56 @@ export class UserDataService {
       await this.updateNumericField(uid, 'diaryEntryCount', 'increment');
     }
   }
+
+ getLeaderboardUsers(
+    pageSize: number,
+    lastDoc?: QueryDocumentSnapshot<DocumentData> // CAMBIATO DA '| null' A '?' (che implica '| undefined')
+  ): Observable<{ users: UserDashboardCounts[], lastVisible: QueryDocumentSnapshot<DocumentData> | null }> {
+    const usersCollection = collection(this.firestore, 'users');
+
+    let q = query(
+      usersCollection,
+      orderBy('totalXP', 'desc'),
+      orderBy('nicknameLowercase', 'asc'),
+      limit(pageSize)
+    );
+
+    // Il controllo resta lo stesso, perché 'undefined' e 'null' sono entrambi falsy
+    if (lastDoc) {
+      q = query(q, startAfter(lastDoc));
+    }
+
+    return from(getDocs(q).then(snapshot => {
+      const users: UserDashboardCounts[] = [];
+      snapshot.forEach(doc => {
+        const userData = doc.data() as UserDashboardCounts;
+        users.push({
+          uid: doc.id,
+          nickname: userData.nickname,
+          name: userData.name,
+          surname: userData.surname,
+          profilePictureUrl: userData.profilePictureUrl,
+          totalXP: userData.totalXP ?? 0,
+          activeAlarmsCount: userData.activeAlarmsCount ?? 0,
+          totalAlarmsCount: userData.totalAlarmsCount ?? 0,
+          lastAlarmInteraction: userData.lastAlarmInteraction ?? '',
+          totalNotesCount: userData.totalNotesCount ?? 0,
+          totalListsCount: userData.totalListsCount ?? 0,
+          incompleteListItems: userData.incompleteListItems ?? 0,
+          lastNoteListInteraction: userData.lastNoteListInteraction ?? '',
+          followersCount: userData.followersCount ?? 0,
+          followingCount: userData.followingCount ?? 0,
+          lastGlobalActivityTimestamp: userData.lastGlobalActivityTimestamp ?? '',
+          totalPhotosShared: userData.totalPhotosShared ?? 0,
+          lastPhotoSharedInteraction: userData.lastPhotoSharedInteraction ?? '',
+          diaryTotalWords: userData.diaryTotalWords ?? 0,
+          diaryLastInteraction: userData.diaryLastInteraction ?? '',
+          diaryEntryCount: userData.diaryEntryCount ?? 0,
+        } as UserDashboardCounts);
+      });
+      const lastVisible = snapshot.docs[snapshot.docs.length - 1] || null;
+      return { users, lastVisible };
+    }));
+  }
+
 }

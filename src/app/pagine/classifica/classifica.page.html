@@ -1,5 +1,5 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar class="ff7-toolbar">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
@@ -33,13 +33,13 @@
         </h2>
         <p class="full-name" *ngIf="user.name || user.surname">{{ user.name }} {{ user.surname }}</p>
         <div class="user-stats">
-          <span class="level-badge">Lv. {{ user.level }}</span>
-          <span class="exp-points">{{ user.expPoints }} EXP</span>
+          <span class="level-badge">Lv. {{ user.totalXP ? (user.totalXP / 1000 | number:'1.0-0') : 0 }}</span>
+          <span class="exp-points">{{ user.totalXP ?? 0 }} EXP</span>
         </div>
       </ion-label>
     </ion-item>
 
-    <ion-infinite-scroll (ionInfinite)="loadUsers($event)" [disabled]="allUsersLoaded">
+    <ion-infinite-scroll (ionInfinite)="loadData($event)" [disabled]="allUsersLoaded">
       <ion-infinite-scroll-content
         loadingSpinner="crescent"
         loadingText="Caricamento altri utenti...">
