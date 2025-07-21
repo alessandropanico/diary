@@ -107,11 +107,11 @@ export class ClassificaPage implements OnInit {
   // Funzione per ottenere il percorso del trofeo in base alla posizione
   getTrophy(index: number): string {
     if (index === 0) {
-      return 'assets/icons/trophy-gold.png';
+      return 'assets/immaginiGenerali/trophy-gold.png';
     } else if (index === 1) {
-      return 'assets/icons/trophy-silver.png';
+      return 'assets/immaginiGenerali/trophy-silver.png';
     } else if (index === 2) {
-      return 'assets/icons/trophy-bronze.png';
+      return 'assets/immaginiGenerali/trophy-bronze.png';
     }
     return '';
   }
