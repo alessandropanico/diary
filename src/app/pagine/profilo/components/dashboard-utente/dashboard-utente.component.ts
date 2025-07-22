@@ -8,7 +8,7 @@ import { Subscription } from 'rxjs';
   selector: 'app-dashboard-utente',
   templateUrl: './dashboard-utente.component.html',
   styleUrls: ['./dashboard-utente.component.scss'],
-  standalone: true, // ⭐ Potrebbe essere necessaria se usi Angular 15+ e non lo è già
+  standalone: true,
   imports: [CommonModule],
 })
 export class DashboardUtenteComponent implements OnInit, OnDestroy {
@@ -18,11 +18,17 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   totalAlarmsCount: number = 0;
   lastAlarmInteraction: string = '';
 
-  // Variabili per le metriche di note e liste
+  // Variabili per le metriche di note e liste (esistenti)
   totalNotesCount: number = 0;
   totalListsCount: number = 0;
-  incompleteListItems: number = 0;
-  lastNoteListInteraction: string = '';
+  incompleteListItems: number = 0; // Mantenuta
+  lastNoteListInteraction: string = ''; // Mantenuta
+
+  // ⭐ NUOVE VARIABILI PER LA SEPARAZIONE DI NOTE E TASK
+  lastNoteInteraction: string = ''; // Ultima modifica specifica per le Note
+  incompleteTaskItems: number = 0; // Task incompiute (se diversa da incompleteListItems)
+  lastTaskInteraction: string = ''; // Ultima modifica specifica per le Task
+
 
   // Variabili per le metriche di social
   followersCount: number = 0;
@@ -43,13 +49,9 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
   xpForNextLevel: number = 100;
   totalXP: number = 0;
   progressPercentage: number = 0;
-  // ⭐ NUOVO: Variabile per indicare se l'utente ha raggiunto il livello massimo
   maxLevelReached: boolean = false;
 
   lastGlobalActivityTimestamp: string = '';
-
-  // ⭐ RIMOSSO: levelThresholds non è più necessario qui, la logica è in ExpService
-  // private levelThresholds: { level: number, xpRequired: number }[] = [...];
 
   private subscriptions: Subscription = new Subscription();
 
@@ -60,14 +62,13 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subscriptions.add(
-      // ⭐ MODIFICATO: Sottoscrizione a getUserExpData() per ottenere tutti i dati XP e livello pre-calcolati
       this.expService.getUserExpData().subscribe(expData => {
         this.totalXP = expData.totalXP;
         this.userLevel = expData.userLevel;
         this.currentXP = expData.currentXP;
         this.xpForNextLevel = expData.xpForNextLevel;
         this.progressPercentage = expData.progressPercentage;
-        this.maxLevelReached = expData.maxLevelReached; // ⭐ NOVITÀ: Assegna il valore di maxLevelReached
+        this.maxLevelReached = expData.maxLevelReached;
       })
     );
     this.loadDashboardData();
@@ -79,9 +80,6 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
 
   async loadDashboardData(): Promise<void> {
     try {
-      // Nota: Non passiamo totalXP direttamente da qui a ExpService,
-      // perché ExpService si abbona al totalXP salvato in UserDataService
-      // tramite onAuthStateChanged e la sua logica interna.
       const data = await this.userDataService.getUserData() as UserDashboardCounts | null;
 
       if (data) {
@@ -89,10 +87,17 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
         this.totalAlarmsCount = data.totalAlarmsCount ?? 0;
         this.lastAlarmInteraction = data.lastAlarmInteraction ?? '';
 
+        // Dati esistenti per Note e Liste
         this.totalNotesCount = data.totalNotesCount ?? 0;
         this.totalListsCount = data.totalListsCount ?? 0;
         this.incompleteListItems = data.incompleteListItems ?? 0;
         this.lastNoteListInteraction = data.lastNoteListInteraction ?? '';
+
+        // ⭐ NUOVI DATI PER LA SEPARAZIONE
+        this.lastNoteInteraction = data.lastNoteInteraction ?? '';
+        this.incompleteTaskItems = data.incompleteTaskItems ?? 0; // Se usi questo al posto di incompleteListItems per le task
+        this.lastTaskInteraction = data.lastTaskInteraction ?? '';
+
 
         this.followersCount = data.followersCount ?? 0;
         this.followingCount = data.followingCount ?? 0;
@@ -102,13 +107,12 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
 
         this.lastGlobalActivityTimestamp = data.lastGlobalActivityTimestamp ?? '';
 
-        // ⭐ POPOLA LE NUOVE VARIABILI DEL DIARIO
         this.diaryTotalWords = data.diaryTotalWords ?? 0;
         this.diaryLastInteraction = data.diaryLastInteraction ?? '';
         this.diaryEntryCount = data.diaryEntryCount ?? 0;
 
         // totalXP è gestito dalla sottoscrizione a expService.getUserExpData() in ngOnInit.
-        // Non è più necessario leggerlo direttamente qui da data.
+        // this.totalXP = data.totalXP ?? 0; // Non è più necessario qui se lo ricevi da expService
       } else {
         this.resetDashboardData();
       }
@@ -122,34 +126,35 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     this.activeAlarmsCount = 0;
     this.totalAlarmsCount = 0;
     this.lastAlarmInteraction = '';
+
+    // Reset dati esistenti
     this.totalNotesCount = 0;
     this.totalListsCount = 0;
     this.incompleteListItems = 0;
     this.lastNoteListInteraction = '';
+
+    // ⭐ Reset nuovi dati
+    this.lastNoteInteraction = '';
+    this.incompleteTaskItems = 0;
+    this.lastTaskInteraction = '';
+
     this.followersCount = 0;
     this.followingCount = 0;
     this.totalPhotosShared = 0;
     this.lastPhotoSharedInteraction = '';
 
     this.lastGlobalActivityTimestamp = '';
-    // ⭐ RESETTA LE NUOVE VARIABILI DEL DIARIO
     this.diaryTotalWords = 0;
     this.diaryLastInteraction = '';
     this.diaryEntryCount = 0;
 
-    // Queste variabili di livello verranno comunque aggiornate dalla sottoscrizione a ExpService
-    // ma un reset qui può aiutare per una coerenza visiva iniziale.
     this.userLevel = 1;
     this.currentXP = 0;
     this.xpForNextLevel = 100;
     this.totalXP = 0;
     this.progressPercentage = 0;
-    this.maxLevelReached = false; // ⭐ NOVITÀ: Resetta anche questa
+    this.maxLevelReached = false;
   }
-
-  // ⭐ RIMOSSO: calculateLevelAndProgress() non è più necessario qui.
-  // La logica è stata spostata interamente in ExpService e i risultati vengono ricevuti tramite Observable.
-  // calculateLevelAndProgress(): void { ... }
 
   getDisplayDate(dateString: string): string {
     if (!dateString) {

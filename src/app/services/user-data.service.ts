@@ -4,15 +4,25 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit,
 import { ExpService } from './exp.service';
 import { BehaviorSubject, Observable, from } from 'rxjs';
 
+// src/app/services/user-data.service.ts (o un file di interfacce dedicato)
+
 export interface UserDashboardCounts {
   uid: string;
   activeAlarmsCount: number;
   totalAlarmsCount: number;
   lastAlarmInteraction: string;
+
   totalNotesCount: number;
   totalListsCount: number;
-  incompleteListItems: number;
-  lastNoteListInteraction: string;
+  incompleteListItems: number; // Mantenuto, come da tua interfaccia
+  lastNoteListInteraction: string; // Mantenuto, come da tua interfaccia
+
+  // ⭐ NUOVE PROPRIETÀ per la separazione di Note e Task
+  lastNoteInteraction?: string; // Nuova: Ultima interazione specifica per le Note
+  lastTaskInteraction?: string; // Nuova: Ultima interazione specifica per le Task
+  incompleteTaskItems?: number; // Nuova: Task incomplete (se la vuoi separata da incompleteListItems)
+
+
   followersCount: number;
   followingCount: number;
   lastGlobalActivityTimestamp?: string;
@@ -27,7 +37,6 @@ export interface UserDashboardCounts {
   surname?: string;
   profilePictureUrl?: string;
   photo?: string;
-
 }
 
 @Injectable({

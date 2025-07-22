@@ -19,7 +19,7 @@
 
   <div class="ff7-dashboard-section level-2-section">
     <h3 class="ff7-section-heading">
-      <i class="icon-notes"></i> Note & Task
+      <i class="icon-notes"></i> Le Tue Note
     </h3>
     <div class="ff7-data-grid">
       <div class="ff7-data-item">
@@ -27,16 +27,30 @@
         <div class="ff7-data-value">{{ totalNotesCount }}</div>
       </div>
       <div class="ff7-data-item">
-        <div class="ff7-data-label">Liste Totali</div>
+        <div class="ff7-data-label">Ultima Modifica Nota</div>
+        <div class="ff7-data-value">{{ getDisplayDate(lastNoteInteraction) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ff7-section-divider"></div>
+
+  <div class="ff7-dashboard-section level-2-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-tasks"></i> Le Tue Task
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Liste Task Totali</div>
         <div class="ff7-data-value">{{ totalListsCount }}</div>
       </div>
       <div class="ff7-data-item">
-        <div class="ff7-data-label">Task Incompiuti</div>
-        <div class="ff7-data-value ff7-warning-value">{{ incompleteListItems }}</div>
+        <div class="ff7-data-label">Task Incompiute</div>
+        <div class="ff7-data-value ff7-warning-value">{{ incompleteTaskItems }}</div>
       </div>
       <div class="ff7-data-item">
-        <div class="ff7-data-label">Ultima Modifica</div>
-        <div class="ff7-data-value">{{ getDisplayDate(lastNoteListInteraction) }}</div>
+        <div class="ff7-data-label">Ultima Modifica Task</div>
+        <div class="ff7-data-value">{{ getDisplayDate(lastTaskInteraction) }}</div>
       </div>
     </div>
   </div>
