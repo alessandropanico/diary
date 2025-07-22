@@ -6,7 +6,7 @@ import { getAuth, User, onAuthStateChanged } from 'firebase/auth';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
-import { ExpService } from 'src/app/services/exp.service'; // ⭐ Importa ExpService
+import { ExpService } from 'src/app/services/exp.service';
 
 @Component({
   selector: 'app-profilo',
@@ -48,7 +48,6 @@ export class ProfiloPage implements OnInit, OnDestroy {
   followersCount = 0;
   followingCount = 0;
 
-  // ⭐ NOVITÀ: Proprietà per il livello e XP, che riceveremo da ExpService
   userLevel: number = 0;
   userXP: number = 0;
   xpForNextLevel: number = 100;
@@ -58,9 +57,12 @@ export class ProfiloPage implements OnInit, OnDestroy {
   private followersCountSubscription: Subscription | undefined;
   private followingCountSubscription: Subscription | undefined;
   private userStatusSubscription: Subscription | undefined;
-  private userExpSubscription: Subscription | undefined; // ⭐ NOVITÀ: Sottoscrizione per l'XP e Livello
+  private userExpSubscription: Subscription | undefined;
 
   isLoadingStats: boolean = true;
+
+  // ⭐ NOVITÀ: Proprietà per gestire lo switch tra Post e Dashboard
+  selectedSegment: 'posts' | 'dashboard' = 'posts'; // Default a 'posts'
 
   constructor(
     private ngZone: NgZone,
@@ -68,7 +70,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     private userDataService: UserDataService,
     private followService: FollowService,
     private router: Router,
-    private expService: ExpService, // ⭐ Iniettato ExpService
+    private expService: ExpService,
   ) { }
 
   async ngOnInit() {
@@ -83,14 +85,13 @@ export class ProfiloPage implements OnInit, OnDestroy {
           await this.loadProfileData(user);
           this.subscribeToFollowCounts(user.uid);
           this.subscribeToUserStatus();
-          this.subscribeToUserExp(); // ⭐ NOVITÀ: Sottoscrizione all'XP dell'utente
+          this.subscribeToUserExp();
         } else {
           this.loggedInUserId = null;
           this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '', status: '', link: '', linkText: '' };
           this.profileEdit = { ...this.profile };
           this.isLoading = false;
           this.isLoadingStats = false;
-          // ⭐ NOVITÀ: Reset anche per XP e livello in caso di logout
           this.userLevel = 0;
           this.userXP = 0;
           this.xpForNextLevel = 100;
@@ -100,7 +101,6 @@ export class ProfiloPage implements OnInit, OnDestroy {
     });
   }
 
-  // ⭐ NOVITÀ: Metodo per sottoscriversi all'XP dell'utente
   private subscribeToUserExp() {
     if (this.userExpSubscription) this.userExpSubscription.unsubscribe();
 
@@ -346,7 +346,6 @@ export class ProfiloPage implements OnInit, OnDestroy {
     if (this.userStatusSubscription) {
       this.userStatusSubscription.unsubscribe();
     }
-    // ⭐ NOVITÀ: Disiscrizione dalla sottoscrizione XP
     if (this.userExpSubscription) {
       this.userExpSubscription.unsubscribe();
     }

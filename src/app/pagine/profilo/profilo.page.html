@@ -85,10 +85,38 @@
       </div>
     </div>
 
-    <div *ngIf="!editing">
-      <app-dashboard-utente></app-dashboard-utente>
-    </div>
+    <div class="profile-content-switcher" *ngIf="!editing">
+      <div class="ff7-toggle-buttons">
+        <ion-button
+          (click)="selectedSegment = 'posts'"
+          [class.active]="selectedSegment === 'posts'"
+          class="ff7-toggle-button"
+          fill="clear"
+          expand="block"
+        >
+          Post
+        </ion-button>
+        <ion-button
+          (click)="selectedSegment = 'dashboard'"
+          [class.active]="selectedSegment === 'dashboard'"
+          class="ff7-toggle-button"
+          fill="clear"
+          expand="block"
+        >
+          Dashboard
+        </ion-button>
+        <div class="toggle-indicator" [class.shift-right]="selectedSegment === 'dashboard'"></div>
+      </div>
 
+      <div>
+        <div *ngIf="selectedSegment === 'posts'" class="content-fade-in">
+          <app-post></app-post>
+        </div>
+        <div *ngIf="selectedSegment === 'dashboard'" class="content-fade-in">
+          <app-dashboard-utente></app-dashboard-utente>
+        </div>
+      </div>
+    </div>
     <form *ngIf="editing" (ngSubmit)="saveProfile()">
       <ion-list lines="none">
         <ion-item class="ff7-item">
