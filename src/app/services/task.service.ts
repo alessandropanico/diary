@@ -15,7 +15,7 @@ import {
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 
 import { ExpService } from './exp.service';
-import { UserDataService } from './user-data.service'; // ⭐ Importa UserDataService
+import { UserDataService } from './user-data.service';
 
 @Injectable({
   providedIn: 'root'
@@ -32,7 +32,7 @@ export class TaskService {
 
   constructor(
     private expService: ExpService,
-    private userDataService: UserDataService // ⭐ Inietta UserDataService
+    private userDataService: UserDataService
   ) {
     const auth = getAuth();
     this.authStateSubscription = new Subscription();
@@ -45,6 +45,7 @@ export class TaskService {
         } else {
           this.tasksSubject.next([]);
           this.initialLoadCompleted = true;
+          await this.userDataService.setIncompleteTaskItems(0);
         }
       })
     );
@@ -64,6 +65,15 @@ export class TaskService {
     return user ? user.uid : null;
   }
 
+  /**
+   * Aggiorna il conteggio delle task incomplete nell'User Data Service.
+   * @param tasks L'array corrente di task.
+   */
+  private async updateIncompleteTasksCount(tasks: Task[]): Promise<void> {
+    const incompleteCount = tasks.filter(task => !task.completed).length;
+    await this.userDataService.setIncompleteTaskItems(incompleteCount);
+  }
+
   async loadTasks(): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
@@ -72,6 +82,7 @@ export class TaskService {
       } else {
         this.tasksSubject.next([]);
       }
+      await this.userDataService.setIncompleteTaskItems(0);
       return;
     }
 
@@ -118,21 +129,21 @@ export class TaskService {
       loadedTasks.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       this.tasksSubject.next(loadedTasks);
 
+      await this.updateIncompleteTasksCount(loadedTasks);
+
       if (xpFromExpiredTasks > 0) {
         this.expService.addExperience(xpFromExpiredTasks);
-        // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE - per task scadute
-        await this.userDataService.saveUserData({
-            lastGlobalActivityTimestamp: new Date().toISOString()
-        });
+        await this.userDataService.setLastGlobalActivityTimestamp(new Date().toISOString());
       }
 
     } catch (error) {
       console.error('TaskService: Errore durante il caricamento delle task da Firestore:', error);
       this.tasksSubject.next([]);
+      await this.userDataService.setIncompleteTaskItems(0);
     }
   }
 
-async addTask(task: Task): Promise<void> {
+  async addTask(task: Task): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
       console.error('TaskService: Nessun utente autenticato. Impossibile aggiungere la task.');
@@ -141,16 +152,18 @@ async addTask(task: Task): Promise<void> {
 
     try {
       const tasksCollectionRef = collection(this.db, `users/${uid}/tasks`);
-      const taskToSave = { ...task, createdAt: new Date().toISOString() };
+      const taskToSave = { ...task, completed: false, createdAt: new Date().toISOString() };
       const docRef = await addDoc(tasksCollectionRef, taskToSave);
 
       const currentTasks = this.tasksSubject.value || [];
       const newTaskWithId = { id: docRef.id, ...taskToSave };
-      this.tasksSubject.next([...currentTasks, newTaskWithId]);
+      const updatedTasks = [...currentTasks, newTaskWithId];
+
+      this.tasksSubject.next(updatedTasks);
 
       this.expService.addExperience(5);
-      // ⭐ AGGIORNAMENTO: Chiama setLastTaskInteraction per l'aggiunta di una nuova task
       await this.userDataService.setLastTaskInteraction(new Date().toISOString());
+      await this.updateIncompleteTasksCount(updatedTasks);
 
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiunta della task a Firestore:', error);
@@ -158,7 +171,7 @@ async addTask(task: Task): Promise<void> {
     }
   }
 
- async deleteTask(taskId: string): Promise<void> {
+  async deleteTask(taskId: string): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
       console.error('TaskService: Nessun utente autenticato. Impossibile eliminare la task.');
@@ -170,10 +183,12 @@ async addTask(task: Task): Promise<void> {
       await deleteDoc(taskDocRef);
 
       const currentTasks = this.tasksSubject.value || [];
-      this.tasksSubject.next(currentTasks.filter(t => t.id !== taskId));
+      const updatedTasks = currentTasks.filter(t => t.id !== taskId); // Crea la nuova lista
 
-      // ⭐ AGGIORNAMENTO: Chiama setLastTaskInteraction per l'eliminazione di una task
+      this.tasksSubject.next(updatedTasks); // Aggiorna il BehaviorSubject
+
       await this.userDataService.setLastTaskInteraction(new Date().toISOString());
+      await this.updateIncompleteTasksCount(updatedTasks);
 
     } catch (error) {
       console.error('TaskService: Errore durante l\'eliminazione della task da Firestore:', error);
@@ -181,7 +196,7 @@ async addTask(task: Task): Promise<void> {
     }
   }
 
-   async toggleCompletion(taskId: string, completed: boolean): Promise<void> {
+  async toggleCompletion(taskId: string, completed: boolean): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
       console.error('TaskService: Nessun utente autenticato. Impossibile aggiornare la task.');
@@ -201,8 +216,8 @@ async addTask(task: Task): Promise<void> {
       if (completed) {
         this.expService.addExperience(10);
       }
-      // ⭐ AGGIORNAMENTO: Chiama setLastTaskInteraction per il toggle di completamento
       await this.userDataService.setLastTaskInteraction(new Date().toISOString());
+      await this.updateIncompleteTasksCount(updatedTasks);
 
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiornamento della task in Firestore:', error);
