@@ -751,7 +751,7 @@ ion-spinner {
 
     ion-segment-button {
       --color: var(--text-secondary-subtle);
-      --color-checked: var(--bg-dark-deep);
+      // --color-checked: var(--bg-dark-deep);
       --background-checked: var(--primary-accent-calm);
       --ripple-color: var(--primary-accent-calm);
       transition: all 0.2s ease;
@@ -781,5 +781,24 @@ ion-spinner {
         filter: drop-shadow(0 0 10px rgba(95, 234, 255, 0.6));
       }
     }
+  }
+
+
+}
+
+.sleep-segment {
+  ion-segment-button {
+    transition: background-color 0.3s ease, color 0.3s ease;
+    --color-checked: #0e122b; // Colore del testo icona/p al check
+  }
+
+  ion-segment-button[aria-pressed="true"] {
+    background-color: #264653 !important; /* Cambia il colore come vuoi */
+    color: #0e122b !important;
+  }
+
+  ion-icon,
+  p {
+    pointer-events: none;
   }
 }

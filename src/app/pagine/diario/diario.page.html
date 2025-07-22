@@ -103,29 +103,35 @@
         </div>
 
 
-        <div class="metric-box">
-          <div class="metric-header">
-            <ion-label class="ff7-label-text">Sonno</ion-label>
-            <span class="value-display">
-              {{ currentEntry.sleepQuality || '-' }}
-            </span>
-          </div>
-          <ion-segment [(ngModel)]="currentEntry.sleepQuality" color="primary-accent-calm" mode="md"
-            (ionChange)="markAsChanged()">
-            <ion-segment-button value="scarso">
-              <ion-icon name="bed-outline"></ion-icon>
-              <p>Scarso</p>
-            </ion-segment-button>
-            <ion-segment-button value="medio">
-              <ion-icon name="moon-outline"></ion-icon>
-              <p>Medio</p>
-            </ion-segment-button>
-            <ion-segment-button value="ottimo">
-              <ion-icon name="checkmark-circle-outline"></ion-icon>
-              <p>Ottimo</p>
-            </ion-segment-button>
-          </ion-segment>
-        </div>
+     <div class="metric-box">
+  <div class="metric-header">
+    <ion-label class="ff7-label-text">Sonno</ion-label>
+    <span class="value-display">
+      {{ currentEntry.sleepQuality || '-' }}
+    </span>
+  </div>
+
+  <ion-segment
+    [(ngModel)]="currentEntry.sleepQuality"
+    (ionChange)="markAsChanged()"
+    mode="md"
+    class="sleep-segment"
+  >
+    <ion-segment-button value="scarso">
+      <ion-icon name="bed-outline"></ion-icon>
+      <p>Scarso</p>
+    </ion-segment-button>
+    <ion-segment-button value="medio">
+      <ion-icon name="moon-outline"></ion-icon>
+      <p>Medio</p>
+    </ion-segment-button>
+    <ion-segment-button value="ottimo">
+      <ion-icon name="checkmark-circle-outline"></ion-icon>
+      <p>Ottimo</p>
+    </ion-segment-button>
+  </ion-segment>
+</div>
+
 
         <div class="metric-box">
           <div class="metric-header">
