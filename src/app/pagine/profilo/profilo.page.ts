@@ -6,6 +6,7 @@ import { getAuth, User, onAuthStateChanged } from 'firebase/auth';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
+import { ExpService } from 'src/app/services/exp.service'; // ⭐ Importa ExpService
 
 @Component({
   selector: 'app-profilo',
@@ -24,7 +25,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     bio: '',
     status: '',
     link: '',
-    linkText: '' // ⭐ NOVITÀ: Aggiunto il campo linkText
+    linkText: ''
   };
 
   profileEdit = {
@@ -36,7 +37,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     bio: '',
     status: '',
     link: '',
-    linkText: '' // ⭐ NOVITÀ: Aggiunto il campo linkText
+    linkText: ''
   };
 
   editing = false;
@@ -47,13 +48,19 @@ export class ProfiloPage implements OnInit, OnDestroy {
   followersCount = 0;
   followingCount = 0;
 
+  // ⭐ NOVITÀ: Proprietà per il livello e XP, che riceveremo da ExpService
+  userLevel: number = 0;
+  userXP: number = 0;
+  xpForNextLevel: number = 100;
+  xpPercentage: number = 0;
+
   private authStateUnsubscribe: (() => void) | undefined;
   private followersCountSubscription: Subscription | undefined;
   private followingCountSubscription: Subscription | undefined;
+  private userStatusSubscription: Subscription | undefined;
+  private userExpSubscription: Subscription | undefined; // ⭐ NOVITÀ: Sottoscrizione per l'XP e Livello
 
   isLoadingStats: boolean = true;
-
-  private userStatusSubscription: Subscription | undefined;
 
   constructor(
     private ngZone: NgZone,
@@ -61,6 +68,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
     private userDataService: UserDataService,
     private followService: FollowService,
     private router: Router,
+    private expService: ExpService, // ⭐ Iniettato ExpService
   ) { }
 
   async ngOnInit() {
@@ -75,15 +83,33 @@ export class ProfiloPage implements OnInit, OnDestroy {
           await this.loadProfileData(user);
           this.subscribeToFollowCounts(user.uid);
           this.subscribeToUserStatus();
+          this.subscribeToUserExp(); // ⭐ NOVITÀ: Sottoscrizione all'XP dell'utente
         } else {
           this.loggedInUserId = null;
-          // ⭐ Aggiornato con i campi link e linkText
           this.profile = { photo: '', banner: '', nickname: '', name: '', email: '', bio: '', status: '', link: '', linkText: '' };
           this.profileEdit = { ...this.profile };
           this.isLoading = false;
           this.isLoadingStats = false;
-          console.warn('ProfiloPage: Nessun utente loggato.');
+          // ⭐ NOVITÀ: Reset anche per XP e livello in caso di logout
+          this.userLevel = 0;
+          this.userXP = 0;
+          this.xpForNextLevel = 100;
+          this.xpPercentage = 0;
         }
+      });
+    });
+  }
+
+  // ⭐ NOVITÀ: Metodo per sottoscriversi all'XP dell'utente
+  private subscribeToUserExp() {
+    if (this.userExpSubscription) this.userExpSubscription.unsubscribe();
+
+    this.userExpSubscription = this.expService.getUserExpData().subscribe(expData => {
+      this.ngZone.run(() => {
+        this.userLevel = expData.userLevel;
+        this.userXP = expData.currentXP;
+        this.xpForNextLevel = expData.xpForNextLevel;
+        this.xpPercentage = expData.progressPercentage;
       });
     });
   }
@@ -104,7 +130,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
           bio: firestoreData.bio || '',
           status: firestoreData.status ?? '',
           link: firestoreData.link || '',
-          linkText: firestoreData.linkText || '' // ⭐ NOVITÀ: Popola il campo linkText
+          linkText: firestoreData.linkText || ''
         };
       } else {
         initialProfileData = {
@@ -116,7 +142,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
           bio: '',
           status: '',
           link: '',
-          linkText: '' // ⭐ NOVITÀ: Inizializza il campo linkText
+          linkText: ''
         };
         await this.userDataService.saveUserData(initialProfileData);
       }
@@ -126,7 +152,6 @@ export class ProfiloPage implements OnInit, OnDestroy {
     } catch (error: unknown) {
       console.error("Errore durante il caricamento/salvataggio iniziale da Firestore:", error);
       await this.presentFF7Alert('Errore nel caricamento del profilo. Riprova più tardi.');
-      // ⭐ Aggiornato con i campi link e linkText
       this.profile = { photo: 'assets/immaginiGenerali/default-avatar.jpg', banner: 'assets/immaginiGenerali/default-banner.jpg', nickname: '', name: '', email: '', bio: '', status: '', link: '', linkText: '' };
       this.profileEdit = { ...this.profile };
     } finally {
@@ -216,7 +241,7 @@ export class ProfiloPage implements OnInit, OnDestroy {
       bio: this.profileEdit.bio || '',
       status: this.profileEdit.status ?? '',
       link: this.profileEdit.link || '',
-      linkText: this.profileEdit.linkText || '' // ⭐ NOVITÀ: Salva il campo linkText
+      linkText: this.profileEdit.linkText || ''
     };
 
     try {
@@ -320,6 +345,10 @@ export class ProfiloPage implements OnInit, OnDestroy {
     }
     if (this.userStatusSubscription) {
       this.userStatusSubscription.unsubscribe();
+    }
+    // ⭐ NOVITÀ: Disiscrizione dalla sottoscrizione XP
+    if (this.userExpSubscription) {
+      this.userExpSubscription.unsubscribe();
     }
   }
 }

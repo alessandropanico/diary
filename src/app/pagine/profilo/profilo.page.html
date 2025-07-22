@@ -53,6 +53,15 @@
     <div class="profile-view">
       <h2>{{ profile.nickname || 'nickname' }}</h2>
       <h3>{{ profile.name || 'Nome e Cognome' }}</h3>
+
+      <div class="level-compact-info">
+        <span class="level-label">Livello</span>
+        <span class="level-number">{{ userLevel }}</span>
+        <div class="xp-bar-compact-container">
+          <div class="xp-bar-compact" [style.width]="xpPercentage + '%'"></div>
+        </div>
+        <span class="xp-compact-text">{{ userXP }} / {{ xpForNextLevel }} XP</span>
+      </div>
       <p>{{ profile.bio || 'Descrizione assente' }}</p>
       <p *ngIf="profile.link && !editing">
         <a [href]="profile.link" target="_blank" rel="noopener noreferrer">
