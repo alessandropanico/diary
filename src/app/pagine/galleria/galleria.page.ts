@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { PhotoService } from 'src/app/services/photo.service';
 import { ExpService } from 'src/app/services/exp.service';
-import { UserDataService } from 'src/app/services/user-data.service'; // ⭐ Importa UserDataService
+import { UserDataService } from 'src/app/services/user-data.service';
 
 interface Photo {
   id: number;
@@ -19,7 +19,7 @@ export class GalleriaPage implements OnInit {
   constructor(
     private photoService: PhotoService,
     private expService: ExpService,
-    private userDataService: UserDataService, // ⭐ Iniettalo qui
+    private userDataService: UserDataService,
   ) { }
 
   @ViewChild('video', { static: false }) videoElement!: ElementRef<HTMLVideoElement>;
@@ -34,7 +34,6 @@ export class GalleriaPage implements OnInit {
   isLoading = true;
   cameraFacing: 'user' | 'environment' = 'environment';
 
-  // Getter per foto selezionata (lightbox)
   get selectedPhoto(): string {
     return this.photos[this.selectedPhotoIndex]?.src || '';
   }
@@ -56,8 +55,6 @@ export class GalleriaPage implements OnInit {
     }
   }
 
-
-  // Fotocamera
   async startCamera() {
     try {
       this.previewActive = true;
@@ -77,13 +74,12 @@ export class GalleriaPage implements OnInit {
     }
   }
 
- isMobile(): boolean {
-  return (
-    (navigator.maxTouchPoints > 1 || 'ontouchstart' in window) &&
-    window.innerWidth <= 768
-  );
-}
-
+  isMobile(): boolean {
+    return (
+      (navigator.maxTouchPoints > 1 || 'ontouchstart' in window) &&
+      window.innerWidth <= 768
+    );
+  }
 
   async toggleCamera() {
     this.stopCamera();
@@ -91,14 +87,12 @@ export class GalleriaPage implements OnInit {
     await this.startCamera();
   }
 
-
   async takePhoto() {
     const video = this.videoElement?.nativeElement;
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     if (!context || !video) return;
 
-    // Riduzione dimensioni e compressione
     canvas.width = video.videoWidth / 2;
     canvas.height = video.videoHeight / 2;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -119,7 +113,6 @@ export class GalleriaPage implements OnInit {
     this.previewActive = false;
   }
 
-  // Lightbox
   openLightbox(photoSrc: string) {
     const index = this.photos.findIndex(p => p.src === photoSrc);
     if (index >= 0) {
@@ -146,7 +139,6 @@ export class GalleriaPage implements OnInit {
     }
   }
 
-  // Eliminazione
   askDelete(photo: Photo) {
     this.confirmDeletePhoto = photo;
   }
@@ -168,23 +160,24 @@ export class GalleriaPage implements OnInit {
     await this.loadPhotos();
   }
 
-  // Condivisione
- async sharePhoto(photoSrc: string) {
+  async sharePhoto(photoSrc: string) {
     try {
       const response = await fetch(photoSrc);
       const blob = await response.blob();
       const file = new File([blob], 'foto.jpg', { type: blob.type });
 
+      const appLink = 'https://alessandropanico.github.io/Sito-Portfolio/';
+      const appHashtag = '#Diary'; // Un hashtag più specifico per la tua app
+
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: 'Condividi foto',
-          text: 'Guarda questa foto!',
+          text: `Ho scattato una foto fantastica con la mia app! Scaricala qui: ${appLink} ${appHashtag}`,
+          // ---------------------------------------------
         });
-        // ✅ AGGIUNGI QUI
-        await this.expService.addExperience(10, 'photoShared'); // Assegna 10 XP per la condivisione
 
-        // ⭐ AGGIORNA LE METRICHE DELLE FOTO CONDIVISE NEL USERDATASERVICE
+        await this.expService.addExperience(10, 'photoShared');
         await this.userDataService.incrementTotalPhotosShared();
         await this.userDataService.setLastPhotoSharedInteraction(new Date().toISOString());
 
