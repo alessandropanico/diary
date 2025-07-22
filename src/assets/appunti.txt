@@ -10,7 +10,7 @@ generazione automatica di to-do da note vocali.];
 Nella dashboard:
 - Attività supporto creatore App;
 
-Rendere l'app più "intuitiva";
+Creare sezione notizie (in questa sezione mettiamo pure i banner pubblcitari!)
 
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ---------------------------------------------------------
