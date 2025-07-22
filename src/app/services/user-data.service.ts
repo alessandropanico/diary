@@ -4,8 +4,6 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit,
 import { ExpService } from './exp.service';
 import { BehaviorSubject, Observable, from } from 'rxjs';
 
-// src/app/services/user-data.service.ts (o un file di interfacce dedicato)
-
 export interface UserDashboardCounts {
   uid: string;
   activeAlarmsCount: number;
@@ -223,6 +221,10 @@ export class UserDataService {
           data.diaryLastInteraction = data.diaryLastInteraction ?? '';
           data.diaryEntryCount = data.diaryEntryCount ?? 0;
 
+          data.lastNoteInteraction = data.lastNoteInteraction ?? '';
+          data.lastTaskInteraction = data.lastTaskInteraction ?? '';
+          data.incompleteTaskItems = data.incompleteTaskItems ?? 0;
+
         } else {
           // Dati iniziali per un nuovo utente, inclusi i nuovi campi
           const initialData = {
@@ -233,6 +235,11 @@ export class UserDataService {
             activeAlarmsCount: 0,
             totalAlarmsCreated: 0,
             lastAlarmInteraction: '',
+
+             lastNoteInteraction: '',
+            lastTaskInteraction: '',
+            incompleteTaskItems: 0,
+
             totalNotesCount: 0,
             totalListsCount: 0,
             incompleteListItems: 0,
@@ -293,7 +300,7 @@ export class UserDataService {
     }
   }
 
-  private async updateNumericField(uid: string, field: string, valueToUpdate: number | 'increment', setValue?: number): Promise<void> {
+ private async updateNumericField(uid: string, field: string, valueToUpdate: number | 'increment', setValue?: number): Promise<void> {
     const userDocRef = doc(this.firestore, 'users', uid);
     try {
       const updateData: { [key: string]: any } = {};
@@ -311,6 +318,10 @@ export class UserDataService {
 
       await updateDoc(userDocRef, updateData);
       console.log(`[UserDataService] Campo '${field}' aggiornato.`);
+      // ⭐ Aggiorna il timestamp globale solo se il campo è rilevante per l'attività utente
+      if (['activeAlarmsCount', 'totalNotesCount', 'totalListsCount', 'incompleteListItems', 'diaryTotalWords', 'diaryEntryCount', 'totalPhotosShared', 'incompleteTaskItems'].includes(field)) { // Aggiunto 'incompleteTaskItems'
+        await this.setLastGlobalActivityTimestamp(new Date().toISOString());
+      }
     } catch (error) {
       if ((error as any).code === 'not-found') {
         console.warn(`Documento utente per UID ${uid} non trovato per aggiornare il campo '${field}'. Provando a crearlo.`);
@@ -321,6 +332,10 @@ export class UserDataService {
           initialValue = typeof valueToUpdate === 'number' ? valueToUpdate : 1;
         }
         await setDoc(userDocRef, { [field]: initialValue }, { merge: true });
+        // Se il documento viene creato, aggiorna anche il timestamp globale
+        if (['activeAlarmsCount', 'totalNotesCount', 'totalListsCount', 'incompleteListItems', 'diaryTotalWords', 'diaryEntryCount', 'totalPhotosShared', 'incompleteTaskItems'].includes(field)) { // Aggiunto 'incompleteTaskItems'
+          await this.setLastGlobalActivityTimestamp(new Date().toISOString());
+        }
       } else {
         console.error(`Errore nell'aggiornamento del campo '${field}' per UID ${uid}:`, error);
         throw error;
@@ -328,10 +343,14 @@ export class UserDataService {
     }
   }
 
-  private async updateStringField(uid: string, field: string, value: string): Promise<void> {
+ private async updateStringField(uid: string, field: string, value: string): Promise<void> {
     const userDocRef = doc(this.firestore, 'users', uid);
     try {
       await updateDoc(userDocRef, { [field]: value });
+      // ⭐ Aggiorna il timestamp globale solo se il campo è rilevante per l'attività utente
+      if (['lastAlarmInteraction', 'lastNoteInteraction', 'lastTaskInteraction', 'lastPhotoSharedInteraction', 'diaryLastInteraction', 'lastNoteListInteraction'].includes(field)) { // Aggiunto 'lastNoteListInteraction'
+        await this.setLastGlobalActivityTimestamp(value);
+      }
     } catch (error) {
       console.error(`Errore nell'aggiornamento del campo '${field}' per UID ${uid}:`, error);
       throw error;
@@ -353,15 +372,41 @@ export class UserDataService {
     if (uid) await this.updateStringField(uid, 'lastAlarmInteraction', timestamp);
   }
 
-  async incrementTotalNotesCount(change: number = 1): Promise<void> {
+   async incrementTotalNotesCount(change: number = 1): Promise<void> {
     const uid = this.getUserUid();
-    if (uid) await this.updateNumericField(uid, 'totalNotesCount', change);
+    if (uid) {
+      await this.updateNumericField(uid, 'totalNotesCount', change);
+      // ⭐ Aggiorna l'ultima interazione nota quando il conteggio delle note cambia
+      await this.setLastNoteInteraction(new Date().toISOString());
+    }
   }
 
   async incrementTotalListsCount(change: number = 1): Promise<void> {
     const uid = this.getUserUid();
-    if (uid) await this.updateNumericField(uid, 'totalListsCount', change);
+    if (uid) {
+      await this.updateNumericField(uid, 'totalListsCount', change);
+      // ⭐ Se le liste di task sono create/modificate, potresti voler aggiornare lastTaskInteraction
+      await this.setLastTaskInteraction(new Date().toISOString());
+    }
   }
+
+   // ⭐ NUOVI METODI PER AGGIORNARE ULTIMA MODIFICA NOTA E TASK
+  async setLastNoteInteraction(timestamp: string): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) await this.updateStringField(uid, 'lastNoteInteraction', timestamp);
+  }
+
+  async setLastTaskInteraction(timestamp: string): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) await this.updateStringField(uid, 'lastTaskInteraction', timestamp);
+  }
+
+  async setIncompleteTaskItems(count: number): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) await this.updateNumericField(uid, 'incompleteTaskItems', 0, count);
+  }
+
+
 
   async setIncompleteListItems(count: number): Promise<void> {
     const uid = this.getUserUid();
@@ -448,7 +493,7 @@ export class UserDataService {
     }
   }
 
-  getLeaderboardUsers(
+   getLeaderboardUsers(
     pageSize: number,
     lastDoc?: QueryDocumentSnapshot<DocumentData>
   ): Observable<{ users: UserDashboardCounts[], lastVisible: QueryDocumentSnapshot<DocumentData> | null }> {
@@ -485,6 +530,12 @@ export class UserDataService {
           totalListsCount: userData['totalListsCount'] as number ?? 0,
           incompleteListItems: userData['incompleteListItems'] as number ?? 0,
           lastNoteListInteraction: userData['lastNoteListInteraction'] as string ?? '',
+          // ⭐ AGGIUNTI: I nuovi campi alla mappatura per la leaderboard
+          lastNoteInteraction: userData['lastNoteInteraction'] as string ?? '',
+          lastTaskInteraction: userData['lastTaskInteraction'] as string ?? '',
+          incompleteTaskItems: userData['incompleteTaskItems'] as number ?? 0,
+
+
           followersCount: userData['followersCount'] as number ?? 0,
           followingCount: userData['followingCount'] as number ?? 0,
           lastGlobalActivityTimestamp: userData['lastGlobalActivityTimestamp'] as string ?? '',
@@ -500,5 +551,4 @@ export class UserDataService {
     }));
   }
 }
-
 
