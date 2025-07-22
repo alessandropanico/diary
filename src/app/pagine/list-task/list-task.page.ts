@@ -25,6 +25,10 @@ export class ListTaskPage implements OnInit, OnDestroy {
   isLoadingTasks = true;
   private tasksSubscription: Subscription | undefined;
   private authUnsubscribe: (() => void) | undefined;
+  filteredTasks: Task[] = [];
+
+  showTaskDetailModal = false;
+  tasksForSelectedDate: Task[] = [];
 
   // ⭐ PROPRIETÀ NECESSARIE PER IL CALENDARIO (COME NEL DIARIO)
   todayString: string = this.formatDate(new Date()); // Formato YYYY-MM-DD
@@ -103,10 +107,19 @@ export class ListTaskPage implements OnInit, OnDestroy {
   // ⭐ METODO CHIAMATO QUANDO LA DATA NEL CALENDARIO CAMBIA
   onCalendarDateChange(event: CustomEvent) {
     this.selectedCalendarDate = event.detail.value;
-    console.log('Data selezionata nel calendario task:', this.formatDateIT(this.selectedCalendarDate));
-    // Qui potresti voler filtrare le task in base alla data selezionata
-    // Ad esempio: this.filterTasksByDate(this.selectedCalendarDate);
+
+    const selectedDateString = this.formatDate(new Date(this.selectedCalendarDate)); // YYYY-MM-DD
+
+    this.tasksForSelectedDate = this.tasks.filter(task => {
+      const taskDate = this.formatDate(new Date(task.dueDate));
+      return taskDate === selectedDateString;
+    });
+
+    // Mostra il secondo modal solo se ci sono task o se vuoi sempre mostrarlo
+    this.showTaskDetailModal = true;
   }
+
+
 
   // ⭐ Metodo per formattare una data in YYYY-MM-DD (necessario per max e highlightedDates)
   formatDate(date: Date): string {

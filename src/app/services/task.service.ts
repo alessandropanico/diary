@@ -67,7 +67,6 @@ export class TaskService {
   async loadTasks(): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
-      console.warn('TaskService: Nessun utente autenticato. Impossibile caricare le task.');
       if (!this.initialLoadCompleted) {
         this.tasksSubject.next(null);
       } else {
