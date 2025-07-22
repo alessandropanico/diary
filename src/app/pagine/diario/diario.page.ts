@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, AlertController } from '@ionic/angular';
@@ -8,19 +8,20 @@ import { UserDataService } from 'src/app/services/user-data.service';
 import { Subscription } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 
-// --- NUOVA INTERFACCIA PER LE DATE EVIDENZIATE ---
+// --- INTERFACCIA PER LE DATE EVIDENZIATE ---
 interface HighlightedDate {
   date: string; // Formato 'YYYY-MM-DD'
   textColor?: string;
   backgroundColor?: string;
 }
-// --- FINE NUOVA INTERFACCIA ---
+// --- FINE INTERFACCIA ---
 
 @Component({
   selector: 'app-diario',
   templateUrl: './diario.page.html',
   styleUrls: ['./diario.page.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DiarioPage implements OnInit, OnDestroy {
 
@@ -33,7 +34,7 @@ export class DiarioPage implements OnInit, OnDestroy {
     mood: '',
     note: '',
     energyLevel: 0,
-    sleepQuality: '',
+    sleepQuality: '', // Assicurati che il valore iniziale rispetti il tipo
     stressLevel: 0,
     focusHours: undefined
   };
@@ -46,15 +47,14 @@ export class DiarioPage implements OnInit, OnDestroy {
   private currentEntrySubscription: Subscription | undefined;
   recentEntries: DailyEntry[] = [];
 
-  // --- NUOVA PROPRIETÀ ---
   highlightedDatesConfig: HighlightedDate[] = [];
-  // --- FINE NUOVA PROPRIETÀ ---
 
   constructor(
     private diaryService: DiaryService,
     private expService: ExpService,
     private userDataService: UserDataService,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
@@ -63,14 +63,14 @@ export class DiarioPage implements OnInit, OnDestroy {
         this.userId = user.uid;
         this.initializeDate();
         this.loadRecentEntries();
-        this.loadHighlightedDates(); // CHIAMATA ALLA NUOVA FUNZIONE
+        this.loadHighlightedDates();
       } else {
         this.userId = null;
         this.resetCurrentEntry();
         this.initialEntryState = null;
         this.hasChanges = false;
         this.recentEntries = [];
-        this.highlightedDatesConfig = []; // Pulisci se l'utente si disconnette
+        this.highlightedDatesConfig = [];
         this.expService.setTotalXP(0);
       }
     });
@@ -91,7 +91,7 @@ export class DiarioPage implements OnInit, OnDestroy {
       mood: '',
       note: '',
       energyLevel: 0,
-      sleepQuality: '',
+      sleepQuality: '', // Deve essere '' o uno dei valori letterali
       stressLevel: 0,
       focusHours: undefined
     };
@@ -138,24 +138,33 @@ export class DiarioPage implements OnInit, OnDestroy {
     this.currentEntrySubscription?.unsubscribe();
     this.currentEntrySubscription = this.diaryService.getDailyEntry(this.userId, date).subscribe({
       next: (entry) => {
+        // Valori validi per sleepQuality
+        const validSleepQualities = ['scarso', 'medio', 'ottimo'];
+        // Assicurati che sleepQuality sia uno dei valori attesi o una stringa vuota
+        const loadedSleepQuality = entry?.sleepQuality && validSleepQualities.includes(entry.sleepQuality)
+          ? entry.sleepQuality as 'scarso' | 'medio' | 'ottimo' // Cast esplicito
+          : ''; // Default a stringa vuota se non valido o assente
+
         this.currentEntry = {
           date: date,
           mood: entry?.mood ?? '',
           note: entry?.note ?? '',
           energyLevel: entry?.energyLevel ?? 0,
-          sleepQuality: entry?.sleepQuality ?? '',
+          sleepQuality: loadedSleepQuality, // Assegna il valore validato
           stressLevel: entry?.stressLevel ?? 0,
           focusHours: entry?.focusHours ?? undefined
         };
         this.initialEntryState = JSON.parse(JSON.stringify(this.currentEntry));
         this.hasChanges = false;
+        this.cdr.detectChanges();
       },
-      error: (error: any) => { // Aggiornato qui: specificato tipo 'any'
+      error: (error: any) => {
         console.error('Errore nel caricamento della voce del diario:', error);
         this.presentAlert('Errore', 'Impossibile caricare la voce del diario.');
         this.resetCurrentEntry(date);
         this.initialEntryState = null;
         this.hasChanges = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -168,14 +177,14 @@ export class DiarioPage implements OnInit, OnDestroy {
     this.diaryService.getRecentDailyEntries(this.userId, 7).subscribe({
       next: (entries) => {
         this.recentEntries = entries;
+        this.cdr.detectChanges();
       },
-      error: (error: any) => { // Aggiornato qui: specificato tipo 'any'
+      error: (error: any) => {
         console.error('Errore nel caricamento delle voci recenti:', error);
       }
     });
   }
 
-  // --- NUOVA FUNZIONE PER CARICARE LE DATE EVIDENZIATE ---
   loadHighlightedDates() {
     if (!this.userId) {
       this.highlightedDatesConfig = [];
@@ -189,13 +198,13 @@ export class DiarioPage implements OnInit, OnDestroy {
           textColor: '#FFF',
           backgroundColor: '#005f73'
         }));
+        this.cdr.detectChanges();
       },
-      error: (error: any) => { // Aggiornato qui: specificato tipo 'any'
+      error: (error: any) => {
         console.error('Errore nel caricamento delle date evidenziate:', error);
       }
     });
   }
-  // --- FINE NUOVA FUNZIONE ---
 
   selectMood(mood: string) {
     if (this.currentEntry.mood === mood) {
@@ -204,6 +213,18 @@ export class DiarioPage implements OnInit, OnDestroy {
       this.currentEntry.mood = mood;
     }
     this.markAsChanged();
+    this.cdr.detectChanges();
+  }
+
+  // NUOVO METODO PER LA QUALITÀ DEL SONNO - Tipizzazione raffinata per prevenire errori
+  selectSleepQuality(quality: 'scarso' | 'medio' | 'ottimo') {
+    if (this.currentEntry.sleepQuality === quality) {
+      this.currentEntry.sleepQuality = ''; // Deseleziona
+    } else {
+      this.currentEntry.sleepQuality = quality; // Seleziona
+    }
+    this.markAsChanged();
+    this.cdr.detectChanges();
   }
 
   markAsChanged() {
@@ -218,12 +239,14 @@ export class DiarioPage implements OnInit, OnDestroy {
         focusHours: undefined
       };
       this.hasChanges = JSON.stringify(this.currentEntry) !== JSON.stringify(defaultEmptyEntry);
+      this.cdr.detectChanges();
       return;
     }
 
     const current = JSON.stringify(this.currentEntry);
     const initial = JSON.stringify(this.initialEntryState);
     this.hasChanges = current !== initial;
+    this.cdr.detectChanges();
   }
 
   cancelChanges() {
@@ -234,6 +257,7 @@ export class DiarioPage implements OnInit, OnDestroy {
     }
     this.hasChanges = false;
     this.presentAlert('Annullato', 'Le modifiche sono state annullate.');
+    this.cdr.detectChanges();
   }
 
   async saveEntry() {
@@ -253,6 +277,7 @@ export class DiarioPage implements OnInit, OnDestroy {
     for (const key in entryToSave) {
       if (entryToSave.hasOwnProperty(key)) {
         // @ts-ignore
+        // Questa annotazione sopprime l'errore TypeScript perché sappiamo che stiamo gestendo valori undefined
         if (entryToSave[key] === undefined) {
           // @ts-ignore
           delete entryToSave[key];
@@ -267,7 +292,7 @@ export class DiarioPage implements OnInit, OnDestroy {
         this.initialEntryState = JSON.parse(JSON.stringify(this.currentEntry));
         this.hasChanges = false;
         this.loadRecentEntries();
-        this.loadHighlightedDates(); // AGGIORNA LE DATE EVIDENZIATE DOPO UN SALVATAGGIO
+        this.loadHighlightedDates();
 
         const wordCount = this.currentEntry.note ? this.currentEntry.note.split(/\s+/).filter(word => word.length > 0).length : 0;
         const currentTimestampISO = new Date().toISOString();
@@ -292,11 +317,12 @@ export class DiarioPage implements OnInit, OnDestroy {
         const xpToAward = 25;
         this.expService.addExperience(xpToAward, 'Diario Compilato');
         console.log(`Guadagnati ${xpToAward} XP per aver salvato il diario.`);
-
+        this.cdr.detectChanges();
       },
-      error: async (error: any) => { // Aggiornato qui: specificato tipo 'any'
+      error: async (error: any) => {
         console.error('Errore nel salvataggio della voce del diario:', error);
         await this.presentAlert('Errore', 'Impossibile salvare la voce del diario.');
+        this.cdr.detectChanges();
       }
     });
   }
