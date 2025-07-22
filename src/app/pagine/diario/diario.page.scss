@@ -11,7 +11,6 @@
   --danger-muted: #d46a6a;
   --success-muted: #6ad46a;
   --warning-muted: #d4b16a;
-
   font-family: 'Orbitron', sans-serif;
   color: var(--text-main);
 }
@@ -432,68 +431,66 @@ ion-spinner {
 
   .sleep-options-custom {
     display: flex;
-    justify-content: space-around; // Distribuisce i bottoni uniformemente
+    justify-content: space-around;
     align-items: center;
-    gap: 10px; // Spazio tra i bottoni
+    gap: 10px;
 
     ion-button {
-      --background: rgba(25, 30, 55, 0.6); // Sfondo bluastro di default
-      --background-activated: var(--primary-accent-calm); // Sfondo primario quando attivo
-      --background-hover: rgba(30, 35, 60, 0.8); // Sfondo al hover
-      --border-color: var(--border-subtle); // Bordo bluastro di default
-      --border-width: 1px;
-      --border: 1px solid var(--text-secondary-subtle);
-      --border-radius: 5px;
-      --color: var(--text-main); // Colore testo bianco di default
+      --background: transparent;
+      border: 1px solid var(--text-secondary-subtle);
+      --color: var(--text-secondary-subtle);
       --ripple-color: var(--primary-accent-calm);
+      border-radius: 3px;
       font-family: 'Orbitron', sans-serif;
       text-transform: uppercase;
       font-weight: 500;
-      min-width: 90px; // Assicura una larghezza minima
-      height: auto; // Altezza flessibile
-      padding: 10px 8px; // Padding per icona e testo
+      padding: 8px;
       display: flex;
-      flex-direction: column; // Icona e testo in colonna
-      align-items: center; // Centra verticalmente
-      justify-content: center; // Centra orizzontalmente
-      gap: 5px; // Spazio tra icona e testo
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
       transition: all 0.2s ease;
+      font-size: 0.8em;
       box-shadow: inset 0 0 4px rgba(95, 234, 255, 0.05);
+      min-width: 90px;
+
 
       ion-icon {
         font-size: 1.8em;
-        color: var(--text-main); // Icona bianca di default
+        color: var(--text-main);
         transition: color 0.2s ease;
       }
 
       p {
-        margin: 0; // Rimuovi il margin di default del paragrafo
+        margin: 0;
         font-size: 0.8em;
-        white-space: nowrap; // Evita che il testo vada a capo se non necessario
-        color: var(--text-main); // Testo bianco di default
+        white-space: nowrap;
+        color: var(--text-main);
         transition: color 0.2s ease;
       }
 
-      // Stili quando il bottone è selezionato
       &.selected {
-        --background: var(--primary-accent-calm); // Sfondo primario-glow quando attivo
-        --border-color: var(--primary-accent-calm); // Bordo primario-glow
-        box-shadow: 0 0 12px rgba(95, 234, 255, 0.4); // Ombra più pronunciata
+        background-color: var(--primary-accent-calm);
+        border: 1px solid var(--primary-accent-calm);
+        box-shadow: 0 0 12px rgba(95, 234, 255, 0.4);
+        --color: var(--bg-dark-deep);
         transform: scale(1.03);
 
         ion-icon {
-          color: var(--bg-dark-deep); // Icona bluastra quando attivo
+          color: var(--bg-dark-deep);
         }
 
         p {
-          color: var(--bg-dark-deep); // Testo bluastro quando attivo
+          color: var(--bg-dark-deep);
         }
+
+        box-shadow: inset 0 0 6px rgba(95, 234, 255, 0.1),
+        0 0 10px rgba(160, 132, 255, 0.1);
       }
 
-      // Stili al passaggio del mouse (non selezionato)
       &:hover:not(.selected) {
-        --background: rgba(30, 35, 60, 0.8); // Sfondo leggermente più scuro al hover
-        border-color: var(--primary-accent-calm); // Bordo del primary-glow
+        --background: rgba(30, 35, 60, 0.8);
+        border-color: var(--primary-accent-calm);
         box-shadow: inset 0 0 6px rgba(95, 234, 255, 0.1), 0 0 10px rgba(160, 132, 255, 0.1);
       }
     }
@@ -822,7 +819,6 @@ ion-spinner {
 
     ion-segment-button {
       --color: var(--text-secondary-subtle);
-      // --color-checked: var(--bg-dark-deep);
       --background-checked: var(--primary-accent-calm);
       --ripple-color: var(--primary-accent-calm);
       transition: all 0.2s ease;
@@ -860,12 +856,11 @@ ion-spinner {
 .sleep-segment {
   ion-segment-button {
     transition: background-color 0.3s ease, color 0.3s ease;
-    --color-checked: #0e122b; // Colore del testo icona/p al check
+    --color-checked: #0e122b;
   }
 
   ion-segment-button[aria-pressed="true"] {
     background-color: #264653 !important;
-    /* Cambia il colore come vuoi */
     color: #0e122b !important;
   }
 

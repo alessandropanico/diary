@@ -8,13 +8,11 @@ import { UserDataService } from 'src/app/services/user-data.service';
 import { Subscription } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 
-// --- INTERFACCIA PER LE DATE EVIDENZIATE ---
 interface HighlightedDate {
-  date: string; // Formato 'YYYY-MM-DD'
+  date: string;
   textColor?: string;
   backgroundColor?: string;
 }
-// --- FINE INTERFACCIA ---
 
 @Component({
   selector: 'app-diario',
@@ -34,7 +32,7 @@ export class DiarioPage implements OnInit, OnDestroy {
     mood: '',
     note: '',
     energyLevel: 0,
-    sleepQuality: '', // Assicurati che il valore iniziale rispetti il tipo
+    sleepQuality: '',
     stressLevel: 0,
     focusHours: undefined
   };
@@ -46,7 +44,6 @@ export class DiarioPage implements OnInit, OnDestroy {
   private userId: string | null = null;
   private currentEntrySubscription: Subscription | undefined;
   recentEntries: DailyEntry[] = [];
-
   highlightedDatesConfig: HighlightedDate[] = [];
 
   constructor(
@@ -91,7 +88,7 @@ export class DiarioPage implements OnInit, OnDestroy {
       mood: '',
       note: '',
       energyLevel: 0,
-      sleepQuality: '', // Deve essere '' o uno dei valori letterali
+      sleepQuality: '',
       stressLevel: 0,
       focusHours: undefined
     };
@@ -138,19 +135,17 @@ export class DiarioPage implements OnInit, OnDestroy {
     this.currentEntrySubscription?.unsubscribe();
     this.currentEntrySubscription = this.diaryService.getDailyEntry(this.userId, date).subscribe({
       next: (entry) => {
-        // Valori validi per sleepQuality
         const validSleepQualities = ['scarso', 'medio', 'ottimo'];
-        // Assicurati che sleepQuality sia uno dei valori attesi o una stringa vuota
         const loadedSleepQuality = entry?.sleepQuality && validSleepQualities.includes(entry.sleepQuality)
-          ? entry.sleepQuality as 'scarso' | 'medio' | 'ottimo' // Cast esplicito
-          : ''; // Default a stringa vuota se non valido o assente
+          ? entry.sleepQuality as 'scarso' | 'medio' | 'ottimo'
+          : '';
 
         this.currentEntry = {
           date: date,
           mood: entry?.mood ?? '',
           note: entry?.note ?? '',
           energyLevel: entry?.energyLevel ?? 0,
-          sleepQuality: loadedSleepQuality, // Assegna il valore validato
+          sleepQuality: loadedSleepQuality,
           stressLevel: entry?.stressLevel ?? 0,
           focusHours: entry?.focusHours ?? undefined
         };
@@ -216,12 +211,11 @@ export class DiarioPage implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  // NUOVO METODO PER LA QUALITÀ DEL SONNO - Tipizzazione raffinata per prevenire errori
   selectSleepQuality(quality: 'scarso' | 'medio' | 'ottimo') {
     if (this.currentEntry.sleepQuality === quality) {
-      this.currentEntry.sleepQuality = ''; // Deseleziona
+      this.currentEntry.sleepQuality = '';
     } else {
-      this.currentEntry.sleepQuality = quality; // Seleziona
+      this.currentEntry.sleepQuality = quality;
     }
     this.markAsChanged();
     this.cdr.detectChanges();
@@ -287,7 +281,6 @@ export class DiarioPage implements OnInit, OnDestroy {
 
     this.diaryService.saveDailyEntry(this.userId, entryToSave as DailyEntry).subscribe({
       next: async () => {
-        console.log('Voce diario salvata con successo:', this.currentEntry);
         await this.presentAlert('Successo', 'Voce del diario salvata!');
         this.initialEntryState = JSON.parse(JSON.stringify(this.currentEntry));
         this.hasChanges = false;
@@ -298,10 +291,7 @@ export class DiarioPage implements OnInit, OnDestroy {
         const currentTimestampISO = new Date().toISOString();
 
         await this.userDataService.incrementDiaryTotalWords(wordCount);
-        console.log(`Aggiornato conteggio parole totali: ${wordCount} parole aggiunte.`);
-
         await this.userDataService.setDiaryLastInteraction(currentTimestampISO);
-        console.log(`Ultima interazione diario impostata a: ${currentTimestampISO}.`);
 
         const userData = await this.userDataService.getUserData();
         const lastSavedInteractionDate = userData?.diaryLastInteraction ? new Date(userData.diaryLastInteraction).toDateString() : null;
@@ -309,14 +299,10 @@ export class DiarioPage implements OnInit, OnDestroy {
 
         if (lastSavedInteractionDate !== currentEntryDate) {
           await this.userDataService.incrementDiaryEntryCount();
-          console.log("Contatore delle voci del diario incrementato (nuova voce per un giorno distinto).");
         } else {
-          console.log("Voce del diario aggiornata per lo stesso giorno. Non incremento il contatore delle voci distinte.");
         }
-
         const xpToAward = 25;
         this.expService.addExperience(xpToAward, 'Diario Compilato');
-        console.log(`Guadagnati ${xpToAward} XP per aver salvato il diario.`);
         this.cdr.detectChanges();
       },
       error: async (error: any) => {
