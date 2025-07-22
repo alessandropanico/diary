@@ -85,9 +85,8 @@ export class NoteService {
         this.userDataService.setTotalListsCount(playlists.length - 1);
         // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE - Al caricamento iniziale se ci sono playlist
         if (playlists.length > 1) { // Più di 1 perché "Tutti" è sempre presente
-            this.userDataService.saveUserData({
-                lastGlobalActivityTimestamp: new Date().toISOString()
-            }).catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da playlist load", e));
+          this.userDataService.setLastGlobalActivityTimestamp(new Date().toISOString()) // Usa setLastGlobalActivityTimestamp
+            .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da playlist load", e));
         }
       }),
       catchError(error => {
@@ -105,9 +104,8 @@ export class NoteService {
         this.userDataService.setTotalNotesCount(notes.length);
         // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE - Al caricamento iniziale se ci sono note
         if (notes.length > 0) {
-            this.userDataService.saveUserData({
-                lastGlobalActivityTimestamp: new Date().toISOString()
-            }).catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da note load", e));
+          this.userDataService.setLastGlobalActivityTimestamp(new Date().toISOString()) // Usa setLastGlobalActivityTimestamp
+            .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da note load", e));
         }
       }),
       catchError(error => {
@@ -124,7 +122,12 @@ export class NoteService {
 
   addNote(note: Note): Observable<void> {
     if (!this.userId) return of(console.error('Non autorizzato: utente non loggato per addNote.'));
-    if (!note.id) return of(console.error('Errore: ID nota mancante per addNote.'));
+    // Controlla se note.id esiste prima di usarlo per il docRef
+    if (!note.id) {
+      console.error('Errore: ID nota mancante per addNote. Generazione di un nuovo ID.');
+      // Genera un ID se mancante, è buona pratica se non lo fai a monte
+      note.id = doc(collection(this.firestore, `users/${this.userId}/notes`)).id;
+    }
 
     const playlistIdToSave = note.playlistId === 'all' ? null : note.playlistId;
 
@@ -143,9 +146,13 @@ export class NoteService {
         console.log('[NoteService] XP aggiunti per nuova nota.');
         this.userDataService.incrementTotalNotesCount();
         this.userDataService.setLastNoteListInteraction(new Date().toISOString());
-        // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE
-        this.userDataService.saveUserData({ lastGlobalActivityTimestamp: new Date().toISOString() })
-            .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da addNote", e));
+        // ⭐ NUOVO: Aggiorna il timestamp specifico per l'ultima interazione con le note
+        this.userDataService.setLastNoteInteraction(new Date().toISOString())
+          .catch(e => console.error("Errore nell'aggiornamento lastNoteInteraction da addNote", e));
+
+        // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE (già presente, ma riaffermiamo)
+        this.userDataService.setLastGlobalActivityTimestamp(new Date().toISOString()) // Usa setLastGlobalActivityTimestamp
+          .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da addNote", e));
       }),
       catchError(error => {
         console.error('Errore nell\'aggiunta della nota a Firestore:', error);
@@ -172,9 +179,13 @@ export class NoteService {
       tap(() => {
         console.log('Nota aggiornata in Firestore:', updatedNote.id);
         this.userDataService.setLastNoteListInteraction(new Date().toISOString());
-        // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE
-        this.userDataService.saveUserData({ lastGlobalActivityTimestamp: new Date().toISOString() })
-            .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da updateNote", e));
+        // ⭐ NUOVO: Aggiorna il timestamp specifico per l'ultima interazione con le note
+        this.userDataService.setLastNoteInteraction(new Date().toISOString())
+          .catch(e => console.error("Errore nell'aggiornamento lastNoteInteraction da updateNote", e));
+
+        // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE (già presente, ma riaffermiamo)
+        this.userDataService.setLastGlobalActivityTimestamp(new Date().toISOString()) // Usa setLastGlobalActivityTimestamp
+          .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da updateNote", e));
       }),
       catchError(error => {
         console.error('Errore nell\'aggiornamento della nota in Firestore:', error);
@@ -182,6 +193,7 @@ export class NoteService {
       })
     );
   }
+
 
   deleteNote(id: string): Observable<void> {
     if (!this.userId || !id) {
@@ -194,9 +206,13 @@ export class NoteService {
         console.log('Nota eliminata da Firestore:', id);
         this.userDataService.incrementTotalNotesCount(-1);
         this.userDataService.setLastNoteListInteraction(new Date().toISOString());
-        // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE
-        this.userDataService.saveUserData({ lastGlobalActivityTimestamp: new Date().toISOString() })
-            .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da deleteNote", e));
+        // ⭐ NUOVO: Aggiorna il timestamp specifico per l'ultima interazione con le note
+        this.userDataService.setLastNoteInteraction(new Date().toISOString())
+          .catch(e => console.error("Errore nell'aggiornamento lastNoteInteraction da deleteNote", e));
+
+        // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE (già presente, ma riaffermiamo)
+        this.userDataService.setLastGlobalActivityTimestamp(new Date().toISOString()) // Usa setLastGlobalActivityTimestamp
+          .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da deleteNote", e));
       }),
       catchError(error => {
         console.error('Errore nell\'eliminazione della nota da Firestore:', error);
@@ -225,7 +241,7 @@ export class NoteService {
         this.userDataService.setLastNoteListInteraction(new Date().toISOString());
         // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE
         this.userDataService.saveUserData({ lastGlobalActivityTimestamp: new Date().toISOString() })
-            .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da addPlaylist", e));
+          .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da addPlaylist", e));
       }),
       catchError(error => {
         console.error('Errore nell\'aggiunta della playlist a Firestore:', error);
@@ -260,12 +276,12 @@ export class NoteService {
             console.log(`Playlist "${playlistId}" e ${deletedNotesCount} note associate eliminate da Firestore.`);
             this.userDataService.incrementTotalListsCount(-1);
             if (deletedNotesCount > 0) {
-                   this.userDataService.incrementTotalNotesCount(-deletedNotesCount);
+              this.userDataService.incrementTotalNotesCount(-deletedNotesCount);
             }
             this.userDataService.setLastNoteListInteraction(new Date().toISOString());
             // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE
             this.userDataService.saveUserData({ lastGlobalActivityTimestamp: new Date().toISOString() })
-                .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da deletePlaylist", e));
+              .catch(e => console.error("Errore nell'aggiornamento lastGlobalActivityTimestamp da deletePlaylist", e));
           }),
           catchError(error => {
             console.error('Errore durante l\'eliminazione della playlist e delle note in Firestore:', error);

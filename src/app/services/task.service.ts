@@ -132,7 +132,7 @@ export class TaskService {
     }
   }
 
-  async addTask(task: Task): Promise<void> {
+async addTask(task: Task): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
       console.error('TaskService: Nessun utente autenticato. Impossibile aggiungere la task.');
@@ -141,19 +141,16 @@ export class TaskService {
 
     try {
       const tasksCollectionRef = collection(this.db, `users/${uid}/tasks`);
-      // Assicurati che 'task' includa 'createdAt' se vuoi ordinarle così in loadTasks
-      const taskToSave = { ...task, createdAt: new Date().toISOString() }; // Aggiungi createdAt
+      const taskToSave = { ...task, createdAt: new Date().toISOString() };
       const docRef = await addDoc(tasksCollectionRef, taskToSave);
 
       const currentTasks = this.tasksSubject.value || [];
-      const newTaskWithId = { id: docRef.id, ...taskToSave }; // Usa taskToSave per coerenza
+      const newTaskWithId = { id: docRef.id, ...taskToSave };
       this.tasksSubject.next([...currentTasks, newTaskWithId]);
 
       this.expService.addExperience(5);
-      // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE - per aggiunta task
-      await this.userDataService.saveUserData({
-        lastGlobalActivityTimestamp: new Date().toISOString()
-      });
+      // ⭐ AGGIORNAMENTO: Chiama setLastTaskInteraction per l'aggiunta di una nuova task
+      await this.userDataService.setLastTaskInteraction(new Date().toISOString());
 
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiunta della task a Firestore:', error);
@@ -161,7 +158,7 @@ export class TaskService {
     }
   }
 
-  async deleteTask(taskId: string): Promise<void> {
+ async deleteTask(taskId: string): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
       console.error('TaskService: Nessun utente autenticato. Impossibile eliminare la task.');
@@ -175,11 +172,8 @@ export class TaskService {
       const currentTasks = this.tasksSubject.value || [];
       this.tasksSubject.next(currentTasks.filter(t => t.id !== taskId));
 
-      // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE - per eliminazione task (facoltativo, ma consigliato)
-      // Se vuoi che l'eliminazione sia considerata un'attività che aggiorna il timestamp
-      await this.userDataService.saveUserData({
-        lastGlobalActivityTimestamp: new Date().toISOString()
-      });
+      // ⭐ AGGIORNAMENTO: Chiama setLastTaskInteraction per l'eliminazione di una task
+      await this.userDataService.setLastTaskInteraction(new Date().toISOString());
 
     } catch (error) {
       console.error('TaskService: Errore durante l\'eliminazione della task da Firestore:', error);
@@ -187,7 +181,7 @@ export class TaskService {
     }
   }
 
-  async toggleCompletion(taskId: string, completed: boolean): Promise<void> {
+   async toggleCompletion(taskId: string, completed: boolean): Promise<void> {
     const uid = this.getUserUid();
     if (!uid) {
       console.error('TaskService: Nessun utente autenticato. Impossibile aggiornare la task.');
@@ -207,10 +201,8 @@ export class TaskService {
       if (completed) {
         this.expService.addExperience(10);
       }
-      // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE - per toggle completamento task
-      await this.userDataService.saveUserData({
-        lastGlobalActivityTimestamp: new Date().toISOString()
-      });
+      // ⭐ AGGIORNAMENTO: Chiama setLastTaskInteraction per il toggle di completamento
+      await this.userDataService.setLastTaskInteraction(new Date().toISOString());
 
     } catch (error) {
       console.error('TaskService: Errore durante l\'aggiornamento della task in Firestore:', error);
