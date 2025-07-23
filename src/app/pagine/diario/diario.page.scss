@@ -880,3 +880,11 @@ ion-spinner {
     flex-direction: column;
   }
 }
+
+.chart-container {
+  position: relative;
+  height: 250px; /* O l'altezza che preferisci */
+  width: 100%;
+  margin-top: 15px;
+  padding: 10px; /* Aggiungi un po' di padding se necessario */
+}

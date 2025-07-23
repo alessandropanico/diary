@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, AlertController } from '@ionic/angular';
@@ -7,6 +7,10 @@ import { ExpService } from 'src/app/services/exp.service';
 import { UserDataService } from 'src/app/services/user-data.service';
 import { Subscription } from 'rxjs';
 import { getAuth } from 'firebase/auth';
+import { Chart, registerables } from 'chart.js'; // Importa Chart e registerables
+
+// Registra tutti i componenti di Chart.js (necessario per Ionic/Angular)
+Chart.register(...registerables);
 
 interface HighlightedDate {
   date: string;
@@ -22,6 +26,9 @@ interface HighlightedDate {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DiarioPage implements OnInit, OnDestroy {
+
+  @ViewChild('moodChartCanvas') moodChartCanvas!: ElementRef;
+  moodChart: Chart | undefined;
 
   selectedDate: Date = new Date();
   selectedDateString: string = '';
@@ -69,6 +76,7 @@ export class DiarioPage implements OnInit, OnDestroy {
         this.recentEntries = [];
         this.highlightedDatesConfig = [];
         this.expService.setTotalXP(0);
+        this.destroyChart(); // Distruggi il grafico quando l'utente si disconnette
       }
     });
   }
@@ -80,6 +88,7 @@ export class DiarioPage implements OnInit, OnDestroy {
     if (this.currentEntrySubscription) {
       this.currentEntrySubscription.unsubscribe();
     }
+    this.destroyChart(); // Distruggi il grafico alla distruzione del componente
   }
 
   private resetCurrentEntry(date: string = this.formatDate(new Date())) {
@@ -167,11 +176,13 @@ export class DiarioPage implements OnInit, OnDestroy {
   loadRecentEntries() {
     if (!this.userId) {
       this.recentEntries = [];
+      this.renderMoodChart(); // Aggiorna il grafico anche se non ci sono dati
       return;
     }
     this.diaryService.getRecentDailyEntries(this.userId, 7).subscribe({
       next: (entries) => {
-        this.recentEntries = entries;
+        this.recentEntries = entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()); // Ordina per data
+        this.renderMoodChart(); // Renderizza il grafico dopo aver caricato i dati
         this.cdr.detectChanges();
       },
       error: (error: any) => {
@@ -284,7 +295,7 @@ export class DiarioPage implements OnInit, OnDestroy {
         await this.presentAlert('Successo', 'Voce del diario salvata!');
         this.initialEntryState = JSON.parse(JSON.stringify(this.currentEntry));
         this.hasChanges = false;
-        this.loadRecentEntries();
+        this.loadRecentEntries(); // Ricarica le voci recenti per aggiornare il grafico
         this.loadHighlightedDates();
 
         const wordCount = this.currentEntry.note ? this.currentEntry.note.split(/\s+/).filter(word => word.length > 0).length : 0;
@@ -321,5 +332,125 @@ export class DiarioPage implements OnInit, OnDestroy {
       backdropDismiss: false
     });
     await alert.present();
+  }
+
+  private destroyChart() {
+    if (this.moodChart) {
+      this.moodChart.destroy();
+      this.moodChart = undefined;
+    }
+  }
+
+  renderMoodChart() {
+    this.destroyChart(); // Distruggi il grafico esistente prima di crearne uno nuovo
+
+    if (!this.moodChartCanvas || this.recentEntries.length === 0) {
+      return; // Non renderizzare se non c'è canvas o dati
+    }
+
+    const ctx = this.moodChartCanvas.nativeElement.getContext('2d');
+    if (!ctx) {
+      console.error('Impossibile ottenere il contesto 2D per il canvas.');
+      return;
+    }
+
+    // Mappa i mood a valori numerici per il grafico
+    const moodMap: { [key: string]: number } = {
+      'felice': 5,
+      'motivato': 4,
+      'sereno': 3,
+      'neutro': 2,
+      'stanco': 1,
+      'triste': 0,
+      'arrabbiato': -1,
+      'ansioso': -2,
+      '': NaN // Mood non selezionato
+    };
+
+    const labels = this.recentEntries.map(entry => {
+      const date = new Date(entry.date);
+      return `${date.getDate()}/${date.getMonth() + 1}`; // Formato GG/MM
+    });
+    const data = this.recentEntries.map(entry => moodMap[entry.mood || '']);
+
+    this.moodChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Andamento Umore',
+          data: data,
+          borderColor: '#00bcd4', // Colore primario-accent-calm
+          backgroundColor: 'rgba(0, 188, 212, 0.2)',
+          tension: 0.3, // Curva la linea
+          fill: true,
+          pointBackgroundColor: '#00bcd4',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: '#00bcd4'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: false,
+            ticks: {
+              stepSize: 1,
+              callback: function(value: any) {
+                // Mappa i valori numerici alle etichette dei mood
+                const reverseMoodMap: { [key: number]: string } = {
+                  5: 'Felice',
+                  4: 'Motivato',
+                  3: 'Sereno',
+                  2: 'Neutro',
+                  1: 'Stanco',
+                  0: 'Triste',
+                  '-1': 'Nervoso',
+                  '-2': 'Ansioso',
+                };
+                return reverseMoodMap[value] || '';
+              },
+              color: '#FFF' // Colore del testo delle etichette sull'asse Y
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)' // Colore delle griglie sull'asse Y
+            }
+          },
+          x: {
+            ticks: {
+              color: '#FFF' // Colore del testo delle etichette sull'asse X
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)' // Colore delle griglie sull'asse X
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.raw as number;
+                const reverseMoodMap: { [key: number]: string } = {
+                  5: 'Felice',
+                  4: 'Motivato',
+                  3: 'Sereno',
+                  2: 'Neutro',
+                  1: 'Stanco',
+                  0: 'Triste',
+                  '-1': 'Nervoso',
+                  '-2': 'Ansioso',
+                };
+                return `Umore: ${reverseMoodMap[value] || 'N/D'}`;
+              }
+            }
+          }
+        }
+      }
+    });
   }
 }

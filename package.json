@@ -39,6 +39,7 @@
     "@ionic/angular": "^8.0.0",
     "@ionic/storage-angular": "^4.0.0",
     "capacitor-alarm-plugin": "file:capacitor-alarm-plugin",
+    "chart.js": "^4.5.0",
     "dayjs": "^1.11.13",
     "firebase": "^11.10.0",
     "ionicons": "^7.0.0",
