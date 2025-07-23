@@ -426,11 +426,6 @@
   text-shadow: 0 0 1px var(--primary-glow);
 }
 
-.loading-dots { // .loading-dots è definito sopra
-  // Nessun @extend qui, la classe è definita direttamente in questo file
-}
-
-
 /* --- Media Queries per la Responsività --- */
 @media (max-width: 768px) {
   .add-comment-container,

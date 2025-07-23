@@ -4,13 +4,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PostService } from 'src/app/services/post.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
-import { Post } from 'src/app/interfaces/post';
+import { Post } from 'src/app/interfaces/post'; // Assicurati che Post sia importato
 import { Subscription, from } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController, Platform, IonInfiniteScroll, IonicModule } from '@ionic/angular';
 import { ExpService } from 'src/app/services/exp.service';
 import { CommentSectionComponent } from '../comment-section/comment-section.component';
+import { CommentsModalComponent } from '../comments-modal/comments-modal.component';
 
 @Component({
   selector: 'app-post',
@@ -21,7 +22,8 @@ import { CommentSectionComponent } from '../comment-section/comment-section.comp
     CommonModule,
     FormsModule,
     IonicModule,
-    CommentSectionComponent // <--- AGGIUNGI QUI IL COMPONENTE COMMENTI
+    CommentSectionComponent,
+    CommentsModalComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -38,8 +40,11 @@ export class PostComponent implements OnInit, OnDestroy {
   private lastPostTimestamp: string | null = null;
   canLoadMore: boolean = true;
 
-  // NUOVO: Oggetto per tenere traccia della visibilità dei commenti per ogni post
-  expandedComments: { [key: string]: boolean } = {};
+  showCommentsModal: boolean = false;
+  selectedPostIdForComments: string | null = null;
+  // --- NUOVA PROPRIETÀ: Per memorizzare l'intero oggetto post selezionato ---
+  selectedPostForComments: Post | null = null;
+
 
   private authStateUnsubscribe: (() => void) | undefined;
   private postsSubscription: Subscription | undefined;
@@ -107,7 +112,10 @@ export class PostComponent implements OnInit, OnDestroy {
     this.postsSubscription?.unsubscribe();
     this.lastPostTimestamp = null;
     this.canLoadMore = true;
-    this.expandedComments = {}; // Resetta lo stato di visibilità dei commenti
+
+    this.showCommentsModal = false;
+    this.selectedPostIdForComments = null;
+    this.selectedPostForComments = null; // Resetta anche l'oggetto post selezionato
 
     if (this.infiniteScroll) {
       this.infiniteScroll.disabled = false;
@@ -289,12 +297,22 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-  // NUOVA FUNZIONE: per mostrare/nascondere la sezione commenti
+  // --- MODIFICATO: Questa funzione ora cerca e memorizza l'intero oggetto post ---
   toggleCommentsVisibility(postId: string) {
-    // Inverte lo stato di visibilità per quel postId
-    this.expandedComments[postId] = !this.expandedComments[postId];
-    this.cdr.detectChanges(); // Forziamo il rilevamento per aggiornare la UI
+    this.selectedPostIdForComments = postId;
+    // Trova il post completo e memorizzalo
+    this.selectedPostForComments = this.posts.find(p => p.id === postId) || null;
+    this.showCommentsModal = true;
+    this.cdr.detectChanges();
   }
+
+  closeCommentsModal(): void {
+    this.showCommentsModal = false;
+    this.selectedPostIdForComments = null;
+    this.selectedPostForComments = null; // Resetta anche l'oggetto post selezionato alla chiusura
+    this.cdr.detectChanges();
+  }
+
 
   formatTextWithLinks(text: string): string {
     const urlRegex = /(https?:\/\/[^\s]+)/g;

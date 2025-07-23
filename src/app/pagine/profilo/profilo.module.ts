@@ -9,6 +9,7 @@ import { DashboardUtenteComponent } from './components/dashboard-utente/dashboar
 import { EmojiStatusComponent } from './components/emoji-status/emoji-status.component';
 import { PostComponent } from './components/post/post.component';
 import { CommentSectionComponent } from './components/comment-section/comment-section.component';
+import { CommentsModalComponent } from './components/comments-modal/comments-modal.component';
 
 @NgModule({
   imports: [
@@ -19,7 +20,8 @@ import { CommentSectionComponent } from './components/comment-section/comment-se
     DashboardUtenteComponent,
     EmojiStatusComponent,
     PostComponent,
-    CommentSectionComponent
+    CommentSectionComponent,
+    CommentsModalComponent
   ],
   declarations: [ProfiloPage, ]
 })

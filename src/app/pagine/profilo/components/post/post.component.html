@@ -57,10 +57,17 @@
       <span class="icon share-icon"></span> Condividi
     </button>
   </div>
+</div>
 
-  <app-comment-section *ngIf="expandedComments[post.id]" [postId]="post.id" [initialCommentsCount]="post.commentsCount">
-  </app-comment-section>
-  </div>
+<app-comments-modal
+  *ngIf="showCommentsModal && selectedPostForComments"
+  [postId]="selectedPostForComments.id"
+  [postCreatorAvatar]="selectedPostForComments.userAvatarUrl"
+  [postCreatorUsername]="selectedPostForComments.username"
+  [postText]="selectedPostForComments.text"
+  (closeModalEvent)="closeCommentsModal()">
+</app-comments-modal>
+
 
 <ion-infinite-scroll (ionInfinite)="loadMorePosts($event)" [disabled]="!canLoadMore">
   <ion-infinite-scroll-content loadingSpinner="circles" loadingText="Caricamento altri post..."></ion-infinite-scroll-content>
