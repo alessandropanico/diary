@@ -1,56 +1,66 @@
-<div class="post-card">
+<div class="create-post-container panel-glow-border">
   <div class="post-header">
     <div class="post-avatar">
-      <img src="assets/immaginiGenerali/default-avatar.jpg" alt="User Avatar">
+      <img [src]="currentUserAvatar" alt="User Avatar" (click)="goToUserProfile(currentUserId!)">
     </div>
     <div class="post-info">
-      <span class="post-username">Cloud Strife</span>
-      <span class="post-time">5 minuti fa</span>
+      <span class="post-username" (click)="goToUserProfile(currentUserId!)">{{ currentUserUsername }}</span>
     </div>
   </div>
-  <div class="post-content">
-    <img src="assets/immaginiGenerali/default-banner.jpg" alt="Post Image" class="post-image">
-    <p class="post-text">Questa è una prova del mio primo post in stile Final Fantasy VII! Che ne pensate? #FF7 #Ionic</p>
-  </div>
-  <div class="post-actions">
-    <button class="post-action-button">
-      <span class="icon heart-icon"></span> 120 Mi piace
+  <textarea
+    class="app-textarea"
+    placeholder="Cosa pensi, avventuriero?"
+    [(ngModel)]="newPostText"
+    (input)="adjustTextareaHeight($event)"
+    rows="1"
+  ></textarea>
+  <div class="create-post-actions">
+    <button class="app-button" (click)="selectImage()">
+      <span class="icon image-icon"></span> Aggiungi Immagine
     </button>
-    <button class="post-action-button">
-      <span class="icon comment-icon"></span> 30 Commenti
-    </button>
-    <button class="post-action-button">
-      <span class="icon share-icon"></span> Condividi
+    <button class="app-button primary-button" (click)="createPost()" [disabled]="!newPostText.trim()">
+      <span class="icon send-icon icon-in-primary-button"></span> Pubblica
     </button>
   </div>
 </div>
 
-<div class="post-card">
+<div *ngIf="isLoadingPosts" class="loading-indicator panel-glow-border">
+  <p>Caricamento post... <span class="loading-dots"></span></p>
+</div>
+
+<div *ngIf="!isLoadingPosts && posts.length === 0" class="no-posts-message panel-glow-border">
+  <p>Ancora nessun post da visualizzare. Sii il primo ad illuminare l'etere!</p>
+</div>
+
+<div *ngFor="let post of posts" class="post-card panel-glow-border">
   <div class="post-header">
     <div class="post-avatar">
-      <img src="assets/immaginiGenerali/default-avatar.jpg" alt="User Avatar">
+      <img [src]="post.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar" (click)="goToUserProfile(post.userId)">
     </div>
     <div class="post-info">
-      <span class="post-username">Tifa Lockhart</span>
-      <span class="post-time">1 ora fa</span>
+      <span class="post-username" (click)="goToUserProfile(post.userId)">{{ post.username }}</span>
+      <span class="post-time">{{ formatPostTime(post.timestamp) }}</span>
     </div>
+    <button *ngIf="post.userId === currentUserId" class="app-button delete-button" (click)="presentDeleteAlert(post.id)">
+      <span class="icon delete-icon"></span>
+    </button>
   </div>
   <div class="post-content">
-    <img src="https://via.placeholder.com/400x200/555/FFF?text=FF7+Post+Image+2" alt="Post Image" class="post-image">
-    <p class="post-text">Allenamento duro oggi! Pronti per la prossima missione! 💪 #Avalanche #Training</p>
+    <p class="post-text">{{ post.text }}</p>
   </div>
   <div class="post-actions">
-    <button class="post-action-button">
-      <span class="icon heart-icon"></span>
-      250 Mi piace
+    <button
+      class="post-action-button"
+      [ngClass]="{'liked': currentUserId && post.likes.includes(currentUserId)}"
+      (click)="toggleLike(post)"
+    >
+      <span class="icon heart-icon"></span> {{ post.likes.length }} Mi piace
     </button>
     <button class="post-action-button">
-      <span class="icon comment-icon"></span>
-      55 Commenti
+      <span class="icon comment-icon"></span> {{ post.commentsCount }} Commenti
     </button>
     <button class="post-action-button">
-      <span class="icon share-icon"></span>
-      Condividi
+      <span class="icon share-icon"></span> Condividi
     </button>
   </div>
 </div>
