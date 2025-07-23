@@ -105,10 +105,74 @@
 
 .modal-body {
   flex-grow: 1; /* Permette al body di occupare tutto lo spazio rimanente nel modale */
-  padding: 0; /* Il padding interno sarà gestito dal tuo comment-section.component.scss */
+  padding: 15px; /* Padding su tutti i lati per il contenuto del body */
   overflow-y: auto; /* Abilita lo scroll solo se il contenuto dei commenti supera l'altezza */
   -webkit-overflow-scrolling: touch; /* Migliora lo scrolling su dispositivi iOS */
+
+  display: flex; /* Utilizza flexbox per allineare gli elementi interni */
+  flex-direction: column; /* Impila gli elementi verticalmente */
+  gap: 15px; /* Spazio tra il post originale e la sezione commenti */
 }
+
+/* Stili per la visualizzazione del post originale all'interno del modale */
+.modal-post-info {
+  // Riutilizza le proprietà di .panel-glow-border per consistenza, se non lo è già per @extend
+  // Assicurati che .panel-glow-border sia definito o importato se lo estendi.
+  background: var(--bg-blur);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: 0 0 6px var(--glow-intensity-low);
+  padding: 15px; // Padding interno per i dati del post
+  margin: 0; // Rimuovi margini esterni qui, il gap del .modal-body gestisce la spaziatura
+  flex-shrink: 0; // Non permette che si rimpicciolisca se i commenti sono molti
+
+  .post-header {
+    display: flex;
+    align-items: center; // Centra verticalmente avatar e info utente
+    margin-bottom: 10px; // Spazio tra header del post e contenuto
+    gap: 10px; // Spazio tra avatar e post-info
+
+    .post-avatar {
+      width: 44px; // Dimensione dell'avatar all'interno del modale
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--primary-glow);
+      overflow: hidden;
+      flex-shrink: 0; // Impedisce che l'avatar si rimpicciolisca
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+
+    .post-info {
+      display: flex;
+      flex-direction: column; // Impila username e tempo (se presente)
+      // flex-grow: 1; // Permette di occupare lo spazio rimanente
+    }
+
+    .post-username {
+      font-size: 1.1em;
+      font-weight: bold;
+      color: var(--primary-glow);
+      text-shadow: 0 0 1px var(--glow-intensity-low);
+    }
+    // .post-time { ... } se presente
+  }
+
+  .post-content {
+    .post-text {
+      font-size: 0.95em;
+      line-height: 1.4;
+      color: var(--text-light);
+      white-space: pre-wrap; /* Mantiene gli spazi e i ritorni a capo */
+      word-wrap: break-word; /* Va a capo su parole lunghe */
+      text-align: left;
+    }
+  }
+}
+
 
 /* Media Queries per la Responsività su schermi più piccoli */
 @media (max-width: 768px) {
@@ -136,47 +200,24 @@
   }
 
   .modal-body {
-    padding: 0; /* Mantieni il padding gestito dal componente interno */
+    padding: 10px; // Riduci il padding su schermi più piccoli
+    gap: 10px; // Riduci il gap su schermi più piccoli
   }
-}
 
-/* ... il resto dei tuoi stili del modale ... */
-
-.modal-body {
-  flex-grow: 1;
-  padding: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-
-  /* Aggiungi padding superiore e inferiore per il contenuto */
-  padding-top: 15px;
-  padding-bottom: 15px;
-}
-
-.modal-post-info {
-  padding: 15px; /* Padding interno per i dati del post */
-  margin: 0 15px 15px 15px; /* Margini esterni per distanziare dagli bordi e dalla sezione commenti */
-
-  /* Se vuoi riapplicare il glow o altri stili simili al post, fai riferimento al tuo post-card */
-  background: var(--panel-solid-bg); // Esempio: riutilizza lo sfondo dei pannelli
-  border: 1px solid var(--border-subtle); // Esempio: riutilizza il bordo
-  border-radius: 8px; // Esempio: bordi arrotondati
-}
-
-/* Potrebbe essere necessario un piccolo aggiustamento per i tuoi stili esistenti di post-header, ecc., se sono troppo specifici */
-.modal-post-info .post-header {
-  margin-bottom: 10px; /* Spazio tra header del post e contenuto */
-}
-
-.modal-post-info .post-avatar img {
-  width: 40px; /* Esempio: riduci leggermente l'avatar nel modale */
-  height: 40px;
-}
-
-.modal-post-info .post-username {
-  font-size: 1em; /* Esempio: riduci la dimensione del font */
-}
-
-.modal-post-info .post-text {
-  font-size: 0.9em; /* Esempio: riduci la dimensione del font del testo del post */
+  .modal-post-info {
+    padding: 10px; // Riduci il padding interno del post originale
+    .post-header {
+      gap: 8px;
+      .post-avatar {
+        width: 40px;
+        height: 40px;
+      }
+      .post-username {
+        font-size: 1em;
+      }
+    }
+    .post-content .post-text {
+      font-size: 0.85em;
+    }
+  }
 }
