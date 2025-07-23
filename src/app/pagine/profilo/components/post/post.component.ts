@@ -315,7 +315,6 @@ export class PostComponent implements OnInit, OnDestroy {
         console.error('Errore durante la condivisione del post:', error);
         this.presentAppAlert('Errore Condivisione', 'Non è stato possibile condividere il post.');
       } else {
-        console.log('Condivisione annullata dall\'utente.');
       }
     }
   }
@@ -397,23 +396,17 @@ export class PostComponent implements OnInit, OnDestroy {
   adjustTextareaHeight(event: Event) {
     const textarea = event.target as HTMLTextAreaElement;
 
-    // Resetta l'altezza per calcolare lo scrollHeight correttamente
     textarea.style.height = 'auto';
 
-    // Se lo scrollHeight (altezza effettiva del contenuto) è maggiore della max-height,
-    // imposta l'altezza fissa alla max-height e mostra lo scroll.
-    // Altrimenti, imposta l'altezza allo scrollHeight e nascondi lo scroll.
-
-    // Ottieni la max-height calcolata dal CSS (es. '150px')
     const maxHeightCss = window.getComputedStyle(textarea).maxHeight;
-    const maxHeightPx = parseFloat(maxHeightCss); // Converti '150px' in 150
+    const maxHeightPx = parseFloat(maxHeightCss);
 
     if (textarea.scrollHeight > maxHeightPx) {
       textarea.style.height = maxHeightPx + 'px';
-      textarea.style.overflowY = 'auto'; // Mostra la barra di scorrimento
+      textarea.style.overflowY = 'auto';
     } else {
       textarea.style.height = textarea.scrollHeight + 'px';
-      textarea.style.overflowY = 'hidden'; // Nascondi la barra di scorrimento
+      textarea.style.overflowY = 'hidden';
     }
   }
 }
