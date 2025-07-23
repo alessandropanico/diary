@@ -106,9 +106,9 @@ export class PostComponent implements OnInit, OnDestroy {
     this.canLoadMore = true;
 
     if (this.infiniteScroll) {
-        this.infiniteScroll.disabled = false;
-        // Importante per il caso di "pull to refresh" o ricarica completa
-        this.infiniteScroll.complete();
+      this.infiniteScroll.disabled = false;
+      // Importante per il caso di "pull to refresh" o ricarica completa
+      this.infiniteScroll.complete();
     }
 
 
@@ -396,7 +396,24 @@ export class PostComponent implements OnInit, OnDestroy {
 
   adjustTextareaHeight(event: Event) {
     const textarea = event.target as HTMLTextAreaElement;
+
+    // Resetta l'altezza per calcolare lo scrollHeight correttamente
     textarea.style.height = 'auto';
-    textarea.style.height = textarea.scrollHeight + 'px';
+
+    // Se lo scrollHeight (altezza effettiva del contenuto) è maggiore della max-height,
+    // imposta l'altezza fissa alla max-height e mostra lo scroll.
+    // Altrimenti, imposta l'altezza allo scrollHeight e nascondi lo scroll.
+
+    // Ottieni la max-height calcolata dal CSS (es. '150px')
+    const maxHeightCss = window.getComputedStyle(textarea).maxHeight;
+    const maxHeightPx = parseFloat(maxHeightCss); // Converti '150px' in 150
+
+    if (textarea.scrollHeight > maxHeightPx) {
+      textarea.style.height = maxHeightPx + 'px';
+      textarea.style.overflowY = 'auto'; // Mostra la barra di scorrimento
+    } else {
+      textarea.style.height = textarea.scrollHeight + 'px';
+      textarea.style.overflowY = 'hidden'; // Nascondi la barra di scorrimento
+    }
   }
 }
