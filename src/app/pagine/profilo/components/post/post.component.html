@@ -7,13 +7,8 @@
       <span class="post-username" (click)="goToUserProfile(currentUserId!)">{{ currentUserUsername }}</span>
     </div>
   </div>
-  <textarea
-    class="app-textarea"
-    placeholder="Cosa pensi, avventuriero?"
-    [(ngModel)]="newPostText"
-    (input)="adjustTextareaHeight($event)"
-    rows="1"
-  ></textarea>
+  <textarea class="app-textarea" placeholder="Cosa pensi, avventuriero?" [(ngModel)]="newPostText"
+    (input)="adjustTextareaHeight($event)" rows="1"></textarea>
   <div class="create-post-actions">
     <button class="app-button" (click)="selectImage()">
       <span class="icon image-icon"></span> Aggiungi Immagine
@@ -35,31 +30,30 @@
 <div *ngFor="let post of posts" class="post-card panel-glow-border">
   <div class="post-header">
     <div class="post-avatar">
-      <img [src]="post.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar" (click)="goToUserProfile(post.userId)">
+      <img [src]="post.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar"
+        (click)="goToUserProfile(post.userId)">
     </div>
     <div class="post-info">
       <span class="post-username" (click)="goToUserProfile(post.userId)">{{ post.username }}</span>
       <span class="post-time">{{ formatPostTime(post.timestamp) }}</span>
     </div>
-    <button *ngIf="post.userId === currentUserId" class="app-button delete-button" (click)="presentDeleteAlert(post.id)">
+    <button *ngIf="post.userId === currentUserId" class="app-button delete-button"
+      (click)="presentDeleteAlert(post.id)">
       <span class="icon delete-icon"></span>
     </button>
   </div>
   <div class="post-content">
-    <p class="post-text">{{ post.text }}</p>
+    <p class="post-text" [innerHTML]="formatTextWithLinks(post.text)"></p>
   </div>
   <div class="post-actions">
-    <button
-      class="post-action-button"
-      [ngClass]="{'liked': currentUserId && post.likes.includes(currentUserId)}"
-      (click)="toggleLike(post)"
-    >
+    <button class="post-action-button" [ngClass]="{'liked': currentUserId && post.likes.includes(currentUserId)}"
+      (click)="toggleLike(post)">
       <span class="icon heart-icon"></span> {{ post.likes.length }} Mi piace
     </button>
     <button class="post-action-button">
       <span class="icon comment-icon"></span> {{ post.commentsCount }} Commenti
     </button>
-    <button class="post-action-button">
+    <button class="post-action-button" (click)="sharePost(post)">
       <span class="icon share-icon"></span> Condividi
     </button>
   </div>

@@ -7,7 +7,11 @@ import { Post } from 'src/app/interfaces/post';
 import { Subscription, from } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 import { Router } from '@angular/router';
-import { AlertController } from '@ionic/angular'; // Importa AlertController
+// AGGIORNATO QUI: Rimosso ToastController (non più necessario per questo fallback)
+// AGGIORNATO QUI: Manteniamo AlertController, LoadingController, Platform
+import { AlertController, LoadingController, Platform } from '@ionic/angular';
+// RIMOSSO QUI: import { Share } from '@capacitor/share'; // Non useremo il plugin Capacitor Share direttamente per questo
+
 
 @Component({
   selector: 'app-post',
@@ -34,8 +38,11 @@ export class PostComponent implements OnInit, OnDestroy {
     private userDataService: UserDataService,
     private cdr: ChangeDetectorRef,
     private router: Router,
-    private alertCtrl: AlertController // Inietta AlertController
-  ) { }
+    private alertCtrl: AlertController,
+    private loadingCtrl: LoadingController,
+    private platform: Platform // Manteniamo platform se ti servono altre verifiche specifiche per Capacitor/Browser
+  ) { } // RIMOSSO QUI: private toastCtrl: ToastController
+
 
   ngOnInit() {
     this.authStateUnsubscribe = getAuth().onAuthStateChanged(user => {
@@ -108,6 +115,12 @@ export class PostComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const loading = await this.loadingCtrl.create({
+      message: 'Pubblicazione in corso...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
     const newPost: Omit<Post, 'id' | 'likes' | 'commentsCount'> = {
       userId: this.currentUserId,
       username: this.currentUserUsername,
@@ -119,21 +132,23 @@ export class PostComponent implements OnInit, OnDestroy {
     try {
       await this.postService.createPost(newPost);
       this.newPostText = '';
-      const textarea = document.querySelector('.app-textarea') as HTMLTextAreaElement; // Assicurati il selettore corretto
+      const textarea = document.querySelector('.app-textarea') as HTMLTextAreaElement;
       if (textarea) {
-        textarea.style.height = 'auto';
+        textarea.style.height = 'auto'; // Resetta l'altezza della textarea
       }
       this.presentAppAlert('Successo', 'Il tuo messaggio è stato pubblicato con successo nell\'etere!');
     } catch (error) {
       console.error('Errore nella creazione del post:', error);
       this.presentAppAlert('Errore di pubblicazione', 'Impossibile pubblicare il post. Riprova più tardi.');
+    } finally {
+      await loading.dismiss();
     }
   }
 
   async presentDeleteAlert(postId: string) {
     const alert = await this.alertCtrl.create({
       cssClass: 'app-alert',
-      header: 'Conferma Eliminazione', // Header specifico per la conferma
+      header: 'Conferma Eliminazione',
       message: 'Sei sicuro di voler eliminare questo post? Questa azione è irreversibile!',
       buttons: [
         {
@@ -157,12 +172,19 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   async deletePost(postId: string) {
+    const loading = await this.loadingCtrl.create({
+      message: 'Eliminazione in corso...',
+      spinner: 'crescent'
+    });
+    await loading.present();
     try {
       await this.postService.deletePost(postId);
       this.presentAppAlert('Post Eliminato', 'Il post è stato rimosso con successo.');
     } catch (error) {
       console.error('Errore nell\'eliminazione del post:', error);
       this.presentAppAlert('Errore di eliminazione', 'Non è stato possibile eliminare il post. Sei il vero proprietario?');
+    } finally {
+      await loading.dismiss();
     }
   }
 
@@ -176,7 +198,7 @@ export class PostComponent implements OnInit, OnDestroy {
     try {
       await this.postService.toggleLike(post.id, this.currentUserId, !hasLiked);
       if (!hasLiked) {
-        post.likes.push(this.currentUserId);
+        post.likes = [...post.likes, this.currentUserId];
       } else {
         post.likes = post.likes.filter(id => id !== this.currentUserId);
       }
@@ -184,6 +206,51 @@ export class PostComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Errore nel toggle like:', error);
       this.presentAppAlert('Errore', 'Impossibile aggiornare il "Mi piace". Riprova.');
+    }
+  }
+
+  formatTextWithLinks(text: string): string {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="post-link">${url}</a>`);
+  }
+
+  async sharePost(post: Post) {
+    // Il link generico alla tua app, che porta alla homepage o alla sezione principale.
+    // Ho mantenuto il tuo link originale.
+    const appLink = 'https://alessandropanico.github.io/Sito-Portfolio/';
+
+    // Il link specifico al post. Questo è fondamentale per permettere alle persone di cliccare e vedere il post esatto.
+    // Assicurati che il tuo routing gestisca `/post/:id` o la struttura che usi per i singoli post.
+    const postSpecificLink = `${appLink}#/post/${post.id}`;
+
+    // Il messaggio personalizzato con il placeholder per il link
+    // Il placeholder "link" verrà sostituito con l'URL specifico del post.
+    let shareText = `Ho condiviso un post dall'app "NexusPlan"! Vieni a vedere ${postSpecificLink}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Post di ${post.username} su NexusPlan`, // Titolo della finestra di condivisione
+          text: shareText, // Il corpo del messaggio con il link
+          url: postSpecificLink, // L'URL che le app di social media useranno per generare l'anteprima
+        });
+        // Opzionale: Aggiungi qui la tua logica per l'esperienza utente o analytics
+        // ad esempio: await this.expService.addExperience(5, 'postShared');
+        // ad esempio: await this.userDataService.incrementTotalPostsShared();
+      } else {
+        // Fallback per browser/dispositivi che non supportano la Web Share API
+        console.warn('Web Share API non disponibile, copia negli appunti come fallback.');
+        // Nel fallback, copiamo il testo completo che include il link.
+        await navigator.clipboard.writeText(shareText);
+        this.presentAppAlert('Condivisione non supportata', 'La condivisione nativa non è disponibile su questo dispositivo. Il testo del post (con link) è stato copiato negli appunti.');
+      }
+    } catch (error) {
+      if ((error as any).name !== 'AbortError') {
+        console.error('Errore durante la condivisione del post:', error);
+        this.presentAppAlert('Errore Condivisione', 'Non è stato possibile condividere il post.');
+      } else {
+        console.log('Condivisione annullata dall\'utente.');
+      }
     }
   }
 
@@ -242,7 +309,6 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Il tuo metodo AlertController rinominato
   async presentAppAlert(header: string, message: string) {
     const alert = await this.alertCtrl.create({
       cssClass: 'app-alert',
@@ -252,12 +318,12 @@ export class PostComponent implements OnInit, OnDestroy {
         {
           text: 'OK',
           cssClass: 'app-alert-button',
-          role: 'cancel' // Aggiunto role per chiudere automaticamente
+          role: 'cancel'
         }
       ],
       backdropDismiss: true,
       animated: true,
-      mode: 'ios' // Mantiene il look iOS di default per Ionic
+      mode: 'ios'
     });
     await alert.present();
   }
