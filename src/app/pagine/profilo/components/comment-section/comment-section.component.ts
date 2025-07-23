@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, SimpleChanges, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, LoadingController, AlertController } from '@ionic/angular';
@@ -19,9 +19,11 @@ import { Router } from '@angular/router';
   imports: [CommonModule, FormsModule, IonicModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CommentSectionComponent implements OnInit, OnDestroy {
+// 1. Devi implementare l'interfaccia OnChanges
+export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
+
   @Input() postId!: string;
-  @Input() initialCommentsCount: number = 0; // Ricevi il conteggio iniziale dal post
+  @Input() initialCommentsCount: number = 0;
 
   comments: Comment[] = [];
   newCommentText: string = '';
@@ -30,7 +32,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy {
   currentUserAvatar: string = 'assets/immaginiGenerali/default-avatar.jpg';
 
   isLoadingComments: boolean = false;
-  commentsLimit: number = 5; // Carica 5 commenti alla volta
+  commentsLimit: number = 5;
   lastCommentTimestamp: string | null = null;
   canLoadMoreComments: boolean = true;
 
@@ -52,21 +54,30 @@ export class CommentSectionComponent implements OnInit, OnDestroy {
     this.authStateUnsubscribe = getAuth().onAuthStateChanged(user => {
       if (user) {
         this.currentUserId = user.uid;
-        this.userDataSubscription = from(this.userDataService.getUserDataByUid(this.currentUserId!)).subscribe({
-          next: (userData: UserDashboardCounts | null) => {
-            if (userData) {
-              this.currentUserUsername = userData.nickname || 'Eroe Anonimo';
-              this.currentUserAvatar = userData.photo || userData.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg';
+        // 2. Modifica la logica di caricamento dei dati utente:
+        // Carica i dati utente solo se non li abbiamo già
+        if (!this.currentUserUsername || this.currentUserUsername === 'Eroe Anonimo') {
+          this.userDataSubscription = from(this.userDataService.getUserDataByUid(this.currentUserId!)).subscribe({
+            next: (userData: UserDashboardCounts | null) => {
+              if (userData) {
+                this.currentUserUsername = userData.nickname || 'Eroe Anonimo';
+                this.currentUserAvatar = userData.photo || userData.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg';
+              }
+              this.cdr.detectChanges();
+              // Chiamiamo resetAndLoadComments qui per gestire il caso iniziale e i dati utente
+              this.resetAndLoadComments();
+            },
+            error: (err) => {
+              console.error('Errore nel recupero dati utente (CommentSection):', err);
+              this.presentAppAlert('Errore Utente', 'Impossibile caricare i dati del tuo profilo per i commenti.');
+              this.cdr.detectChanges();
             }
-            this.cdr.detectChanges();
-            this.loadComments(); // Carica i commenti solo dopo aver avuto i dati utente
-          },
-          error: (err) => {
-            console.error('Errore nel recupero dati utente (CommentSection):', err);
-            this.presentAppAlert('Errore Utente', 'Impossibile caricare i dati del tuo profilo per i commenti.');
-            this.cdr.detectChanges();
-          }
-        });
+          });
+        } else {
+          // Se i dati utente sono già caricati e l'utente è autenticato, ricarichiamo i commenti
+          // Questo serve se il componente viene reinizializzato ma l'utente è lo stesso
+          this.resetAndLoadComments();
+        }
       } else {
         this.currentUserId = null;
         this.comments = [];
@@ -81,6 +92,22 @@ export class CommentSectionComponent implements OnInit, OnDestroy {
     this.unsubscribeAll();
   }
 
+  // 3. Aggiungi il metodo ngOnChanges
+  ngOnChanges(changes: SimpleChanges): void {
+    // Questo hook viene chiamato quando un @Input() cambia.
+    // Usiamo 'postId' perché è l'input più critico per il caricamento dei commenti.
+    if (changes['postId'] && changes['postId'].currentValue !== changes['postId'].previousValue) {
+      if (this.postId) { // Assicurati che il postId sia valido (non nullo/undefined)
+        this.resetAndLoadComments();
+      } else {
+        // Se postId diventa nullo o non definito, pulisci i commenti
+        this.comments = [];
+        this.canLoadMoreComments = false;
+        this.cdr.detectChanges();
+      }
+    }
+  }
+
   private unsubscribeAll(): void {
     if (this.authStateUnsubscribe) {
       this.authStateUnsubscribe();
@@ -93,16 +120,41 @@ export class CommentSectionComponent implements OnInit, OnDestroy {
     }
   }
 
+  // 4. Aggiungi il nuovo metodo resetAndLoadComments
+  private resetAndLoadComments() {
+    this.comments = []; // Pulisci i commenti esistenti
+    this.lastCommentTimestamp = null; // Resetta il timestamp per la paginazione
+    this.canLoadMoreComments = true; // Permetti il caricamento di altri commenti
+    this.isLoadingComments = false; // Reset dello stato di caricamento
+    this.commentsSubscription?.unsubscribe(); // Annulla la sottoscrizione precedente se presente
+    this.cdr.detectChanges(); // Forziamo il rilevamento delle modifiche per aggiornare la UI subito
+
+    // Carica i commenti solo se l'utente è autenticato e abbiamo un postId valido
+    if (this.currentUserId && this.postId) {
+      this.loadComments();
+    }
+  }
+
   loadComments() {
-    if (!this.postId) return;
+    // 5. Aggiungi un controllo di sicurezza all'inizio di loadComments
+    // Questo eviterà di fare chiamate a Firestore se mancano dati essenziali.
+    if (!this.postId || !this.currentUserId) {
+      console.warn('Impossibile caricare i commenti: postId o currentUserId mancante.', { postId: this.postId, currentUserId: this.currentUserId });
+      this.isLoadingComments = false;
+      this.canLoadMoreComments = false;
+      this.comments = [];
+      this.cdr.detectChanges();
+      return;
+    }
 
     this.isLoadingComments = true;
-    this.commentsSubscription?.unsubscribe();
 
-    this.commentService.getCommentsForPost(this.postId, this.commentsLimit, this.lastCommentTimestamp)
+    // Qui non devi fare unsubscribe della commentsSubscription, altrimenti rompi la paginazione.
+    // L'unsubscribe della sottoscrizione precedente è gestito in `resetAndLoadComments()`.
+    this.commentsSubscription = this.commentService.getCommentsForPost(this.postId, this.commentsLimit, this.lastCommentTimestamp)
       .subscribe({
         next: (commentsData) => {
-          this.comments = [...this.comments, ...commentsData];
+          this.comments = [...this.comments, ...commentsData]; // Aggiungi i nuovi commenti all'array esistente
           this.isLoadingComments = false;
           if (commentsData.length < this.commentsLimit) {
             this.canLoadMoreComments = false;
@@ -113,7 +165,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         },
         error: (error) => {
-          console.error('Errore nel caricamento dei commenti:', error);
+          console.error('Errore nel caricamento dei commenti:', error); // Questa è la riga 116 dell'errore
           this.isLoadingComments = false;
           this.presentAppAlert('Errore caricamento commenti', 'Impossibile caricare i commenti.');
           this.canLoadMoreComments = false;
@@ -134,7 +186,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy {
     });
     await loading.present();
 
-    const commentToAdd: Omit<Comment, 'id' | 'timestamp' | 'likes'> = { // Modificato il tipo qui
+    const commentToAdd: Omit<Comment, 'id' | 'timestamp' | 'likes'> = {
       postId: this.postId,
       userId: this.currentUserId,
       username: this.currentUserUsername,
@@ -148,14 +200,12 @@ export class CommentSectionComponent implements OnInit, OnDestroy {
       const newLocalComment: Comment = {
         ...commentToAdd,
         id: commentId,
-        timestamp: new Date().toISOString(), // Usa data locale per visualizzazione immediata
-        likes: [], // AGGIUNTO: Inizializza likes per il commento aggiunto localmente
+        timestamp: new Date().toISOString(),
+        likes: [],
       };
-      this.comments.unshift(newLocalComment); // Aggiungi in cima
+      this.comments.unshift(newLocalComment);
       this.newCommentText = '';
       this.expService.addExperience(10, 'commentCreated');
-      // Aggiorna il conteggio (vedi nota su Cloud Functions)
-      // await this.commentService.updateCommentCount(this.postId, 1);
       this.cdr.detectChanges();
     } catch (error) {
       console.error('Errore nell\'aggiunta del commento:', error);
@@ -203,8 +253,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy {
       this.comments = this.comments.filter(c => c.id !== commentId);
       this.cdr.detectChanges();
       this.presentAppAlert('Commento Eliminato', 'Il commento è stato rimosso.');
-      // Aggiorna il conteggio (vedi nota su Cloud Functions)
-      // await this.commentService.updateCommentCount(this.postId, -1);
     } catch (error) {
       console.error('Errore nell\'eliminazione del commento:', error);
       this.presentAppAlert('Errore', 'Impossibile eliminare il commento.');
@@ -213,7 +261,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy {
     }
   }
 
-  // NUOVA FUNZIONE: Toggle Mi Piace per un commento
   async toggleLikeComment(comment: Comment) {
     if (!this.currentUserId) {
       this.presentAppAlert('Accedi Necessario', 'Devi essere loggato per mostrare il tuo apprezzamento!');
@@ -224,19 +271,17 @@ export class CommentSectionComponent implements OnInit, OnDestroy {
     try {
       await this.commentService.toggleLikeComment(this.postId, comment.id, this.currentUserId, !hasLiked);
 
-      // Aggiorna localmente l'array dei like per feedback immediato
       if (!hasLiked) {
         comment.likes = [...comment.likes, this.currentUserId];
       } else {
         comment.likes = comment.likes.filter(id => id !== this.currentUserId);
       }
-      this.cdr.detectChanges(); // Forziamo il rilevamento per aggiornare la UI
+      this.cdr.detectChanges();
     } catch (error) {
       console.error('Errore nel toggle like del commento:', error);
       this.presentAppAlert('Errore', 'Impossibile aggiornare il "Mi piace" del commento. Riprova.');
     }
   }
-
 
   goToUserProfile(userId: string) {
     if (userId === this.currentUserId) {
@@ -247,7 +292,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy {
   }
 
   formatCommentTime(timestamp: string): string {
-    // ... (funzione già esistente) ...
     if (!timestamp) return '';
 
     try {
