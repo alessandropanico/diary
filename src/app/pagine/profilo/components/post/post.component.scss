@@ -63,7 +63,8 @@
   border: 2px solid var(--primary-glow);
   overflow: hidden;
   margin-right: 10px;
-  box-shadow: 0 0 5px var(--glow-intensity-low); /* Ridotto ancora il glow qui */
+  box-shadow: 0 0 5px var(--glow-intensity-low);
+  /* Ridotto ancora il glow qui */
   cursor: pointer;
 
   img {
@@ -82,7 +83,8 @@
   font-size: 1.1em;
   font-weight: bold;
   color: var(--primary-glow);
-  text-shadow: 0 0 2px var(--glow-intensity-low); /* Ridotto ancora il glow qui */
+  text-shadow: 0 0 2px var(--glow-intensity-low);
+  /* Ridotto ancora il glow qui */
   cursor: pointer;
 
   &:hover {
@@ -142,18 +144,24 @@
 
   &:hover {
     background-color: var(--button-hover-bg);
-    box-shadow: 0 0 4px var(--glow-intensity-medium); /* Ridotto ancora il glow qui */
+    box-shadow: 0 0 4px var(--glow-intensity-medium);
+    /* Ridotto ancora il glow qui */
   }
 
   &:active {
-    background-color: rgba(0, 255, 238, 0.15); /* Leggermente ridotto */
-    box-shadow: 0 0 6px var(--glow-intensity-high); /* Ridotto ancora il glow qui */
+    background-color: rgba(0, 255, 238, 0.15);
+    /* Leggermente ridotto */
+    box-shadow: 0 0 6px var(--glow-intensity-high);
+    /* Ridotto ancora il glow qui */
   }
 
   &.liked {
-    color: #ff3366; /* Un rosso/magenta più neon per i like */
+    color: #ff3366;
+
+    /* Un rosso/magenta più neon per i like */
     .icon {
-      filter: drop-shadow(0 0 2px #ff3366); /* Ridotto ancora il glow qui */
+      filter: drop-shadow(0 0 2px #ff3366);
+      /* Ridotto ancora il glow qui */
     }
   }
 }
@@ -167,11 +175,16 @@
   background-color: var(--ion-color-light-shade);
   color: var(--ion-color-dark);
   font-size: 1rem;
-  resize: none; /* Impedisce all'utente di ridimensionare manualmente */
-  overflow-y: hidden; /* Nasconde lo scroll verticale per default, sarà gestito da JS */
-  min-height: 50px; /* Altezza iniziale per una riga o due */
-  max-height: 150px; /* ALTEZZA MASSIMA per circa 4-5 righe, DOPO LA QUALE APPARIRÀ LO SCROLL */
-  transition: height 0.2s ease-out; /* Transizione fluida per l'espansione */
+  resize: none;
+  /* Impedisce all'utente di ridimensionare manualmente */
+  overflow-y: hidden;
+  /* Nasconde lo scroll verticale per default, sarà gestito da JS */
+  min-height: 50px;
+  /* Altezza iniziale per una riga o due */
+  max-height: 150px;
+  /* ALTEZZA MASSIMA per circa 4-5 righe, DOPO LA QUALE APPARIRÀ LO SCROLL */
+  transition: height 0.2s ease-out;
+  /* Transizione fluida per l'espansione */
 
   &:focus {
     outline: none;
@@ -198,7 +211,8 @@
   font-weight: bold;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 0 6px var(--glow-intensity-medium); /* Ridotto ancora il glow qui */
+  box-shadow: 0 0 6px var(--glow-intensity-medium);
+  /* Ridotto ancora il glow qui */
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -206,12 +220,14 @@
 
   &:hover {
     background-color: var(--button-hover-bg);
-    box-shadow: 0 0 10px var(--glow-intensity-high); /* Ridotto ancora il glow qui */
+    box-shadow: 0 0 10px var(--glow-intensity-high);
+    /* Ridotto ancora il glow qui */
   }
 
   &:active {
     background-color: rgba(0, 255, 238, 0.2);
-    box-shadow: 0 0 12px var(--glow-intensity-high); /* Ridotto ancora il glow qui */
+    box-shadow: 0 0 12px var(--glow-intensity-high);
+    /* Ridotto ancora il glow qui */
     transform: translateY(1px);
   }
 
@@ -228,20 +244,24 @@
     background-color: var(--primary-glow);
     color: var(--panel-solid-bg); // Testo scuro sul pulsante luminoso
     box-shadow: 0 0 8px var(--glow-intensity-medium); // ULTERIORMENTE RIDOTTO
+
     &:hover {
       background-color: lighten(#00ffee, 3%); // Leggera variazione all'hover
       box-shadow: 0 0 10px var(--glow-intensity-high); // ULTERIORMENTE RIDOTTO
     }
+
     &:active {
       background-color: darken(#00ffee, 3%); // Leggera variazione all'active
     }
   }
 
   &.delete-button {
-    background-color: rgba(255, 50, 50, 0.5); /* Rosso neon più tenue, leggermente ridotto */
+    background-color: rgba(255, 50, 50, 0.5);
+    /* Rosso neon più tenue, leggermente ridotto */
     border-color: #ff0000;
     color: var(--text-light);
-    box-shadow: 0 0 6px rgba(255, 0, 0, 0.3); /* Ridotto ancora il glow qui */
+    box-shadow: 0 0 6px rgba(255, 0, 0, 0.3);
+    /* Ridotto ancora il glow qui */
     margin-left: auto;
     padding: 8px 12px;
     font-size: 0.8em;
@@ -250,8 +270,14 @@
       background-color: rgba(255, 0, 0, 0.6);
       box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
     }
+
     &:active {
       background-color: rgba(255, 0, 0, 0.7);
+    }
+
+    .icon {
+      background-color: var(--text-light); /* Rende l'icona bianca */
+      filter: none; /* Rimuove il drop-shadow glow predefinito se non desiderato */
     }
   }
 }
@@ -319,7 +345,8 @@
   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>');
 }
 
-.loading-indicator, .no-posts-message {
+.loading-indicator,
+.no-posts-message {
   text-align: center;
   padding: 20px;
   font-size: 1.1em;
@@ -337,10 +364,21 @@
 }
 
 @keyframes loading-dots {
-  0% { width: 0; }
-  33% { width: .5em; }
-  66% { width: 1em; }
-  100% { width: 1.5em; }
+  0% {
+    width: 0;
+  }
+
+  33% {
+    width: .5em;
+  }
+
+  66% {
+    width: 1em;
+  }
+
+  100% {
+    width: 1.5em;
+  }
 }
 
 .app-alert {
@@ -393,6 +431,7 @@
       &:first-child {
         border-bottom-left-radius: 8px;
       }
+
       &:last-child {
         border-bottom-right-radius: 8px;
       }
