@@ -10,7 +10,6 @@ import { getAuth } from 'firebase/auth';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController, Platform, IonInfiniteScroll, IonicModule } from '@ionic/angular';
 import { ExpService } from 'src/app/services/exp.service';
-import { CommentSectionComponent } from '../comment-section/comment-section.component';
 import { CommentsModalComponent } from '../comments-modal/comments-modal.component';
 
 @Component({
@@ -22,7 +21,6 @@ import { CommentsModalComponent } from '../comments-modal/comments-modal.compone
     CommonModule,
     FormsModule,
     IonicModule,
-    CommentSectionComponent,
     CommentsModalComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
