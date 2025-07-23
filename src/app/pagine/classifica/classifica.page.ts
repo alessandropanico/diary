@@ -27,12 +27,14 @@ export class ClassificaPage implements OnInit, OnDestroy {
   private authSubscription!: Subscription;
   private loggedInUserId: string | null = null;
 
+  // ⭐ AGGIORNAMENTO: Definisce il limite massimo della classifica
+  private maxLeaderboardSize: number = 500;
+
   constructor(private userDataService: UserDataService,
     private expService: ExpService,
     private router: Router,
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef
-
   ) { }
 
   ngOnInit() {
@@ -45,7 +47,7 @@ export class ClassificaPage implements OnInit, OnDestroy {
       })
     ).subscribe(user => {
       this.loggedInUserId = user ? user.uid : null;
-      this.cdr.detectChanges();
+      this.cdr.detectChanges(); // Assicura che la UI si aggiorni se necessario
       this.loadLeaderboard(true);
     });
   }
@@ -59,33 +61,74 @@ export class ClassificaPage implements OnInit, OnDestroy {
     }
   }
 
-
   /**
    * Gestisce il caricamento degli utenti per la classifica, sia al primo accesso che tramite scroll infinito.
    * @param isInitialLoad Indica se è il caricamento iniziale (true) o successivo (false).
    * @param event L'evento di scroll, fornito da `ion-infinite-scroll`.
    */
   loadLeaderboard(isInitialLoad: boolean, event?: any) {
+    // ⭐ AGGIORNAMENTO: Aggiunta la condizione per il limite massimo ⭐
     if (this.allUsersLoaded && !isInitialLoad) {
       if (event) event.target.complete();
       return;
     }
 
+    // ⭐ AGGIORNAMENTO: Se stiamo per superare il limite massimo, blocchiamo il caricamento ⭐
+    if (this.leaderboardUsers.length >= this.maxLeaderboardSize) {
+        this.allUsersLoaded = true;
+        if (event) {
+            event.target.complete();
+            event.target.disabled = true; // Disabilita l'infinite scroll
+        }
+        this.isLoading = false; // Assicurati che isLoading sia false
+        return;
+    }
+
+
     this.isLoading = true;
 
-    this.usersSubscription = this.userDataService.getLeaderboardUsers(this.pageSize, this.lastVisibleDoc)
+    // ⭐ AGGIORNAMENTO: Calcola quanti utenti mancano al limite di 500 per l'ultima pagina ⭐
+    const remainingUsers = this.maxLeaderboardSize - this.leaderboardUsers.length;
+    const currentBatchSize = Math.min(this.pageSize, remainingUsers);
+
+    // ⭐ AGGIORNAMENTO: Non fare la chiamata se non ci sono più utenti da caricare all'interno del limite ⭐
+    if (currentBatchSize <= 0) {
+      this.allUsersLoaded = true;
+      this.isLoading = false;
+      if (event) {
+          event.target.complete();
+          event.target.disabled = true;
+      }
+      return;
+    }
+
+    // Chiamata al servizio con la dimensione della pagina adattata
+    // ⭐ AGGIORNAMENTO: Passa currentBatchSize al servizio ⭐
+    this.usersSubscription = this.userDataService.getLeaderboardUsers(currentBatchSize, this.lastVisibleDoc)
       .subscribe({
         next: (response) => {
+          // ⭐ AGGIORNAMENTO: Filtra i nuovi utenti per evitare duplicati in caso di ricaricamenti o glitch ⭐
+          const newUsers = response.users.filter(newUser =>
+            !this.leaderboardUsers.some(existingUser => existingUser.uid === newUser.uid)
+          );
+
           if (isInitialLoad) {
-            this.leaderboardUsers = response.users;
+            this.leaderboardUsers = newUsers;
           } else {
-            this.leaderboardUsers = [...this.leaderboardUsers, ...response.users];
+            this.leaderboardUsers = [...this.leaderboardUsers, ...newUsers];
           }
 
-          this.lastVisibleDoc = response.lastVisible ?? undefined;
+          // ⭐ AGGIORNAMENTO: Aggiorna lastVisibleDoc solo se sono stati caricati nuovi utenti e c'è un lastVisible ⭐
+          if (response.users.length > 0) {
+            this.lastVisibleDoc = response.lastVisible || undefined;
+          } else {
+            this.lastVisibleDoc = undefined; // Nessun nuovo documento, quindi non c'è un "dopo"
+          }
+
           this.isLoading = false;
 
-          if (response.users.length < this.pageSize) {
+          // ⭐ AGGIORNAMENTO: Aggiorna allUsersLoaded se abbiamo caricato meno utenti del batch o raggiunto il limite ⭐
+          if (newUsers.length < currentBatchSize || this.leaderboardUsers.length >= this.maxLeaderboardSize) {
             this.allUsersLoaded = true;
           }
 
@@ -129,17 +172,16 @@ export class ClassificaPage implements OnInit, OnDestroy {
     return '';
   }
 
-
   getUserLevel(xp?: number): number {
     return this.expService.getLevelFromXP(xp !== undefined ? xp : 0);
   }
 
-    /**
-     * Se l'ID dell'utente cliccato corrisponde all'ID dell'utente loggato,
-     * naviga al proprio profilo (/profilo). Altrimenti, naviga al profilo di altri utenti
-     * passando l'ID dell'utente come parametro (/profilo-altri-utenti/:userId).
-     * @param userId L'ID dell'utente il cui profilo deve essere visualizzato.
-     */
+  /**
+   * Se l'ID dell'utente cliccato corrisponde all'ID dell'utente loggato,
+   * naviga al proprio profilo (/profilo). Altrimenti, naviga al profilo di altri utenti
+   * passando l'ID dell'utente come parametro (/profilo-altri-utenti/:userId).
+   * @param userId L'ID dell'utente il cui profilo deve essere visualizzato.
+   */
   goToUserProfile(userId: string) {
     this.ngZone.run(() => {
       if (userId === this.loggedInUserId) {
@@ -149,5 +191,4 @@ export class ClassificaPage implements OnInit, OnDestroy {
       }
     });
   }
-
 }

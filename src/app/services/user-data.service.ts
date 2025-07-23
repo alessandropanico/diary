@@ -5,6 +5,7 @@ import { ExpService } from './exp.service';
 import { BehaviorSubject, Observable, from } from 'rxjs';
 
 export interface UserDashboardCounts {
+
   uid: string;
   activeAlarmsCount: number;
   totalAlarmsCount: number;
@@ -12,14 +13,12 @@ export interface UserDashboardCounts {
 
   totalNotesCount: number;
   totalListsCount: number;
-  incompleteListItems: number; // Mantenuto, come da tua interfaccia
-  lastNoteListInteraction: string; // Mantenuto, come da tua interfaccia
+  incompleteListItems: number;
+  lastNoteListInteraction: string;
 
-  // ⭐ NUOVE PROPRIETÀ per la separazione di Note e Task
-  lastNoteInteraction?: string; // Nuova: Ultima interazione specifica per le Note
-  lastTaskInteraction?: string; // Nuova: Ultima interazione specifica per le Task
-  incompleteTaskItems?: number; // Nuova: Task incomplete (se la vuoi separata da incompleteListItems)
-
+  lastNoteInteraction?: string;
+  lastTaskInteraction?: string;
+  incompleteTaskItems?: number;
 
   followersCount: number;
   followingCount: number;
@@ -192,14 +191,13 @@ export class UserDataService {
 
         if (docSnap.exists()) {
           data = docSnap.data();
-          // Inizializza totalXP se non esiste
+
           if (typeof data['totalXP'] === 'undefined') {
             await updateDoc(userDocRef, { totalXP: 0 });
             data.totalXP = 0;
           }
-          // ⭐ AGGIORNAMENTO 2: Inizializza profilePictureUrl, nicknameLowercase e nameLowercase ⭐
           if (typeof data['profilePictureUrl'] === 'undefined' || data['profilePictureUrl'] === '') {
-            await updateDoc(userDocRef, { profilePictureUrl: '' }); // Salva una stringa vuota nel DB
+            await updateDoc(userDocRef, { profilePictureUrl: '' });
             data.profilePictureUrl = '';
           }
           if (typeof data['nicknameLowercase'] === 'undefined' && data['nickname']) {
@@ -211,7 +209,6 @@ export class UserDataService {
             data.nameLowercase = (data['name'] || '').toLowerCase().trim();
           }
 
-          // Inizializzazioni per altri campi (rimangono invariate)
           if (typeof data['lastGlobalActivityTimestamp'] === 'undefined') {
             await updateDoc(userDocRef, { lastGlobalActivityTimestamp: '' });
             data.lastGlobalActivityTimestamp = '';
@@ -226,17 +223,17 @@ export class UserDataService {
           data.incompleteTaskItems = data.incompleteTaskItems ?? 0;
 
         } else {
-          // Dati iniziali per un nuovo utente, inclusi i nuovi campi
+
           const initialData = {
             totalXP: 0,
-            profilePictureUrl: '', // ⭐ AGGIORNAMENTO 3: Inizializza per i nuovi utenti ⭐
-            nicknameLowercase: '', // ⭐ AGGIORNAMENTO 4: Inizializza per i nuovi utenti ⭐
-            nameLowercase: '',     // ⭐ AGGIORNAMENTO 5: Inizializza per i nuovi utenti ⭐
+            profilePictureUrl: '',
+            nicknameLowercase: '',
+            nameLowercase: '',
             activeAlarmsCount: 0,
             totalAlarmsCreated: 0,
             lastAlarmInteraction: '',
 
-             lastNoteInteraction: '',
+            lastNoteInteraction: '',
             lastTaskInteraction: '',
             incompleteTaskItems: 0,
 
@@ -300,7 +297,7 @@ export class UserDataService {
     }
   }
 
- private async updateNumericField(uid: string, field: string, valueToUpdate: number | 'increment', setValue?: number): Promise<void> {
+  private async updateNumericField(uid: string, field: string, valueToUpdate: number | 'increment', setValue?: number): Promise<void> {
     const userDocRef = doc(this.firestore, 'users', uid);
     try {
       const updateData: { [key: string]: any } = {};
@@ -318,7 +315,7 @@ export class UserDataService {
 
       await updateDoc(userDocRef, updateData);
       console.log(`[UserDataService] Campo '${field}' aggiornato.`);
-      // ⭐ Aggiorna il timestamp globale solo se il campo è rilevante per l'attività utente
+
       if (['activeAlarmsCount', 'totalNotesCount', 'totalListsCount', 'incompleteListItems', 'diaryTotalWords', 'diaryEntryCount', 'totalPhotosShared', 'incompleteTaskItems'].includes(field)) { // Aggiunto 'incompleteTaskItems'
         await this.setLastGlobalActivityTimestamp(new Date().toISOString());
       }
@@ -332,7 +329,7 @@ export class UserDataService {
           initialValue = typeof valueToUpdate === 'number' ? valueToUpdate : 1;
         }
         await setDoc(userDocRef, { [field]: initialValue }, { merge: true });
-        // Se il documento viene creato, aggiorna anche il timestamp globale
+
         if (['activeAlarmsCount', 'totalNotesCount', 'totalListsCount', 'incompleteListItems', 'diaryTotalWords', 'diaryEntryCount', 'totalPhotosShared', 'incompleteTaskItems'].includes(field)) { // Aggiunto 'incompleteTaskItems'
           await this.setLastGlobalActivityTimestamp(new Date().toISOString());
         }
@@ -343,11 +340,11 @@ export class UserDataService {
     }
   }
 
- private async updateStringField(uid: string, field: string, value: string): Promise<void> {
+  private async updateStringField(uid: string, field: string, value: string): Promise<void> {
     const userDocRef = doc(this.firestore, 'users', uid);
     try {
       await updateDoc(userDocRef, { [field]: value });
-      // ⭐ Aggiorna il timestamp globale solo se il campo è rilevante per l'attività utente
+
       if (['lastAlarmInteraction', 'lastNoteInteraction', 'lastTaskInteraction', 'lastPhotoSharedInteraction', 'diaryLastInteraction', 'lastNoteListInteraction'].includes(field)) { // Aggiunto 'lastNoteListInteraction'
         await this.setLastGlobalActivityTimestamp(value);
       }
@@ -372,11 +369,10 @@ export class UserDataService {
     if (uid) await this.updateStringField(uid, 'lastAlarmInteraction', timestamp);
   }
 
-   async incrementTotalNotesCount(change: number = 1): Promise<void> {
+  async incrementTotalNotesCount(change: number = 1): Promise<void> {
     const uid = this.getUserUid();
     if (uid) {
       await this.updateNumericField(uid, 'totalNotesCount', change);
-      // ⭐ Aggiorna l'ultima interazione nota quando il conteggio delle note cambia
       await this.setLastNoteInteraction(new Date().toISOString());
     }
   }
@@ -385,12 +381,10 @@ export class UserDataService {
     const uid = this.getUserUid();
     if (uid) {
       await this.updateNumericField(uid, 'totalListsCount', change);
-      // ⭐ Se le liste di task sono create/modificate, potresti voler aggiornare lastTaskInteraction
       await this.setLastTaskInteraction(new Date().toISOString());
     }
   }
 
-   // ⭐ NUOVI METODI PER AGGIORNARE ULTIMA MODIFICA NOTA E TASK
   async setLastNoteInteraction(timestamp: string): Promise<void> {
     const uid = this.getUserUid();
     if (uid) await this.updateStringField(uid, 'lastNoteInteraction', timestamp);
@@ -405,8 +399,6 @@ export class UserDataService {
     const uid = this.getUserUid();
     if (uid) await this.updateNumericField(uid, 'incompleteTaskItems', 0, count);
   }
-
-
 
   async setIncompleteListItems(count: number): Promise<void> {
     const uid = this.getUserUid();
@@ -493,7 +485,7 @@ export class UserDataService {
     }
   }
 
-   getLeaderboardUsers(
+  getLeaderboardUsers(
     pageSize: number,
     lastDoc?: QueryDocumentSnapshot<DocumentData>
   ): Observable<{ users: UserDashboardCounts[], lastVisible: QueryDocumentSnapshot<DocumentData> | null }> {
@@ -512,7 +504,6 @@ export class UserDataService {
 
     return from(getDocs(q).then(snapshot => {
       const users: UserDashboardCounts[] = [];
-      console.log('*** DEBUG CLASSIFICA: Dati recuperati da Firestore ***');
       snapshot.forEach(doc => {
         const userData = doc.data();
 
@@ -521,7 +512,7 @@ export class UserDataService {
           nickname: userData['nickname'] as string ?? 'N/A',
           name: userData['name'] as string ?? '',
           surname: userData['surname'] as string ?? '',
-          photo: userData['photo'] as string ?? 'assets/immaginiGenerali/default-avatar.jpg',
+          photo: (userData['profilePictureUrl'] as string) || (userData['photo'] as string) || 'assets/immaginiGenerali/default-avatar.jpg', // ⭐ AGGIORNAMENTO: Preferisci profilePictureUrl, poi photo
           totalXP: userData['totalXP'] as number ?? 0,
           activeAlarmsCount: userData['activeAlarmsCount'] as number ?? 0,
           totalAlarmsCount: userData['totalAlarmsCount'] as number ?? 0,
@@ -530,11 +521,10 @@ export class UserDataService {
           totalListsCount: userData['totalListsCount'] as number ?? 0,
           incompleteListItems: userData['incompleteListItems'] as number ?? 0,
           lastNoteListInteraction: userData['lastNoteListInteraction'] as string ?? '',
-          // ⭐ AGGIUNTI: I nuovi campi alla mappatura per la leaderboard
+
           lastNoteInteraction: userData['lastNoteInteraction'] as string ?? '',
           lastTaskInteraction: userData['lastTaskInteraction'] as string ?? '',
           incompleteTaskItems: userData['incompleteTaskItems'] as number ?? 0,
-
 
           followersCount: userData['followersCount'] as number ?? 0,
           followingCount: userData['followingCount'] as number ?? 0,
