@@ -1,24 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
-
-// --- Variabili di Stile Globali ---
 :host {
-  --primary-glow: #00ffee; /* Neon blu/ciano */
-  --bg-blur: rgba(15, 15, 35, 0.8); /* Sfondo semi-trasparente scuro */
+  --primary-glow: #00ffee;
+  --bg-blur: rgba(15, 15, 35, 0.8);
   --text-light: #ffffff;
-  --label-color: #a0cfd8; /* Blu chiaro quasi grigio */
-  --panel-solid-bg: rgba(20, 25, 50, 0.95); /* Sfondo pannello scuro */
-  --border-subtle: rgba(0, 255, 238, 0.2); /* Bordo sottile effetto neon */
-  --button-hover-bg: rgba(0, 255, 238, 0.1); /* Sfondo hover pulsante */
-  --glow-intensity-low: rgba(0, 255, 238, 0.1); /* ULTERIORMENTE RIDOTTO */
-  --glow-intensity-medium: rgba(0, 255, 238, 0.25); /* ULTERIORMENTE RIDOTTO */
-  --glow-intensity-high: rgba(0, 255, 238, 0.4); /* ULTERIORMENTE RIDOTTO */
+  --label-color: #a0cfd8;
+  --panel-solid-bg: rgba(20, 25, 50, 0.95);
+  --border-subtle: rgba(0, 255, 238, 0.2);
+  --button-hover-bg: rgba(0, 255, 238, 0.1);
+  --glow-intensity-low: rgba(0, 255, 238, 0.1);
+  --glow-intensity-medium: rgba(0, 255, 238, 0.25);
+  --glow-intensity-high: rgba(0, 255, 238, 0.4);
 }
 
-// --- Stili Globali o Reset per il Componente ---
 :host {
   display: block;
   padding: 20px;
-  background-color: #1a1a1a; /* Sfondo generale più scuro */
+  background-color: #1a1a1a;
   min-height: 100vh;
   font-family: 'Orbitron', sans-serif;
   color: var(--text-light);
@@ -26,23 +22,21 @@
   text-align: center;
 }
 
-// --- Classe per i Pannelli con Bordo Luminoso ---
 .panel-glow-border {
   background: var(--bg-blur);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  box-shadow: 0 0 6px var(--glow-intensity-low); /* Ridotto ancora il glow qui */
+  box-shadow: 0 0 6px var(--glow-intensity-low);
   padding: 15px;
   margin-bottom: 20px;
   text-align: left;
   transition: box-shadow 0.3s ease;
 
   &:hover {
-    box-shadow: 0 0 10px var(--glow-intensity-medium); /* Ridotto ancora il glow all'hover */
+    box-shadow: 0 0 10px var(--glow-intensity-medium);
   }
 }
 
-// --- Stili per la Creazione del Post ---
 .create-post-container {
   display: flex;
   flex-direction: column;
@@ -262,7 +256,28 @@
   }
 }
 
-// --- Stili per le icone ---
+.app-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+  background-color: var(--ion-color-medium-tint);
+  color: var(--ion-color-medium);
+}
+
+.app-button:disabled .icon {
+  color: var(--ion-color-medium);
+}
+
+.primary-button:disabled {
+  background-color: var(--ion-color-medium-shade);
+  color: var(--ion-color-light);
+}
+
+.primary-button:disabled .icon-in-primary-button {
+  color: var(--ion-color-light);
+}
+
+
 .icon {
   display: inline-block;
   width: 18px;
@@ -271,13 +286,12 @@
   mask-size: cover;
   background-color: var(--primary-glow);
   -webkit-mask-size: cover;
-  filter: drop-shadow(0 0 1px var(--glow-intensity-low)); // ULTERIORMENTE RIDOTTO
+  filter: drop-shadow(0 0 1px var(--glow-intensity-low));
 }
 
-// NUOVO STILE PER ICONE NEI PULSANTI PRIMARY
 .icon-in-primary-button {
-  background-color: var(--panel-solid-bg); // Colore scuro per l'icona
-  filter: none; // Rimuove il drop-shadow perché il contrasto è già forte
+  background-color: var(--panel-solid-bg);
+  filter: none;
 }
 
 
@@ -305,13 +319,12 @@
   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>');
 }
 
-/* Stili per il caricamento */
 .loading-indicator, .no-posts-message {
   text-align: center;
   padding: 20px;
   font-size: 1.1em;
   color: var(--primary-glow);
-  text-shadow: 0 0 2px var(--primary-glow); /* Ridotto ancora il glow qui */
+  text-shadow: 0 0 2px var(--primary-glow);
 }
 
 .loading-dots {
@@ -330,13 +343,12 @@
   100% { width: 1.5em; }
 }
 
-/* --- Stili per gli Alert di Ionic --- */
 .app-alert {
   --background: var(--panel-solid-bg);
   --border-radius: 8px;
   --border-width: 1px;
   --border-color: var(--primary-glow);
-  --box-shadow: 0 0 15px var(--primary-glow); /* Alert con glow leggermente ridotto */
+  --box-shadow: 0 0 15px var(--primary-glow);
   --color: var(--text-light);
 
   .alert-head {
@@ -344,7 +356,7 @@
       color: var(--primary-glow);
       font-family: 'Orbitron', sans-serif;
       font-weight: bold;
-      text-shadow: 0 0 3px var(--primary-glow); // Ridotto
+      text-shadow: 0 0 3px var(--primary-glow);
     }
   }
 
@@ -396,8 +408,6 @@
   }
 }
 
-
-/* --- Media Queries per Responsive --- */
 @media (max-width: 768px) {
   :host {
     padding: 15px;
