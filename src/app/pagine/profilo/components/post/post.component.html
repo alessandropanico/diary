@@ -7,7 +7,7 @@
       <span class="post-username" (click)="goToUserProfile(currentUserId!)">{{ currentUserUsername }}</span>
     </div>
   </div>
-  <textarea class="app-textarea" placeholder="Cosa pensi, avventuriero?" [(ngModel)]="newPostText"
+  <textarea class="app-textarea" placeholder="Cosa stai pensando?" [(ngModel)]="newPostText"
     (input)="adjustTextareaHeight($event)" rows="1"></textarea>
   <div class="create-post-actions">
     <button class="app-button" (click)="selectImage()">

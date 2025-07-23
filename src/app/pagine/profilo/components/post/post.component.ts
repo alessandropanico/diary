@@ -7,10 +7,9 @@ import { Post } from 'src/app/interfaces/post';
 import { Subscription, from } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 import { Router } from '@angular/router';
-// AGGIORNATO QUI: Rimosso ToastController (non più necessario per questo fallback)
-// AGGIORNATO QUI: Manteniamo AlertController, LoadingController, Platform
 import { AlertController, LoadingController, Platform } from '@ionic/angular';
-// RIMOSSO QUI: import { Share } from '@capacitor/share'; // Non useremo il plugin Capacitor Share direttamente per questo
+// AGGIUNTO QUI: Importa ExpService
+import { ExpService } from 'src/app/services/exp.service';
 
 
 @Component({
@@ -40,8 +39,10 @@ export class PostComponent implements OnInit, OnDestroy {
     private router: Router,
     private alertCtrl: AlertController,
     private loadingCtrl: LoadingController,
-    private platform: Platform // Manteniamo platform se ti servono altre verifiche specifiche per Capacitor/Browser
-  ) { } // RIMOSSO QUI: private toastCtrl: ToastController
+    private platform: Platform,
+    // AGGIUNTO QUI: Inietta ExpService
+    private expService: ExpService
+  ) { }
 
 
   ngOnInit() {
@@ -137,6 +138,8 @@ export class PostComponent implements OnInit, OnDestroy {
         textarea.style.height = 'auto'; // Resetta l'altezza della textarea
       }
       this.presentAppAlert('Successo', 'Il tuo messaggio è stato pubblicato con successo nell\'etere!');
+      // AGGIUNTO QUI: Aggiungi 50 XP per la creazione di un post
+      this.expService.addExperience(50, 'postCreated');
     } catch (error) {
       console.error('Errore nella creazione del post:', error);
       this.presentAppAlert('Errore di pubblicazione', 'Impossibile pubblicare il post. Riprova più tardi.');
@@ -215,32 +218,21 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   async sharePost(post: Post) {
-    // Il link generico alla tua app, che porta alla homepage o alla sezione principale.
-    // Ho mantenuto il tuo link originale.
     const appLink = 'https://alessandropanico.github.io/Sito-Portfolio/';
-
-    // Il link specifico al post. Questo è fondamentale per permettere alle persone di cliccare e vedere il post esatto.
-    // Assicurati che il tuo routing gestisca `/post/:id` o la struttura che usi per i singoli post.
     const postSpecificLink = `${appLink}#/post/${post.id}`;
-
-    // Il messaggio personalizzato con il placeholder per il link
-    // Il placeholder "link" verrà sostituito con l'URL specifico del post.
     let shareText = `Ho condiviso un post dall'app "NexusPlan"! Vieni a vedere ${postSpecificLink}`;
 
     try {
       if (navigator.share) {
         await navigator.share({
-          title: `Post di ${post.username} su NexusPlan`, // Titolo della finestra di condivisione
-          text: shareText, // Il corpo del messaggio con il link
-          url: postSpecificLink, // L'URL che le app di social media useranno per generare l'anteprima
+          title: `Post di ${post.username} su NexusPlan`,
+          text: shareText,
+          url: postSpecificLink,
         });
-        // Opzionale: Aggiungi qui la tua logica per l'esperienza utente o analytics
-        // ad esempio: await this.expService.addExperience(5, 'postShared');
-        // ad esempio: await this.userDataService.incrementTotalPostsShared();
+        // AGGIUNTO QUI: Aggiungi 20 XP per la condivisione di un post
+        this.expService.addExperience(20, 'postShared');
       } else {
-        // Fallback per browser/dispositivi che non supportano la Web Share API
         console.warn('Web Share API non disponibile, copia negli appunti come fallback.');
-        // Nel fallback, copiamo il testo completo che include il link.
         await navigator.clipboard.writeText(shareText);
         this.presentAppAlert('Condivisione non supportata', 'La condivisione nativa non è disponibile su questo dispositivo. Il testo del post (con link) è stato copiato negli appunti.');
       }
