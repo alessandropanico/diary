@@ -6,16 +6,14 @@
   --text-light: #ffffff;
   --label-color: #a0cfd8;
   --danger-color: #ff4e4e;
+    font-family: 'Orbitron', sans-serif;
+
 }
 
 /* Regola globale per input nativi, spostata e mantenuta per forte specificità */
 input {
   text-align: left !important;
   direction: ltr !important;
-}
-
-:host {
-  font-family: 'Orbitron', sans-serif;
 }
 
 .ff7-title {

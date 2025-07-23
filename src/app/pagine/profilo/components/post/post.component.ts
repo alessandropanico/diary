@@ -1,3 +1,4 @@
+// ... (le tue importazioni esistenti) ...
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,10 +8,9 @@ import { Post } from 'src/app/interfaces/post';
 import { Subscription, from } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 import { Router } from '@angular/router';
-// AGGIORNATO QUI: Rimosso IonInfiniteScrollModule, aggiunto IonicModule
 import { AlertController, LoadingController, Platform, IonInfiniteScroll, IonicModule } from '@ionic/angular';
 import { ExpService } from 'src/app/services/exp.service';
-
+import { CommentSectionComponent } from '../comment-section/comment-section.component';
 
 @Component({
   selector: 'app-post',
@@ -20,7 +20,8 @@ import { ExpService } from 'src/app/services/exp.service';
   imports: [
     CommonModule,
     FormsModule,
-    IonicModule // AGGIUNTO QUI: Importa il modulo Ionic completo
+    IonicModule,
+    CommentSectionComponent // <--- AGGIUNGI QUI IL COMPONENTE COMMENTI
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -37,6 +38,9 @@ export class PostComponent implements OnInit, OnDestroy {
   private lastPostTimestamp: string | null = null;
   canLoadMore: boolean = true;
 
+  // NUOVO: Oggetto per tenere traccia della visibilità dei commenti per ogni post
+  expandedComments: { [key: string]: boolean } = {};
+
   private authStateUnsubscribe: (() => void) | undefined;
   private postsSubscription: Subscription | undefined;
   private userDataSubscription: Subscription | undefined;
@@ -51,7 +55,6 @@ export class PostComponent implements OnInit, OnDestroy {
     private platform: Platform,
     private expService: ExpService
   ) { }
-
 
   ngOnInit() {
     this.authStateUnsubscribe = getAuth().onAuthStateChanged(user => {
@@ -104,13 +107,12 @@ export class PostComponent implements OnInit, OnDestroy {
     this.postsSubscription?.unsubscribe();
     this.lastPostTimestamp = null;
     this.canLoadMore = true;
+    this.expandedComments = {}; // Resetta lo stato di visibilità dei commenti
 
     if (this.infiniteScroll) {
       this.infiniteScroll.disabled = false;
-      // Importante per il caso di "pull to refresh" o ricarica completa
       this.infiniteScroll.complete();
     }
-
 
     this.postsSubscription = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp).subscribe({
       next: (postsData) => {
@@ -285,6 +287,13 @@ export class PostComponent implements OnInit, OnDestroy {
       console.error('Errore nel toggle like:', error);
       this.presentAppAlert('Errore', 'Impossibile aggiornare il "Mi piace". Riprova.');
     }
+  }
+
+  // NUOVA FUNZIONE: per mostrare/nascondere la sezione commenti
+  toggleCommentsVisibility(postId: string) {
+    // Inverte lo stato di visibilità per quel postId
+    this.expandedComments[postId] = !this.expandedComments[postId];
+    this.cdr.detectChanges(); // Forziamo il rilevamento per aggiornare la UI
   }
 
   formatTextWithLinks(text: string): string {

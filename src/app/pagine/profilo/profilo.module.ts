@@ -8,6 +8,7 @@ import { ProfiloPage } from './profilo.page';
 import { DashboardUtenteComponent } from './components/dashboard-utente/dashboard-utente.component';
 import { EmojiStatusComponent } from './components/emoji-status/emoji-status.component';
 import { PostComponent } from './components/post/post.component';
+import { CommentSectionComponent } from './components/comment-section/comment-section.component';
 
 @NgModule({
   imports: [
@@ -17,7 +18,8 @@ import { PostComponent } from './components/post/post.component';
     ProfiloPageRoutingModule,
     DashboardUtenteComponent,
     EmojiStatusComponent,
-    PostComponent
+    PostComponent,
+    CommentSectionComponent
   ],
   declarations: [ProfiloPage, ]
 })

@@ -50,14 +50,17 @@
       (click)="toggleLike(post)">
       <span class="icon heart-icon"></span> {{ post.likes.length }} Mi piace
     </button>
-    <button class="post-action-button">
+    <button class="post-action-button" (click)="toggleCommentsVisibility(post.id)">
       <span class="icon comment-icon"></span> {{ post.commentsCount }} Commenti
     </button>
     <button class="post-action-button" (click)="sharePost(post)">
       <span class="icon share-icon"></span> Condividi
     </button>
   </div>
-</div>
+
+  <app-comment-section *ngIf="expandedComments[post.id]" [postId]="post.id" [initialCommentsCount]="post.commentsCount">
+  </app-comment-section>
+  </div>
 
 <ion-infinite-scroll (ionInfinite)="loadMorePosts($event)" [disabled]="!canLoadMore">
   <ion-infinite-scroll-content loadingSpinner="circles" loadingText="Caricamento altri post..."></ion-infinite-scroll-content>

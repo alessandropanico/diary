@@ -4,7 +4,9 @@
   --text-light: #e0faff;
   --label-color: #a0cfd8;
   --danger-color: #ff4e4e;
+  font-family: 'Orbitron', sans-serif;
 }
+
 
 .profile-avatar {
   width: 140px;
@@ -72,16 +74,6 @@ ion-button[type="submit"] {
 }
 
 
-
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
-
-:host {
-  font-family: 'Orbitron', sans-serif;
-  --primary-glow: #00ffee;
-  --bg-blur: rgba(15, 15, 35, 0.8);
-  --text-light: #ffffff;
-  --label-color: #a0cfd8;
-}
 
 .ff7-item {
   background: var(--bg-blur);
