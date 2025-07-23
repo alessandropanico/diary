@@ -28,7 +28,7 @@
 
 // --- Classe per i Pannelli con Bordo Luminoso ---
 .panel-glow-border {
-  background: var(--panel-solid-bg);
+  background: var(--bg-blur);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   box-shadow: 0 0 6px var(--glow-intensity-low); /* Ridotto ancora il glow qui */
