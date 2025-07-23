@@ -58,3 +58,7 @@
     </button>
   </div>
 </div>
+
+<ion-infinite-scroll (ionInfinite)="loadMorePosts($event)" [disabled]="!canLoadMore">
+  <ion-infinite-scroll-content loadingSpinner="circles" loadingText="Caricamento altri post..."></ion-infinite-scroll-content>
+</ion-infinite-scroll>

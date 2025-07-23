@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PostService } from 'src/app/services/post.service';
@@ -7,8 +7,8 @@ import { Post } from 'src/app/interfaces/post';
 import { Subscription, from } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 import { Router } from '@angular/router';
-import { AlertController, LoadingController, Platform } from '@ionic/angular';
-// AGGIUNTO QUI: Importa ExpService
+// AGGIORNATO QUI: Rimosso IonInfiniteScrollModule, aggiunto IonicModule
+import { AlertController, LoadingController, Platform, IonInfiniteScroll, IonicModule } from '@ionic/angular';
 import { ExpService } from 'src/app/services/exp.service';
 
 
@@ -17,16 +17,25 @@ import { ExpService } from 'src/app/services/exp.service';
   templateUrl: './post.component.html',
   styleUrls: ['./post.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    IonicModule // AGGIUNTO QUI: Importa il modulo Ionic completo
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PostComponent implements OnInit, OnDestroy {
+  @ViewChild(IonInfiniteScroll) infiniteScroll!: IonInfiniteScroll;
+
   posts: Post[] = [];
   newPostText: string = '';
   currentUserId: string | null = null;
   currentUserUsername: string = 'Eroe Anonimo';
   currentUserAvatar: string = 'assets/immaginiGenerali/default-avatar.jpg';
   isLoadingPosts: boolean = true;
+  private postsLimit: number = 10;
+  private lastPostTimestamp: string | null = null;
+  canLoadMore: boolean = true;
 
   private authStateUnsubscribe: (() => void) | undefined;
   private postsSubscription: Subscription | undefined;
@@ -40,7 +49,6 @@ export class PostComponent implements OnInit, OnDestroy {
     private alertCtrl: AlertController,
     private loadingCtrl: LoadingController,
     private platform: Platform,
-    // AGGIUNTO QUI: Inietta ExpService
     private expService: ExpService
   ) { }
 
@@ -56,7 +64,7 @@ export class PostComponent implements OnInit, OnDestroy {
               this.currentUserAvatar = userData.photo || userData.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg';
             }
             this.cdr.detectChanges();
-            this.loadPosts();
+            this.loadInitialPosts();
           },
           error: (err) => {
             console.error('Errore nel recupero dati utente:', err);
@@ -91,23 +99,89 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadPosts() {
+  loadInitialPosts() {
     this.isLoadingPosts = true;
     this.postsSubscription?.unsubscribe();
+    this.lastPostTimestamp = null;
+    this.canLoadMore = true;
 
-    this.postsSubscription = this.postService.getPosts(20).subscribe({
+    if (this.infiniteScroll) {
+        this.infiniteScroll.disabled = false;
+        // Importante per il caso di "pull to refresh" o ricarica completa
+        this.infiniteScroll.complete();
+    }
+
+
+    this.postsSubscription = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp).subscribe({
       next: (postsData) => {
         this.posts = postsData;
         this.isLoadingPosts = false;
+        if (this.posts.length > 0) {
+          this.lastPostTimestamp = this.posts[this.posts.length - 1].timestamp;
+        }
+        if (postsData.length < this.postsLimit) {
+          this.canLoadMore = false;
+          if (this.infiniteScroll) {
+            this.infiniteScroll.disabled = true;
+          }
+        }
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('Errore nel caricamento dei post:', error);
+        console.error('Errore nel caricamento iniziale dei post:', error);
         this.isLoadingPosts = false;
         this.presentAppAlert('Errore di caricamento', 'Impossibile caricare i post. Verifica la tua connessione.');
+        this.canLoadMore = false;
+        if (this.infiniteScroll) {
+          this.infiniteScroll.disabled = true;
+        }
         this.cdr.detectChanges();
       }
     });
+  }
+
+  async loadMorePosts(event: any) {
+    if (!this.canLoadMore) {
+      event.target.complete();
+      return;
+    }
+
+    try {
+      this.postsSubscription = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp).subscribe({
+        next: (newPosts) => {
+          this.posts = [...this.posts, ...newPosts];
+          if (newPosts.length > 0) {
+            this.lastPostTimestamp = this.posts[this.posts.length - 1].timestamp;
+          }
+
+          if (newPosts.length < this.postsLimit) {
+            this.canLoadMore = false;
+            if (this.infiniteScroll) {
+              this.infiniteScroll.disabled = true;
+            }
+          }
+          this.cdr.detectChanges();
+          event.target.complete();
+        },
+        error: (error) => {
+          console.error('Errore nel caricamento di altri post:', error);
+          this.presentAppAlert('Errore di caricamento', 'Impossibile caricare altri post. Riprova.');
+          this.canLoadMore = false;
+          if (this.infiniteScroll) {
+            this.infiniteScroll.disabled = true;
+          }
+          this.cdr.detectChanges();
+          event.target.complete();
+        }
+      });
+    } catch (error) {
+      console.error('Errore generico in loadMorePosts:', error);
+      this.canLoadMore = false;
+      if (this.infiniteScroll) {
+        this.infiniteScroll.disabled = true;
+      }
+      event.target.complete();
+    }
   }
 
   async createPost() {
@@ -135,11 +209,11 @@ export class PostComponent implements OnInit, OnDestroy {
       this.newPostText = '';
       const textarea = document.querySelector('.app-textarea') as HTMLTextAreaElement;
       if (textarea) {
-        textarea.style.height = 'auto'; // Resetta l'altezza della textarea
+        textarea.style.height = 'auto';
       }
       this.presentAppAlert('Successo', 'Il tuo messaggio è stato pubblicato con successo nell\'etere!');
-      // AGGIUNTO QUI: Aggiungi 50 XP per la creazione di un post
       this.expService.addExperience(50, 'postCreated');
+      this.loadInitialPosts();
     } catch (error) {
       console.error('Errore nella creazione del post:', error);
       this.presentAppAlert('Errore di pubblicazione', 'Impossibile pubblicare il post. Riprova più tardi.');
@@ -183,6 +257,7 @@ export class PostComponent implements OnInit, OnDestroy {
     try {
       await this.postService.deletePost(postId);
       this.presentAppAlert('Post Eliminato', 'Il post è stato rimosso con successo.');
+      this.loadInitialPosts();
     } catch (error) {
       console.error('Errore nell\'eliminazione del post:', error);
       this.presentAppAlert('Errore di eliminazione', 'Non è stato possibile eliminare il post. Sei il vero proprietario?');
@@ -229,7 +304,6 @@ export class PostComponent implements OnInit, OnDestroy {
           text: shareText,
           url: postSpecificLink,
         });
-        // AGGIUNTO QUI: Aggiungi 20 XP per la condivisione di un post
         this.expService.addExperience(20, 'postShared');
       } else {
         console.warn('Web Share API non disponibile, copia negli appunti come fallback.');
