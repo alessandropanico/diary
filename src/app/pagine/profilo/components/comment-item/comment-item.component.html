@@ -35,11 +35,11 @@
       *ngFor="let reply of comment.replies"
       [comment]="reply"
       [currentUserId]="currentUserId"
-      [nestingLevel]="nestingLevel + 1" [formatCommentTime]="formatCommentTime"
+      [nestingLevel]="nestingLevel + 1"
+      [formatCommentTime]="formatCommentTime"
       (toggleLike)="onToggleLike()"
       (setReply)="onSetReply()"
-      (deleteComment)="onDeleteComment()"
-      (goToProfile)="onGoToProfile()">
-    </app-comment-item>
+      (deleteComment)="propagateDeleteComment($event)"
+      (goToProfile)="propagateGoToProfile($event)"> </app-comment-item>
   </div>
 </div>

@@ -1,18 +1,16 @@
-// src/app/comment-section/comment-section.component.ts
 import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, SimpleChanges, OnChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, LoadingController, AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { CommentService } from 'src/app/services/comment.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
-import { Comment } from 'src/app/interfaces/comment';
+import { Comment, CommentFetchResult } from 'src/app/interfaces/comment';
 import { Subscription, from } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 import { ExpService } from 'src/app/services/exp.service';
 import { Router } from '@angular/router';
 import { DocumentSnapshot } from '@angular/fire/firestore';
 
-// Importa il nuovo componente
 import { CommentItemComponent } from '../comment-item/comment-item.component';
 
 @Component({
@@ -20,7 +18,7 @@ import { CommentItemComponent } from '../comment-item/comment-item.component';
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule, CommentItemComponent], // AGGIUNGI QUI CommentItemComponent
+  imports: [CommonModule, FormsModule, IonicModule, CommentItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
@@ -74,6 +72,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
               console.error('Errore nel recupero dati utente (CommentSection):', err);
               this.presentAppAlert('Errore Utente', 'Impossibile caricare i dati del tuo profilo per i commenti.');
               this.cdr.detectChanges();
+              this.resetAndLoadComments();
             }
           });
         } else {
@@ -126,13 +125,10 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     this.commentsSubscription?.unsubscribe();
     this.commentService.resetPagination();
 
-    // Controlla se infiniteScroll è definito prima di accedervi
     if (this.infiniteScroll) {
       this.infiniteScroll.disabled = false;
-      // IMPORTANTE: Aggiungi un piccolo timeout prima di chiamare complete()
-      // per dare tempo a Angular di renderizzare i nuovi elementi prima di disabilitare.
       setTimeout(() => {
-        if (this.infiniteScroll) { // Ricontrolla per sicurezza
+        if (this.infiniteScroll) {
           this.infiniteScroll.complete();
         }
       }, 0);
@@ -148,13 +144,20 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   private async loadInitialComments() {
+    if (!this.postId) {
+      this.isLoadingComments = false;
+      this.canLoadMoreComments = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.isLoadingComments = true;
-    this.comments = []; // Assicurati che sia vuoto prima di caricare
-    this.canLoadMoreComments = true; // Resetta questo anche qui
+    this.comments = [];
+    this.canLoadMoreComments = true;
     this.cdr.detectChanges();
 
     try {
-      const result = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
+      const result: CommentFetchResult = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
       this.comments = result.comments;
       this.canLoadMoreComments = result.hasMore;
 
@@ -174,7 +177,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     } finally {
       this.isLoadingComments = false;
       this.cdr.detectChanges();
-      if (this.infiniteScroll) { // Controlla anche qui
+      if (this.infiniteScroll) {
         this.infiniteScroll.complete();
       }
     }
@@ -190,11 +193,15 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     this.cdr.detectChanges();
 
     try {
-      const result = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
+      const result: CommentFetchResult = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
 
       if (result.comments.length > 0) {
-        this.comments = [...this.comments, ...result.comments];
-        this.comments = this.removeDuplicates(this.comments); // Mantiene solo i commenti unici a livello radice
+        const combinedCommentsMap = new Map<string, Comment>();
+        [...this.comments, ...result.comments].forEach(comment => {
+          combinedCommentsMap.set(comment.id, comment);
+        });
+        this.comments = Array.from(combinedCommentsMap.values())
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       }
 
       this.canLoadMoreComments = result.hasMore;
@@ -215,11 +222,92 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     } finally {
       this.isLoadingComments = false;
       this.cdr.detectChanges();
-      if (event.target) { // Assicurati che event.target esista prima di chiamare complete
+      if (event.target) {
         event.target.complete();
       }
     }
   }
+
+
+  /**
+   * Gestisce l'eliminazione di un commento o di una risposta.
+   * Decide quale metodo di eliminazione del servizio chiamare in base alla natura del commento.
+   * @param commentId L'ID del commento da eliminare (questo è l'ID del commento "cliccato").
+   */
+async handleDeleteComment(commentId: string) {
+  let commentToDelete: Comment | null = null;
+  const loadingInitial = await this.loadingCtrl.create({ // Aggiunto un loading iniziale
+    message: 'Recupero dettagli commento...',
+    spinner: 'crescent'
+  });
+  await loadingInitial.present();
+
+  try {
+    // 1. Recupera il commento completo dal servizio per conoscerne il parentId
+    commentToDelete = await this.commentService.getCommentByIdOnce(this.postId, commentId); // Usa getCommentByIdOnce!
+
+    if (!commentToDelete) {
+      console.error('handleDeleteComment: Commento non trovato nel servizio per ID:', commentId);
+      this.presentAppAlert('Errore Eliminazione', 'Commento non trovato. Impossibile eliminare.');
+      return; // Esci dalla funzione
+    }
+  } catch (error) {
+    console.error('Errore nel recupero del commento da eliminare:', error);
+    this.presentAppAlert('Errore Eliminazione', 'Impossibile recuperare i dettagli del commento. Riprova.');
+    return; // Esci dalla funzione
+  } finally {
+    await loadingInitial.dismiss(); // Dismiss il loading iniziale
+  }
+
+  let confirmMessage: string;
+  let deleteFunction: (postId: string, id: string) => Promise<void>; // Definisci il tipo della funzione
+
+  // 2. DECISIONE BASATA SUL parentId DEL COMMENTO RECUPERATO
+  if (commentToDelete.parentId === null) {
+    // È un commento principale (radice)
+    console.log(`handleDeleteComment: Identificato commento radice per ID: ${commentId}. Chiamerò deleteCommentAndReplies.`);
+    confirmMessage = 'Sei sicuro di voler eliminare questo commento e tutte le sue risposte? Questa azione è irreversibile.';
+    deleteFunction = (postId, id) => this.commentService.deleteCommentAndReplies(postId, id);
+  } else {
+    // È una risposta (ha un parentId)
+    console.log(`handleDeleteComment: Identificata risposta per ID: ${commentId}. Parent ID: ${commentToDelete.parentId}. Chiamerò deleteSingleComment.`);
+    confirmMessage = 'Sei sicuro di voler eliminare solo questa risposta? Questa azione è irreversibile.';
+    deleteFunction = (postId, id) => this.commentService.deleteSingleComment(postId, id);
+  }
+
+  // 3. Chiedi conferma all'utente e poi esegui l'eliminazione
+  const alert = await this.alertCtrl.create({
+    header: 'Conferma Eliminazione',
+    message: confirmMessage,
+    buttons: [
+      {
+        text: 'Annulla',
+        role: 'cancel',
+        cssClass: 'alert-button-cancel'
+      },
+      {
+        text: 'Elimina',
+        handler: async () => {
+          const loading = await this.loadingCtrl.create({
+            message: 'Eliminazione in corso...',
+            spinner: 'crescent'
+          });
+          await loading.present();
+          try {
+            await deleteFunction(this.postId, commentToDelete!.id); // Chiama la funzione corretta
+            this.resetAndLoadComments(); // Ricarica i commenti
+          } catch (error) {
+            console.error('Errore durante l\'eliminazione del commento:', error);
+            this.presentAppAlert('Errore', 'Impossibile eliminare il commento.');
+          } finally {
+            await loading.dismiss();
+          }
+        }
+      }
+    ]
+  });
+  await alert.present();
+}
 
   setReplyTarget(comment: Comment) {
     this.replyingToComment = comment;
@@ -245,21 +333,21 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     });
     await loading.present();
 
-    const commentToAdd: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'replies'> = {
+    const commentToAdd: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'replies' | 'isRootComment'> = {
       postId: this.postId,
       userId: this.currentUserId,
       username: this.currentUserUsername,
-      userAvatarUrl: this.currentUserAvatar,
+      userAvatarUrl: this.currentUserAvatar as string,
       text: this.newCommentText.trim(),
       parentId: this.replyingToComment ? this.replyingToComment.id : null
     };
 
     try {
-      await this.commentService.addComment(commentToAdd);
+      const addedCommentId = await this.commentService.addComment(commentToAdd);
       this.newCommentText = '';
       this.replyingToComment = null;
       this.expService.addExperience(10, 'commentCreated');
-      // Ricarica tutti i commenti per riflettere la nuova aggiunta e la sua posizione annidata
+
       this.resetAndLoadComments();
       this.cdr.detectChanges();
     } catch (error) {
@@ -270,52 +358,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  async presentDeleteCommentAlert(commentId: string) {
-    const alert = await this.alertCtrl.create({
-      cssClass: 'app-alert',
-      header: 'Conferma Eliminazione Commento',
-      message: 'Sei sicuro di voler eliminare questo commento?',
-      buttons: [
-        { text: 'Annulla', role: 'cancel', cssClass: 'app-alert-button cancel-button' },
-        {
-          text: 'Elimina',
-          cssClass: 'app-alert-button delete-button',
-          handler: async () => { await this.deleteComment(commentId); }
-        }
-      ],
-      backdropDismiss: true,
-      animated: true,
-      mode: 'ios'
-    });
-    await alert.present();
-  }
-
-  async deleteComment(commentId: string) {
-    const loading = await this.loadingCtrl.create({
-      message: 'Eliminazione commento...',
-      spinner: 'crescent'
-    });
-    await loading.present();
-
-    try {
-      await this.commentService.deleteComment(this.postId, commentId);
-      this.presentAppAlert('Commento Eliminato', 'Il commento è stato rimosso.');
-      // Ricarica la lista per riflettere il cambiamento, incluse le risposte annidate
-      this.resetAndLoadComments();
-      this.cdr.detectChanges();
-    } catch (error) {
-      console.error('Errore nell\'eliminazione del commento:', error);
-      this.presentAppAlert('Errore', `Impossibile eliminare il commento: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
-    } finally {
-      await loading.dismiss();
-    }
-  }
-
-  /**
-   * Gestisce l'aggiunta o la rimozione di un "Mi piace" a un commento o a una risposta.
-   * Aggiorna lo stato localmente per evitare il ricaricamento completo.
-   * Ora deve cercare ricorsivamente il commento/risposta per ID.
-   */
   async toggleLikeComment(commentToToggle: Comment) {
     if (!this.currentUserId) {
       this.presentAppAlert('Accedi Necessario', 'Devi essere loggato per mostrare il tuo apprezzamento!');
@@ -326,7 +368,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     try {
       await this.commentService.toggleLikeComment(this.postId, commentToToggle.id, this.currentUserId, !hasLiked);
 
-      // Funzione ricorsiva per aggiornare lo stato dei like nell'array `comments`
       const updateLikesRecursively = (commentsArray: Comment[], targetCommentId: string, userId: string, liked: boolean): Comment[] => {
         return commentsArray.map(c => {
           if (c.id === targetCommentId) {
@@ -337,7 +378,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
           }
           if (c.replies && c.replies.length > 0) {
             const updatedReplies = updateLikesRecursively(c.replies, targetCommentId, userId, liked);
-            if (updatedReplies !== c.replies) { // Se le risposte sono cambiate
+            if (updatedReplies !== c.replies) {
               return { ...c, replies: updatedReplies };
             }
           }
@@ -347,7 +388,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
       this.comments = updateLikesRecursively(this.comments, commentToToggle.id, this.currentUserId, !hasLiked);
 
-      this.cdr.detectChanges(); // Forzo il rilevamento dei cambiamenti per aggiornare la UI
+      this.cdr.detectChanges();
     } catch (error) {
       console.error('Errore nel toggle like del commento:', error);
       this.presentAppAlert('Errore', 'Impossibile aggiornare il "Mi piace" del commento. Riprova.');

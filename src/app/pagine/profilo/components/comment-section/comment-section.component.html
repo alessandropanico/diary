@@ -11,8 +11,12 @@
         *ngFor="let comment of comments"
         [comment]="comment"
         [currentUserId]="currentUserId"
-        [nestingLevel]="0" [formatCommentTime]="formatCommentTime"
-        (toggleLike)="toggleLikeComment($event)" (setReply)="setReplyTarget($event)" (deleteComment)="presentDeleteCommentAlert($event)" (goToProfile)="goToUserProfile($event)"> </app-comment-item>
+        [nestingLevel]="0"
+        [formatCommentTime]="formatCommentTime"
+        (toggleLike)="toggleLikeComment($event)"
+        (setReply)="setReplyTarget($event)"
+        (deleteComment)="handleDeleteComment($event)" (goToProfile)="goToUserProfile($event)">
+      </app-comment-item>
 
       <ion-infinite-scroll (ionInfiniteScroll)="loadMoreComments($event)" [disabled]="!canLoadMoreComments"
         [threshold]="'100px'" position="bottom">
