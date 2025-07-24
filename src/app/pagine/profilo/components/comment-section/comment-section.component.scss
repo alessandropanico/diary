@@ -22,10 +22,10 @@
   --ion-color-dark: #222428;
 
   // Variabile per l'altezza del footer (da calibrare)
-  --comment-input-footer-height: 80px; /* Altezza approssimativa del footer */
+  --comment-input-footer-height: 80px; /* Altezza approssimativa del footer, da adattare con .reply-target-info */
 }
 
-/* --- Stili Globali "Duplicati" o specifici del componente --- */
+/* --- Estensioni (mixins impliciti) --- */
 .panel-glow-border {
   background: var(--bg-blur);
   border: 1px solid var(--border-subtle);
@@ -39,217 +39,27 @@
   }
 }
 
-.post-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 2px solid var(--primary-glow);
-  overflow: hidden;
-  margin-right: 10px;
-  box-shadow: 0 0 5px var(--glow-intensity-low);
-  cursor: pointer;
-  flex-shrink: 0;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-.app-textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid var(--ion-color-medium-tint);
-  border-radius: 8px;
-  background-color: var(--ion-color-light-shade);
-  color: var(--ion-color-dark);
-  font-size: 1rem;
-  resize: none;
-  overflow-y: hidden;
-  min-height: 50px;
-  max-height: 150px;
-  transition: height 0.2s ease-out;
-
-  &:focus {
-    outline: none;
-    border-color: var(--ion-color-primary);
-    box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.2);
-  }
-
-  &::placeholder {
-    color: var(--ion-color-medium);
-  }
-}
-
-.app-button {
-  background-color: var(--panel-solid-bg);
-  border: 1px solid var(--primary-glow);
-  border-radius: 4px;
-  padding: 10px 15px;
-  color: var(--primary-glow);
-  font-family: 'Orbitron', sans-serif;
-  font-size: 0.9em;
-  font-weight: bold;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 0 6px var(--glow-intensity-medium);
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    background-color: var(--button-hover-bg);
-    box-shadow: 0 0 10px var(--glow-intensity-high);
-  }
-
-  &:active {
-    background-color: rgba(0, 255, 238, 0.2);
-    box-shadow: 0 0 12px var(--glow-intensity-high);
-    transform: translateY(1px);
-  }
-
-  &:disabled {
-    background-color: rgba(20, 25, 50, 0.5);
-    border-color: rgba(0, 255, 238, 0.1);
-    color: rgba(255, 255, 255, 0.4);
-    cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
-  }
-
-  &.primary-button {
-    background-color: var(--primary-glow);
-    color: var(--panel-solid-bg);
-    box-shadow: 0 0 8px var(--glow-intensity-medium);
-
-    &:hover {
-      background-color: lighten(#00ffee, 3%);
-      box-shadow: 0 0 10px var(--glow-intensity-high);
-    }
-
-    &:active {
-      background-color: darken(#00ffee, 3%);
-    }
-  }
-
-  &.delete-button {
-    background-color: rgba(255, 50, 50, 0.5);
-    border-color: #ff0000;
-    color: var(--text-light);
-    box-shadow: 0 0 6px rgba(255, 0, 0, 0.3);
-    margin-left: auto;
-    padding: 8px 12px;
-    font-size: 0.8em;
-
-    &:hover {
-      background-color: rgba(255, 0, 0, 0.6);
-      box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
-    }
-
-    &:active {
-      background-color: rgba(255, 0, 0, 0.7);
-    }
-
-    .icon {
-      background-color: var(--text-light);
-      filter: none;
-    }
-  }
-}
-
-.app-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  box-shadow: none;
-  background-color: var(--ion-color-medium-tint);
-  color: var(--ion-color-medium);
-}
-
-.app-button:disabled .icon {
-  color: var(--ion-color-medium);
-}
-
-.primary-button:disabled {
-  background-color: var(--ion-color-medium-shade);
-  color: var(--ion-color-light);
-}
-
-.primary-button:disabled .icon-in-primary-button {
-  color: var(--ion-color-light);
-}
-
-.icon {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  vertical-align: middle;
-  mask-size: cover;
-  background-color: var(--primary-glow);
-  -webkit-mask-size: cover;
-  filter: drop-shadow(0 0 1px var(--glow-intensity-low));
-}
-
-.icon-in-primary-button {
-  background-color: var(--panel-solid-bg);
-  filter: none;
-}
-
-// Stili Animazione Caricamento
-.loading-dots {
-  display: inline-block;
-  overflow: hidden;
-  height: 1em;
-  vertical-align: bottom;
-  content: '\2026';
-  animation: loading-dots 1.5s infinite steps(1, end);
-}
-
-@keyframes loading-dots {
-  0% { width: 0; }
-  33% { width: .5em; }
-  66% { width: 1em; }
-  100% { width: 1.5em; }
-}
-
-
-/* --- LAYOUT PRINCIPALE: Contenitore della Modal / Componente --- */
-// Questo `host` o il contenitore della modal deve avere un'altezza definita, es. 100vh
+/* --- Layout Principale --- */
 :host {
   display: flex;
   flex-direction: column;
-  height: 100%; // O l'altezza desiderata della modal, es. 80vh
-  position: relative; // Necessario se il footer è 'fixed' al contenitore della modal
-
-  // Rimuovi o imposta una max-width molto più alta per l'host se vuoi che la modal si estenda
-  // Es. per rendere la modal "full width" sempre, potresti voler rimuovere completamente la max-width qui.
-  // Oppure se vuoi una max-width solo su desktop, usa una media query.
-  // max-width: 600px; /* Rimuovi o aumenta questa linea se vuoi più larghezza */
-  // margin: 0 auto; /* Centra il wrapper orizzontalmente, ma rimuovi se vuoi larghezza piena */
-
+  height: 100%; // La modal o il contenitore del componente dovrebbe definire l'altezza
+  position: relative;
   background: var(--bg-blur);
   border-radius: 8px;
   overflow: hidden;
 }
 
-// Questo wrapper non sarà più un flex container che gestisce footer e scroll separatamente.
-// Servirà a contenere tutto il contenuto *scrollabile*.
 .comment-section-content-wrapper {
   flex-grow: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   position: relative;
   padding: 15px;
-  padding-bottom: var(--comment-input-footer-height);
-
-  // Assicurati che il contenuto scrollabile occupi sempre il 100% della larghezza del suo *genitore*.
-  // Il genitore qui è :host, che ora può estendersi.
+  // padding-bottom sarà gestito in base all'altezza dinamica del footer
   width: 100%;
 }
 
-
-/* Contenitore per lo spinner di caricamento a schermo intero */
 .loading-full-screen {
   display: flex;
   flex-direction: column;
@@ -266,72 +76,103 @@
   font-size: 1.1em;
 }
 
-
 /* --- Stili Card Commento Individuale --- */
 .comment-card {
   @extend .panel-glow-border;
   padding: 12px;
   margin-bottom: 12px;
-  width: 100%; /* Assicurati che le card occupino la larghezza piena disponibile */
+  width: 100%;
 
   &:last-of-type {
     margin-bottom: 0;
   }
 }
 
-.comment-header {
+.comment-header, .reply-header {
   display: flex;
   align-items: center;
   margin-bottom: 8px;
   position: relative;
+}
 
-  .post-avatar {
-    width: 36px;
-    height: 36px;
-    margin-right: 8px;
-    border: 1px solid var(--primary-glow);
-    box-shadow: 0 0 3px var(--glow-intensity-low);
-  }
+.post-avatar, .reply-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--primary-glow);
+  box-shadow: 0 0 3px var(--glow-intensity-low);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-right: 8px; // Uniforma il margine destro per entrambi
 
-  .post-info {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-  }
-
-  .post-username {
-    font-size: 0.9em;
-    font-weight: bold;
-    color: var(--primary-glow);
-    text-shadow: 0 0 1px var(--glow-intensity-low);
-    cursor: pointer;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-
-  .post-time {
-    font-size: 0.7em;
-    color: var(--label-color);
-    margin-top: 2px;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }
 
-.comment-content {
-  margin-left: calc(36px + 8px);
+.reply-avatar {
+  width: 30px; // Leggermente più piccolo per le risposte
+  height: 30px;
+  border: 1px solid rgba(0, 255, 238, 0.5); // Bordo più tenue
+}
+
+
+.post-info, .reply-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.post-username, .reply-username {
+  font-size: 0.9em;
+  font-weight: bold;
+  color: var(--primary-glow);
+  text-shadow: 0 0 1px var(--glow-intensity-low);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.reply-username {
+  font-size: 0.8em; // Dimensione più piccola per il username della risposta
+  color: var(--text-light); // Colore meno evidenziato
+}
+
+.post-time, .reply-time {
+  font-size: 0.7em;
+  color: var(--label-color);
+  margin-top: 2px;
+}
+
+.comment-content, .reply-content {
+  margin-left: calc(36px + 8px); // Indentazione basata sulla dimensione avatar + margine
   margin-bottom: 10px;
-
-  .post-text {
-    font-size: 0.85em;
-    line-height: 1.3;
-    color: var(--text-light);
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  }
 }
 
-.comment-card-actions {
+.reply-content {
+  margin-left: calc(30px + 8px); // Indentazione basata sulla dimensione avatar + margine per risposte
+}
+
+
+.post-text, .reply-text {
+  font-size: 0.85em;
+  line-height: 1.3;
+  color: var(--text-light);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.reply-text {
+  font-size: 0.8em; // Testo più piccolo per le risposte
+  color: var(--label-color); // Colore più tenue
+}
+
+
+.comment-card-actions, .reply-card-actions {
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -377,78 +218,122 @@
   }
 }
 
+/* --- NUOVI STILI PER LE RISPOSTE --- */
+.replies-section {
+  margin-left: 20px; /* Indenta la sezione delle risposte */
+  border-left: 2px solid var(--border-subtle); /* Aggiunge una linea verticale */
+  padding-left: 10px; /* Spazio tra la linea e le risposte */
+  margin-top: -5px; /* Sposta leggermente in su per allineare meglio */
+}
+
+.reply-card {
+  background: rgba(20, 25, 50, 0.7); /* Sfondo più scuro per le risposte */
+  border: 1px solid rgba(0, 255, 238, 0.1); /* Bordo più tenue */
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 8px; /* Spazio tra le risposte */
+  box-shadow: 0 0 4px var(--glow-intensity-low); /* Ombra più leggera */
+
+  &:first-of-type {
+    margin-top: 5px; /* Riduci il margine superiore per la prima risposta */
+  }
+}
+
 /* --- SEZIONE DI INPUT NUOVO COMMENTO (FOOTER FISSO) --- */
 .comment-input-footer {
-  position: fixed;
+  position: sticky; // Lo rendiamo sticky invece di fixed per gestione più semplice in una modal
   bottom: 0;
-  left: 0; /* Anziché 50% e translateX, lo ancoriamo a sinistra */
-  width: 100%; /* Occupa sempre tutta la larghezza */
-
-  // Se la tua modal non è sempre full screen, potresti voler allineare il footer alla larghezza della modal
-  // Per esempio, se la modal ha una max-width, il footer dovrebbe rispettarla.
-  // In questo caso, potresti voler rimettere `left: 50%; transform: translateX(-50%);`
-  // e aggiungere `max-width: 600px;` (o la max-width della tua modal) qui.
-  // Dipende da come gestisci l'apertura della modal a livello globale.
-  // Per ora, assumiamo che la modal debba essere "full width" o quasi.
-
+  left: 0;
+  width: 100%;
   padding: 10px 15px;
-  @extend .panel-glow-border;
-  background: #0B0C0D; /* O un altro colore completamente opaco, es. #141932 */
+  background: #0B0C0D;
   border-top: 1px solid var(--border-subtle);
-  margin-bottom: 0;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
+  border-radius: 0; // Il footer sarà sempre full width e senza bordi inferiori per la modal
   z-index: 100;
 
-  .comment-input-area {
-    display: flex;
-    align-items: flex-end;
-    gap: 10px;
+  // L'altezza dinamica del footer dovrà essere comunicata al `comment-section-content-wrapper`
+  // tramite un meccanismo JS (es. resize observer) o calcolo più complesso.
+  // Per ora, l'altezza `var(--comment-input-footer-height)` rimane un'approssimazione.
+}
 
-    .post-avatar {
-      width: 40px;
-      height: 40px;
-      margin-right: 0;
+.comment-input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+
+  .post-avatar {
+    width: 40px;
+    height: 40px;
+    margin-right: 0;
+  }
+
+  .comment-textarea {
+    flex-grow: 1;
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-subtle);
+    --padding-start: 0;
+    --padding-end: 0;
+    --padding-top: 5px;
+    --padding-bottom: 5px;
+    font-size: 0.9em;
+    min-height: 40px;
+    max-height: 100px;
+    color: var(--text-light);
+
+    &:focus {
+      border-color: var(--primary-glow);
+      box-shadow: none;
     }
-
-    .comment-textarea {
-      flex-grow: 1;
-      background-color: transparent;
-      border: none;
-      border-bottom: 1px solid var(--border-subtle);
-      --padding-start: 0;
-      --padding-end: 0;
-      --padding-top: 5px;
-      --padding-bottom: 5px;
-      font-size: 0.9em;
-      min-height: 40px;
-      max-height: 100px;
-      color: var(--text-light);
-
-      &:focus {
-        border-color: var(--primary-glow);
-        box-shadow: none;
-      }
-      &::placeholder {
-        color: var(--label-color);
-      }
+    &::placeholder {
+      color: var(--label-color);
     }
+  }
 
-    ion-button {
-      --color: var(--primary-glow);
-      --padding-start: 5px;
-      --padding-end: 5px;
-      font-size: 1.2em;
-      height: 40px;
-      width: 40px;
-      ion-icon {
-        font-size: 1.6em;
-      }
+  ion-button {
+    --color: var(--primary-glow);
+    --padding-start: 5px;
+    --padding-end: 5px;
+    font-size: 1.2em;
+    height: 40px;
+    width: 40px;
+    ion-icon {
+      font-size: 1.6em;
     }
   }
 }
+
+.reply-target-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(0, 255, 238, 0.08); /* Sfondo leggero per l'informazione "Rispondi a" */
+  border-radius: 4px;
+  padding: 5px 10px;
+  margin-top: 8px; /* Spazio tra input e questa info */
+  color: var(--label-color);
+  font-size: 0.8em;
+
+  strong {
+    color: var(--primary-glow);
+  }
+
+  ion-button {
+    --padding-start: 0;
+    --padding-end: 0;
+    --color: var(--label-color);
+    margin-left: 10px;
+
+    ion-icon {
+      font-size: 1.2em;
+    }
+
+    &:hover {
+      --color: #ff0000;
+    }
+  }
+}
+
 
 /* --- Stili Messaggi di Stato (Nessun Commento) --- */
 .no-comments-message {
@@ -470,7 +355,6 @@
   .comment-section-content-wrapper {
     padding-left: 10px;
     padding-right: 10px;
-    // La padding-bottom dovrebbe essere la stessa del mobile, a meno che il footer non cambi altezza
   }
 
   .comment-card {
@@ -510,9 +394,8 @@
   }
 
   .comment-input-footer {
-    max-width: 100%; // Il footer fisso occupa tutta la larghezza su mobile
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    max-width: 100%;
+    border-radius: 0;
     padding-left: 10px;
     padding-right: 10px;
   }
@@ -535,47 +418,49 @@
       }
     }
   }
+
+  // Mobile specific reply styles
+  .replies-section {
+    margin-left: 15px; /* Ridotto per mobile */
+    padding-left: 8px;
+  }
+  .reply-card {
+    padding: 6px;
+    margin-top: 6px;
+  }
+  .reply-avatar {
+    width: 26px;
+    height: 26px;
+  }
+  .reply-username {
+    font-size: 0.75em;
+  }
+  .reply-text {
+    font-size: 0.75em;
+  }
+  .reply-content {
+    margin-left: calc(26px + 8px);
+  }
+  .reply-target-info {
+    font-size: 0.75em;
+  }
 }
 
-/* --- Stili specifici per la modal se usi ion-modal --- */
+
+/* --- Stili per ion-modal (se usata come contenitore) --- */
 // Questi stili devono essere applicati nel tuo file SCSS globale (es. `global.scss` o `app.scss`)
 // o come `cssClass` quando apri la modal, perché Ionic gestisce il wrapper della modal con Shadow DOM.
-// Esempio di applicazione con `cssClass`:
-// ```typescript
-// async presentCommentModal() {
-//   const modal = await this.modalController.create({
-//     component: CommentSectionComponent,
-//     cssClass: 'comment-modal-fullscreen', // <-- Aggiungi questa classe
-//     initialBreakpoint: 1, // Fullscreen se non usi brekpoints
-//     breakpoints: [0, 1] // Se usi breakpoints, imposta 1 per full screen
-//   });
-//   await modal.present();
-// }
-// ```
-// Nel tuo `global.scss` o `app.scss`:
 .comment-modal-fullscreen {
-  // Imposta l'altezza e la larghezza della modal stessa
   --width: 100%;
   --height: 100%;
-  --border-radius: 0; /* Rimuove i bordi arrotondati della modal se vuoi full screen */
-  --box-shadow: none; /* Rimuove l'ombra della modal */
+  --border-radius: 0;
+  --box-shadow: none;
 
-  // Se Ionic applica ancora un max-width al suo wrapper interno per desktop, sovrascrivi:
   &::part(content) {
     width: 100%;
-    max-width: 100%; /* Assicura che il contenuto della modal sia sempre al 100% */
+    max-width: 100%;
   }
 
-  // Puoi anche voler sovrascrivere l'allineamento di default della modal
   align-items: stretch;
   justify-content: stretch;
 }
-
-// Se stai usando una versione di Ionic più vecchia che non supporta --width/--height o ::part(content),
-// potresti dover usare un selettore più aggressivo (meno raccomandato ma a volte necessario):
-// .comment-modal-fullscreen .modal-wrapper {
-//   width: 100%;
-//   height: 100%;
-//   max-width: 100%;
-//   border-radius: 0;
-// }

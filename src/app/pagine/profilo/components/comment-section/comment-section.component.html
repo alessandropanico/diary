@@ -24,6 +24,11 @@
               {{ comment.likes.length }}
             </ion-button>
 
+            <ion-button fill="clear" size="small" (click)="setReplyTarget(comment)">
+              <ion-icon name="chatbubble-outline"></ion-icon>
+              Rispondi
+            </ion-button>
+
             <ion-button *ngIf="comment.userId === currentUserId" fill="clear" size="small"
               color="danger" (click)="presentDeleteCommentAlert(comment.id)">
               <ion-icon name="trash-outline"></ion-icon>
@@ -33,6 +38,36 @@
         <div class="comment-content">
           <p class="post-text">{{ comment.text }}</p>
         </div>
+
+        <div *ngIf="comment.replies && comment.replies.length > 0" class="replies-section">
+          <div *ngFor="let reply of comment.replies" class="reply-card">
+            <div class="reply-header">
+              <ion-avatar (click)="goToUserProfile(reply.userId)" class="reply-avatar">
+                <img [src]="reply.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
+              </ion-avatar>
+              <div class="reply-info">
+                <span class="reply-username" (click)="goToUserProfile(reply.userId)">{{ reply.username }}</span>
+                <span class="reply-time">{{ formatCommentTime(reply.timestamp) }}</span>
+              </div>
+              <div class="reply-card-actions">
+                <ion-button fill="clear" size="small"
+                  [class.liked]="currentUserId && reply.likes.includes(currentUserId)"
+                  (click)="toggleLikeComment(reply)">
+                  <ion-icon [name]="currentUserId && reply.likes.includes(currentUserId) ? 'heart' : 'heart-outline'"></ion-icon>
+                  {{ reply.likes.length }}
+                </ion-button>
+                <ion-button *ngIf="reply.userId === currentUserId" fill="clear" size="small"
+                  color="danger" (click)="presentDeleteCommentAlert(reply.id)">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </ion-button>
+              </div>
+            </div>
+            <div class="reply-content">
+              <p class="reply-text">{{ reply.text }}</p>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <ion-infinite-scroll (ionInfiniteScroll)="loadMoreComments($event)" [disabled]="!canLoadMoreComments"
@@ -49,22 +84,30 @@
     </ng-template>
   </div>
 
-</div> <div class="comment-input-footer panel-glow-border">
+</div>
+
+<div class="comment-input-footer panel-glow-border">
   <div class="comment-input-area">
     <ion-avatar (click)="goToUserProfile(currentUserId!)" class="post-avatar">
       <img [src]="currentUserAvatar" alt="User Avatar">
     </ion-avatar>
     <ion-textarea
       class="app-textarea comment-textarea"
-      placeholder="Aggiungi un commento..."
+      [placeholder]="replyingToComment ? 'Rispondi a ' + replyingToComment.username + '...' : 'Aggiungi un commento...'"
       rows="1"
       max-rows="5"
       autoGrow="true"
       [(ngModel)]="newCommentText"
       (ionInput)="adjustTextareaHeight($event)"
     ></ion-textarea>
-    <ion-button fill="clear" (click)="addComment()" [disabled]="!newCommentText.trim() || !currentUserId">
+    <ion-button fill="clear" (click)="addCommentOrReply()" [disabled]="!newCommentText.trim() || !currentUserId">
       <ion-icon name="send"></ion-icon>
+    </ion-button>
+  </div>
+  <div *ngIf="replyingToComment" class="reply-target-info">
+    <span>Rispondi a: <strong>{{ replyingToComment.username }}</strong></span>
+    <ion-button fill="clear" size="small" (click)="cancelReply()">
+      <ion-icon name="close-circle-outline"></ion-icon>
     </ion-button>
   </div>
 </div>
