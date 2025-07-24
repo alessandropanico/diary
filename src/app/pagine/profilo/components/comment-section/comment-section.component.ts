@@ -38,7 +38,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
   isLoadingComments: boolean = false;
   private commentsLimit: number = 10;
-  // lastVisibleDocSnapshot non è più gestito direttamente qui, ma dal servizio
   canLoadMoreComments: boolean = true;
 
   private commentsSubscription: Subscription | undefined;
@@ -125,14 +124,17 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     this.comments = [];
     this.canLoadMoreComments = true;
     this.commentsSubscription?.unsubscribe();
-    this.commentService.resetPagination(); // Resetta la paginazione nel servizio
+    this.commentService.resetPagination();
 
+    // Controlla se infiniteScroll è definito prima di accedervi
     if (this.infiniteScroll) {
       this.infiniteScroll.disabled = false;
-      // IMPORTANT: Aggiungi un piccolo timeout prima di chiamare complete()
+      // IMPORTANTE: Aggiungi un piccolo timeout prima di chiamare complete()
       // per dare tempo a Angular di renderizzare i nuovi elementi prima di disabilitare.
       setTimeout(() => {
-        this.infiniteScroll.complete();
+        if (this.infiniteScroll) { // Ricontrolla per sicurezza
+          this.infiniteScroll.complete();
+        }
       }, 0);
     }
     this.cdr.detectChanges();
@@ -152,11 +154,9 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     this.cdr.detectChanges();
 
     try {
-      // Usa il metodo corretto dal CommentService
       const result = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
       this.comments = result.comments;
-      this.canLoadMoreComments = result.hasMore; // Usa hasMore dal servizio
-      this.isLoadingComments = false;
+      this.canLoadMoreComments = result.hasMore;
 
       if (!this.canLoadMoreComments) {
         if (this.infiniteScroll) {
@@ -172,8 +172,9 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         this.infiniteScroll.disabled = true;
       }
     } finally {
+      this.isLoadingComments = false;
       this.cdr.detectChanges();
-      if (this.infiniteScroll) {
+      if (this.infiniteScroll) { // Controlla anche qui
         this.infiniteScroll.complete();
       }
     }
@@ -189,7 +190,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     this.cdr.detectChanges();
 
     try {
-      // Usa il metodo corretto dal CommentService
       const result = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
 
       if (result.comments.length > 0) {
@@ -197,7 +197,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         this.comments = this.removeDuplicates(this.comments); // Mantiene solo i commenti unici a livello radice
       }
 
-      this.canLoadMoreComments = result.hasMore; // Usa hasMore dal servizio
+      this.canLoadMoreComments = result.hasMore;
 
       if (!this.canLoadMoreComments) {
         if (this.infiniteScroll) {
@@ -215,7 +215,9 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     } finally {
       this.isLoadingComments = false;
       this.cdr.detectChanges();
-      event.target.complete();
+      if (event.target) { // Assicurati che event.target esista prima di chiamare complete
+        event.target.complete();
+      }
     }
   }
 
