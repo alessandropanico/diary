@@ -41,7 +41,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   private userDataSubscription: Subscription | undefined;
   private authStateUnsubscribe: (() => void) | undefined;
 
-  // Nuovo stato per la gestione delle risposte
   replyingToComment: Comment | null = null;
 
   constructor(
@@ -212,30 +211,18 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  // --- Nuovi Metodi per la Gestione delle Risposte ---
-
-  /**
-   * Imposta il commento a cui si vuole rispondere.
-   * @param comment Il commento che sarà il genitore della nuova risposta.
-   */
   setReplyTarget(comment: Comment) {
     this.replyingToComment = comment;
-    this.newCommentText = `@${comment.username} `; // Prepopola la textarea
-    this.cdr.detectChanges(); // Aggiorna la UI per mostrare il target di risposta
+    this.newCommentText = `@${comment.username} `;
+    this.cdr.detectChanges();
   }
 
-  /**
-   * Annulla la modalità di risposta.
-   */
   cancelReply() {
     this.replyingToComment = null;
     this.newCommentText = '';
-    this.cdr.detectChanges(); // Aggiorna la UI
+    this.cdr.detectChanges();
   }
 
-  /**
-   * Aggiunge un nuovo commento o una risposta.
-   */
   async addCommentOrReply() {
     if (!this.newCommentText.trim() || !this.currentUserId) {
       this.presentAppAlert('Attenzione', 'Il commento non può essere vuoto e devi essere autenticato.');
@@ -254,25 +241,25 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       username: this.currentUserUsername,
       userAvatarUrl: this.currentUserAvatar,
       text: this.newCommentText.trim(),
-      parentId: this.replyingToComment ? this.replyingToComment.id : null // Imposta parentId se è una risposta
+      parentId: this.replyingToComment ? this.replyingToComment.id : null
     };
 
     try {
       await this.commentService.addComment(commentToAdd);
       this.newCommentText = '';
-      this.replyingToComment = null; // Resetta il target di risposta
+      this.replyingToComment = null;
       this.expService.addExperience(10, 'commentCreated');
-      this.resetAndLoadComments(); // Ricarica la lista per mostrare il nuovo commento/risposta
+      // Dopo aver aggiunto un commento, ricarica i commenti per includerlo
+      // E potenzialmente resetta la paginazione per mostrare il nuovo commento in cima
+      this.resetAndLoadComments(); // Questo aggiornerà la lista con il nuovo commento
       this.cdr.detectChanges();
     } catch (error) {
-      console.error('Errore nell\'aggiunta del commento/risposta:', error);
-      this.presentAppAlert('Errore', 'Impossibile aggiungere il commento/risposta.');
+      console.error('Errore nell\'aggiunta del commento:', error);
+      this.presentAppAlert('Errore', 'Impossibile aggiungere il commento.');
     } finally {
       await loading.dismiss();
     }
   }
-
-  // --- Metodi Esistenti (senza modifiche sostanziali alla logica) ---
 
   async presentDeleteCommentAlert(commentId: string) {
     const alert = await this.alertCtrl.create({
@@ -304,6 +291,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     try {
       await this.commentService.deleteComment(this.postId, commentId);
       this.presentAppAlert('Commento Eliminato', 'Il commento è stato rimosso.');
+      // Dopo aver eliminato un commento, ricarica la lista per riflettere il cambiamento
       this.resetAndLoadComments();
       this.cdr.detectChanges();
     } catch (error) {
@@ -314,6 +302,10 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
+  /**
+   * Gestisce l'aggiunta o la rimozione di un "Mi piace" a un commento o a una risposta.
+   * Aggiorna lo stato localmente per evitare il ricaricamento completo.
+   */
   async toggleLikeComment(comment: Comment) {
     if (!this.currentUserId) {
       this.presentAppAlert('Accedi Necessario', 'Devi essere loggato per mostrare il tuo apprezzamento!');
@@ -323,8 +315,46 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     const hasLiked = comment.likes.includes(this.currentUserId);
     try {
       await this.commentService.toggleLikeComment(this.postId, comment.id, this.currentUserId, !hasLiked);
-      this.resetAndLoadComments(); // Ricarica per riflettere i like/dislike in tempo reale e mantenere l'ordinamento
-      this.cdr.detectChanges();
+
+      // --- INIZIO MODIFICA QUI ---
+      // Trova il commento nell'array locale e aggiorna i suoi like
+      const updateLikes = (commentArray: Comment[], commentIdToFind: string, userId: string, liked: boolean): boolean => {
+        for (let i = 0; i < commentArray.length; i++) {
+          const c = commentArray[i];
+          if (c.id === commentIdToFind) {
+            if (liked) {
+              if (!c.likes.includes(userId)) {
+                c.likes = [...c.likes, userId];
+              }
+            } else {
+              c.likes = c.likes.filter(id => id !== userId);
+            }
+            // Importante: Creare un nuovo oggetto commento per innescare ChangeDetection
+            // Se non crei un nuovo oggetto o un nuovo array, Angular potrebbe non rilevare la modifica
+            // se ChangeDetectionStrategy.OnPush è attivo in modo rigoroso.
+            commentArray[i] = { ...c };
+            return true; // Commento principale trovato e aggiornato
+          }
+
+          // Cerca nelle risposte (se il commento ha risposte)
+          if (c.replies && c.replies.length > 0) {
+            if (updateLikes(c.replies, commentIdToFind, userId, liked)) {
+              // Se la risposta è stata aggiornata, dobbiamo ricreare l'oggetto commento principale
+              // per assicurarci che l'array `replies` venga considerato modificato da Angular.
+              commentArray[i] = { ...c, replies: [...c.replies] }; // Ricreo l'array delle risposte
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      // Chiamiamo la funzione ricorsiva sull'array principale dei commenti
+      updateLikes(this.comments, comment.id, this.currentUserId, !hasLiked);
+
+      this.cdr.detectChanges(); // Forzo il rilevamento dei cambiamenti per aggiornare la UI
+      // --- FINE MODIFICA QUI ---
+
     } catch (error) {
       console.error('Errore nel toggle like del commento:', error);
       this.presentAppAlert('Errore', 'Impossibile aggiornare il "Mi piace" del commento. Riprova.');
