@@ -16,10 +16,11 @@ import {
   arrayRemove,
   collectionData,
   startAfter,
-  DocumentSnapshot
+  DocumentSnapshot,
+  getDoc // Importa getDoc
 } from '@angular/fire/firestore';
-import { Observable, of, lastValueFrom } from 'rxjs'; // Aggiunto 'lastValueFrom' e 'of'
-import { map, switchMap } from 'rxjs/operators'; // 'finalize' non è più necessario qui
+import { Observable, of, lastValueFrom } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
 import { Comment } from '../interfaces/comment';
 
@@ -28,7 +29,17 @@ import { Comment } from '../interfaces/comment';
 })
 export class CommentService {
 
+  private _lastVisibleCommentDoc: DocumentSnapshot | null = null; // Aggiunto per la paginazione
+
   constructor(private firestore: Firestore) { }
+
+  /**
+   * Resetta lo stato dell'ultimo documento visibile per la paginazione.
+   * Chiamare questo metodo quando si ricaricano i commenti dall'inizio.
+   */
+  resetPagination(): void {
+    this._lastVisibleCommentDoc = null;
+  }
 
   /**
    * Aggiunge un nuovo commento (o una risposta) a un post specifico.
@@ -163,24 +174,32 @@ export class CommentService {
    * utile per la paginazione "carica di più".
    * @param postId L'ID del post.
    * @param commentsLimit Il numero di commenti di primo livello da caricare.
-   * @param lastVisibleDocSnapshot L'ultimo DocumentSnapshot caricato per la paginazione.
    */
-  async getCommentsForPostOnce(postId: string, commentsLimit: number = 10, lastVisibleDocSnapshot: DocumentSnapshot | null = null): Promise<{ comments: Comment[], lastDoc: DocumentSnapshot | null }> {
+  async getCommentsForPostOnce(postId: string, commentsLimit: number = 10): Promise<{ comments: Comment[], hasMore: boolean }> {
     const commentsCollectionRef = collection(this.firestore, `posts/${postId}/comments`);
 
     let commentsQuery = query(
       commentsCollectionRef,
       where('parentId', '==', null), // Filtra solo i commenti di primo livello
       orderBy('timestamp', 'desc'),
-      limit(commentsLimit)
+      limit(commentsLimit + 1) // Chiediamo un elemento in più per controllare se ci sono altri commenti
     );
 
-    if (lastVisibleDocSnapshot) {
-      commentsQuery = query(commentsQuery, startAfter(lastVisibleDocSnapshot));
+    if (this._lastVisibleCommentDoc) {
+      commentsQuery = query(commentsQuery, startAfter(this._lastVisibleCommentDoc));
     }
 
     const querySnapshot = await getDocs(commentsQuery);
     const comments: Comment[] = [];
+    let hasMore = false;
+
+    // Se abbiamo recuperato più del limite, significa che ci sono altri commenti
+    if (querySnapshot.docs.length > commentsLimit) {
+      hasMore = true;
+      // Rimuovi l'ultimo documento, che serve solo per il controllo `hasMore`
+      querySnapshot.docs.pop();
+    }
+
     querySnapshot.forEach(doc => {
       const data = doc.data();
       comments.push({
@@ -197,7 +216,8 @@ export class CommentService {
       });
     });
 
-    const lastDoc = querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null;
+    // Aggiorna l'ultimo documento visibile per la prossima paginazione
+    this._lastVisibleCommentDoc = querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null;
 
     // Recupera le risposte per i commenti appena caricati
     const commentsWithReplies = await Promise.all(
@@ -210,7 +230,36 @@ export class CommentService {
       })
     );
 
-    return { comments: commentsWithReplies, lastDoc: lastDoc };
+    return { comments: commentsWithReplies, hasMore: hasMore };
+  }
+
+  /**
+   * Ottiene un singolo commento o risposta per ID.
+   * Utile per recuperare i dettagli di un commento a cui si sta rispondendo.
+   * @param postId L'ID del post proprietario del commento.
+   * @param commentId L'ID del commento da recuperare.
+   */
+  async getCommentByIdOnce(postId: string, commentId: string): Promise<Comment | null> {
+    const commentDocRef = doc(this.firestore, `posts/${postId}/comments`, commentId);
+    const docSnap = await getDoc(commentDocRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        postId: postId,
+        userId: data['userId'],
+        username: data['username'],
+        userAvatarUrl: data['userAvatarUrl'],
+        text: data['text'],
+        timestamp: (data['timestamp']?.toDate() || new Date()).toISOString(),
+        likes: data['likes'] || [],
+        parentId: data['parentId'] || null,
+        replies: [] // Le risposte non vengono caricate con questo metodo singolo
+      } as Comment;
+    } else {
+      return null;
+    }
   }
 
   /**

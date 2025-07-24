@@ -10,6 +10,7 @@ import { EmojiStatusComponent } from './components/emoji-status/emoji-status.com
 import { PostComponent } from './components/post/post.component';
 import { CommentSectionComponent } from './components/comment-section/comment-section.component';
 import { CommentsModalComponent } from './components/comments-modal/comments-modal.component';
+import { CommentItemComponent } from './components/comment-item/comment-item.component';
 
 @NgModule({
   imports: [
@@ -21,7 +22,8 @@ import { CommentsModalComponent } from './components/comments-modal/comments-mod
     EmojiStatusComponent,
     PostComponent,
     CommentSectionComponent,
-    CommentsModalComponent
+    CommentsModalComponent,
+    CommentItemComponent
   ],
   declarations: [ProfiloPage, ]
 })

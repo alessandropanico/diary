@@ -7,68 +7,12 @@
 
   <div class="comments-scroll-container">
     <div *ngIf="comments.length > 0; else noComments" class="comments-list-wrapper">
-      <div *ngFor="let comment of comments" class="comment-card panel-glow-border">
-        <div class="comment-header">
-          <ion-avatar (click)="goToUserProfile(comment.userId)" class="post-avatar">
-            <img [src]="comment.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
-          </ion-avatar>
-          <div class="post-info">
-            <span class="post-username" (click)="goToUserProfile(comment.userId)">{{ comment.username }}</span>
-            <span class="post-time">{{ formatCommentTime(comment.timestamp) }}</span>
-          </div>
-          <div class="comment-card-actions">
-            <ion-button fill="clear" size="small"
-              [class.liked]="currentUserId && comment.likes.includes(currentUserId)"
-              (click)="toggleLikeComment(comment)">
-              <ion-icon [name]="currentUserId && comment.likes.includes(currentUserId) ? 'heart' : 'heart-outline'"></ion-icon>
-              {{ comment.likes.length }}
-            </ion-button>
-
-            <ion-button fill="clear" size="small" (click)="setReplyTarget(comment)">
-              <ion-icon name="chatbubble-outline"></ion-icon>
-              Rispondi
-            </ion-button>
-
-            <ion-button *ngIf="comment.userId === currentUserId" fill="clear" size="small"
-              color="danger" (click)="presentDeleteCommentAlert(comment.id)">
-              <ion-icon name="trash-outline"></ion-icon>
-            </ion-button>
-          </div>
-        </div>
-        <div class="comment-content">
-          <p class="post-text">{{ comment.text }}</p>
-        </div>
-
-        <div *ngIf="comment.replies && comment.replies.length > 0" class="replies-section">
-          <div *ngFor="let reply of comment.replies" class="reply-card">
-            <div class="reply-header">
-              <ion-avatar (click)="goToUserProfile(reply.userId)" class="reply-avatar">
-                <img [src]="reply.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
-              </ion-avatar>
-              <div class="reply-info">
-                <span class="reply-username" (click)="goToUserProfile(reply.userId)">{{ reply.username }}</span>
-                <span class="reply-time">{{ formatCommentTime(reply.timestamp) }}</span>
-              </div>
-              <div class="reply-card-actions">
-                <ion-button fill="clear" size="small"
-                  [class.liked]="currentUserId && reply.likes.includes(currentUserId)"
-                  (click)="toggleLikeComment(reply)">
-                  <ion-icon [name]="currentUserId && reply.likes.includes(currentUserId) ? 'heart' : 'heart-outline'"></ion-icon>
-                  {{ reply.likes.length }}
-                </ion-button>
-                <ion-button *ngIf="reply.userId === currentUserId" fill="clear" size="small"
-                  color="danger" (click)="presentDeleteCommentAlert(reply.id)">
-                  <ion-icon name="trash-outline"></ion-icon>
-                </ion-button>
-              </div>
-            </div>
-            <div class="reply-content">
-              <p class="reply-text">{{ reply.text }}</p>
-            </div>
-          </div>
-        </div>
-
-      </div>
+      <app-comment-item
+        *ngFor="let comment of comments"
+        [comment]="comment"
+        [currentUserId]="currentUserId"
+        [nestingLevel]="0" [formatCommentTime]="formatCommentTime"
+        (toggleLike)="toggleLikeComment($event)" (setReply)="setReplyTarget($event)" (deleteComment)="presentDeleteCommentAlert($event)" (goToProfile)="goToUserProfile($event)"> </app-comment-item>
 
       <ion-infinite-scroll (ionInfiniteScroll)="loadMoreComments($event)" [disabled]="!canLoadMoreComments"
         [threshold]="'100px'" position="bottom">

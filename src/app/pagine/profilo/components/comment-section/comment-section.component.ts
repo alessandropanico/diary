@@ -1,3 +1,4 @@
+// src/app/comment-section/comment-section.component.ts
 import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, SimpleChanges, OnChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,12 +12,15 @@ import { ExpService } from 'src/app/services/exp.service';
 import { Router } from '@angular/router';
 import { DocumentSnapshot } from '@angular/fire/firestore';
 
+// Importa il nuovo componente
+import { CommentItemComponent } from '../comment-item/comment-item.component';
+
 @Component({
   selector: 'app-comment-section',
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonicModule, CommentItemComponent], // AGGIUNGI QUI CommentItemComponent
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
@@ -34,7 +38,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
   isLoadingComments: boolean = false;
   private commentsLimit: number = 10;
-  private lastVisibleDocSnapshot: DocumentSnapshot | null = null;
+  // lastVisibleDocSnapshot non è più gestito direttamente qui, ma dal servizio
   canLoadMoreComments: boolean = true;
 
   private commentsSubscription: Subscription | undefined;
@@ -119,13 +123,17 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   private resetAndLoadComments() {
     this.isLoadingComments = true;
     this.comments = [];
-    this.lastVisibleDocSnapshot = null;
     this.canLoadMoreComments = true;
     this.commentsSubscription?.unsubscribe();
+    this.commentService.resetPagination(); // Resetta la paginazione nel servizio
 
     if (this.infiniteScroll) {
       this.infiniteScroll.disabled = false;
-      this.infiniteScroll.complete();
+      // IMPORTANT: Aggiungi un piccolo timeout prima di chiamare complete()
+      // per dare tempo a Angular di renderizzare i nuovi elementi prima di disabilitare.
+      setTimeout(() => {
+        this.infiniteScroll.complete();
+      }, 0);
     }
     this.cdr.detectChanges();
 
@@ -139,19 +147,18 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
   private async loadInitialComments() {
     this.isLoadingComments = true;
-    this.comments = [];
-    this.lastVisibleDocSnapshot = null;
-    this.canLoadMoreComments = true;
+    this.comments = []; // Assicurati che sia vuoto prima di caricare
+    this.canLoadMoreComments = true; // Resetta questo anche qui
     this.cdr.detectChanges();
 
     try {
-      const result = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit, null);
+      // Usa il metodo corretto dal CommentService
+      const result = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
       this.comments = result.comments;
-      this.lastVisibleDocSnapshot = result.lastDoc;
+      this.canLoadMoreComments = result.hasMore; // Usa hasMore dal servizio
       this.isLoadingComments = false;
 
-      if (result.comments.length < this.commentsLimit) {
-        this.canLoadMoreComments = false;
+      if (!this.canLoadMoreComments) {
         if (this.infiniteScroll) {
           this.infiniteScroll.disabled = true;
         }
@@ -182,16 +189,17 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     this.cdr.detectChanges();
 
     try {
-      const result = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit, this.lastVisibleDocSnapshot);
+      // Usa il metodo corretto dal CommentService
+      const result = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
 
       if (result.comments.length > 0) {
         this.comments = [...this.comments, ...result.comments];
-        this.comments = this.removeDuplicates(this.comments);
-        this.lastVisibleDocSnapshot = result.lastDoc;
+        this.comments = this.removeDuplicates(this.comments); // Mantiene solo i commenti unici a livello radice
       }
 
-      if (result.comments.length < this.commentsLimit) {
-        this.canLoadMoreComments = false;
+      this.canLoadMoreComments = result.hasMore; // Usa hasMore dal servizio
+
+      if (!this.canLoadMoreComments) {
         if (this.infiniteScroll) {
           this.infiniteScroll.disabled = true;
         }
@@ -249,9 +257,8 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       this.newCommentText = '';
       this.replyingToComment = null;
       this.expService.addExperience(10, 'commentCreated');
-      // Dopo aver aggiunto un commento, ricarica i commenti per includerlo
-      // E potenzialmente resetta la paginazione per mostrare il nuovo commento in cima
-      this.resetAndLoadComments(); // Questo aggiornerà la lista con il nuovo commento
+      // Ricarica tutti i commenti per riflettere la nuova aggiunta e la sua posizione annidata
+      this.resetAndLoadComments();
       this.cdr.detectChanges();
     } catch (error) {
       console.error('Errore nell\'aggiunta del commento:', error);
@@ -291,7 +298,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     try {
       await this.commentService.deleteComment(this.postId, commentId);
       this.presentAppAlert('Commento Eliminato', 'Il commento è stato rimosso.');
-      // Dopo aver eliminato un commento, ricarica la lista per riflettere il cambiamento
+      // Ricarica la lista per riflettere il cambiamento, incluse le risposte annidate
       this.resetAndLoadComments();
       this.cdr.detectChanges();
     } catch (error) {
@@ -305,56 +312,40 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   /**
    * Gestisce l'aggiunta o la rimozione di un "Mi piace" a un commento o a una risposta.
    * Aggiorna lo stato localmente per evitare il ricaricamento completo.
+   * Ora deve cercare ricorsivamente il commento/risposta per ID.
    */
-  async toggleLikeComment(comment: Comment) {
+  async toggleLikeComment(commentToToggle: Comment) {
     if (!this.currentUserId) {
       this.presentAppAlert('Accedi Necessario', 'Devi essere loggato per mostrare il tuo apprezzamento!');
       return;
     }
 
-    const hasLiked = comment.likes.includes(this.currentUserId);
+    const hasLiked = commentToToggle.likes.includes(this.currentUserId);
     try {
-      await this.commentService.toggleLikeComment(this.postId, comment.id, this.currentUserId, !hasLiked);
+      await this.commentService.toggleLikeComment(this.postId, commentToToggle.id, this.currentUserId, !hasLiked);
 
-      // --- INIZIO MODIFICA QUI ---
-      // Trova il commento nell'array locale e aggiorna i suoi like
-      const updateLikes = (commentArray: Comment[], commentIdToFind: string, userId: string, liked: boolean): boolean => {
-        for (let i = 0; i < commentArray.length; i++) {
-          const c = commentArray[i];
-          if (c.id === commentIdToFind) {
-            if (liked) {
-              if (!c.likes.includes(userId)) {
-                c.likes = [...c.likes, userId];
-              }
-            } else {
-              c.likes = c.likes.filter(id => id !== userId);
-            }
-            // Importante: Creare un nuovo oggetto commento per innescare ChangeDetection
-            // Se non crei un nuovo oggetto o un nuovo array, Angular potrebbe non rilevare la modifica
-            // se ChangeDetectionStrategy.OnPush è attivo in modo rigoroso.
-            commentArray[i] = { ...c };
-            return true; // Commento principale trovato e aggiornato
+      // Funzione ricorsiva per aggiornare lo stato dei like nell'array `comments`
+      const updateLikesRecursively = (commentsArray: Comment[], targetCommentId: string, userId: string, liked: boolean): Comment[] => {
+        return commentsArray.map(c => {
+          if (c.id === targetCommentId) {
+            const updatedLikes = liked ?
+              (c.likes.includes(userId) ? c.likes : [...c.likes, userId]) :
+              c.likes.filter(id => id !== userId);
+            return { ...c, likes: updatedLikes };
           }
-
-          // Cerca nelle risposte (se il commento ha risposte)
           if (c.replies && c.replies.length > 0) {
-            if (updateLikes(c.replies, commentIdToFind, userId, liked)) {
-              // Se la risposta è stata aggiornata, dobbiamo ricreare l'oggetto commento principale
-              // per assicurarci che l'array `replies` venga considerato modificato da Angular.
-              commentArray[i] = { ...c, replies: [...c.replies] }; // Ricreo l'array delle risposte
-              return true;
+            const updatedReplies = updateLikesRecursively(c.replies, targetCommentId, userId, liked);
+            if (updatedReplies !== c.replies) { // Se le risposte sono cambiate
+              return { ...c, replies: updatedReplies };
             }
           }
-        }
-        return false;
+          return c;
+        });
       };
 
-      // Chiamiamo la funzione ricorsiva sull'array principale dei commenti
-      updateLikes(this.comments, comment.id, this.currentUserId, !hasLiked);
+      this.comments = updateLikesRecursively(this.comments, commentToToggle.id, this.currentUserId, !hasLiked);
 
       this.cdr.detectChanges(); // Forzo il rilevamento dei cambiamenti per aggiornare la UI
-      // --- FINE MODIFICA QUI ---
-
     } catch (error) {
       console.error('Errore nel toggle like del commento:', error);
       this.presentAppAlert('Errore', 'Impossibile aggiornare il "Mi piace" del commento. Riprova.');

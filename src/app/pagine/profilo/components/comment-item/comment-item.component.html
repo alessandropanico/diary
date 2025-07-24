@@ -1,0 +1,45 @@
+<div class="comment-card" [class.is-reply]="nestingLevel > 0" [style.margin-left.px]="nestingLevel * 20">
+  <div [class]="nestingLevel === 0 ? 'comment-header' : 'reply-header'">
+    <ion-avatar (click)="onGoToProfile()" [class]="nestingLevel === 0 ? 'post-avatar' : 'reply-avatar'">
+      <img [src]="comment.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
+    </ion-avatar>
+    <div [class]="nestingLevel === 0 ? 'post-info' : 'reply-info'">
+      <span [class]="nestingLevel === 0 ? 'post-username' : 'reply-username'" (click)="onGoToProfile()">{{ comment.username }}</span>
+      <span [class]="nestingLevel === 0 ? 'post-time' : 'reply-time'">{{ formatCommentTime(comment.timestamp) }}</span>
+    </div>
+    <div [class]="nestingLevel === 0 ? 'comment-card-actions' : 'reply-card-actions'">
+      <ion-button fill="clear" size="small"
+        [class.liked]="currentUserId && comment.likes.includes(currentUserId)"
+        (click)="onToggleLike()">
+        <ion-icon [name]="currentUserId && comment.likes.includes(currentUserId) ? 'heart' : 'heart-outline'"></ion-icon>
+        {{ comment.likes.length }}
+      </ion-button>
+
+      <ion-button fill="clear" size="small" (click)="onSetReply()">
+        <ion-icon name="chatbubble-outline"></ion-icon>
+        <ng-container *ngIf="nestingLevel === 0">Rispondi</ng-container>
+      </ion-button>
+
+      <ion-button *ngIf="comment.userId === currentUserId" fill="clear" size="small"
+        color="danger" (click)="onDeleteComment()">
+        <ion-icon name="trash-outline"></ion-icon>
+      </ion-button>
+    </div>
+  </div>
+  <div [class]="nestingLevel === 0 ? 'comment-content' : 'reply-content'">
+    <p [class]="nestingLevel === 0 ? 'post-text' : 'reply-text'">{{ comment.text }}</p>
+  </div>
+
+  <div *ngIf="comment.replies && comment.replies.length > 0" class="replies-section">
+    <app-comment-item
+      *ngFor="let reply of comment.replies"
+      [comment]="reply"
+      [currentUserId]="currentUserId"
+      [nestingLevel]="nestingLevel + 1" [formatCommentTime]="formatCommentTime"
+      (toggleLike)="onToggleLike()"
+      (setReply)="onSetReply()"
+      (deleteComment)="onDeleteComment()"
+      (goToProfile)="onGoToProfile()">
+    </app-comment-item>
+  </div>
+</div>
