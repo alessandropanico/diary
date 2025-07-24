@@ -1,56 +1,74 @@
+<div *ngIf="isLoadingComments && comments.length === 0" class="loading-full-screen">
+  <ion-spinner name="crescent"></ion-spinner>
+  <p>Caricamento commenti...</p>
+</div>
+
 <div class="add-comment-container panel-glow-border">
   <div class="comment-header">
-    <div class="post-avatar">
-      <img [src]="currentUserAvatar" alt="User Avatar" (click)="goToUserProfile(currentUserId!)">
-    </div>
+    <ion-avatar slot="start" (click)="goToUserProfile(currentUserId!)" class="post-avatar">
+      <img [src]="currentUserAvatar" alt="User Avatar">
+    </ion-avatar>
     <div class="post-info">
       <span class="post-username" (click)="goToUserProfile(currentUserId!)">{{ currentUserUsername }}</span>
     </div>
   </div>
-  <textarea class="app-textarea" placeholder="Aggiungi un commento..." [(ngModel)]="newCommentText"
-    (input)="adjustTextareaHeight($event)" rows="1"></textarea>
+  <ion-textarea
+    class="app-textarea comment-textarea"
+    placeholder="Aggiungi un commento..."
+    rows="1"
+    max-rows="5"
+    autoGrow="true"
+    [(ngModel)]="newCommentText"
+    (ionInput)="adjustTextareaHeight($event)"
+  ></ion-textarea>
   <div class="comment-actions">
-    <button class="app-button primary-button" (click)="addComment()" [disabled]="!newCommentText.trim() || !currentUserId">
-      <span class="icon send-icon icon-in-primary-button"></span> Commenta
-    </button>
+    <ion-button expand="block" class="app-button primary-button" (click)="addComment()"
+      [disabled]="!newCommentText.trim() || !currentUserId">
+      <ion-icon name="send" slot="start"></ion-icon> Commenta
+    </ion-button>
   </div>
 </div>
 
-<div *ngIf="comments.length > 0; else noComments">
-  <div *ngFor="let comment of comments" class="comment-card panel-glow-border">
-    <div class="comment-header">
-      <div class="post-avatar">
-        <img [src]="comment.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar"
-          (click)="goToUserProfile(comment.userId)">
-      </div>
-      <div class="post-info">
-        <span class="post-username" (click)="goToUserProfile(comment.userId)">{{ comment.username }}</span>
-        <span class="post-time">{{ formatCommentTime(comment.timestamp) }}</span>
-      </div>
-      <div class="comment-card-actions">
-        <button class="post-action-button" [ngClass]="{'liked': currentUserId && comment.likes.includes(currentUserId)}"
-          (click)="toggleLikeComment(comment)">
-          <span class="icon heart-icon"></span> {{ comment.likes.length }}
-        </button>
+<div class="comments-scroll-container">
+  <div *ngIf="comments.length > 0">
+    <div *ngFor="let comment of comments" class="comment-card panel-glow-border">
+      <div class="comment-header">
+        <ion-avatar slot="start" (click)="goToUserProfile(comment.userId)" class="post-avatar">
+          <img [src]="comment.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
+        </ion-avatar>
+        <div class="post-info">
+          <span class="post-username" (click)="goToUserProfile(comment.userId)">{{ comment.username }}</span>
+          <span class="post-time">{{ formatCommentTime(comment.timestamp) }}</span>
+        </div>
+        <div class="comment-card-actions">
+          <ion-button fill="clear" size="small"
+            [class.liked]="currentUserId && comment.likes.includes(currentUserId)"
+            (click)="toggleLikeComment(comment)">
+            <ion-icon [name]="currentUserId && comment.likes.includes(currentUserId) ? 'heart' : 'heart-outline'"></ion-icon>
+            {{ comment.likes.length }}
+          </ion-button>
 
-        <button *ngIf="comment.userId === currentUserId" class="app-button delete-button"
-          (click)="presentDeleteCommentAlert(comment.id)">
-          <span class="icon delete-icon"></span>
-        </button>
+          <ion-button *ngIf="comment.userId === currentUserId" fill="clear" size="small"
+            color="danger" (click)="presentDeleteCommentAlert(comment.id)">
+            <ion-icon name="trash-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+      <div class="comment-content">
+        <p class="post-text">{{ comment.text }}</p>
       </div>
     </div>
-    <div class="comment-content">
-      <p class="post-text">{{ comment.text }}</p>
+
+    <ion-infinite-scroll (ionInfiniteScroll)="loadMoreComments($event)" [disabled]="!canLoadMoreComments"
+      [threshold]="'100px'" position="bottom">
+      <ion-infinite-scroll-content loadingSpinner="crescent" loadingText="Caricamento altri commenti...">
+      </ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+  </div>
+
+  <ng-template #noComments>
+    <div *ngIf="!isLoadingComments" class="no-posts-message panel-glow-border">
+      <p>Ancora nessun commento. Sii il primo a commentare!</p>
     </div>
-  </div>
-</div>
-
-<ng-template #noComments>
-  <div *ngIf="!isLoadingComments" class="no-posts-message panel-glow-border">
-    <p>Ancora nessun commento. Sii il primo a commentare!</p>
-  </div>
-</ng-template>
-
-<div *ngIf="isLoadingComments" class="loading-indicator panel-glow-border">
-  <p>Caricamento commenti... <span class="loading-dots"></span></p>
+  </ng-template>
 </div>

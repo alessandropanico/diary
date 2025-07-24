@@ -7,15 +7,19 @@ import {
   where,
   orderBy,
   limit,
-  getDocs,
+  getDocs,       // Re-importato per getCommentsForPostOnce
   doc,
   deleteDoc,
   serverTimestamp,
-  updateDoc, // AGGIUNTO per updateDoc
-  arrayUnion, // AGGIUNTO per arrayUnion
-  arrayRemove, // AGGIUNTO per arrayRemove
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  onSnapshot,      // Mantenuto per la reattività
+  collectionData,  // Utilizzato per creare l'Observable reattivo
+  startAfter,      // Aggiunto per la paginazione
+  DocumentSnapshot // Aggiunto per la paginazione più robusta
 } from '@angular/fire/firestore';
-import { Observable, from } from 'rxjs';
+import { Observable } from 'rxjs'; // 'from' non è più necessario qui
 import { map } from 'rxjs/operators';
 import { Comment } from '../interfaces/comment';
 
@@ -40,9 +44,44 @@ export class CommentService {
   }
 
   /**
-   * Ottiene i commenti per un post specifico, con paginazione.
+   * Ottiene i commenti per un post specifico in tempo reale.
+   * Questo metodo usa una sottoscrizione per aggiornamenti immediati.
+   * @param postId L'ID del post per cui recuperare i commenti.
+   * @param commentsLimit Il numero massimo di commenti da caricare inizialmente.
    */
-  getCommentsForPost(postId: string, commentsLimit: number = 10, lastCommentTimestamp: string | null = null): Observable<Comment[]> {
+  getCommentsForPost(postId: string, commentsLimit: number = 10): Observable<Comment[]> {
+    const commentsCollectionRef = collection(this.firestore, `posts/${postId}/comments`);
+
+    let commentsQuery = query(
+      commentsCollectionRef,
+      orderBy('timestamp', 'desc'),
+      limit(commentsLimit) // Limita i primi N commenti per l'osservatore reattivo
+    );
+
+    // Utilizza collectionData da @angular/fire per un Observable reattivo
+    return collectionData(commentsQuery, { idField: 'id' }).pipe(
+      map(docs => {
+        // Mappa i dati per convertire il Timestamp di Firestore in stringa ISO
+        return docs.map(doc => {
+          const comment = doc as Comment;
+          // Assicurati che timestamp sia convertito se è un oggetto Timestamp
+          if (comment.timestamp && typeof comment.timestamp === 'object' && 'toDate' in (comment.timestamp as any)) {
+            comment.timestamp = (comment.timestamp as any).toDate().toISOString();
+          }
+          return comment;
+        });
+      })
+    );
+  }
+
+  /**
+   * Ottiene un blocco di commenti per un post specifico una tantum (non in tempo reale),
+   * utile per la paginazione "carica di più".
+   * @param postId L'ID del post.
+   * @param commentsLimit Il numero di commenti da caricare.
+   * @param lastVisibleDocSnapshot L'ultimo DocumentSnapshot caricato per la paginazione.
+   */
+  async getCommentsForPostOnce(postId: string, commentsLimit: number = 10, lastVisibleDocSnapshot: DocumentSnapshot | null = null): Promise<Comment[]> {
     const commentsCollectionRef = collection(this.firestore, `posts/${postId}/comments`);
 
     let commentsQuery = query(
@@ -51,30 +90,28 @@ export class CommentService {
       limit(commentsLimit)
     );
 
-    // Come discusso, per startAfter con serverTimestamp, avresti bisogno di un DocumentSnapshot.
-    // Per un'implementazione completa e robusta, si raccomanda di passare l'ultimo docSnapshot
-    // piuttosto che solo il timestamp, o usare una Cloud Function per la paginazione.
-    // Per semplicità qui, la paginazione basata su timestamp è abbozzata ma potrebbe non essere perfetta con serverTimestamp.
+    if (lastVisibleDocSnapshot) {
+      // Se è presente un DocumentSnapshot, riprendi da lì
+      commentsQuery = query(commentsQuery, startAfter(lastVisibleDocSnapshot));
+    }
 
-    return from(getDocs(commentsQuery)).pipe(
-      map(querySnapshot => {
-        const comments: Comment[] = [];
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          comments.push({
-            id: doc.id,
-            postId: postId,
-            userId: data['userId'],
-            username: data['username'],
-            userAvatarUrl: data['userAvatarUrl'],
-            text: data['text'],
-            timestamp: (data['timestamp']?.toDate() || new Date()).toISOString(), // Converti Timestamp a string ISO
-            likes: data['likes'] || [], // Leggi l'array dei like, default a vuoto se non esiste
-          });
-        });
-        return comments;
-      })
-    );
+    const querySnapshot = await getDocs(commentsQuery);
+    const comments: Comment[] = [];
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      comments.push({
+        id: doc.id,
+        postId: postId,
+        userId: data['userId'],
+        username: data['username'],
+        userAvatarUrl: data['userAvatarUrl'],
+        text: data['text'],
+        // Converti Timestamp a string ISO. getDocs restituisce sempre Timestamp per i campi Timestamp.
+        timestamp: (data['timestamp']?.toDate() || new Date()).toISOString(),
+        likes: data['likes'] || [],
+      });
+    });
+    return comments;
   }
 
   /**
