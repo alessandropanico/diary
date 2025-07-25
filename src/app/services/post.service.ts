@@ -1,6 +1,6 @@
 // src/app/services/post.service.ts
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, doc, updateDoc, getDoc, startAfter } from '@angular/fire/firestore'; // AGGIUNTO startAfter
+import { Firestore, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, doc, updateDoc, getDoc, startAfter } from '@angular/fire/firestore';
 import { Observable, from, of } from 'rxjs';
 import { map, switchMap, catchError } from 'rxjs/operators';
 import { Post } from '../interfaces/post';
@@ -18,7 +18,7 @@ export class PostService {
       const docRef = await addDoc(this.postsCollection, {
         ...post,
         likes: [], // Inizializza i "mi piace" come un array vuoto
-        commentsCount: 0 // Inizializza il conteggio commenti a 0
+        commentsCount: 0 // ✅ Giusto! Inizializza il conteggio commenti a 0
       });
       return docRef.id;
     } catch (error) {
@@ -32,8 +32,15 @@ export class PostService {
     return from(this.getPostsQuery(limitPosts, startAfterTimestamp)).pipe(
       map(querySnapshot => {
         const posts: Post[] = [];
-        querySnapshot.forEach(doc => {
-          posts.push({ id: doc.id, ...doc.data() as Omit<Post, 'id'> });
+        querySnapshot.forEach(docSnap => { // Rinominato 'doc' in 'docSnap' per chiarezza
+          // 👇 NOVITÀ: Assicurati che commentsCount sia letto correttamente dal documento
+          // e che sia almeno 0 in caso di dati inconsistenti o mancanti
+          const data = docSnap.data();
+          posts.push({
+            id: docSnap.id,
+            ...data as Omit<Post, 'id'>, // Estrai tutti gli altri campi
+            commentsCount: Math.max(0, data['commentsCount'] || 0) // Forza a min 0
+          });
         });
         return posts;
       }),

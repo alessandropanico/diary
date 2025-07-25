@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import {
   Firestore,
   collection,
-  addDoc,
+  addDoc, // Potrebbe non servire più, useremo setDoc con ID specifico
   query,
   where,
   orderBy,
@@ -11,7 +11,7 @@ import {
   writeBatch,
   doc,
   deleteDoc,
-  serverTimestamp,
+  serverTimestamp, // Useremo ISOString()
   updateDoc,
   arrayUnion,
   arrayRemove,
@@ -21,7 +21,9 @@ import {
   getDoc,
   QueryDocumentSnapshot,
   DocumentData,
-  setDoc
+  setDoc,
+  // 👇 NOVITÀ: Importa increment per aggiornamenti atomici del contatore
+  increment
 } from '@angular/fire/firestore';
 import { Observable, of, lastValueFrom, from } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
@@ -75,6 +77,35 @@ export class CommentService {
     this._lastVisibleCommentDoc = null;
   }
 
+  // --- NOVITÀ: Metodo per aggiornare il conteggio dei commenti sul post ---
+  // Questo metodo è privato e chiamato internamente.
+  private async updatePostCommentsCount(postId: string, change: number): Promise<void> {
+    const postRef = doc(this.firestore, `posts`, postId);
+    try {
+      await updateDoc(postRef, {
+        // Usa increment per aggiornamenti atomici
+        // E Math.max per assicurarti che il conteggio non scenda sotto lo 0
+        commentsCount: increment(change)
+      });
+
+      // Dopo l'incremento, recupera il valore attuale per assicurarti che non sia negativo
+      const postSnap = await getDoc(postRef);
+      const currentCount = postSnap.data()?.['commentsCount'] || 0;
+      if (currentCount < 0) {
+        await updateDoc(postRef, {
+          commentsCount: 0 // Forza a 0 se è andato sotto
+        });
+        console.warn(`commentsCount for post ${postId} was negative (${currentCount}), reset to 0.`);
+      }
+
+      console.log(`commentsCount per post ${postId} aggiornato di ${change}`);
+    } catch (error) {
+      console.error(`Errore nell'aggiornare commentsCount per post ${postId}:`, error);
+      // Non rilanciare l'errore per non bloccare l'operazione principale
+    }
+  }
+
+  // --- NOVITÀ nel metodo addComment ---
   async addComment(
     commentData: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'replies' | 'isRootComment'>
   ): Promise<string> {
@@ -95,6 +126,8 @@ export class CommentService {
 
     try {
       await setDoc(newCommentRef, commentToSave);
+      // 👇 NOVITÀ: Incrementa il conteggio dei commenti del post
+      await this.updatePostCommentsCount(commentData.postId, 1);
       return newCommentRef.id;
     } catch (error) {
       console.error('Errore durante l\'aggiunta del commento:', error);
@@ -291,80 +324,88 @@ export class CommentService {
     }
   }
 
+  // --- NOVITÀ nel metodo deleteCommentAndReplies ---
   async deleteCommentAndReplies(postId: string, commentId: string): Promise<void> {
-    console.log('deleteCommentAndReplies: Tentativo di eliminare commento principale e risposte. Post ID:', postId, 'Comment ID:', commentId); // LOG AGGIUNTO
+    console.log('deleteCommentAndReplies: Tentativo di eliminare commento principale e risposte. Post ID:', postId, 'Comment ID:', commentId);
     const commentDocRef = doc(this.firestore, `posts/${postId}/comments`, commentId);
     const docSnap = await getDoc(commentDocRef);
 
     if (!docSnap.exists()) {
-      console.error('deleteCommentAndReplies: Commento principale non trovato per ID:', commentId); // LOG AGGIUNTO
+      console.error('deleteCommentAndReplies: Commento principale non trovato per ID:', commentId);
       throw new Error('Commento non trovato: impossibile eliminare.');
     }
 
     const commentData = docSnap.data();
     if (commentData?.['parentId'] !== null) {
-      console.error('deleteCommentAndReplies: Tentativo di eliminare una risposta come commento principale. Comment ID:', commentId, 'Parent ID:', commentData?.['parentId']); // LOG AGGIUNTO
+      console.error('deleteCommentAndReplies: Tentativo di eliminare una risposta come commento principale. Comment ID:', commentId, 'Parent ID:', commentData?.['parentId']);
       throw new Error('Questo metodo è destinato all\'eliminazione di commenti principali con risposte a cascata. Usa deleteSingleComment per eliminare risposte.');
     }
 
-    const batch = writeBatch(this.firestore);
-    batch.delete(commentDocRef);
-    console.log('deleteCommentAndReplies: Aggiunto commento principale al batch di eliminazione:', commentId); // LOG AGGIUNTO
-
     const commentsToDeleteIds: string[] = [];
+    // Raccogli anche l'ID del commento principale per il conteggio totale
+    commentsToDeleteIds.push(commentId);
     await this._collectRepliesToDelete(postId, commentId, commentsToDeleteIds);
-    console.log('deleteCommentAndReplies: Trovate risposte annidate da eliminare:', commentsToDeleteIds); // LOG AGGIUNTO
+    console.log('deleteCommentAndReplies: Trovate risposte annidate da eliminare, incluso il principale:', commentsToDeleteIds);
 
+    const batch = writeBatch(this.firestore);
     commentsToDeleteIds.forEach(id => {
-      const replyDocRef = doc(this.firestore, `posts/${postId}/comments`, id);
-      batch.delete(replyDocRef);
-      console.log('deleteCommentAndReplies: Aggiunta risposta al batch di eliminazione:', id); // LOG AGGIUNTO
+      const deleteRef = doc(this.firestore, `posts/${postId}/comments`, id);
+      batch.delete(deleteRef);
+      console.log('deleteCommentAndReplies: Aggiunto al batch di eliminazione:', id);
     });
 
     await batch.commit();
-    console.log('deleteCommentAndReplies: Batch di eliminazione completato con successo.'); // LOG AGGIUNTO
+    console.log('deleteCommentAndReplies: Batch di eliminazione completato con successo.');
+
+    // 👇 NOVITÀ: Decrementa il conteggio totale dei commenti sul post
+    // Il cambiamento è il numero totale di commenti (e risposte) che sono stati eliminati
+    await this.updatePostCommentsCount(postId, -commentsToDeleteIds.length);
   }
 
-async deleteSingleComment(postId: string, commentId: string): Promise<void> {
-  console.log('deleteSingleComment: Tentativo di eliminare singolo commento/risposta. Post ID:', postId, 'Comment ID:', commentId);
-  const commentDocRef = doc(this.firestore, `posts/${postId}/comments`, commentId);
-  const docSnap = await getDoc(commentDocRef);
+  // --- NOVITÀ nel metodo deleteSingleComment ---
+  async deleteSingleComment(postId: string, commentId: string): Promise<void> {
+    console.log('deleteSingleComment: Tentativo di eliminare singolo commento/risposta. Post ID:', postId, 'Comment ID:', commentId);
+    const commentDocRef = doc(this.firestore, `posts/${postId}/comments`, commentId);
+    const docSnap = await getDoc(commentDocRef);
 
-  if (!docSnap.exists()) {
-    console.error('deleteSingleComment: Commento/risposta non trovato per ID:', commentId);
-    throw new Error('Commento non trovato: impossibile eliminare.');
+    if (!docSnap.exists()) {
+      console.error('deleteSingleComment: Commento/risposta non trovato per ID:', commentId);
+      throw new Error('Commento non trovato: impossibile eliminare.');
+    }
+
+    await deleteDoc(commentDocRef);
+    console.log('deleteSingleComment: Commento/risposta eliminato con successo:', commentId);
+
+    // 👇 NOVITÀ: Decrementa il conteggio dei commenti del post di 1
+    await this.updatePostCommentsCount(postId, -1);
   }
-
-  await deleteDoc(commentDocRef);
-  console.log('deleteSingleComment: Commento/risposta eliminato con successo:', commentId);
-}
 
   async toggleLikeComment(postId: string, commentId: string, userId: string, liked: boolean): Promise<void> {
-    console.log('toggleLikeComment: Toggling like. Post ID:', postId, 'Comment ID:', commentId, 'User ID:', userId, 'Liked:', liked); // LOG AGGIUNTO
+    console.log('toggleLikeComment: Toggling like. Post ID:', postId, 'Comment ID:', commentId, 'User ID:', userId, 'Liked:', liked);
     const commentDocRef = doc(this.firestore, `posts/${postId}/comments`, commentId);
     if (liked) {
       await updateDoc(commentDocRef, {
         likes: arrayUnion(userId)
       });
-      console.log('toggleLikeComment: Aggiunto like per utente:', userId, 'su commento:', commentId); // LOG AGGIUNTO
+      console.log('toggleLikeComment: Aggiunto like per utente:', userId, 'su commento:', commentId);
     } else {
       await updateDoc(commentDocRef, {
         likes: arrayRemove(userId)
       });
-      console.log('toggleLikeComment: Rimosso like per utente:', userId, 'da commento:', commentId); // LOG AGGIUNTO
+      console.log('toggleLikeComment: Rimosso like per utente:', userId, 'da commento:', commentId);
     }
-    console.log('toggleLikeComment: Operazione completata.'); // LOG AGGIUNTO
+    console.log('toggleLikeComment: Operazione completata.');
   }
 
   private async _collectRepliesToDelete(postId: string, parentCommentId: string, ids: string[]): Promise<void> {
-    console.log('_collectRepliesToDelete: Inizio raccolta risposte per parent ID:', parentCommentId); // LOG AGGIUNTO
+    console.log('_collectRepliesToDelete: Inizio raccolta risposte per parent ID:', parentCommentId);
     const commentsCollectionRef = collection(this.firestore, `posts/${postId}/comments`);
     let queue = [parentCommentId];
     let visited = new Set<string>();
 
     while (queue.length > 0) {
       const currentParentId = queue.shift() as string;
-      console.log('_collectRepliesToDelete: Processando parent ID:', currentParentId); // LOG AGGIUNTO
+      console.log('_collectRepliesToDelete: Processando parent ID:', currentParentId);
       const repliesQuery = query(commentsCollectionRef, where('parentId', '==', currentParentId));
       const repliesSnapshot = await getDocs(repliesQuery);
 
@@ -373,10 +414,10 @@ async deleteSingleComment(postId: string, commentId: string): Promise<void> {
           ids.push(docSnap.id);
           queue.push(docSnap.id);
           visited.add(docSnap.id);
-          console.log('_collectRepliesToDelete: Trovata risposta discendente:', docSnap.id); // LOG AGGIUNTO
+          console.log('_collectRepliesToDelete: Trovata risposta discendente:', docSnap.id);
         }
       });
     }
-    console.log('_collectRepliesToDelete: Raccolta completata. IDs totali:', ids); // LOG AGGIUNTO
+    console.log('_collectRepliesToDelete: Raccolta completata. IDs totali:', ids);
   }
 }

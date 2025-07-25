@@ -50,8 +50,8 @@
       (click)="toggleLike(post)">
       <span class="icon heart-icon"></span> {{ post.likes.length }} Mi piace
     </button>
-    <button class="post-action-button" (click)="toggleCommentsVisibility(post.id)">
-      <span class="icon comment-icon"></span> {{ post.commentsCount }} Commenti
+    <button class="post-action-button" (click)="toggleCommentsVisibility(post)">
+      <span class="icon comment-icon"></span> {{ post.commentsCount || 0 }} Commenti
     </button>
     <button class="post-action-button" (click)="sharePost(post)">
       <span class="icon share-icon"></span> Condividi

@@ -1,13 +1,19 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+// Ho aggiunto FormsModule e IonicModule perché li avevi inclusi prima
+// e CommentSectionComponent potrebbe dipendere da FormsModule per ngModel
+// e IonicModule per eventuali componenti Ionic.
+import { FormsModule } from '@angular/forms';
+import { IonicModule } from '@ionic/angular';
+
 import { CommentSectionComponent } from '../comment-section/comment-section.component';
 // Non hai bisogno di importare 'Post' qui dato che passi singole proprietà
-// import { Post } from 'src/app/interfaces/post';
 
 @Component({
   selector: 'app-comments-modal',
   standalone: true,
-  imports: [CommonModule, CommentSectionComponent],
+  // Aggiunti FormsModule e IonicModule per consistenza con le tue importazioni precedenti
+  imports: [CommonModule, FormsModule, IonicModule, CommentSectionComponent],
   templateUrl: './comments-modal.component.html',
   styleUrls: ['./comments-modal.component.scss']
 })
