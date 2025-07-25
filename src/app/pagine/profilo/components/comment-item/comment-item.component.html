@@ -27,7 +27,9 @@
     </div>
   </div>
   <div [class]="nestingLevel === 0 ? 'comment-content' : 'reply-content'">
-    <p [class]="nestingLevel === 0 ? 'post-text' : 'reply-text'">{{ comment.text }}</p>
+    <p [class]="nestingLevel === 0 ? 'post-text' : 'reply-text'"
+      [innerHTML]="formattedCommentText"
+      (click)="onCommentTextClick($event)"></p>
   </div>
 
   <div *ngIf="comment.replies && comment.replies.length > 0" class="replies-section">

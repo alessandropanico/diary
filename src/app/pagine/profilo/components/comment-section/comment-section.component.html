@@ -16,8 +16,7 @@
         (toggleLike)="toggleLikeComment($event)"
         (setReply)="setReplyTarget($event)"
         (deleteComment)="handleDeleteComment($event)"
-        (goToProfile)="goToUserProfile($event)">
-      </app-comment-item>
+        (goToProfile)="handleGoToProfile($event)"> </app-comment-item>
 
       <ion-infinite-scroll (ionInfiniteScroll)="loadMoreComments($event)" [disabled]="!canLoadMoreComments"
         [threshold]="'100px'" position="bottom">
@@ -56,8 +55,7 @@
 </div>
 <div class="comment-input-footer panel-glow-border">
   <div class="comment-input-area">
-    <ion-avatar (click)="goToUserProfile(currentUserId!)" class="post-avatar">
-      <img [src]="currentUserAvatar" alt="User Avatar">
+    <ion-avatar (click)="handleGoToProfile(currentUserId!)" class="post-avatar"> <img [src]="currentUserAvatar" alt="User Avatar">
     </ion-avatar>
     <ion-textarea
       class="app-textarea comment-textarea"

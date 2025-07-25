@@ -6,7 +6,7 @@ import { CommentService } from 'src/app/services/comment.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Comment, CommentFetchResult } from 'src/app/interfaces/comment';
 import { Subscription, from } from 'rxjs';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs'; // Aggiungi debounceTime, distinctUntilChanged, Subject
+import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 import { ExpService } from 'src/app/services/exp.service';
 import { Router } from '@angular/router';
@@ -17,9 +17,9 @@ import { CommentItemComponent } from '../comment-item/comment-item.component';
 export interface TagUser {
   uid: string;
   nickname: string;
-  fullName?: string; // Potrebbe non essere sempre presente o voluto
+  fullName?: string;
   photo?: string;
-  profilePictureUrl?: string; // UserDataService usa questo
+  profilePictureUrl?: string;
 }
 
 @Component({
@@ -228,6 +228,8 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
       if (result.comments.length > 0) {
         const combinedCommentsMap = new Map<string, Comment>();
+        // Usa `map` invece di `forEach` per creare un nuovo array per i commenti combinati
+        // e poi trasformalo in una Map
         [...this.comments, ...result.comments].forEach(comment => {
           combinedCommentsMap.set(comment.id, comment);
         });
@@ -267,7 +269,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
    */
   async handleDeleteComment(commentId: string) {
     let commentToDelete: Comment | null = null;
-    const loadingInitial = await this.loadingCtrl.create({ // Aggiunto un loading iniziale
+    const loadingInitial = await this.loadingCtrl.create({
       message: 'Recupero dettagli commento...',
       spinner: 'crescent'
     });
@@ -275,23 +277,23 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
     try {
       // 1. Recupera il commento completo dal servizio per conoscerne il parentId
-      commentToDelete = await this.commentService.getCommentByIdOnce(this.postId, commentId); // Usa getCommentByIdOnce!
+      commentToDelete = await this.commentService.getCommentByIdOnce(this.postId, commentId);
 
       if (!commentToDelete) {
         console.error('handleDeleteComment: Commento non trovato nel servizio per ID:', commentId);
         this.presentAppAlert('Errore Eliminazione', 'Commento non trovato. Impossibile eliminare.');
-        return; // Esci dalla funzione
+        return;
       }
     } catch (error) {
       console.error('Errore nel recupero del commento da eliminare:', error);
       this.presentAppAlert('Errore Eliminazione', 'Impossibile recuperare i dettagli del commento. Riprova.');
-      return; // Esci dalla funzione
+      return;
     } finally {
-      await loadingInitial.dismiss(); // Dismiss il loading iniziale
+      await loadingInitial.dismiss();
     }
 
     let confirmMessage: string;
-    let deleteFunction: (postId: string, id: string) => Promise<void>; // Definisci il tipo della funzione
+    let deleteFunction: (postId: string, id: string) => Promise<void>;
 
     // 2. DECISIONE BASATA SUL parentId DEL COMMENTO RECUPERATO
     if (commentToDelete.parentId === null) {
@@ -325,8 +327,8 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
             });
             await loading.present();
             try {
-              await deleteFunction(this.postId, commentToDelete!.id); // Chiama la funzione corretta
-              this.resetAndLoadComments(); // Ricarica i commenti
+              await deleteFunction(this.postId, commentToDelete!.id);
+              this.resetAndLoadComments();
             } catch (error) {
               console.error('Errore durante l\'eliminazione del commento:', error);
               this.presentAppAlert('Errore', 'Impossibile eliminare il commento.');
@@ -426,13 +428,56 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  goToUserProfile(userId: string) {
-    if (userId === this.currentUserId) {
-      this.router.navigateByUrl('/profilo');
+  // ⭐ METODO AGGIORNATO: handleGoToProfile
+  async handleGoToProfile(identifier: string) {
+    let uidToNavigate: string | null = identifier; // Presumiamo sia un UID inizialmente
+
+    // Controllo euristico per distinguere UID da nickname
+    // Un UID di Firebase tipicamente è una stringa alfanumerica di 28 caratteri.
+    // Un nickname è solitamente più corto e può contenere caratteri speciali (es. '-', '.')
+    // che non sono comuni negli UID.
+    const isLikelyNickname = identifier.length < 20 || identifier.includes('-') || identifier.includes('.');
+
+    if (isLikelyNickname) {
+      console.log(`CommentSectionComponent: '${identifier}' è probabilmente un nickname. Tentativo di risolvere in UID...`);
+      // Mostra un loading temporaneo mentre risolvi il nickname
+      const loading = await this.loadingCtrl.create({
+        message: 'Ricerca utente...',
+        spinner: 'dots',
+        duration: 3000 // Timeout per evitare blocchi
+      });
+      await loading.present();
+
+      try {
+        uidToNavigate = await this.userDataService.getUidByNickname(identifier);
+        console.log(`CommentSectionComponent: Nickname '${identifier}' risolto in UID: ${uidToNavigate}`);
+      } catch (error) {
+        console.error(`Errore nel risolvere nickname '${identifier}':`, error);
+        this.presentAppAlert('Errore', `Impossibile trovare l'utente con nickname @${identifier}.`);
+        uidToNavigate = null; // Forza a null per impedire la navigazione se fallisce
+      } finally {
+        await loading.dismiss();
+      }
     } else {
-      this.router.navigateByUrl(`/profilo/${userId}`);
+      console.log(`CommentSectionComponent: '${identifier}' è probabilmente un UID. Navigazione diretta.`);
+    }
+
+    if (uidToNavigate) {
+      if (uidToNavigate === this.currentUserId) {
+        // Naviga al profilo dell'utente corrente
+        this.router.navigateByUrl('/profilo');
+      } else {
+        // Naviga al profilo di altri utenti usando l'UID
+        // ⭐ Assicurati che la rotta sia '/profilo-altri-utenti/:id'
+        this.router.navigate(['/profilo-altri-utenti', uidToNavigate]);
+      }
+    } else {
+      console.warn(`CommentSectionComponent: Impossibile navigare. UID non disponibile per l'identifier: ${identifier}`);
+      // Un alert è già stato mostrato se la risoluzione del nickname è fallita.
+      // Qui potresti mettere un log o un alert generico se uidToNavigate è null per altre ragioni.
     }
   }
+
 
   formatCommentTime(timestamp: string): string {
     if (!timestamp) return '';
@@ -494,33 +539,27 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
     // LOGICA PER IL TAGGING AGGIORNATA
     const text = this.newCommentText;
-    const atIndex = text.lastIndexOf('@'); // Cerca l'ultima '@' per gestire più tag o input complessi
+    const atIndex = text.lastIndexOf('@');
 
     if (atIndex !== -1) {
       const textAfterAt = text.substring(atIndex + 1);
       const spaceIndex = textAfterAt.indexOf(' ');
 
-      // Se c'è uno spazio dopo la '@' e il testo successivo
-      // o se non c'è più nulla dopo la '@' (ovvero il tag è appena stato completato con uno spazio)
       if (spaceIndex !== -1) {
-        // C'è uno spazio, quindi il tag corrente è probabilmente completo.
-        // Oltrepassiamo la ricerca di suggerimenti per il momento.
         this.showTaggingSuggestions = false;
         this.taggingUsers = [];
         this.currentSearchText = '';
       } else {
-        // Nessuno spazio dopo '@', continua a cercare suggerimenti
         this.showTaggingSuggestions = true;
         this.currentSearchText = textAfterAt;
         this.searchUserTerm.next(this.currentSearchText);
       }
     } else {
-      // Nessuna '@' presente, disattiva i suggerimenti
       this.showTaggingSuggestions = false;
       this.taggingUsers = [];
       this.currentSearchText = '';
     }
-    this.cdr.detectChanges(); // Forza il rilevamento dei cambiamenti
+    this.cdr.detectChanges();
   }
 
 
@@ -555,18 +594,14 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
    * Cerca per nickname e/o nome completo.
    */
   async searchUsersForTagging(searchTerm: string) {
-    if (!searchTerm || searchTerm.length < 2) { // Non cercare con meno di 2 caratteri
+    if (!searchTerm || searchTerm.length < 2) {
       this.taggingUsers = [];
       this.cdr.detectChanges();
       return;
     }
 
     try {
-      // UserDataService dovrà avere un metodo per la ricerca utenti.
-      // Esempio: `searchUsersByNicknameOrName(searchTerm: string): Promise<TagUser[]>`
-      // Questo metodo dovrà interrogare Firestore/DB per gli utenti.
       const users = await this.userDataService.searchUsers(searchTerm);
-      // Filtra l'utente corrente dalla lista dei suggerimenti
       this.taggingUsers = users.filter(user => user.uid !== this.currentUserId);
       this.cdr.detectChanges();
     } catch (error) {
@@ -585,23 +620,19 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     const atIndex = text.lastIndexOf('@');
 
     if (atIndex !== -1) {
-      // Sostituisce il @ iniziale e il termine di ricerca con @username_selezionato e uno spazio
       const prefix = text.substring(0, atIndex);
-      this.newCommentText = `${prefix}@${user.nickname} `; // Aggiungi lo spazio qui
+      this.newCommentText = `${prefix}@${user.nickname} `;
     } else {
-      // Fallback, anche se il controllo @ dovrebbe impedire questo se si arriva qui
       this.newCommentText = `@${user.nickname} `;
     }
 
-    this.showTaggingSuggestions = false; // Nascondi la lista dei suggerimenti
-    this.taggingUsers = []; // Svuota la lista
-    this.currentSearchText = ''; // Resetta il testo di ricerca
+    this.showTaggingSuggestions = false;
+    this.taggingUsers = [];
+    this.currentSearchText = '';
 
-    this.cdr.detectChanges(); // Forza il refresh della UI
-    // Potresti voler impostare il focus sulla textarea qui
+    this.cdr.detectChanges();
     const textarea = document.querySelector('.comment-textarea textarea') as HTMLTextAreaElement;
     if (textarea) {
-      // Sposta il cursore alla fine del testo
       textarea.focus();
       textarea.setSelectionRange(this.newCommentText.length, this.newCommentText.length);
     }

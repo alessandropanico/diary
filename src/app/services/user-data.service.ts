@@ -577,5 +577,21 @@ export class UserDataService {
       return { users, lastVisible };
     }));
   }
+
+  async getUidByNickname(nickname: string): Promise<string | null> {
+    if (!nickname) {
+      return null;
+    }
+    // ⭐ USA this.firestore (o this.db, sono la stessa cosa) ⭐
+    const usersRef = collection(this.firestore, 'users');
+    // Assicurati che il campo 'nickname' esista nei tuoi documenti utente
+    const q = query(usersRef, where('nickname', '==', nickname));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      return querySnapshot.docs[0].id;
+    }
+    return null;
+  }
 }
 
