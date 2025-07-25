@@ -397,9 +397,9 @@ async handleDeleteComment(commentId: string) {
 
   goToUserProfile(userId: string) {
     if (userId === this.currentUserId) {
-      this.router.navigateByUrl('/profile');
+      this.router.navigateByUrl('/profilo');
     } else {
-      this.router.navigateByUrl(`/profile/${userId}`);
+      this.router.navigateByUrl(`/profilo/${userId}`);
     }
   }
 
