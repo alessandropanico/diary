@@ -43,7 +43,8 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   currentUserUsername: string = 'Eroe Anonimo';
   currentUserAvatar: string = 'assets/immaginiGenerali/default-avatar.jpg';
 
-  isLoadingComments: boolean = false;
+  // ⭐ Inizializza a true. Sarà la prima cosa a essere letta. ⭐
+  isLoadingComments: boolean = true;
   private commentsLimit: number = 10;
   canLoadMoreComments: boolean = true;
 
@@ -71,9 +72,14 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   ) { }
 
   ngOnInit() {
+    // ⭐ Assicurati che isLoadingComments sia true fin dall'inizio del ciclo di vita ⭐
+    this.isLoadingComments = true;
+    this.cdr.detectChanges(); // Forziamo il refresh per mostrare subito il loader
+
     this.authStateUnsubscribe = getAuth().onAuthStateChanged(user => {
       if (user) {
         this.currentUserId = user.uid;
+        // ⭐ La logica di caricamento utenti e commenti si integra qui ⭐
         if (!this.currentUserUsername || this.currentUserUsername === 'Eroe Anonimo') {
           this.userDataSubscription = from(this.userDataService.getUserDataByUid(this.currentUserId!)).subscribe({
             next: (userData: UserDashboardCounts | null) => {
@@ -81,24 +87,26 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
                 this.currentUserUsername = userData.nickname || 'Eroe Anonimo';
                 this.currentUserAvatar = userData.photo || userData.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg';
               }
-              this.cdr.detectChanges();
-              this.resetAndLoadComments();
+              this.cdr.detectChanges(); // Aggiorna i dati utente
+              this.resetAndLoadComments(); // Avvia il caricamento dei commenti DOPO aver caricato i dati utente
             },
             error: (err) => {
               console.error('Errore nel recupero dati utente (CommentSection):', err);
               this.presentAppAlert('Errore Utente', 'Impossibile caricare i dati del tuo profilo per i commenti.');
+              this.isLoadingComments = false; // Ferma il loading anche in caso di errore
               this.cdr.detectChanges();
-              this.resetAndLoadComments();
+              this.resetAndLoadComments(); // Prova a caricare i commenti anche con errore utente
             }
           });
         } else {
+          // Se i dati utente sono già presenti (e non di default), procedi direttamente
           this.resetAndLoadComments();
         }
       } else {
         this.currentUserId = null;
         this.comments = [];
         this.canLoadMoreComments = false;
-        this.isLoadingComments = false;
+        this.isLoadingComments = false; // Nessun utente, niente da caricare, mostra subito "nessun commento" se necessario
         this.cdr.detectChanges();
         this.unsubscribeAll();
       }
@@ -150,7 +158,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   private resetAndLoadComments() {
-    this.isLoadingComments = true;
+    this.isLoadingComments = true; // ⭐ Inizializza a true ogni volta che resetta e carica ⭐
     this.comments = [];
     this.canLoadMoreComments = true;
     this.commentsSubscription?.unsubscribe();
@@ -158,18 +166,18 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
     if (this.infiniteScroll) {
       this.infiniteScroll.disabled = false;
-      setTimeout(() => {
+      setTimeout(() => { // Small timeout to ensure infinite scroll is ready
         if (this.infiniteScroll) {
           this.infiniteScroll.complete();
         }
       }, 0);
     }
-    this.cdr.detectChanges();
+    this.cdr.detectChanges(); // ⭐ Forza il refresh qui per mostrare il loader ⭐
 
     if (this.currentUserId && this.postId) {
       this.loadInitialComments();
     } else {
-      this.isLoadingComments = false;
+      this.isLoadingComments = false; // Se non ci sono ID utente o post, non caricare e ferma il loader
       this.cdr.detectChanges();
     }
   }
@@ -182,10 +190,11 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       return;
     }
 
-    this.isLoadingComments = true;
-    this.comments = [];
-    this.canLoadMoreComments = true;
-    this.cdr.detectChanges();
+    // ⭐ isLoadingComments è già true da resetAndLoadComments, non serve qui ⭐
+    // this.isLoadingComments = true;
+    // this.comments = []; // Già svuotato da resetAndLoadComments
+    // this.canLoadMoreComments = true; // Già impostato da resetAndLoadComments
+    // this.cdr.detectChanges(); // Già chiamato da resetAndLoadComments
 
     try {
       const result: CommentFetchResult = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
@@ -199,15 +208,14 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       }
     } catch (error) {
       console.error('Errore nel caricamento iniziale dei commenti:', error);
-      this.isLoadingComments = false;
       this.presentAppAlert('Errore caricamento commenti', 'Impossibile caricare i commenti iniziali.');
       this.canLoadMoreComments = false;
       if (this.infiniteScroll) {
         this.infiniteScroll.disabled = true;
       }
     } finally {
-      this.isLoadingComments = false;
-      this.cdr.detectChanges();
+      this.isLoadingComments = false; // ⭐ Imposta a false solo alla fine del caricamento (successo o errore) ⭐
+      this.cdr.detectChanges(); // ⭐ Forza il refresh della vista dopo aver impostato i dati e il loading ⭐
       if (this.infiniteScroll) {
         this.infiniteScroll.complete();
       }
@@ -215,12 +223,12 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   async loadMoreComments(event: any) {
-    if (!this.canLoadMoreComments || this.isLoadingComments) {
+    if (!this.canLoadMoreComments || this.isLoadingComments) { // Controlla anche isLoadingComments per evitare doppie chiamate
       event.target.complete();
       return;
     }
 
-    this.isLoadingComments = true;
+    this.isLoadingComments = true; // ⭐ Imposta a true per il caricamento addizionale (anche se Ionic ha il suo spinner) ⭐
     this.cdr.detectChanges();
 
     try {
@@ -253,7 +261,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         this.infiniteScroll.disabled = true;
       }
     } finally {
-      this.isLoadingComments = false;
+      this.isLoadingComments = false; // ⭐ Imposta a false al termine del caricamento addizionale ⭐
       this.cdr.detectChanges();
       if (event.target) {
         event.target.complete();
@@ -332,7 +340,10 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
             }
           }
         }
-      ]
+      ],
+      backdropDismiss: true,
+      animated: true,
+      mode: 'ios'
     });
     await alert.present();
   }
@@ -414,6 +425,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         });
       };
 
+      // ⭐ Crea una nuova istanza dell'array per attivare la Change Detection con OnPush ⭐
       this.comments = updateLikesRecursively(this.comments, commentToToggle.id, this.currentUserId, !hasLiked);
 
       this.cdr.detectChanges();
@@ -599,8 +611,8 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-    * Seleziona un utente dalla lista dei suggerimenti e lo inserisce nel commento.
-    */
+   * Seleziona un utente dalla lista dei suggerimenti e lo inserisce nel commento.
+   */
   selectUserForTagging(user: TagUser) {
     const text = this.newCommentText;
     const atIndex = text.lastIndexOf('@');

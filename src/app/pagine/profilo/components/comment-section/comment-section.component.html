@@ -1,11 +1,11 @@
 <div class="comment-section-content-wrapper">
 
-  <div *ngIf="isLoadingComments && comments.length === 0" class="loading-full-screen">
+  <div *ngIf="isLoadingComments" class="loading-full-screen">
     <ion-spinner name="crescent"></ion-spinner>
     <p>Caricamento commenti...</p>
   </div>
 
-  <div class="comments-scroll-container">
+  <div *ngIf="!isLoadingComments" class="comments-scroll-container">
     <div *ngIf="comments.length > 0; else noComments" class="comments-list-wrapper">
       <app-comment-item
         *ngFor="let comment of comments"
@@ -26,7 +26,7 @@
     </div>
 
     <ng-template #noComments>
-      <div *ngIf="!isLoadingComments" class="no-comments-message panel-glow-border">
+      <div class="no-comments-message panel-glow-border">
         <p>Ancora nessun commento. Sii il primo a commentare!</p>
       </div>
     </ng-template>
