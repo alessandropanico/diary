@@ -295,15 +295,10 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     let confirmMessage: string;
     let deleteFunction: (postId: string, id: string) => Promise<void>;
 
-    // 2. DECISIONE BASATA SUL parentId DEL COMMENTO RECUPERATO
     if (commentToDelete.parentId === null) {
-      // È un commento principale (radice)
-      console.log(`handleDeleteComment: Identificato commento radice per ID: ${commentId}. Chiamerò deleteCommentAndReplies.`);
       confirmMessage = 'Sei sicuro di voler eliminare questo commento e tutte le sue risposte? Questa azione è irreversibile.';
       deleteFunction = (postId, id) => this.commentService.deleteCommentAndReplies(postId, id);
     } else {
-      // È una risposta (ha un parentId)
-      console.log(`handleDeleteComment: Identificata risposta per ID: ${commentId}. Parent ID: ${commentToDelete.parentId}. Chiamerò deleteSingleComment.`);
       confirmMessage = 'Sei sicuro di voler eliminare solo questa risposta? Questa azione è irreversibile.';
       deleteFunction = (postId, id) => this.commentService.deleteSingleComment(postId, id);
     }
@@ -428,19 +423,11 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  // ⭐ METODO AGGIORNATO: handleGoToProfile
   async handleGoToProfile(identifier: string) {
-    let uidToNavigate: string | null = identifier; // Presumiamo sia un UID inizialmente
-
-    // Controllo euristico per distinguere UID da nickname
-    // Un UID di Firebase tipicamente è una stringa alfanumerica di 28 caratteri.
-    // Un nickname è solitamente più corto e può contenere caratteri speciali (es. '-', '.')
-    // che non sono comuni negli UID.
+    let uidToNavigate: string | null = identifier;
     const isLikelyNickname = identifier.length < 20 || identifier.includes('-') || identifier.includes('.');
 
     if (isLikelyNickname) {
-      console.log(`CommentSectionComponent: '${identifier}' è probabilmente un nickname. Tentativo di risolvere in UID...`);
-      // Mostra un loading temporaneo mentre risolvi il nickname
       const loading = await this.loadingCtrl.create({
         message: 'Ricerca utente...',
         spinner: 'dots',
@@ -450,7 +437,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
       try {
         uidToNavigate = await this.userDataService.getUidByNickname(identifier);
-        console.log(`CommentSectionComponent: Nickname '${identifier}' risolto in UID: ${uidToNavigate}`);
       } catch (error) {
         console.error(`Errore nel risolvere nickname '${identifier}':`, error);
         this.presentAppAlert('Errore', `Impossibile trovare l'utente con nickname @${identifier}.`);

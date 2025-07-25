@@ -113,7 +113,6 @@ export class UserDataService {
 
       try {
         await setDoc(userDocRef, dataToSave, { merge: true });
-        console.log("Dati utente salvati con successo per UID:", user.uid);
 
         if (dataToSave.status !== undefined) {
           this._userStatus.next(dataToSave.status ?? '');
@@ -351,7 +350,6 @@ export class UserDataService {
       }
 
       await updateDoc(userDocRef, updateData);
-      console.log(`[UserDataService] Campo '${field}' aggiornato.`);
 
       if (['activeAlarmsCount', 'totalNotesCount', 'totalListsCount', 'incompleteListItems', 'diaryTotalWords', 'diaryEntryCount', 'totalPhotosShared', 'incompleteTaskItems'].includes(field)) { // Aggiunto 'incompleteTaskItems'
         await this.setLastGlobalActivityTimestamp(new Date().toISOString());
