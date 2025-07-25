@@ -268,7 +268,7 @@ export class PostComponent implements OnInit, OnDestroy {
     try {
       // ✅ NOVITÀ: Utilizza il CommentService per eliminare tutti i commenti del post
       // Questo gestirà anche la decrementazione del commentsCount sul post
-      await this.commentService.deleteCommentAndReplies(postId, postId); // Il commento principale non ha parentId, quindi usiamo postId per il commento stesso
+      await this.commentService.deleteAllCommentsForPost(postId);
       await this.postService.deletePost(postId);
       this.presentAppAlert('Post Eliminato', 'Il post è stato rimosso con successo.');
       this.loadInitialPosts();

@@ -295,7 +295,6 @@ export class CommentService {
     }
 
     const commentsToDeleteIds: string[] = [];
-    // Raccogli anche l'ID del commento principale per il conteggio totale
     commentsToDeleteIds.push(commentId);
     await this._collectRepliesToDelete(postId, commentId, commentsToDeleteIds);
 
@@ -306,7 +305,6 @@ export class CommentService {
     });
 
     await batch.commit();
-
     await this.updatePostCommentsCount(postId, -commentsToDeleteIds.length);
   }
 
@@ -345,7 +343,6 @@ export class CommentService {
       const currentParentId = queue.shift() as string;
       const repliesQuery = query(commentsCollectionRef, where('parentId', '==', currentParentId));
       const repliesSnapshot = await getDocs(repliesQuery);
-
       repliesSnapshot.forEach(docSnap => {
         if (!visited.has(docSnap.id)) {
           ids.push(docSnap.id);
@@ -353,6 +350,35 @@ export class CommentService {
           visited.add(docSnap.id);
         }
       });
+    }
+  }
+
+  async deleteAllCommentsForPost(postId: string): Promise<void> {
+    const commentsRef = collection(this.firestore, `posts/${postId}/comments`);
+    const q = query(commentsRef);
+
+    try {
+      const querySnapshot = await getDocs(q);
+      const batch = writeBatch(this.firestore);
+      let deletedCount = 0;
+      querySnapshot.forEach(commentDoc => {
+        batch.delete(commentDoc.ref);
+        deletedCount++;
+      });
+
+      await batch.commit();
+      const postRef = doc(this.firestore, 'posts', postId);
+      const postSnap = await getDoc(postRef);
+
+      if (postSnap.exists()) {
+        const currentCommentsCount = postSnap.data()['commentsCount'] || 0;
+        const newCommentsCount = Math.max(0, currentCommentsCount - deletedCount);
+        await updateDoc(postRef, { commentsCount: newCommentsCount });
+      }
+
+    } catch (error) {
+      console.error(`Errore durante l'eliminazione di tutti i commenti per il post ${postId}:`, error);
+      throw error;
     }
   }
 }
