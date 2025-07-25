@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit,
 import { ExpService } from './exp.service';
 import { BehaviorSubject, Observable, from } from 'rxjs';
 
+
 export interface UserDashboardCounts {
 
   uid: string;
@@ -34,6 +35,9 @@ export interface UserDashboardCounts {
   surname?: string;
   profilePictureUrl?: string;
   photo?: string;
+
+  nicknameLowercase?: string; // Nuova proprietà per la ricerca
+  nameLowercase?: string;     // Nuova proprietà per la ricerca
 }
 
 @Injectable({
@@ -88,10 +92,21 @@ export class UserDataService {
       const userDocRef = doc(this.firestore, 'users', user.uid);
       const dataToSave: any = { ...data };
 
+
       if (dataToSave.nickname !== undefined) {
         dataToSave.nicknameLowercase = (dataToSave.nickname || '').toLowerCase().trim();
       }
 
+      if (dataToSave.name !== undefined) {
+        dataToSave.nameLowercase = (dataToSave.name || '').toLowerCase().trim();
+      }
+
+      // NOVITÀ: Salva la versione in minuscolo di nickname per la ricerca
+      if (dataToSave.nickname !== undefined) {
+        dataToSave.nicknameLowercase = (dataToSave.nickname || '').toLowerCase().trim();
+      }
+
+      // NOVITÀ: Salva la versione in minuscolo di name per la ricerca
       if (dataToSave.name !== undefined) {
         dataToSave.nameLowercase = (dataToSave.name || '').toLowerCase().trim();
       }
@@ -122,55 +137,65 @@ export class UserDataService {
 
     const usersRef = collection(this.db, 'users');
     const allResults: any[] = [];
-    const addedUids = new Set<string>();
+    const addedUids = new Set<string>(); // Per evitare duplicati tra ricerche di nickname e nome
 
+    // Ricerca per nickname
     const queryByNickname = query(
       usersRef,
       where('nicknameLowercase', '>=', normalizedSearchTerm),
-      where('nicknameLowercase', '<=', normalizedSearchTerm + '\uf8ff'),
+      where('nicknameLowercase', '<=', normalizedSearchTerm + '\uf8ff'), // Tecnica per ricerca "startsWith"
       orderBy('nicknameLowercase'),
-      limit(10)
+      limit(10) // Limita i risultati per performance
     );
     const snapshotNickname = await getDocs(queryByNickname);
     snapshotNickname.forEach((doc) => {
       const userData = doc.data();
-      if (!addedUids.has(doc.id)) {
+      if (!addedUids.has(doc.id)) { // Aggiungi solo se non già presente
         allResults.push({
           uid: doc.id,
           nickname: userData['nickname'],
-          name: userData['name'],
-          photo: userData['photo'],
-          bio: userData['bio']
+          // NOVITÀ: Creiamo fullName combinando name e surname
+          fullName: userData['name'] ? `${userData['name']} ${userData['surname'] || ''}`.trim() : null,
+          // NOVITÀ: Preferiamo 'profilePictureUrl', altrimenti usiamo 'photo'
+          profilePictureUrl: userData['profilePictureUrl'] || userData['photo'] || 'assets/immaginiGenerali/default-avatar.jpg',
         });
         addedUids.add(doc.id);
       }
     });
 
+    // Ricerca per nome (se non è stato trovato abbastanza dal nickname, o per offrire più opzioni)
+    // Puoi regolare questa logica per dare priorità ai nickname o combinare i risultati
+    // Ho rimosso il controllo `allResults.length < 10` per dare più opportunità di trovare risultati anche dal nome
     const queryByName = query(
       usersRef,
       where('nameLowercase', '>=', normalizedSearchTerm),
       where('nameLowercase', '<=', normalizedSearchTerm + '\uf8ff'),
       orderBy('nameLowercase'),
-      limit(10)
+      limit(10) // Limita i risultati anche qui
     );
     const snapshotName = await getDocs(queryByName);
     snapshotName.forEach((doc) => {
       const userData = doc.data();
-      if (!addedUids.has(doc.id)) {
+      if (!addedUids.has(doc.id)) { // Aggiungi solo se non già presente
         allResults.push({
           uid: doc.id,
           nickname: userData['nickname'],
-          name: userData['name'],
-          photo: userData['photo'],
-          bio: userData['bio']
+          // NOVITÀ: Creiamo fullName combinando name e surname
+          fullName: userData['name'] ? `${userData['name']} ${userData['surname'] || ''}`.trim() : null,
+          // NOVITÀ: Preferiamo 'profilePictureUrl', altrimenti usiamo 'photo'
+          profilePictureUrl: userData['profilePictureUrl'] || userData['photo'] || 'assets/immaginiGenerali/default-avatar.jpg',
         });
         addedUids.add(doc.id);
       }
     });
 
+    // Ordina i risultati finali per nickname per consistenza nella lista di suggerimenti
     allResults.sort((a, b) => a.nickname.localeCompare(b.nickname));
-    return allResults;
+
+    // NOVITÀ: Assicurati di restituire un massimo di 10 risultati combinati
+    return allResults.slice(0, 10);
   }
+
 
   async getUserDataByUid(uid: string): Promise<any | null> {
     const userDocRef = doc(this.db, 'users', uid);
@@ -213,6 +238,18 @@ export class UserDataService {
             await updateDoc(userDocRef, { lastGlobalActivityTimestamp: '' });
             data.lastGlobalActivityTimestamp = '';
           }
+
+          // NOVITÀ: Inizializza nicknameLowercase se mancante e nickname esiste
+          if (typeof data['nicknameLowercase'] === 'undefined' && data['nickname']) {
+            await updateDoc(userDocRef, { nicknameLowercase: (data['nickname'] || '').toLowerCase().trim() });
+            data.nicknameLowercase = (data['nickname'] || '').toLowerCase().trim();
+          }
+          // NOVITÀ: Inizializza nameLowercase se mancante e name esiste
+          if (typeof data['nameLowercase'] === 'undefined' && data['name']) {
+            await updateDoc(userDocRef, { nameLowercase: (data['name'] || '').toLowerCase().trim() });
+            data.nameLowercase = (data['name'] || '').toLowerCase().trim();
+          }
+
           data.status = data.status ?? '';
           data.diaryTotalWords = data.diaryTotalWords ?? 0;
           data.diaryLastInteraction = data.diaryLastInteraction ?? '';

@@ -6,12 +6,21 @@ import { CommentService } from 'src/app/services/comment.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Comment, CommentFetchResult } from 'src/app/interfaces/comment';
 import { Subscription, from } from 'rxjs';
+import { debounceTime, distinctUntilChanged, Subject } from 'rxjs'; // Aggiungi debounceTime, distinctUntilChanged, Subject
 import { getAuth } from 'firebase/auth';
 import { ExpService } from 'src/app/services/exp.service';
 import { Router } from '@angular/router';
 import { DocumentSnapshot } from '@angular/fire/firestore';
 
 import { CommentItemComponent } from '../comment-item/comment-item.component';
+
+export interface TagUser {
+  uid: string;
+  nickname: string;
+  fullName?: string; // Potrebbe non essere sempre presente o voluto
+  photo?: string;
+  profilePictureUrl?: string; // UserDataService usa questo
+}
 
 @Component({
   selector: 'app-comment-section',
@@ -43,6 +52,13 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   private authStateUnsubscribe: (() => void) | undefined;
 
   replyingToComment: Comment | null = null;
+
+  // Nuove variabili per il tagging
+  showTaggingSuggestions: boolean = false;
+  taggingUsers: TagUser[] = []; // Utenti suggeriti per il tag
+  private searchUserTerm = new Subject<string>();
+  private searchUserSubscription: Subscription | undefined;
+  public currentSearchText: string = ''; // Per tenere traccia del testo di ricerca corrente dopo '@'
 
   constructor(
     private commentService: CommentService,
@@ -87,10 +103,25 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         this.unsubscribeAll();
       }
     });
+    // Nuova sottoscrizione per la ricerca utenti
+    this.searchUserSubscription = this.searchUserTerm.pipe(
+      debounceTime(300), // Aspetta 300ms dopo l'ultima digitazione
+      distinctUntilChanged() // Emette solo se il valore corrente è diverso dall'ultimo
+    ).subscribe(searchTerm => {
+      if (searchTerm) {
+        this.searchUsersForTagging(searchTerm);
+      } else {
+        this.taggingUsers = []; // Svuota i suggerimenti se il termine è vuoto
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   ngOnDestroy(): void {
     this.unsubscribeAll();
+    if (this.searchUserSubscription) { // Disiscriviti anche dalla ricerca utenti
+      this.searchUserSubscription.unsubscribe();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -234,80 +265,80 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
    * Decide quale metodo di eliminazione del servizio chiamare in base alla natura del commento.
    * @param commentId L'ID del commento da eliminare (questo è l'ID del commento "cliccato").
    */
-async handleDeleteComment(commentId: string) {
-  let commentToDelete: Comment | null = null;
-  const loadingInitial = await this.loadingCtrl.create({ // Aggiunto un loading iniziale
-    message: 'Recupero dettagli commento...',
-    spinner: 'crescent'
-  });
-  await loadingInitial.present();
+  async handleDeleteComment(commentId: string) {
+    let commentToDelete: Comment | null = null;
+    const loadingInitial = await this.loadingCtrl.create({ // Aggiunto un loading iniziale
+      message: 'Recupero dettagli commento...',
+      spinner: 'crescent'
+    });
+    await loadingInitial.present();
 
-  try {
-    // 1. Recupera il commento completo dal servizio per conoscerne il parentId
-    commentToDelete = await this.commentService.getCommentByIdOnce(this.postId, commentId); // Usa getCommentByIdOnce!
+    try {
+      // 1. Recupera il commento completo dal servizio per conoscerne il parentId
+      commentToDelete = await this.commentService.getCommentByIdOnce(this.postId, commentId); // Usa getCommentByIdOnce!
 
-    if (!commentToDelete) {
-      console.error('handleDeleteComment: Commento non trovato nel servizio per ID:', commentId);
-      this.presentAppAlert('Errore Eliminazione', 'Commento non trovato. Impossibile eliminare.');
+      if (!commentToDelete) {
+        console.error('handleDeleteComment: Commento non trovato nel servizio per ID:', commentId);
+        this.presentAppAlert('Errore Eliminazione', 'Commento non trovato. Impossibile eliminare.');
+        return; // Esci dalla funzione
+      }
+    } catch (error) {
+      console.error('Errore nel recupero del commento da eliminare:', error);
+      this.presentAppAlert('Errore Eliminazione', 'Impossibile recuperare i dettagli del commento. Riprova.');
       return; // Esci dalla funzione
+    } finally {
+      await loadingInitial.dismiss(); // Dismiss il loading iniziale
     }
-  } catch (error) {
-    console.error('Errore nel recupero del commento da eliminare:', error);
-    this.presentAppAlert('Errore Eliminazione', 'Impossibile recuperare i dettagli del commento. Riprova.');
-    return; // Esci dalla funzione
-  } finally {
-    await loadingInitial.dismiss(); // Dismiss il loading iniziale
-  }
 
-  let confirmMessage: string;
-  let deleteFunction: (postId: string, id: string) => Promise<void>; // Definisci il tipo della funzione
+    let confirmMessage: string;
+    let deleteFunction: (postId: string, id: string) => Promise<void>; // Definisci il tipo della funzione
 
-  // 2. DECISIONE BASATA SUL parentId DEL COMMENTO RECUPERATO
-  if (commentToDelete.parentId === null) {
-    // È un commento principale (radice)
-    console.log(`handleDeleteComment: Identificato commento radice per ID: ${commentId}. Chiamerò deleteCommentAndReplies.`);
-    confirmMessage = 'Sei sicuro di voler eliminare questo commento e tutte le sue risposte? Questa azione è irreversibile.';
-    deleteFunction = (postId, id) => this.commentService.deleteCommentAndReplies(postId, id);
-  } else {
-    // È una risposta (ha un parentId)
-    console.log(`handleDeleteComment: Identificata risposta per ID: ${commentId}. Parent ID: ${commentToDelete.parentId}. Chiamerò deleteSingleComment.`);
-    confirmMessage = 'Sei sicuro di voler eliminare solo questa risposta? Questa azione è irreversibile.';
-    deleteFunction = (postId, id) => this.commentService.deleteSingleComment(postId, id);
-  }
+    // 2. DECISIONE BASATA SUL parentId DEL COMMENTO RECUPERATO
+    if (commentToDelete.parentId === null) {
+      // È un commento principale (radice)
+      console.log(`handleDeleteComment: Identificato commento radice per ID: ${commentId}. Chiamerò deleteCommentAndReplies.`);
+      confirmMessage = 'Sei sicuro di voler eliminare questo commento e tutte le sue risposte? Questa azione è irreversibile.';
+      deleteFunction = (postId, id) => this.commentService.deleteCommentAndReplies(postId, id);
+    } else {
+      // È una risposta (ha un parentId)
+      console.log(`handleDeleteComment: Identificata risposta per ID: ${commentId}. Parent ID: ${commentToDelete.parentId}. Chiamerò deleteSingleComment.`);
+      confirmMessage = 'Sei sicuro di voler eliminare solo questa risposta? Questa azione è irreversibile.';
+      deleteFunction = (postId, id) => this.commentService.deleteSingleComment(postId, id);
+    }
 
-  // 3. Chiedi conferma all'utente e poi esegui l'eliminazione
-  const alert = await this.alertCtrl.create({
-    header: 'Conferma Eliminazione',
-    message: confirmMessage,
-    buttons: [
-      {
-        text: 'Annulla',
-        role: 'cancel',
-        cssClass: 'alert-button-cancel'
-      },
-      {
-        text: 'Elimina',
-        handler: async () => {
-          const loading = await this.loadingCtrl.create({
-            message: 'Eliminazione in corso...',
-            spinner: 'crescent'
-          });
-          await loading.present();
-          try {
-            await deleteFunction(this.postId, commentToDelete!.id); // Chiama la funzione corretta
-            this.resetAndLoadComments(); // Ricarica i commenti
-          } catch (error) {
-            console.error('Errore durante l\'eliminazione del commento:', error);
-            this.presentAppAlert('Errore', 'Impossibile eliminare il commento.');
-          } finally {
-            await loading.dismiss();
+    // 3. Chiedi conferma all'utente e poi esegui l'eliminazione
+    const alert = await this.alertCtrl.create({
+      header: 'Conferma Eliminazione',
+      message: confirmMessage,
+      buttons: [
+        {
+          text: 'Annulla',
+          role: 'cancel',
+          cssClass: 'alert-button-cancel'
+        },
+        {
+          text: 'Elimina',
+          handler: async () => {
+            const loading = await this.loadingCtrl.create({
+              message: 'Eliminazione in corso...',
+              spinner: 'crescent'
+            });
+            await loading.present();
+            try {
+              await deleteFunction(this.postId, commentToDelete!.id); // Chiama la funzione corretta
+              this.resetAndLoadComments(); // Ricarica i commenti
+            } catch (error) {
+              console.error('Errore durante l\'eliminazione del commento:', error);
+              this.presentAppAlert('Errore', 'Impossibile eliminare il commento.');
+            } finally {
+              await loading.dismiss();
+            }
           }
         }
-      }
-    ]
-  });
-  await alert.present();
-}
+      ]
+    });
+    await alert.present();
+  }
 
   setReplyTarget(comment: Comment) {
     this.replyingToComment = comment;
@@ -446,6 +477,7 @@ async handleDeleteComment(commentId: string) {
     }
   }
 
+  // AGGIORNATO: Ora include la logica per il tagging
   adjustTextareaHeight(event: Event) {
     const textarea = event.target as HTMLTextAreaElement;
     textarea.style.height = 'auto';
@@ -459,7 +491,38 @@ async handleDeleteComment(commentId: string) {
       textarea.style.height = textarea.scrollHeight + 'px';
       textarea.style.overflowY = 'hidden';
     }
+
+    // LOGICA PER IL TAGGING AGGIORNATA
+    const text = this.newCommentText;
+    const atIndex = text.lastIndexOf('@'); // Cerca l'ultima '@' per gestire più tag o input complessi
+
+    if (atIndex !== -1) {
+      const textAfterAt = text.substring(atIndex + 1);
+      const spaceIndex = textAfterAt.indexOf(' ');
+
+      // Se c'è uno spazio dopo la '@' e il testo successivo
+      // o se non c'è più nulla dopo la '@' (ovvero il tag è appena stato completato con uno spazio)
+      if (spaceIndex !== -1) {
+        // C'è uno spazio, quindi il tag corrente è probabilmente completo.
+        // Oltrepassiamo la ricerca di suggerimenti per il momento.
+        this.showTaggingSuggestions = false;
+        this.taggingUsers = [];
+        this.currentSearchText = '';
+      } else {
+        // Nessuno spazio dopo '@', continua a cercare suggerimenti
+        this.showTaggingSuggestions = true;
+        this.currentSearchText = textAfterAt;
+        this.searchUserTerm.next(this.currentSearchText);
+      }
+    } else {
+      // Nessuna '@' presente, disattiva i suggerimenti
+      this.showTaggingSuggestions = false;
+      this.taggingUsers = [];
+      this.currentSearchText = '';
+    }
+    this.cdr.detectChanges(); // Forza il rilevamento dei cambiamenti
   }
+
 
   async presentAppAlert(header: string, message: string) {
     const alert = await this.alertCtrl.create({
@@ -486,4 +549,62 @@ async handleDeleteComment(commentId: string) {
       return true;
     });
   }
+
+  /**
+   * Cerca utenti per il tagging in base al termine di ricerca.
+   * Cerca per nickname e/o nome completo.
+   */
+  async searchUsersForTagging(searchTerm: string) {
+    if (!searchTerm || searchTerm.length < 2) { // Non cercare con meno di 2 caratteri
+      this.taggingUsers = [];
+      this.cdr.detectChanges();
+      return;
+    }
+
+    try {
+      // UserDataService dovrà avere un metodo per la ricerca utenti.
+      // Esempio: `searchUsersByNicknameOrName(searchTerm: string): Promise<TagUser[]>`
+      // Questo metodo dovrà interrogare Firestore/DB per gli utenti.
+      const users = await this.userDataService.searchUsers(searchTerm);
+      // Filtra l'utente corrente dalla lista dei suggerimenti
+      this.taggingUsers = users.filter(user => user.uid !== this.currentUserId);
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Errore durante la ricerca utenti per tagging:', error);
+      this.taggingUsers = [];
+      this.presentAppAlert('Errore di ricerca', 'Impossibile cercare utenti.');
+      this.cdr.detectChanges();
+    }
+  }
+
+  /**
+    * Seleziona un utente dalla lista dei suggerimenti e lo inserisce nel commento.
+    */
+  selectUserForTagging(user: TagUser) {
+    const text = this.newCommentText;
+    const atIndex = text.lastIndexOf('@');
+
+    if (atIndex !== -1) {
+      // Sostituisce il @ iniziale e il termine di ricerca con @username_selezionato e uno spazio
+      const prefix = text.substring(0, atIndex);
+      this.newCommentText = `${prefix}@${user.nickname} `; // Aggiungi lo spazio qui
+    } else {
+      // Fallback, anche se il controllo @ dovrebbe impedire questo se si arriva qui
+      this.newCommentText = `@${user.nickname} `;
+    }
+
+    this.showTaggingSuggestions = false; // Nascondi la lista dei suggerimenti
+    this.taggingUsers = []; // Svuota la lista
+    this.currentSearchText = ''; // Resetta il testo di ricerca
+
+    this.cdr.detectChanges(); // Forza il refresh della UI
+    // Potresti voler impostare il focus sulla textarea qui
+    const textarea = document.querySelector('.comment-textarea textarea') as HTMLTextAreaElement;
+    if (textarea) {
+      // Sposta il cursore alla fine del testo
+      textarea.focus();
+      textarea.setSelectionRange(this.newCommentText.length, this.newCommentText.length);
+    }
+  }
+
 }

@@ -15,7 +15,8 @@
         [formatCommentTime]="formatCommentTime"
         (toggleLike)="toggleLikeComment($event)"
         (setReply)="setReplyTarget($event)"
-        (deleteComment)="handleDeleteComment($event)" (goToProfile)="goToUserProfile($event)">
+        (deleteComment)="handleDeleteComment($event)"
+        (goToProfile)="goToUserProfile($event)">
       </app-comment-item>
 
       <ion-infinite-scroll (ionInfiniteScroll)="loadMoreComments($event)" [disabled]="!canLoadMoreComments"
@@ -34,6 +35,25 @@
 
 </div>
 
+<div *ngIf="showTaggingSuggestions" class="tagging-suggestions-container panel-glow-border">
+  <ion-list lines="none" *ngIf="taggingUsers.length > 0; else noTaggingResults">
+    <ion-item *ngFor="let user of taggingUsers" (click)="selectUserForTagging(user)">
+      <ion-avatar slot="start">
+        <img [src]="user.photo || user.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ user.nickname }}</h2>
+        <p *ngIf="user.fullName">{{ user.fullName }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+  <ng-template #noTaggingResults>
+    <div class="no-results-message">
+      <p *ngIf="currentSearchText.length > 0">Nessun utente trovato per "{{ currentSearchText }}"</p>
+      <p *ngIf="currentSearchText.length === 0">Digita per cercare utenti...</p>
+    </div>
+  </ng-template>
+</div>
 <div class="comment-input-footer panel-glow-border">
   <div class="comment-input-area">
     <ion-avatar (click)="goToUserProfile(currentUserId!)" class="post-avatar">
@@ -46,8 +66,7 @@
       max-rows="5"
       autoGrow="true"
       [(ngModel)]="newCommentText"
-      (ionInput)="adjustTextareaHeight($event)"
-    ></ion-textarea>
+      (ionInput)="adjustTextareaHeight($event)" ></ion-textarea>
     <ion-button fill="clear" (click)="addCommentOrReply()" [disabled]="!newCommentText.trim() || !currentUserId">
       <ion-icon name="send"></ion-icon>
     </ion-button>
