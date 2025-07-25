@@ -1,6 +1,5 @@
-// src/app/services/post.service.ts
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, doc, updateDoc, getDoc, startAfter } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, doc, updateDoc, getDoc, startAfter, where } from '@angular/fire/firestore'; // IMPORTANTE: assicurati che 'where' sia qui
 import { Observable, from, of } from 'rxjs';
 import { map, switchMap, catchError } from 'rxjs/operators';
 import { Post } from '../interfaces/post';
@@ -17,8 +16,8 @@ export class PostService {
     try {
       const docRef = await addDoc(this.postsCollection, {
         ...post,
-        likes: [], // Inizializza i "mi piace" come un array vuoto
-        commentsCount: 0 // ✅ Giusto! Inizializza il conteggio commenti a 0
+        likes: [],
+        commentsCount: 0
       });
       return docRef.id;
     } catch (error) {
@@ -27,26 +26,23 @@ export class PostService {
     }
   }
 
-  // MODIFICATO: getPosts accetta limite e un timestamp da cui iniziare
   getPosts(limitPosts: number = 10, startAfterTimestamp: string | null = null): Observable<Post[]> {
     return from(this.getPostsQuery(limitPosts, startAfterTimestamp)).pipe(
       map(querySnapshot => {
         const posts: Post[] = [];
-        querySnapshot.forEach(docSnap => { // Rinominato 'doc' in 'docSnap' per chiarezza
-          // 👇 NOVITÀ: Assicurati che commentsCount sia letto correttamente dal documento
-          // e che sia almeno 0 in caso di dati inconsistenti o mancanti
+        querySnapshot.forEach(docSnap => {
           const data = docSnap.data();
           posts.push({
             id: docSnap.id,
-            ...data as Omit<Post, 'id'>, // Estrai tutti gli altri campi
-            commentsCount: Math.max(0, data['commentsCount'] || 0) // Forza a min 0
+            ...data as Omit<Post, 'id'>,
+            commentsCount: Math.max(0, data['commentsCount'] || 0)
           });
         });
         return posts;
       }),
       catchError(error => {
         console.error('Errore nel recupero dei post:', error);
-        return of([]); // Restituisce un array vuoto in caso di errore
+        return of([]);
       })
     );
   }
@@ -54,15 +50,13 @@ export class PostService {
   private async getPostsQuery(limitPosts: number, startAfterTimestamp: string | null) {
     let q;
     if (startAfterTimestamp) {
-      // Se startAfterTimestamp è fornito, inizia a leggere da lì (per la paginazione)
       q = query(
         this.postsCollection,
-        orderBy('timestamp', 'desc'), // Ordina dal più recente al più vecchio
-        startAfter(startAfterTimestamp), // Inizia dopo questo timestamp
+        orderBy('timestamp', 'desc'),
+        startAfter(startAfterTimestamp),
         limit(limitPosts)
       );
     } else {
-      // Altrimenti, prendi i primi N post
       q = query(
         this.postsCollection,
         orderBy('timestamp', 'desc'),
@@ -98,7 +92,6 @@ export class PostService {
     } else if (!like && currentLikes.includes(userId)) {
       updatedLikes = currentLikes.filter(id => id !== userId);
     } else {
-      // Nessun cambiamento necessario
       return;
     }
 
@@ -109,4 +102,49 @@ export class PostService {
       throw error;
     }
   }
+
+
+  getUserPosts(userId: string, limitPosts: number = 10, startAfterTimestamp: string | null = null): Observable<Post[]> {
+    return from(this.getUserPostsQuery(userId, limitPosts, startAfterTimestamp)).pipe(
+      map(querySnapshot => {
+        const posts: Post[] = [];
+        querySnapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          posts.push({
+            id: docSnap.id,
+            ...data as Omit<Post, 'id'>,
+            commentsCount: Math.max(0, data['commentsCount'] || 0)
+          });
+        });
+        return posts;
+      }),
+      catchError(error => {
+        console.error(`Errore nel recupero dei post per l'utente ${userId}:`, error);
+        return of([]);
+      })
+    );
+  }
+
+  private async getUserPostsQuery(userId: string, limitPosts: number, startAfterTimestamp: string | null) {
+    let q;
+    if (startAfterTimestamp) {
+      q = query(
+        this.postsCollection,
+        where('userId', '==', userId),
+        orderBy('timestamp', 'desc'),
+        startAfter(startAfterTimestamp),
+        limit(limitPosts)
+      );
+    } else {
+      q = query(
+        this.postsCollection,
+        where('userId', '==', userId),
+        orderBy('timestamp', 'desc'),
+        limit(limitPosts)
+      );
+    }
+    return getDocs(q);
+  }
+
+
 }

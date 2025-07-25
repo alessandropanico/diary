@@ -5,9 +5,9 @@ import { PostService } from 'src/app/services/post.service';
 import { CommentService } from 'src/app/services/comment.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Post } from 'src/app/interfaces/post';
-import { Subscription, from } from 'rxjs';
+import { Subscription, from, Observable } from 'rxjs';
 import { getAuth } from 'firebase/auth';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, LoadingController, Platform, IonInfiniteScroll, IonicModule } from '@ionic/angular';
 import { ExpService } from 'src/app/services/exp.service';
 import { CommentsModalComponent } from '../comments-modal/comments-modal.component';
@@ -42,16 +42,19 @@ export class PostComponent implements OnInit, OnDestroy {
   selectedPostIdForComments: string | null = null;
   selectedPostForComments: Post | null = null;
 
+  private userIdToDisplayPosts: string | null = null;
 
   private authStateUnsubscribe: (() => void) | undefined;
   private postsSubscription: Subscription | undefined;
   private userDataSubscription: Subscription | undefined;
+  private routeSubscription: Subscription | undefined;
 
   constructor(
     private postService: PostService,
     private userDataService: UserDataService,
     private cdr: ChangeDetectorRef,
     private router: Router,
+    private activatedRoute: ActivatedRoute,
     private alertCtrl: AlertController,
     private loadingCtrl: LoadingController,
     private platform: Platform,
@@ -70,7 +73,17 @@ export class PostComponent implements OnInit, OnDestroy {
               this.currentUserAvatar = userData.photo || userData.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg';
             }
             this.cdr.detectChanges();
-            this.loadInitialPosts();
+
+            this.routeSubscription = this.activatedRoute.paramMap.subscribe(params => {
+              const profileUserId = params.get('userId');
+
+              if (profileUserId && profileUserId !== this.currentUserId) {
+                this.userIdToDisplayPosts = profileUserId;
+              } else {
+                this.userIdToDisplayPosts = this.currentUserId;
+              }
+              this.loadInitialPosts();
+            });
           },
           error: (err) => {
             console.error('Errore nel recupero dati utente:', err);
@@ -91,6 +104,9 @@ export class PostComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.unsubscribeAll();
+    if (this.routeSubscription) {
+      this.routeSubscription.unsubscribe();
+    }
   }
 
   private unsubscribeAll(): void {
@@ -120,7 +136,14 @@ export class PostComponent implements OnInit, OnDestroy {
       this.infiniteScroll.complete();
     }
 
-    this.postsSubscription = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp).subscribe({
+    let postsObservable: Observable<Post[]>;
+    if (this.userIdToDisplayPosts) {
+      postsObservable = this.postService.getUserPosts(this.userIdToDisplayPosts, this.postsLimit, this.lastPostTimestamp);
+    } else {
+      postsObservable = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp);
+    }
+
+    this.postsSubscription = postsObservable.subscribe({
       next: (postsData) => {
         this.posts = postsData;
         this.isLoadingPosts = false;
@@ -155,7 +178,14 @@ export class PostComponent implements OnInit, OnDestroy {
     }
 
     try {
-      this.postsSubscription = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp).subscribe({
+      let postsObservable: Observable<Post[]>;
+      if (this.userIdToDisplayPosts) {
+        postsObservable = this.postService.getUserPosts(this.userIdToDisplayPosts, this.postsLimit, this.lastPostTimestamp);
+      } else {
+        postsObservable = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp);
+      }
+
+      this.postsSubscription = postsObservable.subscribe({
         next: (newPosts) => {
           this.posts = [...this.posts, ...newPosts];
           if (newPosts.length > 0) {
@@ -328,7 +358,7 @@ export class PostComponent implements OnInit, OnDestroy {
           text: shareText,
           url: postSpecificLink,
         });
-        this.expService.addExperience(20, 'postShared');
+        this.expService.addExperience(20, 'postShared'); // Aggiungi esperienza per la condivisione
       } else {
         console.warn('Web Share API non disponibile, copia negli appunti come fallback.');
         await navigator.clipboard.writeText(shareText);
@@ -423,7 +453,7 @@ export class PostComponent implements OnInit, OnDestroy {
     textarea.style.height = 'auto';
 
     const maxHeightCss = window.getComputedStyle(textarea).maxHeight;
-    const maxHeightPx = parseFloat(maxHeightCss);
+    const maxHeightPx = parseFloat(maxHeightCss); // Converte '150px' in 150
 
     if (textarea.scrollHeight > maxHeightPx) {
       textarea.style.height = maxHeightPx + 'px';
