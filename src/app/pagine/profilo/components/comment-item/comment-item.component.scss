@@ -27,14 +27,14 @@
 .comment-card {
   @extend .panel-glow-border; // Assicurati che .panel-glow-border sia definito o importato
   padding: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   width: 100%; // Sarà gestito dal parent per l'indentazione
   background: rgba(20, 25, 50, 0.95); /* Colore base per i commenti principali */
 
 
-  &:last-of-type {
-    margin-bottom: 0;
-  }
+  // &:last-of-type {
+  //   margin-bottom: 0;
+  // }
 
   // Stili specifici per le risposte (quando nestingLevel > 0)
   &.is-reply {

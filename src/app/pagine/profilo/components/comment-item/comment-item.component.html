@@ -1,4 +1,4 @@
-<div class="comment-card" [class.is-reply]="nestingLevel > 0" [style.margin-left.px]="nestingLevel * 20">
+<div class="comment-card" [class.is-reply]="nestingLevel > 0">
   <div [class]="nestingLevel === 0 ? 'comment-header' : 'reply-header'">
     <ion-avatar (click)="onGoToProfile()" [class]="nestingLevel === 0 ? 'post-avatar' : 'reply-avatar'">
       <img [src]="comment.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
