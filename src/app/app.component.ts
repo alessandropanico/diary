@@ -38,7 +38,6 @@ export class AppComponent implements OnInit, OnDestroy {
   private searchSubscription: Subscription | undefined;
   unreadCount = 0;
 
-  // *** MODIFICA QUI: ACCETTA boolean O null ***
   firebaseIsLoggedIn: boolean | null = null;
 
   constructor(
@@ -59,7 +58,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     this.firebaseAuthStateService.isAuthenticated$().subscribe(async isLoggedIn => {
-      // TypeScript ora accetta l'assegnazione di boolean | null a firebaseIsLoggedIn
       this.firebaseIsLoggedIn = isLoggedIn;
       await this.loadProfilePhoto();
     });
@@ -92,17 +90,13 @@ export class AppComponent implements OnInit, OnDestroy {
     this.deferredPrompt.prompt();
     const choiceResult = await this.deferredPrompt.userChoice;
     if (choiceResult.outcome === 'accepted') {
-      console.log('Utente ha accettato di installare l\'app');
     } else {
-      console.log('Utente ha rifiutato l\'installazione');
     }
     this.deferredPrompt = null;
     this.showInstallButton = false;
   }
 
-  // Questo metodo ora legge lo stato da firebaseIsLoggedIn, che può essere boolean o null
   isLoggedIn(): boolean {
-    // Restituisce true solo se firebaseIsLoggedIn è true, altrimenti false (gestendo anche null)
     return !!this.firebaseIsLoggedIn;
   }
 
@@ -164,7 +158,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   async presentSearchModal() {
-    if (this.firebaseIsLoggedIn) { // Controlla lo stato di login Firebase
+    if (this.firebaseIsLoggedIn) {
       const modal = await this.modalCtrl.create({
         component: SearchModalComponent,
         cssClass: 'search-modal'

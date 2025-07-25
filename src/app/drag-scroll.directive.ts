@@ -24,7 +24,6 @@ export class DragScrollDirective {
     this.startX = e.pageX - this.el.nativeElement.offsetLeft;
     this.scrollLeft = this.el.nativeElement.scrollLeft;
     this.el.nativeElement.style.cursor = 'grabbing';
-    console.log('mousedown');
 
   }
 

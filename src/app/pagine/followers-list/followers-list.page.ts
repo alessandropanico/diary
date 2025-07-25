@@ -1,12 +1,11 @@
-// src/app/pagine/followers-list/followers-list.page.ts
-import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core'; // AGGIUNGI ChangeDetectorRef
+import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FollowService } from 'src/app/services/follow.service';
 import { UserDataService } from 'src/app/services/user-data.service';
 import { AlertController } from '@ionic/angular';
-import { Subscription, forkJoin, of, from } from 'rxjs'; // Aggiungi 'forkJoin', 'of', 'from'
-import { switchMap, map, catchError, tap, take } from 'rxjs/operators'; // Aggiungi 'tap', 'take'
-import { getAuth, User, onAuthStateChanged } from 'firebase/auth'; // Importa User e onAuthStateChanged
+import { Subscription, forkJoin, of, from } from 'rxjs';
+import { switchMap, map, catchError, tap, take } from 'rxjs/operators';
+import { getAuth, User, onAuthStateChanged } from 'firebase/auth';
 
 @Component({
   selector: 'app-followers-list',
@@ -17,10 +16,10 @@ import { getAuth, User, onAuthStateChanged } from 'firebase/auth'; // Importa Us
 export class FollowersListPage implements OnInit, OnDestroy {
   users: any[] = [];
   isLoading: boolean = true;
-  private userId: string | null = null; // L'ID dell'utente di cui stiamo visualizzando i follower
+  private userId: string | null = null;
   private usersSubscription: Subscription | undefined;
-  private authSubscription: Subscription | undefined; // Per gestire la sottoscrizione a onAuthStateChanged
-  private loggedInUserId: string | null = null; // L'ID dell'utente attualmente loggato
+  private authSubscription: Subscription | undefined;
+  private loggedInUserId: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -29,13 +28,12 @@ export class FollowersListPage implements OnInit, OnDestroy {
     private userDataService: UserDataService,
     private alertCtrl: AlertController,
     private ngZone: NgZone,
-    private cdr: ChangeDetectorRef // INJECT ChangeDetectorRef
+    private cdr: ChangeDetectorRef
   ) {
   }
 
   ngOnInit() {
 
-    // 1. Ottieni l'ID dell'utente loggato in modo reattivo e una tantum
     this.authSubscription = from(
       new Promise<User | null>(resolve => {
         const unsubscribe = onAuthStateChanged(getAuth(), user => {
@@ -47,10 +45,10 @@ export class FollowersListPage implements OnInit, OnDestroy {
       take(1),
       tap(user => {
         this.loggedInUserId = user ? user.uid : null;
-        this.cdr.detectChanges(); // Forza un tick del change detection
+        this.cdr.detectChanges();
       }),
       catchError(err => {
-        console.error('FLLW: Errore nel recupero stato autenticazione:', err); // Modificato prefisso
+        console.error('FLLW: Errore nel recupero stato autenticazione:', err);
         this.ngZone.run(() => {
           this.isLoading = false;
           this.cdr.detectChanges();
@@ -58,13 +56,12 @@ export class FollowersListPage implements OnInit, OnDestroy {
         return of(null);
       })
     ).subscribe(() => {
-      // 2. Iscriviti ai parametri della rotta una volta che loggedInUserId è disponibile.
       this.route.paramMap.subscribe(params => {
         this.userId = params.get('id');
         if (this.userId) {
           this.loadFollowers();
         } else {
-          console.error('FLLW: ID utente non trovato per la lista follower. Reindirizzamento al profilo.'); // Modificato prefisso
+          console.error('FLLW: ID utente non trovato per la lista follower. Reindirizzamento al profilo.');
           this.ngZone.run(() => {
             this.isLoading = false;
             this.cdr.detectChanges();
@@ -78,12 +75,12 @@ export class FollowersListPage implements OnInit, OnDestroy {
   loadFollowers() {
     this.ngZone.run(() => {
       this.isLoading = true;
-      this.users = []; // Resetta la lista per mostrare lo spinner
-      this.cdr.detectChanges(); // Forza aggiornamento UI per mostrare spinner
+      this.users = [];
+      this.cdr.detectChanges();
     });
 
     if (!this.userId) {
-      console.warn('FLLW: Cannot load followers. userId is missing. Aborting load.'); // Modificato prefisso
+      console.warn('FLLW: Cannot load followers. userId is missing. Aborting load.');
       this.ngZone.run(() => {
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -96,54 +93,52 @@ export class FollowersListPage implements OnInit, OnDestroy {
     }
 
     this.usersSubscription = this.followService.getFollowersIds(this.userId!).pipe(
-      tap(followerIds => console.log('FLLW: getFollowersIds emitted:', followerIds)), // Modificato prefisso
+      tap(followerIds => console.log('FLLW: getFollowersIds emitted:', followerIds)),
       switchMap(followerIds => {
         if (followerIds.length === 0) {
-          return of([]); // Ritorna un Observable di un array vuoto
+          return of([]);
         }
 
         const userObservables = followerIds.map(id => {
           const userDataObservable = from(this.userDataService.getUserDataById(id)).pipe(
-            tap(data => console.log(`FLLW: UserData for ${id}:`, data)), // Modificato prefisso
+            tap(data => console.log(`FLLW: UserData for ${id}:`, data)),
             catchError(err => {
-              console.error(`FLLW: Errore nel recupero dati utente ${id}:`, err); // Modificato prefisso
+              console.error(`FLLW: Errore nel recupero dati utente ${id}:`, err);
               return of(null);
             })
           );
 
-          // Aggiungi un Observable per verificare se l'utente loggato segue questo follower
-          // Questo è il "ragionamento" della following-list
           const isFollowingThisUserObservable = this.loggedInUserId
             ? this.followService.isFollowing(this.loggedInUserId, id).pipe(
-                take(1), // Prendi solo il primo valore e poi completa
-                tap(isF => console.log(`FLLW: isFollowing (${this.loggedInUserId} following ${id}):`, isF)), // Modificato prefisso
+                take(1),
+                tap(isF => console.log(`FLLW: isFollowing (${this.loggedInUserId} following ${id}):`, isF)),
                 catchError(err => {
-                  console.error(`FLLW: Errore isFollowing per ${this.loggedInUserId} -> ${id}:`, err); // Modificato prefisso
+                  console.error(`FLLW: Errore isFollowing per ${this.loggedInUserId} -> ${id}:`, err);
                   return of(false);
                 })
               )
-            : of(false).pipe(tap(() => console.log('FLLW: loggedInUserId non disponibile per isFollowing. Default a false.'))); // Modificato prefisso
+            : of(false).pipe(tap(() => console.log('FLLW: loggedInUserId non disponibile per isFollowing. Default a false.')));
 
           return forkJoin({
             userData: userDataObservable,
-            isFollowing: isFollowingThisUserObservable // Ora include se l'utente loggato segue il follower
+            isFollowing: isFollowingThisUserObservable
           }).pipe(
-            tap(res => console.log(`FLLW: forkJoin result for ${id}:`, res)), // Modificato prefisso
+            tap(res => console.log(`FLLW: forkJoin result for ${id}:`, res)),
             map(res => {
               return res.userData ? { uid: id, ...res.userData, isFollowing: res.isFollowing } : null;
             }),
-            tap(userItem => console.log(`FLLW: Mapped user item for ${id}:`, userItem)) // Modificato prefisso
+            tap(userItem => console.log(`FLLW: Mapped user item for ${id}:`, userItem))
           );
         });
 
         return forkJoin(userObservables).pipe(
           map(results => results.filter(user => user !== null)),
-          tap(finalUsers => console.log('FLLW: Risultato finale forkJoin (utenti filtrati):', finalUsers)) // Modificato prefisso
+          tap(finalUsers => console.log('FLLW: Risultato finale forkJoin (utenti filtrati):', finalUsers))
         );
       }),
-      tap(finalData => console.log('FLLW: PIPE COMPLETO. Risultati pronti per la sottoscrizione (final tap):', finalData)), // Modificato prefisso
+      tap(finalData => console.log('FLLW: PIPE COMPLETO. Risultati pronti per la sottoscrizione (final tap):', finalData)),
       catchError(err => {
-        console.error('FLLW: Errore nella pipeline principale di caricamento follower:', err); // Modificato prefisso
+        console.error('FLLW: Errore nella pipeline principale di caricamento follower:', err);
         this.ngZone.run(() => {
           this.isLoading = false;
           this.users = [];
@@ -161,7 +156,7 @@ export class FollowersListPage implements OnInit, OnDestroy {
         });
       },
       error: (err) => {
-        console.error('FLLW: Sottoscrizione ERROR: Errore finale:', err); // Modificato prefisso
+        console.error('FLLW: Sottoscrizione ERROR: Errore finale:', err);
         this.ngZone.run(() => {
           this.isLoading = false;
           this.cdr.detectChanges();
@@ -189,7 +184,7 @@ export class FollowersListPage implements OnInit, OnDestroy {
           text: 'Annulla',
           role: 'cancel',
           cssClass: 'ff7-alert-button',
-          handler: () => console.log('FLLW: Annullata rimozione follower.') // Modificato prefisso
+          handler: () => console.log('FLLW: Annullata rimozione follower.')
         },
         {
           text: 'Rimuovi',
@@ -212,8 +207,6 @@ export class FollowersListPage implements OnInit, OnDestroy {
       await this.presentFF7Alert('Devi essere loggato per eseguire questa azione.');
       return;
     }
-    // L'utente che sta cercando di rimuovere il follower (loggedInUserId)
-    // deve essere l'ID del profilo corrente (userId)
     if (this.loggedInUserId !== this.userId) {
         await this.presentFF7Alert('Non puoi rimuovere follower dal profilo di un altro utente.');
         return;
@@ -226,14 +219,9 @@ export class FollowersListPage implements OnInit, OnDestroy {
 
      try {
     await this.followService.unfollowUser(followerId, this.loggedInUserId);
-    // Se arriviamo qui, la Promise di unfollowUser si è risolta senza lanciare un errore.
-    // Tuttavia, il tuo log precedente mostra un errore catturato.
-    // Dobbiamo capire DOVE avviene l'errore.
     await this.presentFF7Alert(`${this.users.find(u => u.uid === followerId)?.nickname || 'Utente'} rimosso dai tuoi follower.`);
   } catch (error) {
-    // QUESTO È IL PUNTO CRUCIALE: STAMPA L'OGGETTO ERRORE COMPLETO
     console.error('FLLW: Errore CATTURATO durante la rimozione del follower:', error);
-    // Se l'errore è un FirebaseError, potremmo voler stampare anche il suo codice
     if (error && typeof error === 'object' && 'code' in error) {
       console.error('FLLW: Codice errore Firebase:', (error as any).code);
     }
@@ -241,7 +229,6 @@ export class FollowersListPage implements OnInit, OnDestroy {
   }
   }
 
-  // Nuova funzione per gestire il toggle di follow da questa pagina (se presente in UI)
   async toggleFollowFromFollowersList(targetUserId: string, isCurrentlyFollowing: boolean) {
     if (!this.loggedInUserId) {
         await this.presentFF7Alert('Devi essere loggato per eseguire questa azione.');

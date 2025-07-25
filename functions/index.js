@@ -40,7 +40,6 @@ exports.sendChatNotification = functions.firestore
         // Non inviare notifiche per i messaggi inviati dal sistema (es. messaggio di benvenuto)
         // o se il messaggio non ha un mittente valido.
         if (!newMessage || !newMessage.senderId || newMessage.senderId === 'system') {
-            console.log('Skipping notification for system message or invalid message.');
             return null;
         }
 
@@ -48,21 +47,17 @@ exports.sendChatNotification = functions.firestore
         const messageText = newMessage.text || "Nuovo messaggio"; // Usa il testo del messaggio o un default
         const senderName = newMessage.senderName || "Un utente"; // Assumi che il mittente abbia un nome
 
-        console.log(`New message in conversation ${conversationId} by ${senderName}: ${messageText}`);
-
         try {
             // 1. Recupera la conversazione per ottenere i partecipanti
             const conversationRef = db.collection('conversations').doc(conversationId);
             const conversationDoc = await conversationRef.get();
 
             if (!conversationDoc.exists) {
-                console.log(`Conversation ${conversationId} does not exist. Skipping notification.`);
                 return null;
             }
 
             const conversation = conversationDoc.data();
             if (!conversation || !Array.isArray(conversation.participants)) {
-                console.warn(`Conversation ${conversationId} has no participants. Skipping notification.`);
                 return null;
             }
 
@@ -70,14 +65,12 @@ exports.sendChatNotification = functions.firestore
             const recipientIds = conversation.participants.filter(id => id !== senderId);
 
             if (recipientIds.length === 0) {
-                console.log('No recipients for this message. Skipping notification.');
                 return null;
             }
 
             let tokensToSend = [];
             const tokensToRemove = [];
 
-            // 3. Recupera i token FCM per ogni destinatario
             for (const recipientId of recipientIds) {
                 const userRef = db.collection('users').doc(recipientId);
                 const userDoc = await userRef.get();
@@ -85,7 +78,6 @@ exports.sendChatNotification = functions.firestore
                 if (userDoc.exists) {
                     const userData = userDoc.data();
                     if (userData && userData.fcmTokens) {
-                        // userData.fcmTokens è una mappa { token: true }
                         for (const token in userData.fcmTokens) {
                             if (userData.fcmTokens[token] === true) {
                                 tokensToSend.push(token);
@@ -98,7 +90,6 @@ exports.sendChatNotification = functions.firestore
             }
 
             if (tokensToSend.length === 0) {
-                console.log('No FCM tokens found for recipients. Skipping notification.');
                 return null;
             }
 
@@ -119,7 +110,6 @@ exports.sendChatNotification = functions.firestore
             };
 
             // 5. Invia la notifica a tutti i token validi
-            console.log(`Sending notification to ${tokensToSend.length} devices for conversation ${conversationId}.`);
             const response = await admin.messaging().sendToDevice(tokensToSend, payload);
 
             // 6. Gestisci i token scaduti o non validi
@@ -153,7 +143,6 @@ exports.sendChatNotification = functions.firestore
                                 }
                             }
                             if (changed) {
-                                console.log(`Removing invalid tokens for user ${recipientId}.`);
                                 await userRef.update({ fcmTokens: userData.fcmTokens });
                             }
                         }
