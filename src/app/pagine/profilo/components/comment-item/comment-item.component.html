@@ -37,7 +37,7 @@
       [currentUserId]="currentUserId"
       [nestingLevel]="nestingLevel + 1"
       [formatCommentTime]="formatCommentTime"
-      (toggleLike)="onToggleLike()"
+      (toggleLike)="propagateToggleLike($event)"
       (setReply)="onSetReply()"
       (deleteComment)="propagateDeleteComment($event)"
       (goToProfile)="propagateGoToProfile($event)"> </app-comment-item>

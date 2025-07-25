@@ -24,7 +24,7 @@ export class CommentItemComponent implements OnInit, OnChanges {
   @Output() deleteComment = new EventEmitter<string>();
   @Output() goToProfile = new EventEmitter<string>(); // EventEmitter per la navigazione del profilo
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     // console.log(`CommentItemComponent Init: ID=${this.comment.id}, ParentID=${this.comment.parentId}, Level=${this.nestingLevel}`);
@@ -53,6 +53,13 @@ export class CommentItemComponent implements OnInit, OnChanges {
   onGoToProfile() {
     console.log(`CommentItemComponent: Richiesta go to profile per User ID: ${this.comment.userId} (Comment ID: ${this.comment.id}, Level: ${this.nestingLevel})`);
     this.goToProfile.emit(this.comment.userId);
+  }
+
+  // NUOVO METODO: Propaga l'evento toggleLike dai commenti figli al commento padre.
+  // Questo assicura che il commento corretto venga propagato.
+  propagateToggleLike(commentToToggle: Comment) {
+    // console.log(`CommentItemComponent (livello ${this.nestingLevel}): Propagazione like per ID: ${commentToToggle.id}`);
+    this.toggleLike.emit(commentToToggle);
   }
 
   // Questo nuovo metodo viene chiamato quando un componente app-comment-item figlio
