@@ -4,8 +4,9 @@ import { Router } from '@angular/router';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { environment } from 'src/environments/environment';
-import { UserDataService } from 'src/app/services/user-data.service';
-import { doc, getDoc } from 'firebase/firestore';
+import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service'; // Importa anche l'interfaccia
+// Rimuoviamo gli import di 'doc' e 'getDoc' perché non li useremo direttamente qui
+// import { doc, getDoc } from 'firebase/firestore';
 
 const app = initializeApp(environment.firebaseConfig);
 const auth = getAuth(app);
@@ -81,42 +82,22 @@ export class LoginPage implements OnInit {
       const userCredential = await signInWithCredential(auth, credential);
       const firebaseUser = userCredential.user;
 
-      const userDocRef = doc(this.userDataService['firestore'], 'users', firebaseUser.uid);
-      const docSnap = await getDoc(userDocRef);
-
-      let dataToSave: any = {
-        email: firebaseUser.email,
-        lastLogin: new Date().toISOString(),
+      // ⭐ SOLO QUESTA È LA PARTE RILEVANTE PER lastOnline AL LOGIN ⭐
+      // Prepariamo l'oggetto con i dati che vogliamo inviare al servizio.
+      // Il servizio UserDataService si occuperà di leggere/scrivere nel database.
+      const dataToUpdate: Partial<UserDashboardCounts> = {
+        uid: firebaseUser.uid, // L'UID è essenziale per identificare il documento utente
+        email: firebaseUser.email || '', // Includiamo l'email (se non la gestisci altrove)
+        lastLogin: new Date().toISOString(), // Aggiorniamo l'ultimo login
+        lastOnline: new Date().toISOString(), // ⭐ Questo è il timestamp "online" chiave ⭐
+        // Rimuovi QUI tutti gli altri campi del profilo (name, nickname, photo, createdAt, etc.)
+        // Lascia che sia il tuo UserDataService a gestire l'inizializzazione di tutti i campi
+        // quando crea un nuovo utente, o a ignorarli quando aggiorna un utente esistente.
       };
 
-      if (!docSnap.exists()) {
-        const fullName = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Nuovo Utente';
-        const nameParts = fullName.split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-        const initialNickname = fullName;
-
-        dataToSave = {
-          ...dataToSave,
-          name: fullName,
-          nickname: initialNickname,
-          firstName: firstName,
-          lastName: lastName,
-          photo: firebaseUser.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
-          createdAt: new Date().toISOString()
-        };
-      } else {
-        const existingData = docSnap.data();
-        dataToSave = {
-          ...dataToSave,
-          name: existingData['name'] || firebaseUser.displayName,
-          nickname: existingData['nickname'] || existingData['name'] || firebaseUser.displayName,
-          photo: existingData['photo'] || firebaseUser.photoURL || 'assets/immaginiGenerali/default-avatar.jpg',
-          createdAt: existingData['createdAt'] || new Date().toISOString()
-        };
-      }
-
-      await this.userDataService.saveUserData(dataToSave);
+      // Invochiamo il metodo del servizio per salvare/aggiornare i dati dell'utente.
+      // Il servizio userà l'UID e i dati forniti per aggiornare il documento in Firestore.
+      await this.userDataService.saveUserData(dataToUpdate);
 
       const alert = await this.alertCtrl.create({
         header: 'Accesso riuscito',

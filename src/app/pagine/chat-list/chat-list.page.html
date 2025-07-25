@@ -3,7 +3,7 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title class="ff7-title">Le Tue Chat</ion-title>
+    <ion-title>Le Tue Chat</ion-title>
 
     <ion-buttons slot="end">
       <ion-button (click)="toggleSelectionMode()">
@@ -42,11 +42,26 @@
           (ionChange)="toggleConversationSelection(conv.id); $event.stopPropagation()"
         ></ion-checkbox>
 
-        <ion-avatar slot="start" *ngIf="!isSelectionMode">
-          <img [src]="conv.otherParticipantPhoto" alt="Foto Profilo">
-        </ion-avatar>
+        <div class="avatar-wrapper" slot="start" *ngIf="!isSelectionMode">
+          <ion-avatar>
+            <img [src]="conv.otherParticipantPhoto" alt="Foto Profilo">
+          </ion-avatar>
+          <div
+            class="online-status-indicator"
+            [class.online]="conv.otherParticipantIsOnline"
+            [class.offline]="!conv.otherParticipantIsOnline"
+          ></div>
+        </div>
+
         <ion-label>
-          <h2>{{ conv.otherParticipantName }}</h2>
+          <div class="name-and-status">
+            <h2>{{ conv.otherParticipantName }}</h2>
+            <span class="online-status-text"
+                  [class.online-text]="conv.otherParticipantIsOnline"
+                  [class.offline-text]="!conv.otherParticipantIsOnline">
+              {{ conv.otherParticipantIsOnline ? 'Online' : conv.otherParticipantLastOnline }}
+            </span>
+          </div>
           <p>
             {{ getDisplayLastMessage(conv) | slice:0:40 }}{{ conv.lastMessage && conv.lastMessage.length > 40 ? '...' : '' }}
           </p>

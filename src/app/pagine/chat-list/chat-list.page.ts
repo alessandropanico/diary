@@ -1,5 +1,5 @@
 // src/app/pagine/chat-list/chat-list.page.ts
-import { Component, OnInit, OnDestroy, ViewChildren, QueryList } from '@angular/core'; // Aggiunti ViewChildren e QueryList
+import { Component, OnInit, OnDestroy, ViewChildren, QueryList } from '@angular/core';
 import {
   ChatService,
   ConversationDocument,
@@ -13,7 +13,7 @@ import { map, switchMap, catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ChatNotificationService } from 'src/app/services/chat-notification.service';
 import { Timestamp } from 'firebase/firestore';
-import { AlertController, IonItemSliding } from '@ionic/angular'; // Aggiunto IonItemSliding
+import { AlertController, IonItemSliding } from '@ionic/angular';
 
 import * as dayjs from 'dayjs';
 import 'dayjs/locale/it';
@@ -58,8 +58,8 @@ export class ChatListPage implements OnInit, OnDestroy {
 
   private authStateUnsubscribe: (() => void) | undefined;
   private conversationsSubscription: Subscription | undefined;
+  private onlineStatusInterval: any; // ⭐ Aggiunto per il controllo dello stato online
 
-  // Aggiunto ViewChildren per ottenere tutti gli ion-item-sliding
   @ViewChildren(IonItemSliding) slidingItems!: QueryList<IonItemSliding>;
 
   constructor(
@@ -78,11 +78,13 @@ export class ChatListPage implements OnInit, OnDestroy {
       if (user) {
         this.loggedInUserId = user.uid;
         this.loadUserConversations();
+        this.startOnlineStatusCheck(); // ⭐ Avvia il controllo dello stato online
       } else {
         this.loggedInUserId = null;
         this.conversations = [];
         this.isLoading = false;
         this.router.navigateByUrl('/login');
+        this.stopOnlineStatusCheck(); // ⭐ Ferma il controllo dello stato online
       }
     });
   }
@@ -94,6 +96,7 @@ export class ChatListPage implements OnInit, OnDestroy {
     if (this.conversationsSubscription) {
       this.conversationsSubscription.unsubscribe();
     }
+    this.stopOnlineStatusCheck(); // ⭐ Assicurati che l'intervallo sia fermato alla distruzione del componente
   }
 
   async loadUserConversations() {
@@ -106,7 +109,6 @@ export class ChatListPage implements OnInit, OnDestroy {
     this.conversationsSubscription = this.chatService.getUserConversations(this.loggedInUserId)
       .pipe(
         map((rawConvs: ConversationDocument[]) => {
-          // Mantieni il filtro basato su deletedBy se è ancora rilevante per la tua logica
           return rawConvs.filter(conv =>
             !(conv.deletedBy && conv.deletedBy.includes(this.loggedInUserId!))
           );
@@ -136,6 +138,9 @@ export class ChatListPage implements OnInit, OnDestroy {
 
                 const hasUnread = unreadCountForChat > 0;
 
+                // ⭐ Calcolo dello stato online dell'altro partecipante
+                const { isOnline, lastOnlineDisplay } = this.getOnlineStatus(otherUserData?.lastOnline);
+
                 const extendedConv: ExtendedConversation = {
                   id: conv.id,
                   participants: conv.participants,
@@ -152,8 +157,9 @@ export class ChatListPage implements OnInit, OnDestroy {
                   hasUnreadMessages: hasUnread,
                   unreadMessageCount: unreadCountForChat,
                   deletedBy: conv.deletedBy || [],
-                  // Non includere 'eliminato' se non vuoi più gestirlo
-                  // eliminato: conv.eliminato || {}
+                  // ⭐ Assegna i valori calcolati
+                  otherParticipantIsOnline: isOnline,
+                  otherParticipantLastOnline: lastOnlineDisplay
                 };
 
                 if (hasUnread && !(extendedConv.deletedBy && extendedConv.deletedBy.includes(this.loggedInUserId!))) {
@@ -184,8 +190,9 @@ export class ChatListPage implements OnInit, OnDestroy {
                   hasUnreadMessages: false,
                   unreadMessageCount: 0,
                   deletedBy: conv.deletedBy || [],
-                  // Non includere 'eliminato' se non vuoi più gestirlo
-                  // eliminato: conv.eliminato || {}
+                  // ⭐ In caso di errore, imposta lo stato online di default
+                  otherParticipantIsOnline: false,
+                  otherParticipantLastOnline: 'N/D'
                 } as ExtendedConversation);
               })
             );
@@ -209,6 +216,77 @@ export class ChatListPage implements OnInit, OnDestroy {
         }
       });
   }
+
+  // ⭐⭐ NUOVI METODI PER LA GESTIONE DELLO STATO ONLINE ⭐⭐
+
+  private startOnlineStatusCheck() {
+    // Aggiorna lo stato ogni 30 secondi (o il valore desiderato)
+    this.onlineStatusInterval = setInterval(() => {
+      this.updateOnlineStatusForConversations();
+    }, 30000); // 30 secondi
+  }
+
+  private stopOnlineStatusCheck() {
+    if (this.onlineStatusInterval) {
+      clearInterval(this.onlineStatusInterval);
+      this.onlineStatusInterval = null;
+    }
+  }
+
+  /**
+   * Aggiorna lo stato online per tutte le conversazioni esistenti.
+   * Chiamato periodicamente dall'intervallo.
+   */
+  private updateOnlineStatusForConversations() {
+    if (this.conversations && this.conversations.length > 0) {
+      this.conversations = this.conversations.map(conv => {
+        // Non abbiamo i dati UserProfile qui, ma abbiamo otherParticipantLastOnline
+        // che ci è stato passato dal chat.service
+        const { isOnline, lastOnlineDisplay } = this.getOnlineStatus(conv.otherParticipantLastOnline);
+        return {
+          ...conv,
+          otherParticipantIsOnline: isOnline,
+          otherParticipantLastOnline: lastOnlineDisplay
+        };
+      });
+      // console.log('Stato online conversazioni aggiornato:', this.conversations.map(c => ({ id: c.id, online: c.otherParticipantIsOnline, lastOnline: c.otherParticipantLastOnline })));
+    }
+  }
+
+  /**
+   * Determina se un utente è online e restituisce una stringa formattata per l'ultima attività.
+   * @param lastOnlineTimestamp La stringa ISO del timestamp dell'ultima attività.
+   * @returns Un oggetto con 'isOnline' (boolean) e 'lastOnlineDisplay' (stringa formattata).
+   */
+  getOnlineStatus(lastOnlineTimestamp: string | undefined): { isOnline: boolean, lastOnlineDisplay: string } {
+    if (!lastOnlineTimestamp) {
+      return { isOnline: false, lastOnlineDisplay: 'Offline' };
+    }
+
+    const lastOnline = dayjs(lastOnlineTimestamp);
+    const now = dayjs();
+    const diffSeconds = now.diff(lastOnline, 'second');
+
+    // Considera online se l'ultima attività è avvenuta negli ultimi X secondi (es. 60 secondi)
+    const isOnline = diffSeconds <= 60; // 60 secondi di tolleranza per considerare online
+
+    let lastOnlineDisplay: string;
+    if (isOnline) {
+      lastOnlineDisplay = 'Online';
+    } else if (lastOnline.isToday()) {
+      lastOnlineDisplay = `Oggi alle ${lastOnline.format('HH:mm')}`;
+    } else if (lastOnline.isYesterday()) {
+      lastOnlineDisplay = 'Ieri';
+    } else if (lastOnline.year() === now.year()) {
+      lastOnlineDisplay = lastOnline.format('D MMM');
+    } else {
+      lastOnlineDisplay = lastOnline.format('D MMM YYYY');
+    }
+
+    return { isOnline, lastOnlineDisplay };
+  }
+
+  // ⭐⭐ FINE NUOVI METODI ⭐⭐
 
   openChat(conversationId: string) {
     if (!this.isSelectionMode) {
@@ -260,8 +338,6 @@ export class ChatListPage implements OnInit, OnDestroy {
           text: 'Elimina',
           handler: async () => {
             try {
-              // Rimuovi la chiamata a markConversationAsDeleted se non vuoi più usare il campo 'eliminato'
-              // Se la tua logica di eliminazione è basata su 'deletedBy', mantienila come segue:
               await this.chatService.markConversationAsDeleted(conversation.id, this.loggedInUserId!);
               this.chatNotificationService.clearUnread(conversation.id);
             } catch (error) {
@@ -280,23 +356,15 @@ export class ChatListPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  /**
-   * Attiva o disattiva la modalità di selezione multipla.
-   */
   toggleSelectionMode() {
     this.isSelectionMode = !this.isSelectionMode;
     if (!this.isSelectionMode) {
       this.selectedConversations.clear();
     } else {
-      // Chiudi tutti gli ion-item-sliding aperti quando si entra in modalità selezione
       this.closeAllSlidingItems();
     }
   }
 
-  /**
-   * Chiude tutti gli ion-item-sliding aperti.
-   * Chiamato quando si entra in modalità selezione.
-   */
   private async closeAllSlidingItems() {
     if (this.slidingItems) {
       this.slidingItems.forEach(async (item: IonItemSliding) => {
@@ -305,10 +373,6 @@ export class ChatListPage implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Seleziona/deseleziona una conversazione in modalità di selezione.
-   * @param conversationId L'ID della conversazione.
-   */
   toggleConversationSelection(conversationId: string) {
     if (this.isConversationSelected(conversationId)) {
       this.selectedConversations.delete(conversationId);
@@ -317,18 +381,10 @@ export class ChatListPage implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Controlla se una conversazione è selezionata.
-   * @param conversationId L'ID della conversazione.
-   * @returns Vero se la conversazione è selezionata, falso altrimenti.
-   */
   isConversationSelected(conversationId: string): boolean {
     return this.selectedConversations.has(conversationId);
   }
 
-  /**
-   * Elimina tutte le conversazioni selezionate.
-   */
   async deleteSelectedConversations() {
     if (this.selectedConversations.size === 0) {
       return;
@@ -349,8 +405,6 @@ export class ChatListPage implements OnInit, OnDestroy {
 
             const deletePromises: Promise<void>[] = [];
             for (const convId of this.selectedConversations) {
-              // Rimuovi la chiamata a markConversationAsDeleted se non vuoi più usare il campo 'eliminato'
-              // Se la tua logica di eliminazione è basata su 'deletedBy', mantienila come segue:
               deletePromises.push(this.chatService.markConversationAsDeleted(convId, this.loggedInUserId!));
               this.chatNotificationService.clearUnread(convId);
             }

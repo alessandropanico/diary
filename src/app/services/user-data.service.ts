@@ -38,6 +38,10 @@ export interface UserDashboardCounts {
 
   nicknameLowercase?: string;
   nameLowercase?: string;
+
+  email?: string; // ⭐ DEVE ESSERE QUI ⭐
+  lastLogin?: string; // ⭐ DEVE ESSERE QUI ⭐
+  lastOnline?: string; // ⭐ DEVE ESSERE QUI ⭐
 }
 
 @Injectable({
@@ -590,6 +594,22 @@ export class UserDataService {
       return querySnapshot.docs[0].id;
     }
     return null;
+  }
+
+  // ⭐⭐ AGGIUNGI QUESTO NUOVO METODO ⭐⭐
+  async setLastOnline(): Promise<void> {
+    const user = getAuth().currentUser; // Ottiene l'utente Firebase attualmente loggato
+    if (user) {
+      const userDocRef = doc(this.firestore, 'users', user.uid);
+      try {
+        // Aggiorna solo il campo 'lastOnline' per l'utente corrente
+        // { merge: true } è FONDAMENTALE per non cancellare gli altri campi del documento
+        await setDoc(userDocRef, { lastOnline: new Date().toISOString() }, { merge: true });
+        // console.log(`lastOnline aggiornato per utente ${user.uid}`); // Debug
+      } catch (error) {
+        console.error("Errore nell'aggiornamento del timestamp lastOnline:", error);
+      }
+    }
   }
 }
 

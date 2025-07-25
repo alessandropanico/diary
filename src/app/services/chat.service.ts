@@ -1,3 +1,5 @@
+// src/app/services/chat.service.ts
+
 import { Injectable, NgZone } from '@angular/core';
 import {
   Firestore,
@@ -18,7 +20,7 @@ import {
   QueryDocumentSnapshot,
   Timestamp,
   arrayUnion,
-  arrayRemove // Manteniamo arrayRemove per la logica di undelete in sendMessage
+  arrayRemove
 } from '@angular/fire/firestore';
 
 import { Observable } from 'rxjs';
@@ -37,7 +39,7 @@ export interface Message {
 export interface PagedMessages {
   messages: Message[];
   lastVisibleDoc: QueryDocumentSnapshot | null;
-  firstVisibleDoc: QueryDocumentSnapshot | null;
+  firstVisibleDoc: QueryDocumentSnapshot | null; // ⭐⭐ AGGIUNTA QUESTA LINEA ⭐⭐
   hasMore: boolean;
 }
 
@@ -49,9 +51,9 @@ export interface UserProfile {
   photoURL?: string;
   bio?: string;
   email?: string;
+  lastOnline?: string;
 }
 
-// Interfaccia per il documento della conversazione letto direttamente da Firestore
 export interface ConversationDocument {
   id: string;
   participants: string[];
@@ -60,17 +62,16 @@ export interface ConversationDocument {
   createdAt?: Timestamp;
   lastMessageSenderId?: string;
   lastRead?: { [userId: string]: Timestamp };
-  deletedBy?: string[]; // Campo opzionale per gli ID degli utenti che hanno "eliminato" la chat
+  deletedBy?: string[];
 }
 
-// Interfaccia per la conversazione estesa (con i dettagli dell'altro partecipante e info UI)
 export interface ExtendedConversation {
   id: string;
   participants: string[];
   lastMessage: string;
   lastMessageAt: Timestamp | null;
   createdAt: Timestamp | null;
-  chatId: string; // Sarà l'id del documento
+  chatId: string;
   otherParticipantId: string;
   otherParticipantName: string;
   otherParticipantPhoto: string;
@@ -80,6 +81,8 @@ export interface ExtendedConversation {
   hasUnreadMessages?: boolean;
   unreadMessageCount?: number;
   deletedBy?: string[];
+  otherParticipantIsOnline?: boolean;
+  otherParticipantLastOnline?: string;
 }
 
 // --- Fine Interfacce ---
@@ -97,20 +100,10 @@ export class ChatService {
     private ngZone: NgZone
   ) { }
 
-  /**
-   * Cerca una conversazione esistente tra due utenti che non sia stata marcata come eliminata
-   * dall'utente corrente. Se non ne trova, ne crea una nuova con un ID generato da Firestore.
-   * Questo permette di "eliminare" una chat senza che la cronologia riappaia se si avvia una nuova conversazione.
-   * @param user1Id L'ID dell'utente corrente.
-   * @param user2Id L'ID dell'altro utente.
-   * @returns L'ID della conversazione (esistente o nuova).
-   */
   async getOrCreateConversation(user1Id: string, user2Id: string): Promise<string> {
     const conversationsRef = collection(this.afs, 'conversations');
     const sortedParticipants = [user1Id, user2Id].sort();
 
-    // ✅ CORREZIONE QUI: Usa 'where("participants", "==", sortedParticipants)'
-    // Questo è il modo corretto per trovare una conversazione tra due utenti specifici
     const q = query(
       conversationsRef,
       where('participants', '==', sortedParticipants)
@@ -122,8 +115,6 @@ export class ChatService {
 
       for (const docSnap of querySnapshot.docs) {
         const convData = docSnap.data() as ConversationDocument;
-        // Se la conversazione ESISTE e NON è stata eliminata dall'utente corrente, usala.
-        // Se è stata eliminata, la ignoriamo e ne creiamo una nuova alla fine.
         if (!(convData.deletedBy && convData.deletedBy.includes(user1Id))) {
           foundConversationId = docSnap.id;
           break;
@@ -146,7 +137,7 @@ export class ChatService {
             [user1Id]: serverTimestamp() as Timestamp,
             [user2Id]: serverTimestamp() as Timestamp
           },
-          deletedBy: [] // Le nuove conversazioni non sono eliminate da nessuno
+          deletedBy: []
         };
         await setDoc(newConversationRef, newConversationData);
         return newConversationRef.id;
@@ -157,27 +148,17 @@ export class ChatService {
     }
   }
 
-  /**
-   * Invia un messaggio a una conversazione esistente.
-   * ✅ MODIFICATO: Rimuove l'ID del mittente e del destinatario dal campo 'deletedBy'
-   * quando un nuovo messaggio viene inviato, per far riapparire la chat.
-   * @param conversationId L'ID della conversazione.
-   * @param senderId L'ID dell'utente che invia il messaggio.
-   * @param text Il testo del messaggio.
-   */
   async sendMessage(conversationId: string, senderId: string, text: string): Promise<void> {
     const messagesCollectionRef = collection(this.afs, `conversations/${conversationId}/messages`);
     const conversationDocRef = doc(this.afs, 'conversations', conversationId);
 
     try {
-      // 1. Aggiungi il nuovo messaggio alla sottocollezione 'messages'
       await addDoc(messagesCollectionRef, {
         senderId: senderId,
         text: text,
         timestamp: serverTimestamp()
       });
 
-      // 2. Ottieni i dati attuali della conversazione per aggiornare 'deletedBy'
       const conversationSnap = await getDoc(conversationDocRef);
       if (!conversationSnap.exists()) {
         console.error('Errore: Conversazione non trovata per l\'invio del messaggio.');
@@ -186,20 +167,14 @@ export class ChatService {
       const conversationData = conversationSnap.data() as ConversationDocument;
       const participants = conversationData.participants;
 
-      // 3. Rimuovi l'ID di *entrambi* i partecipanti da 'deletedBy'
-      // Questo fa "riapparire" la chat per chi l'aveva nascosta
       const undeletePromises: Promise<void>[] = [];
       participants.forEach(participantId => {
-        // Usa arrayRemove per rimuovere l'ID del partecipante se presente nell'array 'deletedBy'
         undeletePromises.push(updateDoc(conversationDocRef, {
           deletedBy: arrayRemove(participantId)
         }));
       });
-      // Aspetta che tutte le operazioni di rimozione siano completate
       await Promise.all(undeletePromises);
 
-      // 4. Aggiorna la conversazione con l'ultimo messaggio, il suo timestamp e il mittente
-      // Marca anche il messaggio come letto per il mittente in `lastRead`
       await updateDoc(conversationDocRef, {
         lastMessage: text,
         lastMessageAt: serverTimestamp(),
@@ -253,7 +228,7 @@ export class ChatService {
         }
 
         this.ngZone.run(() => {
-          observer.next({ messages, lastVisibleDoc, firstVisibleDoc, hasMore });
+          observer.next({ messages, lastVisibleDoc, firstVisibleDoc, hasMore }); // ⭐ Correzione QUI ⭐
         });
       }, (error) => {
         this.ngZone.run(() => {
@@ -303,6 +278,7 @@ export class ChatService {
         hasMore = nextSnapshot.docs.length > 0;
       }
 
+      // ⭐ Correzione QUI: Assegna null a firstVisibleDoc se non è rilevante per questo metodo ⭐
       return { messages, lastVisibleDoc, firstVisibleDoc: null, hasMore };
     } catch (error) {
       console.error('Errore nel recupero dei messaggi più vecchi:', error);
@@ -310,11 +286,6 @@ export class ChatService {
     }
   }
 
-  /**
-   * Ottiene i dettagli di una singola conversazione in tempo reale.
-   * @param conversationId L'ID della conversazione.
-   * @returns Un Observable che emette i dettagli della conversazione.
-   */
   public getConversationDetails(conversationId: string): Observable<ExtendedConversation | null> {
     const conversationRef = doc(this.afs, 'conversations', conversationId);
     const auth = getAuth();
@@ -347,7 +318,9 @@ export class ChatService {
               displayLastMessageAt: '',
               lastMessageSenderId: data.lastMessageSenderId || '',
               lastRead: data.lastRead || {},
-              deletedBy: data.deletedBy || []
+              deletedBy: data.deletedBy || [],
+              otherParticipantIsOnline: false,
+              otherParticipantLastOnline: otherParticipantData?.lastOnline
             } as ExtendedConversation);
           });
         } else {
@@ -365,12 +338,6 @@ export class ChatService {
     });
   }
 
-  /**
-   * Ottiene le conversazioni di un utente in tempo reale, mappandole a ConversationDocument.
-   * Questo è un flusso di dati grezzi che verrà arricchito e filtrato dalla ChatListPage.
-   * @param userId L'ID dell'utente.
-   * @returns Un Observable che emette un array di ConversationDocument.
-   */
   getUserConversations(userId: string): Observable<ConversationDocument[]> {
     const conversationsRef = collection(this.afs, 'conversations');
     const q = query(
@@ -407,12 +374,6 @@ export class ChatService {
     });
   }
 
-  /**
-   * Marca i messaggi di una conversazione come letti per un utente specifico.
-   * Aggiorna il timestamp 'lastRead' per l'utente nella conversazione.
-   * @param conversationId L'ID della conversazione.
-   * @param userId L'ID dell'utente che ha letto i messaggi.
-   */
   async markMessagesAsRead(conversationId: string, userId: string): Promise<void> {
     const conversationRef = doc(this.afs, 'conversations', conversationId);
     try {
@@ -433,12 +394,6 @@ export class ChatService {
     return dayjs(date).format('DD/MM/YYYY HH:mm');
   }
 
-  /**
-   * Conta quanti messaggi non sono stati letti da uno specifico utente.
-   * @param conversationId ID della conversazione
-   * @param userId ID dell'utente attuale
-   * @param lastRead Timestamp dell'ultimo messaggio letto
-   */
   async countUnreadMessages(conversationId: string, userId: string, lastRead: Timestamp | null): Promise<number> {
     const messagesRef = collection(this.afs, `conversations/${conversationId}/messages`);
 
@@ -453,17 +408,11 @@ export class ChatService {
     return snapshot.size;
   }
 
-  /**
-   * Marca una conversazione come "eliminata" per un utente specifico aggiungendo il suo UID all'array 'deletedBy'.
-   * Questo la nasconderà dalla lista delle chat dell'utente senza cancellarla per gli altri partecipanti.
-   * @param conversationId L'ID della conversazione da marcare.
-   * @param userId L'ID dell'utente che sta "eliminando" la conversazione.
-   */
   async markConversationAsDeleted(conversationId: string, userId: string): Promise<void> {
     const conversationRef = doc(this.afs, 'conversations', conversationId);
     try {
       await updateDoc(conversationRef, {
-        deletedBy: arrayUnion(userId) // Aggiungi l'ID dell'utente all'array 'deletedBy'
+        deletedBy: arrayUnion(userId)
       });
       console.log(`Conversazione ${conversationId} marcata come eliminata per l'utente ${userId}.`);
     } catch (error) {

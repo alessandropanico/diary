@@ -1,4 +1,4 @@
-/* src/app/pagine/lista-utenti/lista-utenti.page.scss */
+/* src/app/pagine/chat-list/chat-list.page.scss */
 
 :host {
   --primary-glow: #00ffee;
@@ -6,203 +6,268 @@
   --text-light: #ffffff;
   --label-color: #a0cfd8;
   --danger-color: #ff4e4e;
-    font-family: 'Orbitron', sans-serif;
-
-}
-
-
-.ff7-title {
+  --success-color: #28a745; // ⭐ Nuovo colore per lo stato online
   font-family: 'Orbitron', sans-serif;
-  color: var(--primary-glow, #00ffee);
-  text-shadow: 0 0 8px var(--primary-glow, #00ffee);
 }
 
+ion-header {
+  ion-toolbar {
 
-.loading-overlay {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
-  text-align: center;
 
-  ion-spinner {
-    width: 64px;
-    height: 64px;
-    color: var(--primary-glow);
-    animation: pulse 1.2s infinite ease-in-out;
-  }
-
-  p {
-    color: var(--primary-glow);
-    font-family: 'Orbitron', 'Segoe UI', monospace;
-    font-size: 1.2rem;
-    letter-spacing: 1px;
-    margin-top: 12px;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 1;
-  }
-}
-
-.ff7-list {
-  background: transparent !important;
-  padding-top: 15px;
-}
-
-.ff7-list-item {
-  --background: var(--bg-blur);
-  --border-radius: 8px;
-  --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  margin-bottom: 10px;
-  border: 1px solid rgba(0, 255, 238, 0.5);
-  border-left: 5px solid var(--primary-glow);
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  padding: 10px;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
-  }
-
-  ion-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: 2px solid var(--primary-glow);
-    overflow: hidden;
-    margin-right: 15px;
-    flex-shrink: 0;
-  }
-
-   ion-label {
-    // IMPORTANTE: Aggiungi queste proprietà per troncare il testo
-    display: flex;       // Usa flexbox per un migliore controllo
-    flex-direction: column; // Impila h2 e p verticalmente
-    min-width: 0;        // Permette al contenuto flex di restringersi
-    overflow: hidden;    // Nasconde qualsiasi contenuto che supera il box
-
-    h2 {
-      color: var(--text-light);
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 2px;
-      font-family: 'Orbitron', sans-serif;
-
-      // ⭐⭐⭐ Aggiungi queste 3 proprietà per il troncamento ⭐⭐⭐
-      white-space: nowrap;      // Impedisce al testo di andare a capo
-      overflow: hidden;         // Nasconde il testo che supera il box
-      text-overflow: ellipsis;  // Aggiunge "..." alla fine del testo troncato
+    ion-title {
+      font-weight: bold;
+      font-size: 1.2em;
+      font-family: 'Orbitron', sans-serif; // Assicurati che il titolo usi Orbitron
+      color: var(--primary-glow); // Colore del testo
+      text-shadow: 0 0 8px var(--primary-glow); // Effetto glow
     }
+
+    ion-buttons ion-button ion-icon {
+      color: var(--primary-glow);
+      font-size: 24px;
+      text-shadow: 0 0 5px rgba(0, 255, 238, 0.5);
+    }
+  }
+}
+
+ion-content {
+  --background: url('/assets/immaginiGenerali/background-final-fantasy.jpg') no-repeat center center / cover; // Sfondo dell'app
+  // Se non vuoi un'immagine di sfondo, puoi usare --background: var(--ion-color-dark, #121212); o simili
+
+  .loading-overlay {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    text-align: center;
+
+    ion-spinner {
+      width: 64px;
+      height: 64px;
+      color: var(--primary-glow);
+      animation: pulse 1.2s infinite ease-in-out;
+    }
+
     p {
-      color: var(--label-color);
-      font-size: 0.9rem;
-
-      // ⭐⭐⭐ Aggiungi queste 3 proprietà per il troncamento ⭐⭐⭐
-      white-space: nowrap;      // Impedisce al testo di andare a capo
-      overflow: hidden;         // Nasconde il testo che supera il box
-      text-overflow: ellipsis;  // Aggiunge "..." alla fine del testo troncato
+      color: var(--primary-glow);
+      font-family: 'Orbitron', 'Segoe UI', monospace;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      margin-top: 12px;
     }
   }
 
-  ion-buttons {
-      // Non è più necessario `flex: 1;` qui, dato che il bottone non è `expand="block"`
-      // ma `justify-content: flex-end;` è comunque utile per allineare a destra.
-      justify-content: flex-end;
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 1;
+    }
   }
-}
 
-// Rimosso `ion-button { color: black !important; }` qui!
-// I colori del testo saranno gestiti dalle classi specifiche.
-
-.follow-button {
-  --background: var(--primary-glow);
-  --color: black; /* Testo nero per "Segui" */
-  font-weight: bold;
-  letter-spacing: 1px;
-  box-shadow: 0 0 15px rgba(0, 255, 238, 0.7);
-  transition: all 0.3s ease;
-  /* RIMOSSO width: 100%; */
-  &:hover {
-    box-shadow: 0 0 20px rgba(0, 255, 238, 1);
-    transform: translateY(-2px);
+  .ff7-list {
+    background: transparent !important;
+    padding-top: 15px;
   }
-}
 
-.unfollow-button {
-  --background: var(--danger-color);
-  --background-activated: #cc0000;
-  --color: white; /* Testo bianco per "Non seguire più" */
-  font-weight: bold;
-  letter-spacing: 1px;
-  box-shadow: 0 0 15px rgba(255, 78, 78, 0.7);
-  transition: all 0.3s ease;
-  /* RIMOSSO width: 100%; */
-  &:hover {
-    box-shadow: 0 0 20px rgba(255, 78, 78, 1);
-    transform: translateY(-2px);
-  }
-}
-
-ion-fab-button {
-  --background: var(--primary-glow);
-  --color: black; /* Lasciamo il testo nero per il fab button */
-  box-shadow: 0 0 15px var(--primary-glow);
-}
-
-ion-card {
-    --background: var(--bg-blur);
-    color: var(--text-light);
-    border: 1px solid rgba(0, 255, 238, 0.3);
-    box-shadow: 0 0 10px rgba(0, 255, 238, 0.2);
+  ion-item-sliding {
+    margin-bottom: 10px;
     border-radius: 8px;
-}
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 255, 238, 0.5);
+    border-left: 5px solid var(--primary-glow); // La barra laterale di glow
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    background: var(--bg-blur); // Applica lo sfondo sfocato all'item sliding
 
-ion-card-title {
-    color: var(--primary-glow);
-    font-family: 'Orbitron', sans-serif;
-    text-shadow: 0 0 5px var(--primary-glow);
-}
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    }
 
-ion-card-content {
+    ion-item {
+      --background: transparent; // L'item è trasparente, usa lo sfondo del sliding
+      --border-color: transparent; // Nessun bordo interno per l'item
+      --inner-border-width: 0; // Rimuovi il bordo predefinito di Ionic tra gli item
+      --padding-start: 0; // Rimuovi il padding di default per il checkbox/avatar
+      --inner-padding-end: 16px; // Padding a destra per la freccia
+      padding: 10px 0; // Padding superiore/inferiore per l'item
+
+      &.selected-item {
+        --background: var(--bg-blur); // Mantieni lo sfondo sfocato anche se selezionato
+        border: 2px solid var(--primary-glow); // Aggiungi un bordo di glow per la selezione
+      }
+
+      ion-checkbox {
+        padding-inline-start: 16px; // Padding solo per il checkbox
+        --checkbox-background: var(--primary-glow);
+        --checkbox-background-checked: var(--primary-glow);
+        --checkmark-color: var(--ion-color-dark); // Colore del segno di spunta quando checked
+      }
+
+      // ⭐ NUOVO: Stile per il wrapper dell'avatar ⭐
+      .avatar-wrapper {
+        position: relative; // Questo contenitore diventa il riferimento per il posizionamento assoluto
+        width: 50px; // Larghezza dell'avatar
+        height: 50px; // Altezza dell'avatar
+        margin-inline-start: 16px; // Padding a sinistra
+        flex-shrink: 0; // Non permettere al wrapper di restringersi
+
+        ion-avatar {
+          width: 100%; // L'avatar occupa tutto lo spazio del wrapper
+          height: 100%;
+          border-radius: 50%;
+          border: 2px solid var(--primary-glow); // Bordo di glow per l'avatar
+          overflow: hidden; // Nasconde ciò che supera i bordi (l'immagine)
+        }
+
+        // ⭐ Stile per l'indicatore di stato (il pallino) ⭐
+        .online-status-indicator {
+          position: absolute;
+          bottom: -2px; // Posizionalo leggermente fuori e sotto l'avatar
+          right: -2px; // Posizionalo leggermente fuori e a destra dell'avatar
+          width: 14px; // Dimensione del pallino
+          height: 14px;
+          border-radius: 50%;
+          border: 2px solid var(--bg-blur); // Bordo che simula lo sfondo per "staccare" il pallino
+          z-index: 10;
+          box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); // Leggera ombra per profondità
+
+          &.online {
+            background-color: var(--success-color); // Verde per online
+          }
+
+          &.offline {
+            background-color: var(--ion-color-medium); // Grigio per offline
+          }
+        }
+      }
+
+      ion-label {
+        margin-inline-start: 15px; // Spazio tra avatar e testo
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        overflow: hidden;
+
+        .name-and-status {
+          display: flex;
+          align-items: baseline; // Allinea il nome e lo stato sulla stessa linea di base
+          flex-wrap: wrap; // Permette di andare a capo se lo spazio è insufficiente
+
+          h2 {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+            font-family: 'Orbitron', sans-serif;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-inline-end: 8px; // Spazio tra nome e stato testuale
+            line-height: 1.2; // Rendi l'altezza della linea più compatta
+          }
+
+          // ⭐ Stile per il testo dello stato online/offline ⭐
+          .online-status-text {
+            font-size: 0.85em;
+            font-weight: normal;
+            white-space: nowrap;
+            line-height: 1.2; // Rendi l'altezza della linea più compatta
+
+            &.online-text {
+              color: var(--success-color); // Verde per "Online"
+              text-shadow: 0 0 3px rgba(40, 167, 69, 0.5); // Leggero glow verde
+            }
+
+            &.offline-text {
+              color: var(--label-color); // Colore più tenue per lo stato offline
+            }
+          }
+        }
+
+        p {
+          color: var(--label-color); // Colore per l'ultimo messaggio
+          font-size: 0.9rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-top: 4px; // Spazio tra nome/stato e ultimo messaggio
+          line-height: 1.2;
+        }
+      }
+
+      ion-note {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end; // Allinea la nota a destra
+        font-size: 0.8em;
+        color: var(--label-color); // Colore per il timestamp
+        min-width: 60px; // Assicurati che ci sia spazio sufficiente per la data
+
+        .unread-count-badge {
+          margin-top: 4px;
+          min-width: 24px;
+          min-height: 24px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: 0.75em;
+          border-radius: 50%;
+          padding: 4px;
+          background-color: var(--danger-color); // Il badge è sempre rosso
+          color: white; // Testo bianco nel badge
+        }
+      }
+    }
+
+    ion-item-options {
+      ion-item-option {
+        &[color="danger"] {
+          --background: var(--danger-color);
+          --color: white; // Testo bianco per il pulsante "Elimina"
+          font-weight: bold;
+          ion-icon {
+            color: white;
+          }
+        }
+      }
+    }
+  }
+
+  // Stili per quando non ci sono conversazioni
+  .ion-text-center.ion-padding {
+    margin-top: 50px;
     color: var(--label-color);
-}
 
-ion-button{
-  color: black;
-}
+    ion-icon {
+      color: var(--label-color);
+      margin-bottom: 10px;
+    }
 
-ion-item {
-  --border-color: transparent;
-  --inner-border-width: 0px;
-  --background: transparent;
-}
+    p {
+      color: var(--text-light);
+      font-size: 1.1em;
+      margin-bottom: 20px;
+    }
 
-ion-header ion-toolbar ion-buttons ion-button ion-icon {
-  color: var(--primary-glow);
-  font-size: 24px;
-  text-shadow: 0 0 5px rgba(0, 255, 238, 0.5);
-}
-
-ion-item-option[color="danger"] {
-  --background: var(--danger-color);
-  --color: white;
-  ion-icon {
-    color: white;
+    ion-button {
+      --background: var(--primary-glow);
+      --color: black;
+      font-weight: bold;
+      letter-spacing: 1px;
+      box-shadow: 0 0 15px rgba(0, 255, 238, 0.7);
+    }
   }
 }
