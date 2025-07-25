@@ -1,12 +1,10 @@
-// ... (le tue importazioni esistenti) ...
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PostService } from 'src/app/services/post.service';
-// 👇 NOVITÀ: CommentService per eliminare commenti (non per il conteggio)
 import { CommentService } from 'src/app/services/comment.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
-import { Post } from 'src/app/interfaces/post'; // Assicurati che Post sia importato
+import { Post } from 'src/app/interfaces/post';
 import { Subscription, from } from 'rxjs';
 import { getAuth } from 'firebase/auth';
 import { Router } from '@angular/router';
@@ -58,7 +56,6 @@ export class PostComponent implements OnInit, OnDestroy {
     private loadingCtrl: LoadingController,
     private platform: Platform,
     private expService: ExpService,
-    // 👇 NOVITÀ: Inietta CommentService
     private commentService: CommentService
   ) { }
 
@@ -116,7 +113,7 @@ export class PostComponent implements OnInit, OnDestroy {
 
     this.showCommentsModal = false;
     this.selectedPostIdForComments = null;
-    this.selectedPostForComments = null; // Resetta anche l'oggetto post selezionato
+    this.selectedPostForComments = null;
 
     if (this.infiniteScroll) {
       this.infiniteScroll.disabled = false;
@@ -266,8 +263,6 @@ export class PostComponent implements OnInit, OnDestroy {
     });
     await loading.present();
     try {
-      // ✅ NOVITÀ: Utilizza il CommentService per eliminare tutti i commenti del post
-      // Questo gestirà anche la decrementazione del commentsCount sul post
       await this.commentService.deleteAllCommentsForPost(postId);
       await this.postService.deletePost(postId);
       this.presentAppAlert('Post Eliminato', 'Il post è stato rimosso con successo.');
@@ -289,7 +284,6 @@ export class PostComponent implements OnInit, OnDestroy {
     const hasLiked = post.likes.includes(this.currentUserId);
     try {
       await this.postService.toggleLike(post.id, this.currentUserId, !hasLiked);
-      // Aggiorna l'array 'likes' localmente per un feedback immediato
       if (!hasLiked) {
         post.likes = [...post.likes, this.currentUserId];
       } else {
@@ -302,10 +296,9 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ✅ Nessuna modifica richiesta qui. selectedPostForComments è già l'intero oggetto Post.
   toggleCommentsVisibility(post: Post) {
     this.selectedPostIdForComments = post.id;
-    this.selectedPostForComments = post; // Passa l'intero oggetto Post
+    this.selectedPostForComments = post;
     this.showCommentsModal = true;
     this.cdr.detectChanges();
   }
@@ -313,14 +306,10 @@ export class PostComponent implements OnInit, OnDestroy {
   closeCommentsModal(): void {
     this.showCommentsModal = false;
     this.selectedPostIdForComments = null;
-    this.selectedPostForComments = null; // Resetta anche l'oggetto post selezionato alla chiusura
+    this.selectedPostForComments = null;
     this.cdr.detectChanges();
-    // ✅ NOVITÀ: Ricarica i post dopo la chiusura del modale per aggiornare il conteggio da Firebase
     this.loadInitialPosts();
   }
-
-  // 👇 Rimosso onCommentsCountChanged(updatedCount: number): void {...}
-  // Questa funzione non è più necessaria perché il conteggio è gestito da Firebase.
 
   formatTextWithLinks(text: string): string {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
