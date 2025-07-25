@@ -36,8 +36,8 @@ export interface UserDashboardCounts {
   profilePictureUrl?: string;
   photo?: string;
 
-  nicknameLowercase?: string; // Nuova proprietà per la ricerca
-  nameLowercase?: string;     // Nuova proprietà per la ricerca
+  nicknameLowercase?: string;
+  nameLowercase?: string;
 }
 
 @Injectable({
