@@ -20,7 +20,7 @@
       </span>
       <ion-button fill="clear" size="small" (click)="onSetReply()">
         <ion-icon name="chatbubble-outline"></ion-icon>
-        <ng-container *ngIf="nestingLevel === 0">Rispondi</ng-container>
+        <ng-container *ngIf="nestingLevel === 0"></ng-container>
       </ion-button>
 
       <ion-button *ngIf="comment.userId === currentUserId" fill="clear" size="small"

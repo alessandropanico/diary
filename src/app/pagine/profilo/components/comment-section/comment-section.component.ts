@@ -571,7 +571,8 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
     try {
       const users = await this.userDataService.searchUsers(searchTerm);
-      this.taggingUsers = users.filter(user => user.uid !== this.currentUserId);
+      // this.taggingUsers = users.filter(user => user.uid !== this.currentUserId);
+      this.taggingUsers = users;
       this.cdr.detectChanges();
     } catch (error) {
       console.error('Errore durante la ricerca utenti per tagging:', error);

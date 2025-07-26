@@ -1,15 +1,7 @@
-/* src/app/components/comment-item/comment-item.component.scss */
-
-// Assicurati che le variabili CSS siano definite globalmente o passate
-// Per semplicità, qui si assume che siano accessibili o si usano valori hardcoded simili
-// Se usi @extend .panel-glow-border, devi importare il file che lo definisce,
-// oppure copiare la sua definizione qui (meno DRY).
-
 :host {
-  display: block; // Importante per la ricorsione
+  display: block;
 }
 
-/* Adatta .panel-glow-border se necessario, o assicurati che sia importato/disponibile globalmente */
 .panel-glow-border {
   background: rgba(15, 15, 35, 0.8);
   border: 1px solid rgba(0, 255, 238, 0.2);
@@ -23,30 +15,24 @@
   }
 }
 
-
 .comment-card {
-  @extend .panel-glow-border; // Assicurati che .panel-glow-border sia definito o importato
+  @extend .panel-glow-border;
   padding: 12px;
   margin-bottom: 10px;
-  width: 100%; // Sarà gestito dal parent per l'indentazione
-  background: rgba(20, 25, 50, 0.95); /* Colore base per i commenti principali */
+  width: 100%;
+  background: rgba(20, 25, 50, 0.95);
 
 
-  // &:last-of-type {
-  //   margin-bottom: 0;
-  // }
-
-  // Stili specifici per le risposte (quando nestingLevel > 0)
   &.is-reply {
-    background: rgba(20, 25, 50, 0.7); /* Sfondo più scuro per le risposte */
-    border: 1px solid rgba(0, 255, 238, 0.1); /* Bordo più tenue */
+    background: rgba(20, 25, 50, 0.7);
+    border: 1px solid rgba(0, 255, 238, 0.1);
     border-radius: 6px;
     padding: 8px;
-    margin-top: 8px; /* Spazio tra le risposte */
-    box-shadow: 0 0 4px rgba(0, 255, 238, 0.1); /* Ombra più leggera */
+    margin-top: 8px;
+    box-shadow: 0 0 4px rgba(0, 255, 238, 0.1);
 
     &:first-of-type {
-      margin-top: 5px; /* Riduci il margine superiore per la prima risposta */
+      margin-top: 5px;
     }
   }
 }
@@ -62,8 +48,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid #00ffee; /* primary-glow */
-  box-shadow: 0 0 3px rgba(0, 255, 238, 0.1); /* glow-intensity-low */
+  border: 1px solid #00ffee;
+  box-shadow: 0 0 3px rgba(0, 255, 238, 0.1);
   cursor: pointer;
   flex-shrink: 0;
   margin-right: 8px;
@@ -90,8 +76,8 @@
 .post-username, .reply-username {
   font-size: 0.9em;
   font-weight: bold;
-  color: #00ffee; /* primary-glow */
-  text-shadow: 0 0 1px rgba(0, 255, 238, 0.1); /* glow-intensity-low */
+  color: #00ffee;
+  text-shadow: 0 0 1px rgba(0, 255, 238, 0.1);
   cursor: pointer;
 
   &:hover {
@@ -101,12 +87,12 @@
 
 .reply-username {
   font-size: 0.8em;
-  color: #ffffff; /* text-light */
+  color: #ffffff;
 }
 
 .post-time, .reply-time {
   font-size: 0.7em;
-  color: #a0cfd8; /* label-color */
+  color: #a0cfd8;
   margin-top: 2px;
 }
 
@@ -246,4 +232,9 @@
   .reply-content {
     margin-left: calc(26px + 8px);
   }
+}
+
+
+.likes-count-display{
+  font-size: 10px;
 }
