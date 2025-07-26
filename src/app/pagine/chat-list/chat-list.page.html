@@ -59,8 +59,7 @@
             <span class="online-status-text"
                   [class.online-text]="conv.otherParticipantIsOnline"
                   [class.offline-text]="!conv.otherParticipantIsOnline">
-              {{ conv.otherParticipantIsOnline ? 'Online' : conv.otherParticipantLastOnline }}
-            </span>
+              {{ conv.otherParticipantIsOnline ? 'Online' : 'Offline' }} </span>
           </div>
           <p>
             {{ getDisplayLastMessage(conv) | slice:0:40 }}{{ conv.lastMessage && conv.lastMessage.length > 40 ? '...' : '' }}

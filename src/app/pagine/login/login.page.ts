@@ -1,12 +1,12 @@
+// src/app/login/login.page.ts
+
 import { Component, NgZone, OnInit } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { environment } from 'src/environments/environment';
-import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service'; // Importa anche l'interfaccia
-// Rimuoviamo gli import di 'doc' e 'getDoc' perché non li useremo direttamente qui
-// import { doc, getDoc } from 'firebase/firestore';
+import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 
 const app = initializeApp(environment.firebaseConfig);
 const auth = getAuth(app);
@@ -39,6 +39,14 @@ export class LoginPage implements OnInit {
             photoURL: firebaseUser.photoURL,
             uid: firebaseUser.uid
           };
+
+          // Chiamata per aggiornare lastOnline anche qui, nel caso l'utente sia già loggato
+          // e navigasse direttamente a '/profilo' o ricaricasse la pagina.
+          // Questo serve come un "ping" iniziale che l'utente è online.
+          this.userDataService.setLastOnline().catch(err => {
+            console.error("Errore nell'aggiornamento di lastOnline all'inizializzazione del login:", err);
+          });
+
 
           if (this.router.url !== '/profilo') {
             this.router.navigateByUrl('/profilo', { replaceUrl: true });
@@ -83,20 +91,13 @@ export class LoginPage implements OnInit {
       const firebaseUser = userCredential.user;
 
       // ⭐ SOLO QUESTA È LA PARTE RILEVANTE PER lastOnline AL LOGIN ⭐
-      // Prepariamo l'oggetto con i dati che vogliamo inviare al servizio.
-      // Il servizio UserDataService si occuperà di leggere/scrivere nel database.
       const dataToUpdate: Partial<UserDashboardCounts> = {
-        uid: firebaseUser.uid, // L'UID è essenziale per identificare il documento utente
-        email: firebaseUser.email || '', // Includiamo l'email (se non la gestisci altrove)
-        lastLogin: new Date().toISOString(), // Aggiorniamo l'ultimo login
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        lastLogin: new Date().toISOString(),
         lastOnline: new Date().toISOString(), // ⭐ Questo è il timestamp "online" chiave ⭐
-        // Rimuovi QUI tutti gli altri campi del profilo (name, nickname, photo, createdAt, etc.)
-        // Lascia che sia il tuo UserDataService a gestire l'inizializzazione di tutti i campi
-        // quando crea un nuovo utente, o a ignorarli quando aggiorna un utente esistente.
       };
 
-      // Invochiamo il metodo del servizio per salvare/aggiornare i dati dell'utente.
-      // Il servizio userà l'UID e i dati forniti per aggiornare il documento in Firestore.
       await this.userDataService.saveUserData(dataToUpdate);
 
       const alert = await this.alertCtrl.create({

@@ -1,7 +1,9 @@
+// src/app/app.component.ts
+
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MenuController, AlertController, ModalController } from '@ionic/angular';
-import { Subject, Subscription, interval } from 'rxjs'; // ⭐ Aggiungi 'interval' qui ⭐
-import { takeWhile } from 'rxjs/operators'; // ⭐ Aggiungi 'takeWhile' qui per la pulizia ⭐
+import { Subject, Subscription, interval } from 'rxjs';
+import { takeWhile } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { UserDataService } from './services/user-data.service';
 import { initializeApp } from 'firebase/app';
@@ -13,7 +15,6 @@ import { FirebaseAuthStateService } from './services/firebase-auth-state.service
 
 import { environment } from 'src/environments/environment';
 const app = initializeApp(environment.firebaseConfig);
-
 
 @Component({
   selector: 'app-root',
@@ -40,7 +41,7 @@ export class AppComponent implements OnInit, OnDestroy {
   unreadCount = 0;
 
   firebaseIsLoggedIn: boolean | null = null;
-  private onlineStatusUpdateSubscription: Subscription | undefined; // ⭐ Nuova variabile per la subscription ⭐
+  private onlineStatusUpdateSubscription: Subscription | undefined;
 
   constructor(
     private menu: MenuController,
@@ -169,8 +170,8 @@ export class AppComponent implements OnInit, OnDestroy {
     if (currentUser) {
       // ⭐ Rimosso l'argomento dalla chiamata a getUserData() ⭐
       const userData = await this.userDataService.getUserData();
-      if (userData && userData.photo) {
-        this.profilePhotoUrl = userData.photo;
+      if (userData && (userData.profilePictureUrl || userData.photo)) { // Ho aggiunto profilePictureUrl dato che l'interfaccia UserDashboardCounts lo ha
+        this.profilePhotoUrl = userData.profilePictureUrl || userData.photo;
       }
       else if (currentUser.photoURL) {
         this.profilePhotoUrl = currentUser.photoURL;
