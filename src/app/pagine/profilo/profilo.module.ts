@@ -12,6 +12,7 @@ import { CommentSectionComponent } from './components/comment-section/comment-se
 import { CommentsModalComponent } from './components/comments-modal/comments-modal.component';
 import { CommentItemComponent } from './components/comment-item/comment-item.component';
 import { LikeModalComponent } from './components/like-modal/like-modal.component';
+import { CommentLikesModalComponent } from './components/comment-likes-modal/comment-likes-modal.component';
 
 @NgModule({
   imports: [
@@ -25,7 +26,8 @@ import { LikeModalComponent } from './components/like-modal/like-modal.component
     CommentSectionComponent,
     CommentsModalComponent,
     CommentItemComponent,
-    LikeModalComponent
+    LikeModalComponent,
+    CommentLikesModalComponent
   ],
   declarations: [ProfiloPage, ]
 })

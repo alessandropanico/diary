@@ -12,9 +12,12 @@
         [class.liked]="currentUserId && comment.likes.includes(currentUserId)"
         (click)="onToggleLike()">
         <ion-icon [name]="currentUserId && comment.likes.includes(currentUserId) ? 'heart' : 'heart-outline'"></ion-icon>
-        {{ comment.likes.length }}
       </ion-button>
-
+      <span *ngIf="comment.likes.length > 0"
+            class="likes-count-display"
+            (click)="onViewLikes()">
+        {{ comment.likes.length }} {{ comment.likes.length === 1 ? 'Mi piace' : 'Mi piace' }}
+      </span>
       <ion-button fill="clear" size="small" (click)="onSetReply()">
         <ion-icon name="chatbubble-outline"></ion-icon>
         <ng-container *ngIf="nestingLevel === 0">Rispondi</ng-container>
@@ -42,6 +45,7 @@
       (toggleLike)="propagateToggleLike($event)"
       (setReply)="onSetReply()"
       (deleteComment)="propagateDeleteComment($event)"
-      (goToProfile)="propagateGoToProfile($event)"> </app-comment-item>
+      (goToProfile)="propagateGoToProfile($event)"
+      (viewLikes)="propagateViewLikes($event)"> </app-comment-item>
   </div>
 </div>

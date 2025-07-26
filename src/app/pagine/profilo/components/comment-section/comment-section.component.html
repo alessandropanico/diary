@@ -16,7 +16,8 @@
         (toggleLike)="toggleLikeComment($event)"
         (setReply)="setReplyTarget($event)"
         (deleteComment)="handleDeleteComment($event)"
-        (goToProfile)="handleGoToProfile($event)"> </app-comment-item>
+        (goToProfile)="handleGoToProfile($event)"
+        (viewLikes)="openCommentLikesModal($event)"> </app-comment-item>
 
       <ion-infinite-scroll (ionInfiniteScroll)="loadMoreComments($event)" [disabled]="!canLoadMoreComments"
         [threshold]="'100px'" position="bottom">

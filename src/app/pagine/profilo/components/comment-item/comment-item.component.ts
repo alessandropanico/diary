@@ -1,9 +1,11 @@
+// src/app/components/comment-item/comment-item.component.ts
+
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { Comment } from 'src/app/interfaces/comment';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser'; 
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-comment-item',
@@ -24,6 +26,7 @@ export class CommentItemComponent implements OnInit, OnChanges {
   @Output() setReply = new EventEmitter<Comment>();
   @Output() deleteComment = new EventEmitter<string>();
   @Output() goToProfile = new EventEmitter<string>();
+  @Output() viewLikes = new EventEmitter<Comment>(); // ⭐ NUOVO: Evento per visualizzare i likes ⭐
 
   formattedCommentText: SafeHtml | undefined;
 
@@ -39,12 +42,6 @@ export class CommentItemComponent implements OnInit, OnChanges {
     }
   }
 
-  /**
-   * ⭐ NUOVO METODO: Formatta il testo del commento, trasformando i tag @nickname in link cliccabili.
-   * Il data-identifier conterrà il nickname.
-   * @param text Il testo grezzo del commento.
-   * @returns SafeHtml Il testo formattato come HTML sicuro.
-   */
   private formatTextWithUserTags(text: string): SafeHtml {
     const tagRegex = /@([a-zA-Z0-9_.-]+)/g;
 
@@ -52,15 +49,9 @@ export class CommentItemComponent implements OnInit, OnChanges {
       return `<a class="user-tag" data-identifier="${nickname}">${match}</a>`;
     });
 
-    // Usa DomSanitizer per marcare l'HTML come sicuro.
     return this.sanitizer.bypassSecurityTrustHtml(replacedText);
   }
 
-  /**
-   * ⭐ NUOVO METODO: Gestisce il click sul testo del commento, in particolare sui link dei tag utente.
-   * Emette l'identifier (nickname) al componente padre.
-   * @param event L'evento click.
-   */
   onCommentTextClick(event: Event) {
     const target = event.target as HTMLElement;
     if (target.classList.contains('user-tag')) {
@@ -100,5 +91,15 @@ export class CommentItemComponent implements OnInit, OnChanges {
 
   propagateGoToProfile(identifier: string) {
     this.goToProfile.emit(identifier);
+  }
+
+  // ⭐ NUOVO METODO: Emette l'evento viewLikes ⭐
+  onViewLikes() {
+    this.viewLikes.emit(this.comment);
+  }
+
+  // ⭐ NUOVO METODO: Propaga l'evento viewLikes dalle risposte ⭐
+  propagateViewLikes(comment: Comment) {
+    this.viewLikes.emit(comment);
   }
 }

@@ -1,7 +1,9 @@
+// src/app/components/comment-section/comment-section.component.ts
+
 import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, SimpleChanges, OnChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, LoadingController, AlertController, IonInfiniteScroll } from '@ionic/angular';
+import { IonicModule, LoadingController, AlertController, IonInfiniteScroll, ModalController } from '@ionic/angular'; // Importa ModalController
 import { CommentService } from 'src/app/services/comment.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Comment, CommentFetchResult } from 'src/app/interfaces/comment';
@@ -13,6 +15,7 @@ import { Router } from '@angular/router';
 import { DocumentSnapshot } from '@angular/fire/firestore';
 
 import { CommentItemComponent } from '../comment-item/comment-item.component';
+import { CommentLikesModalComponent } from '../comment-likes-modal/comment-likes-modal.component'; // ⭐ NUOVO: Importa il modale dei likes ⭐
 
 export interface TagUser {
   uid: string;
@@ -27,7 +30,7 @@ export interface TagUser {
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule, CommentItemComponent],
+  imports: [CommonModule, FormsModule, IonicModule, CommentItemComponent], // Non aggiungiamo CommentLikesModalComponent qui, lo caricheremo dinamicamente
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
@@ -43,7 +46,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   currentUserUsername: string = 'Eroe Anonimo';
   currentUserAvatar: string = 'assets/immaginiGenerali/default-avatar.jpg';
 
-  // ⭐ Inizializza a true. Sarà la prima cosa a essere letta. ⭐
   isLoadingComments: boolean = true;
   private commentsLimit: number = 10;
   canLoadMoreComments: boolean = true;
@@ -54,12 +56,11 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
   replyingToComment: Comment | null = null;
 
-  // Nuove variabili per il tagging
   showTaggingSuggestions: boolean = false;
-  taggingUsers: TagUser[] = []; // Utenti suggeriti per il tag
+  taggingUsers: TagUser[] = [];
   private searchUserTerm = new Subject<string>();
   private searchUserSubscription: Subscription | undefined;
-  public currentSearchText: string = ''; // Per tenere traccia del testo di ricerca corrente dopo '@'
+  public currentSearchText: string = '';
 
   constructor(
     private commentService: CommentService,
@@ -68,18 +69,17 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     private loadingCtrl: LoadingController,
     private alertCtrl: AlertController,
     private expService: ExpService,
-    private router: Router
+    private router: Router,
+    private modalController: ModalController // <-- INIETTA ModalController
   ) { }
 
   ngOnInit() {
-    // ⭐ Assicurati che isLoadingComments sia true fin dall'inizio del ciclo di vita ⭐
     this.isLoadingComments = true;
-    this.cdr.detectChanges(); // Forziamo il refresh per mostrare subito il loader
+    this.cdr.detectChanges();
 
     this.authStateUnsubscribe = getAuth().onAuthStateChanged(user => {
       if (user) {
         this.currentUserId = user.uid;
-        // ⭐ La logica di caricamento utenti e commenti si integra qui ⭐
         if (!this.currentUserUsername || this.currentUserUsername === 'Eroe Anonimo') {
           this.userDataSubscription = from(this.userDataService.getUserDataByUid(this.currentUserId!)).subscribe({
             next: (userData: UserDashboardCounts | null) => {
@@ -87,39 +87,38 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
                 this.currentUserUsername = userData.nickname || 'Eroe Anonimo';
                 this.currentUserAvatar = userData.photo || userData.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg';
               }
-              this.cdr.detectChanges(); // Aggiorna i dati utente
-              this.resetAndLoadComments(); // Avvia il caricamento dei commenti DOPO aver caricato i dati utente
+              this.cdr.detectChanges();
+              this.resetAndLoadComments();
             },
             error: (err) => {
               console.error('Errore nel recupero dati utente (CommentSection):', err);
               this.presentAppAlert('Errore Utente', 'Impossibile caricare i dati del tuo profilo per i commenti.');
-              this.isLoadingComments = false; // Ferma il loading anche in caso di errore
+              this.isLoadingComments = false;
               this.cdr.detectChanges();
-              this.resetAndLoadComments(); // Prova a caricare i commenti anche con errore utente
+              this.resetAndLoadComments();
             }
           });
         } else {
-          // Se i dati utente sono già presenti (e non di default), procedi direttamente
           this.resetAndLoadComments();
         }
       } else {
         this.currentUserId = null;
         this.comments = [];
         this.canLoadMoreComments = false;
-        this.isLoadingComments = false; // Nessun utente, niente da caricare, mostra subito "nessun commento" se necessario
+        this.isLoadingComments = false;
         this.cdr.detectChanges();
         this.unsubscribeAll();
       }
     });
-    // Nuova sottoscrizione per la ricerca utenti
+
     this.searchUserSubscription = this.searchUserTerm.pipe(
-      debounceTime(300), // Aspetta 300ms dopo l'ultima digitazione
-      distinctUntilChanged() // Emette solo se il valore corrente è diverso dall'ultimo
+      debounceTime(300),
+      distinctUntilChanged()
     ).subscribe(searchTerm => {
       if (searchTerm) {
         this.searchUsersForTagging(searchTerm);
       } else {
-        this.taggingUsers = []; // Svuota i suggerimenti se il termine è vuoto
+        this.taggingUsers = [];
         this.cdr.detectChanges();
       }
     });
@@ -127,7 +126,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
   ngOnDestroy(): void {
     this.unsubscribeAll();
-    if (this.searchUserSubscription) { // Disiscriviti anche dalla ricerca utenti
+    if (this.searchUserSubscription) {
       this.searchUserSubscription.unsubscribe();
     }
   }
@@ -158,7 +157,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   private resetAndLoadComments() {
-    this.isLoadingComments = true; // ⭐ Inizializza a true ogni volta che resetta e carica ⭐
+    this.isLoadingComments = true;
     this.comments = [];
     this.canLoadMoreComments = true;
     this.commentsSubscription?.unsubscribe();
@@ -166,18 +165,18 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
     if (this.infiniteScroll) {
       this.infiniteScroll.disabled = false;
-      setTimeout(() => { // Small timeout to ensure infinite scroll is ready
+      setTimeout(() => {
         if (this.infiniteScroll) {
           this.infiniteScroll.complete();
         }
       }, 0);
     }
-    this.cdr.detectChanges(); // ⭐ Forza il refresh qui per mostrare il loader ⭐
+    this.cdr.detectChanges();
 
     if (this.currentUserId && this.postId) {
       this.loadInitialComments();
     } else {
-      this.isLoadingComments = false; // Se non ci sono ID utente o post, non caricare e ferma il loader
+      this.isLoadingComments = false;
       this.cdr.detectChanges();
     }
   }
@@ -189,12 +188,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       this.cdr.detectChanges();
       return;
     }
-
-    // ⭐ isLoadingComments è già true da resetAndLoadComments, non serve qui ⭐
-    // this.isLoadingComments = true;
-    // this.comments = []; // Già svuotato da resetAndLoadComments
-    // this.canLoadMoreComments = true; // Già impostato da resetAndLoadComments
-    // this.cdr.detectChanges(); // Già chiamato da resetAndLoadComments
 
     try {
       const result: CommentFetchResult = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
@@ -214,8 +207,8 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         this.infiniteScroll.disabled = true;
       }
     } finally {
-      this.isLoadingComments = false; // ⭐ Imposta a false solo alla fine del caricamento (successo o errore) ⭐
-      this.cdr.detectChanges(); // ⭐ Forza il refresh della vista dopo aver impostato i dati e il loading ⭐
+      this.isLoadingComments = false;
+      this.cdr.detectChanges();
       if (this.infiniteScroll) {
         this.infiniteScroll.complete();
       }
@@ -223,12 +216,12 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   async loadMoreComments(event: any) {
-    if (!this.canLoadMoreComments || this.isLoadingComments) { // Controlla anche isLoadingComments per evitare doppie chiamate
+    if (!this.canLoadMoreComments || this.isLoadingComments) {
       event.target.complete();
       return;
     }
 
-    this.isLoadingComments = true; // ⭐ Imposta a true per il caricamento addizionale (anche se Ionic ha il suo spinner) ⭐
+    this.isLoadingComments = true;
     this.cdr.detectChanges();
 
     try {
@@ -236,8 +229,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
       if (result.comments.length > 0) {
         const combinedCommentsMap = new Map<string, Comment>();
-        // Usa `map` invece di `forEach` per creare un nuovo array per i commenti combinati
-        // e poi trasformalo in una Map
         [...this.comments, ...result.comments].forEach(comment => {
           combinedCommentsMap.set(comment.id, comment);
         });
@@ -261,7 +252,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         this.infiniteScroll.disabled = true;
       }
     } finally {
-      this.isLoadingComments = false; // ⭐ Imposta a false al termine del caricamento addizionale ⭐
+      this.isLoadingComments = false;
       this.cdr.detectChanges();
       if (event.target) {
         event.target.complete();
@@ -269,12 +260,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-
-  /**
-   * Gestisce l'eliminazione di un commento o di una risposta.
-   * Decide quale metodo di eliminazione del servizio chiamare in base alla natura del commento.
-   * @param commentId L'ID del commento da eliminare (questo è l'ID del commento "cliccato").
-   */
   async handleDeleteComment(commentId: string) {
     let commentToDelete: Comment | null = null;
     const loadingInitial = await this.loadingCtrl.create({
@@ -284,7 +269,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     await loadingInitial.present();
 
     try {
-      // 1. Recupera il commento completo dal servizio per conoscerne il parentId
       commentToDelete = await this.commentService.getCommentByIdOnce(this.postId, commentId);
 
       if (!commentToDelete) {
@@ -311,7 +295,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       deleteFunction = (postId, id) => this.commentService.deleteSingleComment(postId, id);
     }
 
-    // 3. Chiedi conferma all'utente e poi esegui l'eliminazione
     const alert = await this.alertCtrl.create({
       header: 'Conferma Eliminazione',
       message: confirmMessage,
@@ -425,7 +408,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         });
       };
 
-      // ⭐ Crea una nuova istanza dell'array per attivare la Change Detection con OnPush ⭐
       this.comments = updateLikesRecursively(this.comments, commentToToggle.id, this.currentUserId, !hasLiked);
 
       this.cdr.detectChanges();
@@ -462,17 +444,12 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
     if (uidToNavigate) {
       if (uidToNavigate === this.currentUserId) {
-        // Naviga al profilo dell'utente corrente
         this.router.navigateByUrl('/profilo');
       } else {
-        // Naviga al profilo di altri utenti usando l'UID
-        // ⭐ Assicurati che la rotta sia '/profilo-altri-utenti/:id'
         this.router.navigate(['/profilo-altri-utenti', uidToNavigate]);
       }
     } else {
       console.warn(`CommentSectionComponent: Impossibile navigare. UID non disponibile per l'identifier: ${identifier}`);
-      // Un alert è già stato mostrato se la risoluzione del nickname è fallita.
-      // Qui potresti mettere un log o un alert generico se uidToNavigate è null per altre ragioni.
     }
   }
 
@@ -520,7 +497,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  // AGGIORNATO: Ora include la logica per il tagging
   adjustTextareaHeight(event: Event) {
     const textarea = event.target as HTMLTextAreaElement;
     textarea.style.height = 'auto';
@@ -535,7 +511,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       textarea.style.overflowY = 'hidden';
     }
 
-    // LOGICA PER IL TAGGING AGGIORNATA
     const text = this.newCommentText;
     const atIndex = text.lastIndexOf('@');
 
@@ -587,10 +562,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     });
   }
 
-  /**
-   * Cerca utenti per il tagging in base al termine di ricerca.
-   * Cerca per nickname e/o nome completo.
-   */
   async searchUsersForTagging(searchTerm: string) {
     if (!searchTerm || searchTerm.length < 2) {
       this.taggingUsers = [];
@@ -610,9 +581,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  /**
-   * Seleziona un utente dalla lista dei suggerimenti e lo inserisce nel commento.
-   */
   selectUserForTagging(user: TagUser) {
     const text = this.newCommentText;
     const atIndex = text.lastIndexOf('@');
@@ -636,4 +604,32 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
+  // ⭐ NUOVO METODO: Apre il modale dei likes del commento ⭐
+  async openCommentLikesModal(comment: Comment) {
+    if (comment.likes.length === 0) {
+      // Non aprire il modale se non ci sono likes
+      return;
+    }
+
+    const modal = await this.modalController.create({
+      component: CommentLikesModalComponent, // Il componente del modale che abbiamo creato
+      componentProps: {
+        postId: comment.postId,
+        commentId: comment.id
+      },
+      cssClass: 'likes-modal', // Puoi definire una classe CSS per stilizzare il modale
+      mode: 'ios',
+      breakpoints: [0, 0.5, 0.8], // Opzionale: per un modal a scorrimento parziale (come Instagram)
+      initialBreakpoint: 0.8,
+      backdropDismiss: true
+    });
+
+    await modal.present();
+
+    const { data } = await modal.onWillDismiss();
+    // Puoi gestire qui eventuali dati di ritorno dal modale, se necessario
+    if (data && data.dismissed) {
+      console.log('Comment Likes Modal dismissed');
+    }
+  }
 }
