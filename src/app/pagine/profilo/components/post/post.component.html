@@ -1,7 +1,7 @@
 <div class="create-post-container panel-glow-border">
   <div class="post-header">
     <div class="post-avatar">
-      <img [src]="currentUserAvatar" alt="User Avatar" (click)="goToUserProfile(currentUserId!)">
+      <img [src]="getUserPhoto(currentUserAvatar)" alt="User Avatar" (click)="goToUserProfile(currentUserId!)">
     </div>
     <div class="post-info">
       <span class="post-username" (click)="goToUserProfile(currentUserId!)">{{ currentUserUsername }}</span>
@@ -30,7 +30,7 @@
 <div *ngFor="let post of posts" class="post-card panel-glow-border">
   <div class="post-header">
     <div class="post-avatar">
-      <img [src]="post.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar"
+      <img [src]="getUserPhoto(post.userAvatarUrl)" alt="User Avatar"
         (click)="goToUserProfile(post.userId)">
     </div>
     <div class="post-info">
@@ -50,6 +50,9 @@
       (click)="toggleLike(post)">
       <span class="icon heart-icon"></span> {{ post.likes.length }} Mi piace
     </button>
+    <button *ngIf="post.likes.length > 0" class="post-action-button" (click)="openLikesModal(post.id)">
+        Vedi chi ha messo like
+    </button>
     <button class="post-action-button" (click)="toggleCommentsVisibility(post)">
       <span class="icon comment-icon"></span> {{ post.commentsCount || 0 }} Commenti
     </button>
@@ -67,6 +70,12 @@
   [postText]="selectedPostForComments.text"
   (closeModalEvent)="closeCommentsModal()">
 </app-comments-modal>
+
+<app-like-modal
+  *ngIf="showLikesModal && selectedPostIdForLikes"
+  [postId]="selectedPostIdForLikes"
+  (closeModalEvent)="closeLikesModal()">
+</app-like-modal>
 
 
 <ion-infinite-scroll (ionInfinite)="loadMorePosts($event)" [disabled]="!canLoadMore">

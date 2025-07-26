@@ -11,6 +11,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, LoadingController, Platform, IonInfiniteScroll, IonicModule } from '@ionic/angular';
 import { ExpService } from 'src/app/services/exp.service';
 import { CommentsModalComponent } from '../comments-modal/comments-modal.component';
+import { LikeModalComponent } from '../like-modal/like-modal.component'; // ⭐⭐ NUOVO IMPORT ⭐⭐
 
 @Component({
   selector: 'app-post',
@@ -21,7 +22,8 @@ import { CommentsModalComponent } from '../comments-modal/comments-modal.compone
     CommonModule,
     FormsModule,
     IonicModule,
-    CommentsModalComponent
+    CommentsModalComponent,
+    LikeModalComponent // ⭐⭐ AGGIORNATO: Aggiunto LikeModalComponent ⭐⭐
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -41,6 +43,9 @@ export class PostComponent implements OnInit, OnDestroy {
   showCommentsModal: boolean = false;
   selectedPostIdForComments: string | null = null;
   selectedPostForComments: Post | null = null;
+
+  showLikesModal: boolean = false;
+  selectedPostIdForLikes: string | null = null;
 
   private userIdToDisplayPosts: string | null = null;
 
@@ -62,7 +67,7 @@ export class PostComponent implements OnInit, OnDestroy {
     private commentService: CommentService
   ) { }
 
-  ngOnInit() {
+ ngOnInit() {
     this.authStateUnsubscribe = getAuth().onAuthStateChanged(user => {
       if (user) {
         this.currentUserId = user.uid;
@@ -70,7 +75,8 @@ export class PostComponent implements OnInit, OnDestroy {
           next: (userData: UserDashboardCounts | null) => {
             if (userData) {
               this.currentUserUsername = userData.nickname || 'Eroe Anonimo';
-              this.currentUserAvatar = userData.photo || userData.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg';
+              // ⭐⭐ AGGIORNATO: Usa getUserPhoto per impostare l'avatar utente corrente ⭐⭐
+              this.currentUserAvatar = this.getUserPhoto(userData.photo || userData.profilePictureUrl);
             }
             this.cdr.detectChanges();
 
@@ -102,6 +108,7 @@ export class PostComponent implements OnInit, OnDestroy {
     });
   }
 
+
   ngOnDestroy(): void {
     this.unsubscribeAll();
     if (this.routeSubscription) {
@@ -121,7 +128,7 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadInitialPosts() {
+ loadInitialPosts() {
     this.isLoadingPosts = true;
     this.postsSubscription?.unsubscribe();
     this.lastPostTimestamp = null;
@@ -130,6 +137,9 @@ export class PostComponent implements OnInit, OnDestroy {
     this.showCommentsModal = false;
     this.selectedPostIdForComments = null;
     this.selectedPostForComments = null;
+    // ⭐⭐ NUOVE RIGHE: Resetta lo stato del modale dei like all'inizio del caricamento dei post ⭐⭐
+    this.showLikesModal = false;
+    this.selectedPostIdForLikes = null;
 
     if (this.infiniteScroll) {
       this.infiniteScroll.disabled = false;
@@ -171,9 +181,11 @@ export class PostComponent implements OnInit, OnDestroy {
     });
   }
 
-  async loadMorePosts(event: any) {
+
+  async loadMorePosts(event: Event) {
+    const infiniteScrollTarget = event.target as unknown as IonInfiniteScroll;
     if (!this.canLoadMore) {
-      event.target.complete();
+      infiniteScrollTarget.complete();
       return;
     }
 
@@ -199,7 +211,7 @@ export class PostComponent implements OnInit, OnDestroy {
             }
           }
           this.cdr.detectChanges();
-          event.target.complete();
+          infiniteScrollTarget.complete();
         },
         error: (error) => {
           console.error('Errore nel caricamento di altri post:', error);
@@ -209,7 +221,7 @@ export class PostComponent implements OnInit, OnDestroy {
             this.infiniteScroll.disabled = true;
           }
           this.cdr.detectChanges();
-          event.target.complete();
+          infiniteScrollTarget.complete();
         }
       });
     } catch (error) {
@@ -218,7 +230,7 @@ export class PostComponent implements OnInit, OnDestroy {
       if (this.infiniteScroll) {
         this.infiniteScroll.disabled = true;
       }
-      event.target.complete();
+      infiniteScrollTarget.complete();
     }
   }
 
@@ -305,19 +317,20 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-  async toggleLike(post: Post) {
+ async toggleLike(post: Post) {
     if (!this.currentUserId) {
       this.presentAppAlert('Accedi Necessario', 'Devi essere loggato per mostrare il tuo apprezzamento!');
       return;
     }
 
-    const hasLiked = post.likes.includes(this.currentUserId);
+    // Usa ?? [] per assicurare che 'likes' sia un array vuoto se undefined/null
+    const hasLiked = (post.likes ?? []).includes(this.currentUserId);
     try {
       await this.postService.toggleLike(post.id, this.currentUserId, !hasLiked);
       if (!hasLiked) {
-        post.likes = [...post.likes, this.currentUserId];
+        post.likes = [...(post.likes ?? []), this.currentUserId]; // Aggiungi il like
       } else {
-        post.likes = post.likes.filter(id => id !== this.currentUserId);
+        post.likes = (post.likes ?? []).filter(id => id !== this.currentUserId); // Rimuovi il like
       }
       this.cdr.detectChanges();
     } catch (error) {
@@ -453,7 +466,7 @@ export class PostComponent implements OnInit, OnDestroy {
     textarea.style.height = 'auto';
 
     const maxHeightCss = window.getComputedStyle(textarea).maxHeight;
-    const maxHeightPx = parseFloat(maxHeightCss); // Converte '150px' in 150
+    const maxHeightPx = parseFloat(maxHeightCss);
 
     if (textarea.scrollHeight > maxHeightPx) {
       textarea.style.height = maxHeightPx + 'px';
@@ -462,5 +475,33 @@ export class PostComponent implements OnInit, OnDestroy {
       textarea.style.height = textarea.scrollHeight + 'px';
       textarea.style.overflowY = 'hidden';
     }
+  }
+
+    // ⭐⭐ NUOVO METODO: getUserPhoto per la gestione degli URL delle immagini profilo ⭐⭐
+  /**
+   * Restituisce l'URL della foto profilo, usando un avatar di default
+   * se l'URL fornito è nullo, vuoto, o un URL generico di Google.
+   * @param photoUrl L'URL della foto profilo dell'utente.
+   * @returns L'URL effettivo dell'immagine da visualizzare.
+   */
+  getUserPhoto(photoUrl: string | null | undefined): string {
+    const defaultGoogleProfilePicture = 'https://lh3.googleusercontent.com/a/ACg8ocK-pW1q9zsWi1DHCcamHuNOTLOvotU44G2v2qtMUtWu3LI0FOE=s96-c';
+
+    if (!photoUrl || photoUrl === '' || photoUrl === defaultGoogleProfilePicture) {
+      return 'assets/immaginiGenerali/default-avatar.jpg';
+    }
+    return photoUrl;
+  }
+
+    openLikesModal(postId: string) {
+    this.selectedPostIdForLikes = postId;
+    this.showLikesModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeLikesModal(): void {
+    this.showLikesModal = false;
+    this.selectedPostIdForLikes = null;
+    this.cdr.detectChanges();
   }
 }

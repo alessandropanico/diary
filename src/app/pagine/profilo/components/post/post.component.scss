@@ -499,3 +499,63 @@
     height: 16px;
   }
 }
+
+/* Stili per il contenitore del modale (sovrapposizione) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6); /* Sfondo semi-trasparente */
+  display: flex; /* Usa flexbox per centrare il contenuto */
+  justify-content: center; /* Centra orizzontalmente */
+  align-items: center; /* Centra verticalmente */
+  z-index: 1000; /* Assicurati che sia sopra gli altri elementi */
+  backdrop-filter: blur(5px); /* Effetto sfocato per lo sfondo */
+}
+
+/* Stili per il contenuto del modale */
+.modal-content {
+  background-color: var(--ion-color-light); /* Colore di sfondo del modale, puoi usare una variabile Ionic o un colore fisso */
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Ombra per dare profondità */
+  max-width: 90%; /* Larghezza massima del modale */
+  max-height: 90%; /* Altezza massima del modale */
+  overflow-y: auto; /* Aggiungi scroll se il contenuto è troppo lungo */
+  position: relative; /* Necessario per posizionare il bottone di chiusura */
+  border: 1px solid var(--ion-color-medium-tint); // Bordo sottile
+  animation: fadeInScale 0.3s ease-out forwards; // Animazione di ingresso
+}
+
+/* Stili per il bottone di chiusura (opzionale, ma consigliato) */
+.modal-close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  color: var(--ion-color-dark);
+  cursor: pointer;
+  padding: 5px;
+  line-height: 1;
+  transition: color 0.2s ease-in-out;
+
+  &:hover {
+    color: var(--ion-color-primary);
+  }
+}
+
+/* Animazione di ingresso */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

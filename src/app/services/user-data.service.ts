@@ -42,6 +42,8 @@ export interface UserDashboardCounts {
   email?: string; // ⭐ DEVE ESSERE QUI ⭐
   lastLogin?: string; // ⭐ DEVE ESSERE QUI ⭐
   lastOnline?: string; // ⭐ DEVE ESSERE QUI ⭐
+  totalLikesGiven?: number;
+
 }
 
 @Injectable({
@@ -290,6 +292,8 @@ export class UserDataService {
             diaryTotalWords: 0,
             diaryLastInteraction: '',
             diaryEntryCount: 0,
+            totalLikesGiven: 0, // Inizializza a 0
+
           };
           await setDoc(userDocRef, initialData);
           data = initialData;
@@ -573,6 +577,8 @@ export class UserDataService {
           diaryTotalWords: userData['diaryTotalWords'] as number ?? 0,
           diaryLastInteraction: userData['diaryLastInteraction'] as string ?? '',
           diaryEntryCount: userData['diaryEntryCount'] as number ?? 0,
+                totalLikesGiven: userData['totalLikesGiven'] as number ?? 0, // Assicurati di leggerlo
+
         });
       });
       const lastVisible = snapshot.docs[snapshot.docs.length - 1] || null;
@@ -611,5 +617,15 @@ export class UserDataService {
       }
     }
   }
+
+  // Aggiungi questo nuovo metodo alla classe UserDataService
+async updateLikeGivenCount(change: number): Promise<void> {
+  const uid = this.getUserUid();
+  if (uid) {
+    await this.updateNumericField(uid, 'totalLikesGiven', change);
+    await this.setLastGlobalActivityTimestamp(new Date().toISOString()); // Aggiorna anche l'attività globale
+  }
+}
+
 }
 

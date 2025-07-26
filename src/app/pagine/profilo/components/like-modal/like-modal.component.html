@@ -1,3 +1,44 @@
-<p>
-  like-modal works!
-</p>
+<div class="modal-backdrop" (click)="closeModal()"></div>
+
+<div class="modal-content-wrapper" (click)="$event.stopPropagation()">
+  <div class="modal-header">
+    <h2 class="modal-title">Chi ha messo "Mi piace"</h2>
+    <button class="close-button" (click)="closeModal()">
+      <span class="icon close-icon"></span>
+    </button>
+  </div>
+
+  <div class="modal-body">
+    <div *ngIf="isLoading" class="loading-indicator panel-glow-border">
+      <p>Caricamento utenti... <span class="loading-dots"></span></p>
+    </div>
+
+    <div *ngIf="!isLoading && likedUsers.length === 0" class="no-users-message panel-glow-border">
+      <p>Nessuno ha ancora messo "Mi piace" a questo post.</p>
+    </div>
+
+    <div *ngIf="!isLoading && likedUsers.length > 0" class="users-list-container">
+      <div *ngFor="let user of likedUsers" class="user-card panel-glow-border">
+        <div class="user-card-content">
+          <div class="user-avatar-container" (click)="goToUserProfile(user.profile.uid)">
+            <img [src]="getUserPhoto(user.profile.profilePictureUrl || user.profile.photo)" alt="User Avatar" class="user-avatar-img">
+          </div>
+          <div class="user-info-container" (click)="goToUserProfile(user.profile.uid)">
+            <span class="user-nickname">{{ user.profile.nickname }}</span>
+            <span class="user-realname" *ngIf="user.profile.name || user.profile.surname">
+              {{ user.profile.name ?? '' }} {{ user.profile.surname ?? '' }}
+            </span>
+          </div>
+        </div>
+        <div class="user-actions-container">
+          <button *ngIf="currentUserId && user.profile.uid !== currentUserId"
+                    class="app-button"
+                    [ngClass]="{'secondary-button': user.isFollowing, 'primary-button': !user.isFollowing}"
+                    (click)="toggleFollow(user)">
+            {{ user.isFollowing ? 'Segui già' : 'Segui' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

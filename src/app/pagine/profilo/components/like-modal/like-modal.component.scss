@@ -1,0 +1,441 @@
+:host {
+  --primary-glow: #00ffee;
+  --bg-blur: rgba(15, 15, 35, 0.8);
+  --text-light: #ffffff;
+  --label-color: #a0cfd8;
+  --panel-solid-bg: rgba(20, 25, 50, 0.95);
+  --border-subtle: rgba(0, 255, 238, 0.2);
+  --button-hover-bg: rgba(0, 255, 238, 0.1);
+  --glow-intensity-low: rgba(0, 255, 238, 0.1);
+  --glow-intensity-medium: rgba(0, 255, 238, 0.25);
+  --glow-intensity-high: rgba(0, 255, 238, 0.4);
+}
+
+:host {
+  display: block;
+  padding: 20px;
+  background-color: #1a1a1a;
+  min-height: 100vh;
+  font-family: 'Orbitron', sans-serif;
+  color: var(--text-light);
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Stili specifici per la lista utenti all'interno del modale like */
+.users-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Spazio tra le card utente */
+}
+
+.user-card {
+  display: flex;
+  justify-content: space-between; /* Spinge i bottoni a destra */
+  align-items: center;
+  padding: 10px 15px;
+  background: var(--bg-blur); /* Usa le tue variabili globali */
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: 0 0 5px var(--glow-intensity-low);
+  transition: background-color 0.2s ease-in-out;
+  cursor: pointer; // Indica che la card è cliccabile
+
+  &:hover {
+    background-color: rgba(20, 25, 50, 0.9); /* Un leggero cambio colore al hover */
+  }
+}
+
+.user-card-content {
+  display: flex;
+  align-items: center;
+  flex-grow: 1; /* Permette al contenuto utente di occupare spazio */
+  gap: 15px; /* Spazio tra avatar e info */
+}
+
+.user-avatar-container {
+  width: 50px; /* Dimensione avatar */
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--primary-glow); /* Bordo glow per l'avatar */
+  flex-shrink: 0; /* Impedisce che l'avatar si rimpicciolisca */
+
+  .user-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.user-info-container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  text-align: left;
+}
+
+.user-nickname {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: var(--primary-glow);
+  margin: 0;
+  text-shadow: 0 0 1px var(--glow-intensity-low);
+}
+
+.user-realname {
+  font-size: 0.85em;
+  color: var(--label-color);
+  margin: 0;
+}
+
+.user-actions-container {
+  flex-shrink: 0; /* Impedisce che i bottoni si rimpiccioliscano */
+  margin-left: 15px;
+
+  .app-button {
+    // Questi stili dovrebbero essere globali o importati.
+    // Li includo qui come promemoria, ma non duplicarli se già definiti altrove.
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+
+    &.primary-button {
+      background-color: var(--primary-glow);
+      color: #000;
+      box-shadow: 0 0 8px var(--glow-intensity-medium);
+
+      &:hover {
+        background-color: #00ffeb;
+        box-shadow: 0 0 12px var(--glow-intensity-high);
+      }
+    }
+
+    &.secondary-button {
+      background-color: var(--panel-solid-bg);
+      color: var(--primary-glow);
+      border: 1px solid var(--primary-glow);
+      box-shadow: 0 0 5px var(--glow-intensity-low);
+
+      &:hover {
+        background-color: rgba(0, 255, 238, 0.1);
+        color: var(--text-light);
+      }
+    }
+  }
+}
+
+/* Media Queries per la Responsività su schermi più piccoli */
+@media (max-width: 768px) {
+  // Le media query per .modal-content-wrapper, .modal-header, .modal-title, .close-button, .modal-body
+  // dovrebbero essere nel tuo SCSS globale o condiviso.
+
+  .user-card {
+    padding: 8px 10px;
+  }
+
+  .user-card-content {
+    gap: 10px;
+  }
+
+  .user-avatar-container {
+    width: 45px;
+    height: 45px;
+  }
+
+  .user-nickname {
+    font-size: 1em;
+  }
+
+  .user-realname {
+    font-size: 0.8em;
+  }
+
+  .user-actions-container .app-button {
+    padding: 6px 12px;
+    font-size: 0.8em;
+  }
+}
+
+
+/* Variabili globali o importate. Se le hai già definite globalmente (es. in styles.scss), puoi rimuoverle da qui. */
+:host {
+  --primary-glow: #00ffee;
+  --bg-blur: rgba(15, 15, 35, 0.8);
+  --text-light: #ffffff;
+  --label-color: #a0cfd8;
+  --panel-solid-bg: rgba(20, 25, 50, 0.95);
+  --border-subtle: rgba(0, 255, 238, 0.2);
+  --button-hover-bg: rgba(0, 255, 238, 0.1);
+  --glow-intensity-low: rgba(0, 255, 238, 0.1);
+  --glow-intensity-medium: rgba(0, 255, 238, 0.25);
+  --glow-intensity-high: rgba(0, 255, 238, 0.4);
+
+  --ion-color-primary: var(--primary-glow);
+  --ion-color-primary-rgb: 0, 255, 238;
+}
+
+/* Stili per le icone. Se le hai già definite globalmente (es. in styles.scss), puoi rimuoverle da qui. */
+.icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  mask-size: cover;
+  background-color: var(--primary-glow);
+  -webkit-mask-size: cover;
+  filter: drop-shadow(0 0 1px var(--glow-intensity-low));
+}
+
+.close-icon {
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>');
+}
+
+/* Backdrop: copre l'intera pagina */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Sfondo scuro semi-trasparente */
+  z-index: 1000; /* Assicurati che sia sopra tutto il resto del contenuto della pagina */
+  backdrop-filter: blur(5px); /* Effetto sfocatura opzionale per lo sfondo */
+}
+
+/* Contenitore del contenuto del modale (la "finestra" centrale) */
+.modal-content-wrapper {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Centra il modale perfettamente */
+  z-index: 1001; /* Sopra il backdrop */
+
+  background: var(--panel-solid-bg); /* Sfondo del modale */
+  border: 1px solid var(--primary-glow);
+  border-radius: 10px;
+  box-shadow: 0 0 20px var(--glow-intensity-high); /* Ombra pronunciata con effetto glow */
+
+  width: 90%; /* Larghezza su schermi piccoli */
+  max-width: 600px; /* Larghezza massima su schermi grandi */
+  height: 90%; /* Altezza su schermi piccoli */
+  max-height: 80vh; /* Altezza massima su schermi grandi (80% dell'altezza della viewport) */
+
+  display: flex;
+  flex-direction: column; /* Organizza header e body in colonna */
+  overflow: hidden; /* Nasconde scrollbar indesiderate sul contenitore principale */
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-subtle); /* Linea divisoria */
+  background-color: rgba(0, 0, 0, 0.2); /* Leggero sfondo per l'header */
+}
+
+.modal-title {
+  color: var(--primary-glow);
+  font-size: 1.2em;
+  margin: 0; /* Rimuovi i margini predefiniti del titolo */
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: var(--label-color); /* Colore del testo del pulsante */
+  font-size: 1.5em; /* Dimensione del testo/icona */
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%; /* Rende il pulsante circolare */
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--button-hover-bg);
+    color: var(--text-light); /* Colore al passaggio del mouse */
+  }
+
+  .icon {
+    background-color: var(--label-color); /* Colore dell'icona (usa il colore del testo del pulsante) */
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.modal-body {
+  flex-grow: 1; /* Permette al body di occupare tutto lo spazio rimanente nel modale */
+  padding: 15px; /* Padding su tutti i lati per il contenuto del body */
+  overflow-y: auto; /* Abilita lo scroll solo se il contenuto dei commenti supera l'altezza */
+  -webkit-overflow-scrolling: touch; /* Migliora lo scrolling su dispositivi iOS */
+
+  display: flex; /* Utilizza flexbox per allineare gli elementi interni */
+  flex-direction: column; /* Impila gli elementi verticalmente */
+  gap: 15px; /* Spazio tra il post originale e la sezione commenti */
+}
+
+/* Stili per la visualizzazione del post originale all'interno del modale */
+.modal-post-info {
+  // Riutilizza le proprietà di .panel-glow-border per consistenza, se non lo è già per @extend
+  // Assicurati che .panel-glow-border sia definito o importato se lo estendi.
+  background: var(--bg-blur);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: 0 0 6px var(--glow-intensity-low);
+  padding: 15px; // Padding interno per i dati del post
+  margin: 0; // Rimuovi margini esterni qui, il gap del .modal-body gestisce la spaziatura
+  flex-shrink: 0; // Non permette che si rimpicciolisca se i commenti sono molti
+
+  .post-header {
+    display: flex;
+    align-items: center; // Centra verticalmente avatar e info utente
+    margin-bottom: 10px; // Spazio tra header del post e contenuto
+    gap: 10px; // Spazio tra avatar e post-info
+
+    .post-avatar {
+      width: 44px; // Dimensione dell'avatar all'interno del modale
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--primary-glow);
+      overflow: hidden;
+      flex-shrink: 0; // Impedisce che l'avatar si rimpicciolisca
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+
+    .post-info {
+      display: flex;
+      flex-direction: column; // Impila username e tempo (se presente)
+      // flex-grow: 1; // Permette di occupare lo spazio rimanente
+    }
+
+    .post-username {
+      font-size: 1.1em;
+      font-weight: bold;
+      color: var(--primary-glow);
+      text-shadow: 0 0 1px var(--glow-intensity-low);
+    }
+    // .post-time { ... } se presente
+  }
+
+  .post-content {
+    .post-text {
+      font-size: 0.95em;
+      line-height: 1.4;
+      color: var(--text-light);
+      white-space: pre-wrap; /* Mantiene gli spazi e i ritorni a capo */
+      word-wrap: break-word; /* Va a capo su parole lunghe */
+      text-align: left;
+    }
+  }
+}
+
+
+/* Media Queries per la Responsività su schermi più piccoli */
+@media (max-width: 768px) {
+  .modal-content-wrapper {
+    width: 95%;
+    height: 95%;
+    max-width: none; /* Rimuovi il limite di larghezza fisso */
+    max-height: none; /* Rimuovi il limite di altezza fisso */
+  }
+
+  .modal-header {
+    padding: 10px 15px;
+  }
+
+  .modal-title {
+    font-size: 1.1em;
+  }
+
+  .close-button {
+    font-size: 1.2em;
+    .icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .modal-body {
+    padding: 10px; // Riduci il padding su schermi più piccoli
+    gap: 10px; // Riduci il gap su schermi più piccoli
+  }
+
+  .modal-post-info {
+    padding: 10px; // Riduci il padding interno del post originale
+    .post-header {
+      gap: 8px;
+      .post-avatar {
+        width: 40px;
+        height: 40px;
+      }
+      .post-username {
+        font-size: 1em;
+      }
+    }
+    .post-content .post-text {
+      font-size: 0.85em;
+    }
+  }
+}
+
+.panel-glow-border {
+  background: var(--bg-blur);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: 0 0 6px var(--glow-intensity-low);
+  padding: 15px;
+  margin-bottom: 20px;
+  text-align: left;
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 0 10px var(--glow-intensity-medium);
+  }
+}
+
+
+.loading-indicator,
+.no-posts-message {
+  text-align: center;
+  padding: 20px;
+  font-size: 1.1em;
+  color: var(--primary-glow);
+  text-shadow: 0 0 2px var(--primary-glow);
+}
+
+
+.loading-dots {
+  display: inline-block;
+  overflow: hidden;
+  height: 1em;
+  vertical-align: bottom;
+  content: '\2026';
+  animation: loading-dots 1.5s infinite steps(1, end);
+}
+
+@keyframes loading-dots {
+  0% {
+    width: 0;
+  }
+
+  33% {
+    width: .5em;
+  }
+
+  66% {
+    width: 1em;
+  }
+
+  100% {
+    width: 1.5em;
+  }
+}

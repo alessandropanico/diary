@@ -1,8 +1,11 @@
+// src/app/services/post.service.ts
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, doc, updateDoc, getDoc, startAfter, where } from '@angular/fire/firestore'; // IMPORTANTE: assicurati che 'where' sia qui
+import { Firestore, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, doc, updateDoc, getDoc, startAfter, where } from '@angular/fire/firestore';
 import { Observable, from, of } from 'rxjs';
 import { map, switchMap, catchError } from 'rxjs/operators';
 import { Post } from '../interfaces/post';
+import { UserDataService } from './user-data.service';
+import { getAuth } from 'firebase/auth';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +13,10 @@ import { Post } from '../interfaces/post';
 export class PostService {
   private postsCollection = collection(this.firestore, 'posts');
 
-  constructor(private firestore: Firestore) { }
+  constructor(
+    private firestore: Firestore,
+    private userDataService: UserDataService
+  ) { }
 
   async createPost(post: Omit<Post, 'id' | 'likes' | 'commentsCount'>): Promise<string> {
     try {
@@ -25,6 +31,31 @@ export class PostService {
       throw error;
     }
   }
+
+  // ⭐⭐⭐ NUOVO METODO AGGIUNTO QUI ⭐⭐⭐
+  getPostById(postId: string): Observable<Post | null> {
+    const postDocRef = doc(this.firestore, 'posts', postId);
+    return from(getDoc(postDocRef)).pipe(
+      map(docSnapshot => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          return {
+            id: docSnapshot.id,
+            ...data as Omit<Post, 'id'>,
+            commentsCount: Math.max(0, data['commentsCount'] || 0)
+          };
+        } else {
+          console.warn(`Post con ID ${postId} non trovato.`);
+          return null;
+        }
+      }),
+      catchError(error => {
+        console.error(`Errore nel recupero del post ${postId}:`, error);
+        return of(null);
+      })
+    );
+  }
+  // ⭐⭐⭐ FINE NUOVO METODO ⭐⭐⭐
 
   getPosts(limitPosts: number = 10, startAfterTimestamp: string | null = null): Observable<Post[]> {
     return from(this.getPostsQuery(limitPosts, startAfterTimestamp)).pipe(
@@ -86,23 +117,32 @@ export class PostService {
 
     const currentLikes: string[] = postDoc.data()?.['likes'] || [];
     let updatedLikes: string[];
+    let userLikedOrUnliked = false;
 
     if (like && !currentLikes.includes(userId)) {
       updatedLikes = [...currentLikes, userId];
+      userLikedOrUnliked = true;
     } else if (!like && currentLikes.includes(userId)) {
       updatedLikes = currentLikes.filter(id => id !== userId);
+      userLikedOrUnliked = true;
     } else {
       return;
     }
 
     try {
       await updateDoc(postRef, { likes: updatedLikes });
+
+      if (userLikedOrUnliked) {
+        const currentLoggedInUser = getAuth().currentUser;
+        if (currentLoggedInUser && currentLoggedInUser.uid === userId) {
+          await this.userDataService.updateLikeGivenCount(like ? 1 : -1);
+        }
+      }
     } catch (error) {
       console.error('Errore nel toggle like:', error);
       throw error;
     }
   }
-
 
   getUserPosts(userId: string, limitPosts: number = 10, startAfterTimestamp: string | null = null): Observable<Post[]> {
     return from(this.getUserPostsQuery(userId, limitPosts, startAfterTimestamp)).pipe(
@@ -145,6 +185,4 @@ export class PostService {
     }
     return getDocs(q);
   }
-
-
 }
