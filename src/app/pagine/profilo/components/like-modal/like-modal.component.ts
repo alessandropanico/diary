@@ -4,11 +4,12 @@ import { IonicModule, ModalController } from '@ionic/angular';
 import { Subscription, from, combineLatest, of } from 'rxjs';
 import { switchMap, map, catchError } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
+import { Router } from '@angular/router'; // Importa il Router
 
 import { PostService } from 'src/app/services/post.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { FollowService } from 'src/app/services/follow.service';
-import { Post } from 'src/app/interfaces/post'; // Importa l'interfaccia Post
+import { Post } from 'src/app/interfaces/post';
 
 @Component({
   selector: 'app-like-modal',
@@ -24,7 +25,8 @@ export class LikeModalComponent implements OnInit, OnDestroy {
 
   likedUsers: { profile: UserDashboardCounts & { uid: string }, isFollowing: boolean }[] = [];
   isLoading: boolean = true;
-  currentUserId: string | null = null;
+  currentUserId: string | null = null; // Già presente
+  loggedInUserId: string | null = null; // <-- NUOVA PROPRIETÀ
   private subscriptions: Subscription = new Subscription();
 
   constructor(
@@ -32,11 +34,13 @@ export class LikeModalComponent implements OnInit, OnDestroy {
     private userDataService: UserDataService,
     private followService: FollowService,
     private cdr: ChangeDetectorRef,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private router: Router
   ) { }
 
   ngOnInit() {
     this.currentUserId = getAuth().currentUser?.uid || null;
+    this.loggedInUserId = this.currentUserId; // Inizializza l'ID utente loggato
 
     if (this.postId) {
       this.subscriptions.add(
@@ -52,7 +56,7 @@ export class LikeModalComponent implements OnInit, OnDestroy {
                           profile: {
                             ...userProfile,
                             uid: userId,
-                            nickname: userProfile.nickname ?? 'N/D' // Fallback per nickname
+                            nickname: userProfile.nickname ?? 'N/D'
                           },
                           isFollowing: isFollowing
                         })),
@@ -69,14 +73,14 @@ export class LikeModalComponent implements OnInit, OnDestroy {
                         })
                       );
                     } else if (userProfile) {
-                       return of({
-                         profile: {
-                           ...userProfile,
-                           uid: userId,
-                           nickname: userProfile.nickname ?? 'N/D'
-                         },
-                         isFollowing: false
-                       });
+                        return of({
+                           profile: {
+                             ...userProfile,
+                             uid: userId,
+                             nickname: userProfile.nickname ?? 'N/D'
+                           },
+                           isFollowing: false
+                         });
                     }
                     return of(null);
                   })
@@ -151,21 +155,17 @@ export class LikeModalComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ⭐⭐⭐ METODO goToUserProfile AGGIORNATO ⭐⭐⭐
   goToUserProfile(userId: string) {
-    this.closeModal();
-    // Se desideri che il modale navighi direttamente, dovrai iniettare il Router:
-    // import { Router } from '@angular/router';
-    // constructor(..., private router: Router) { }
-    // this.router.navigate(['/profilo', userId]);
+    this.closeModal(); // Chiudi il modale
+
+    if (userId === this.loggedInUserId) {
+      this.router.navigate(['/profilo']); // Naviga alla rotta del proprio profilo
+    } else {
+      this.router.navigate(['/profilo-altri-utenti', userId]); // Naviga alla rotta per gli altri profili con l'ID
+    }
   }
 
-  // ⭐⭐⭐ QUESTO È IL METODO MANCANTE CHE CAUSAVA L'ERRORE ⭐⭐⭐
-  /**
-   * Restituisce l'URL della foto profilo, usando un avatar di default
-   * se l'URL fornito è nullo, vuoto, o un URL generico di Google.
-   * @param photoUrl L'URL della foto profilo dell'utente.
-   * @returns L'URL effettivo dell'immagine da visualizzare.
-   */
   getUserPhoto(photoUrl: string | null | undefined): string {
     const defaultGoogleProfilePicture = 'https://lh3.googleusercontent.com/a/ACg8ocK-pW1q9zsWi1DHCcamHuNOTLOvotU44G2v2qtMUtWu3LI0FOE=s96-c';
 
