@@ -1,5 +1,7 @@
 --TO DO--
 
+**AGGIUSTARE SCSS DEI MODALI LIKE/LIKE COMMENTI**
+
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
 Integrazione con AI (anche semplice):
@@ -11,7 +13,6 @@ Nella dashboard:
 - Attività supporto creatore App;
 
 Creare sezione notizie (in questa sezione mettiamo pure i banner pubblcitari!)
-Vedere chi ha messo "Like" ad un commento di un post;
 Fare header per bene;
 Finestra "Notifiche"
 
