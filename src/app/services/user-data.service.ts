@@ -162,7 +162,7 @@ export class UserDataService {
           // NOVITÀ: Creiamo fullName combinando name e surname
           fullName: userData['name'] ? `${userData['name']} ${userData['surname'] || ''}`.trim() : null,
           // NOVITÀ: Preferiamo 'profilePictureUrl', altrimenti usiamo 'photo'
-          profilePictureUrl: userData['profilePictureUrl'] || userData['photo'] || 'assets/immaginiGenerali/default-avatar.jpg',
+          photo: userData['profilePictureUrl'] || userData['photo'] || 'assets/immaginiGenerali/default-avatar.jpg',
         });
         addedUids.add(doc.id);
       }
