@@ -35,6 +35,16 @@ ion-header {
   border-bottom: 2px solid rgba(0, 255, 255, 0.3);
 }
 
+.contLogo{
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.05rem;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  gap: 6%;
+}
+
 ion-toolbar {
   --background: transparent;
   --color: #00ffe0;
@@ -108,3 +118,6 @@ ion-list {
     vertical-align: middle; /* Allinea verticalmente con il testo */
 }
 
+.logo{
+  width: 50px;
+}
