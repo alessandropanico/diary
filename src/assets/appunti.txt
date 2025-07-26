@@ -11,7 +11,7 @@ Nella dashboard:
 - Attività supporto creatore App;
 
 Creare sezione notizie (in questa sezione mettiamo pure i banner pubblcitari!)
-Vedere chi ha messo "Like" ad un post;
+Vedere chi ha messo "Like" ad un commento di un post;
 Fare header per bene;
 Finestra "Notifiche"
 
