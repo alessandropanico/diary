@@ -111,21 +111,30 @@ export class ChatService {
 
     try {
       const querySnapshot = await getDocs(q);
-      let foundConversationId: string | null = null;
+      let existingConversationDoc: QueryDocumentSnapshot | null = null;
 
-      for (const docSnap of querySnapshot.docs) {
-        const convData = docSnap.data() as ConversationDocument;
-        if (!(convData.deletedBy && convData.deletedBy.includes(user1Id))) {
-          foundConversationId = docSnap.id;
-          break;
-        }
+      // Cerca una conversazione esistente tra i due utenti
+      if (!querySnapshot.empty) {
+        // In un sistema 1-a-1 ci aspettiamo al massimo 1 documento
+        existingConversationDoc = querySnapshot.docs[0];
       }
 
-      if (foundConversationId) {
-        console.log('Conversazione esistente valida trovata:', foundConversationId);
-        return foundConversationId;
+      if (existingConversationDoc) {
+        const conversationId = existingConversationDoc.id;
+        const convData = existingConversationDoc.data() as ConversationDocument;
+
+        console.log('Conversazione esistente trovata:', conversationId);
+
+        // Se la conversazione era stata "eliminata" da uno o entrambi, la "ripristiniamo"
+        if (convData.deletedBy && convData.deletedBy.length > 0) {
+          console.log(`Ripristino conversazione ${conversationId} (rimozione deletedBy).`);
+          await updateDoc(doc(this.afs, 'conversations', conversationId), {
+            deletedBy: [] // Rimuove tutti gli ID dal campo deletedBy
+          });
+        }
+        return conversationId;
       } else {
-        console.log('Nessuna conversazione valida trovata per gli utenti, creando una nuova.');
+        console.log('Nessuna conversazione esistente per gli utenti, creando una nuova.');
         const newConversationRef = doc(conversationsRef);
 
         const newConversationData: ConversationDocument = {
@@ -137,7 +146,7 @@ export class ChatService {
             [user1Id]: serverTimestamp() as Timestamp,
             [user2Id]: serverTimestamp() as Timestamp
           },
-          deletedBy: []
+          deletedBy: [] // Una nuova conversazione non è "deleted"
         };
         await setDoc(newConversationRef, newConversationData);
         return newConversationRef.id;
@@ -147,6 +156,7 @@ export class ChatService {
       throw error;
     }
   }
+
 
   async sendMessage(conversationId: string, senderId: string, text: string): Promise<void> {
     const messagesCollectionRef = collection(this.afs, `conversations/${conversationId}/messages`);
@@ -165,15 +175,28 @@ export class ChatService {
         throw new Error('Conversazione non trovata.');
       }
       const conversationData = conversationSnap.data() as ConversationDocument;
-      const participants = conversationData.participants;
 
+      // NON ABBIAMO PIÙ BISOGNO DI QUESTO BLOCCO QUI
+      // L' "undelete" viene gestito in getOrCreateConversation
+      /*
       const undeletePromises: Promise<void>[] = [];
-      participants.forEach(participantId => {
+      conversationData.participants.forEach(participantId => {
         undeletePromises.push(updateDoc(conversationDocRef, {
           deletedBy: arrayRemove(participantId)
         }));
       });
       await Promise.all(undeletePromises);
+      */
+
+      // Assicurati che il campo deletedBy sia vuoto quando si invia un messaggio,
+      // per ridondanza e per catturare casi limite in cui getOrCreateConversation
+      // non sia stato chiamato immediatamente prima.
+      if (conversationData.deletedBy && conversationData.deletedBy.length > 0) {
+        await updateDoc(conversationDocRef, {
+          deletedBy: [] // Svuota il campo deletedBy
+        });
+      }
+
 
       await updateDoc(conversationDocRef, {
         lastMessage: text,
