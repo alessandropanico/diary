@@ -1,3 +1,4 @@
+/* Variabili CSS fornite */
 :host {
   --primary-glow: #00ffee;
   --bg-blur: rgba(15, 15, 35, 0.8);
@@ -20,6 +21,11 @@
   color: var(--text-light);
   line-height: 1.5;
   text-align: center;
+
+  ion-content {
+    --background: transparent; // Assicurati che ion-content non sovrascriva lo sfondo dell'host
+    padding-bottom: 20px;
+  }
 }
 
 .panel-glow-border {
@@ -41,6 +47,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin: 20px auto;
 }
 
 .create-post-actions {
@@ -54,6 +61,7 @@
   align-items: center;
   margin-bottom: 10px;
   position: relative;
+  /* Nessun padding qui, usa il padding del .panel-glow-border */
 }
 
 .post-avatar {
@@ -64,8 +72,8 @@
   overflow: hidden;
   margin-right: 10px;
   box-shadow: 0 0 5px var(--glow-intensity-low);
-  /* Ridotto ancora il glow qui */
   cursor: pointer;
+  flex-shrink: 0; // Impedisce che l'avatar si rimpicciolisca
 
   img {
     width: 100%;
@@ -77,6 +85,7 @@
 .post-info {
   display: flex;
   flex-direction: column;
+  flex-grow: 1; // Permette all'info di occupare lo spazio restante
 }
 
 .post-username {
@@ -84,7 +93,6 @@
   font-weight: bold;
   color: var(--primary-glow);
   text-shadow: 0 0 2px var(--glow-intensity-low);
-  /* Ridotto ancora il glow qui */
   cursor: pointer;
 
   &:hover {
@@ -99,7 +107,7 @@
 }
 
 .post-content {
-  margin-bottom: 15px;
+  margin-bottom: 30px;
 }
 
 .post-image {
@@ -118,6 +126,18 @@
   margin: 0;
   white-space: pre-wrap;
   word-wrap: break-word;
+
+  .post-link {
+    color: var(--primary-glow); // Usa la variabile per coerenza
+    text-decoration: underline;
+    font-weight: 500;
+  }
+}
+
+.post-card {
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .post-actions {
@@ -125,6 +145,8 @@
   justify-content: space-around;
   border-top: 1px solid var(--border-subtle);
   padding-top: 10px;
+  padding-bottom: 5px;
+  /* Spazio inferiore ai bottoni */
 }
 
 .post-action-button {
@@ -141,65 +163,55 @@
   gap: 5px;
   transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s;
   border-radius: 4px;
+  flex: 1;
+  justify-content: center;
 
   &:hover {
     background-color: var(--button-hover-bg);
     box-shadow: 0 0 4px var(--glow-intensity-medium);
-    /* Ridotto ancora il glow qui */
   }
 
   &:active {
     background-color: rgba(0, 255, 238, 0.15);
-    /* Leggermente ridotto */
     box-shadow: 0 0 6px var(--glow-intensity-high);
-    /* Ridotto ancora il glow qui */
   }
 
   &.liked {
     color: #ff3366;
 
-    /* Un rosso/magenta più neon per i like */
     .icon {
       filter: drop-shadow(0 0 2px #ff3366);
-      /* Ridotto ancora il glow qui */
     }
   }
 }
 
-// --- Stili per Input/Textarea ---
+/* Stili per Input/Textarea */
 .app-textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid var(--ion-color-medium-tint);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background-color: var(--ion-color-light-shade);
-  color: var(--ion-color-dark);
+  background-color: var(--panel-solid-bg);
+  color: var(--text-light);
   font-size: 1rem;
   resize: none;
-  /* Impedisce all'utente di ridimensionare manualmente */
   overflow-y: hidden;
-  /* Nasconde lo scroll verticale per default, sarà gestito da JS */
   min-height: 50px;
-  /* Altezza iniziale per una riga o due */
   max-height: 150px;
-  /* ALTEZZA MASSIMA per circa 4-5 righe, DOPO LA QUALE APPARIRÀ LO SCROLL */
-  transition: height 0.2s ease-out;
-  /* Transizione fluida per l'espansione */
+  transition: height 0.2s ease-out, border-color 0.2s ease, box-shadow 0.2s ease;
 
   &:focus {
     outline: none;
-    border-color: var(--ion-color-primary);
-    box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.2);
+    border-color: var(--primary-glow);
+    box-shadow: 0 0 8px var(--glow-intensity-medium);
   }
 
   &::placeholder {
-    color: var(--ion-color-medium);
+    color: var(--label-color);
   }
 }
 
-/* Altri stili... */
-
-// --- Stili per i Pulsanti Generici dell'App ---
+/* Stili per i Pulsanti Generici dell'App */
 .app-button {
   background-color: var(--panel-solid-bg);
   border: 1px solid var(--primary-glow);
@@ -212,22 +224,20 @@
   text-transform: uppercase;
   cursor: pointer;
   box-shadow: 0 0 6px var(--glow-intensity-medium);
-  /* Ridotto ancora il glow qui */
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
+  justify-content: center;
 
   &:hover {
     background-color: var(--button-hover-bg);
     box-shadow: 0 0 10px var(--glow-intensity-high);
-    /* Ridotto ancora il glow qui */
   }
 
   &:active {
     background-color: rgba(0, 255, 238, 0.2);
     box-shadow: 0 0 12px var(--glow-intensity-high);
-    /* Ridotto ancora il glow qui */
     transform: translateY(1px);
   }
 
@@ -242,29 +252,29 @@
 
   &.primary-button {
     background-color: var(--primary-glow);
-    color: var(--panel-solid-bg); // Testo scuro sul pulsante luminoso
-    box-shadow: 0 0 8px var(--glow-intensity-medium); // ULTERIORMENTE RIDOTTO
+    color: var(--panel-solid-bg);
+    box-shadow: 0 0 8px var(--glow-intensity-medium);
 
     &:hover {
-      background-color: lighten(#00ffee, 3%); // Leggera variazione all'hover
-      box-shadow: 0 0 10px var(--glow-intensity-high); // ULTERIORMENTE RIDOTTO
+      background-color: lighten(#00ffee, 3%);
+      box-shadow: 0 0 10px var(--glow-intensity-high);
     }
 
     &:active {
-      background-color: darken(#00ffee, 3%); // Leggera variazione all'active
+      background-color: darken(#00ffee, 3%);
     }
   }
 
   &.delete-button {
     background-color: rgba(255, 50, 50, 0.5);
-    /* Rosso neon più tenue, leggermente ridotto */
     border-color: #ff0000;
     color: var(--text-light);
     box-shadow: 0 0 6px rgba(255, 0, 0, 0.3);
-    /* Ridotto ancora il glow qui */
     margin-left: auto;
     padding: 8px 12px;
     font-size: 0.8em;
+    min-width: unset;
+    height: 36px;
 
     &:hover {
       background-color: rgba(255, 0, 0, 0.6);
@@ -276,8 +286,8 @@
     }
 
     .icon {
-      background-color: var(--text-light); /* Rende l'icona bianca */
-      filter: none; /* Rimuove il drop-shadow glow predefinito se non desiderato */
+      background-color: var(--text-light);
+      filter: none;
     }
   }
 }
@@ -286,24 +296,24 @@
   opacity: 0.4;
   cursor: not-allowed;
   box-shadow: none;
-  background-color: var(--ion-color-medium-tint);
-  color: var(--ion-color-medium);
+  background-color: var(--panel-solid-bg);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .app-button:disabled .icon {
-  color: var(--ion-color-medium);
+  background-color: rgba(255, 255, 255, 0.4);
 }
 
 .primary-button:disabled {
-  background-color: var(--ion-color-medium-shade);
-  color: var(--ion-color-light);
+  background-color: rgba(0, 255, 238, 0.3);
+  color: var(--panel-solid-bg);
 }
 
 .primary-button:disabled .icon-in-primary-button {
-  color: var(--ion-color-light);
+  background-color: var(--panel-solid-bg);
 }
 
-
+/* Stili per le Icone */
 .icon {
   display: inline-block;
   width: 18px;
@@ -313,13 +323,13 @@
   background-color: var(--primary-glow);
   -webkit-mask-size: cover;
   filter: drop-shadow(0 0 1px var(--glow-intensity-low));
+  flex-shrink: 0;
 }
 
 .icon-in-primary-button {
   background-color: var(--panel-solid-bg);
   filter: none;
 }
-
 
 .heart-icon {
   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>');
@@ -425,8 +435,8 @@
       --background-activated: var(--button-hover-bg);
       --background-hover: var(--button-hover-bg);
       --color: var(--primary-glow);
+      border-radius: 0; // Ionic overrides default button radius, reset it
       border-top: 1px solid var(--border-subtle);
-      border-radius: 0;
 
       &:first-child {
         border-bottom-left-radius: 8px;
@@ -444,6 +454,61 @@
     &.delete-button {
       color: #ff3366;
     }
+  }
+}
+
+/* ⭐⭐ NUOVE CLASSI PER LA SEZIONE LIKE PREVIEW ⭐⭐ */
+.post-likes-info {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px 15px; // Padding per questa sezione
+  cursor: pointer; // Indica che è cliccabile
+  border-top: 1px solid var(--border-subtle); // Separatore dal resto
+  margin-top: -15px; // Sovrappone leggermente al padding del post-card
+
+  &:hover {
+    background: rgba(0, 255, 238, 0.05); // Sfondo leggero al passaggio del mouse
+    border-radius: 0 0 8px 8px; // Arrotonda solo gli angoli inferiori se è il footer
+  }
+}
+
+.liked-avatars-preview {
+  display: flex;
+  margin-right: 8px; // Spazio tra gli avatar e il testo
+
+  .liked-avatar-thumbnail {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--panel-solid-bg); // Bordo per sovrapposizione
+    margin-left: -10px; // Per sovrapporre leggermente gli avatar
+    object-fit: cover; // Assicura che l'immagine riempia il cerchio
+    background-color: var(--label-color); // Sfondo fallback
+
+    &:first-child {
+      margin-left: 0; // Il primo avatar non ha margine negativo
+    }
+  }
+}
+
+.likes-count-text {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin: 0;
+
+  strong {
+    font-weight: bold;
+    color: var(--primary-glow);
+  }
+}
+
+
+/* Stili per lo Spinner di Caricamento */
+ion-infinite-scroll {
+  --ion-color-primary: var(--primary-glow); // Colore dello spinner per l'infinite scroll
+
+  .infinite-scroll-content {
+    color: var(--label-color);
   }
 }
 
@@ -498,64 +563,14 @@
     width: 16px;
     height: 16px;
   }
-}
 
-/* Stili per il contenitore del modale (sovrapposizione) */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6); /* Sfondo semi-trasparente */
-  display: flex; /* Usa flexbox per centrare il contenuto */
-  justify-content: center; /* Centra orizzontalmente */
-  align-items: center; /* Centra verticalmente */
-  z-index: 1000; /* Assicurati che sia sopra gli altri elementi */
-  backdrop-filter: blur(5px); /* Effetto sfocato per lo sfondo */
-}
-
-/* Stili per il contenuto del modale */
-.modal-content {
-  background-color: var(--ion-color-light); /* Colore di sfondo del modale, puoi usare una variabile Ionic o un colore fisso */
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Ombra per dare profondità */
-  max-width: 90%; /* Larghezza massima del modale */
-  max-height: 90%; /* Altezza massima del modale */
-  overflow-y: auto; /* Aggiungi scroll se il contenuto è troppo lungo */
-  position: relative; /* Necessario per posizionare il bottone di chiusura */
-  border: 1px solid var(--ion-color-medium-tint); // Bordo sottile
-  animation: fadeInScale 0.3s ease-out forwards; // Animazione di ingresso
-}
-
-/* Stili per il bottone di chiusura (opzionale, ma consigliato) */
-.modal-close-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 1.5em;
-  color: var(--ion-color-dark);
-  cursor: pointer;
-  padding: 5px;
-  line-height: 1;
-  transition: color 0.2s ease-in-out;
-
-  &:hover {
-    color: var(--ion-color-primary);
+  .liked-avatars-preview .liked-avatar-thumbnail {
+    width: 24px;
+    height: 24px;
+    margin-left: -8px;
   }
-}
 
-/* Animazione di ingresso */
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
+  .likes-count-text {
+    font-size: 0.8em;
   }
 }

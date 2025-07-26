@@ -4,14 +4,20 @@ import { FormsModule } from '@angular/forms';
 import { PostService } from 'src/app/services/post.service';
 import { CommentService } from 'src/app/services/comment.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
-import { Post } from 'src/app/interfaces/post';
-import { Subscription, from, Observable } from 'rxjs';
+import { Post } from 'src/app/interfaces/post'; // Assicurati che Post sia definito qui
+import { Subscription, from, Observable, combineLatest, of } from 'rxjs';
+import { map, switchMap, catchError, take } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, LoadingController, Platform, IonInfiniteScroll, IonicModule } from '@ionic/angular';
 import { ExpService } from 'src/app/services/exp.service';
 import { CommentsModalComponent } from '../comments-modal/comments-modal.component';
-import { LikeModalComponent } from '../like-modal/like-modal.component'; // ⭐⭐ NUOVO IMPORT ⭐⭐
+import { LikeModalComponent } from '../like-modal/like-modal.component';
+
+// Estendi l'interfaccia Post per includere i dettagli degli utenti che hanno messo like
+interface PostWithUserDetails extends Post {
+  likesUsersMap?: Map<string, UserDashboardCounts>; // Mappa degli utenti che hanno messo like per questo post
+}
 
 @Component({
   selector: 'app-post',
@@ -23,14 +29,15 @@ import { LikeModalComponent } from '../like-modal/like-modal.component'; // ⭐�
     FormsModule,
     IonicModule,
     CommentsModalComponent,
-    LikeModalComponent // ⭐⭐ AGGIORNATO: Aggiunto LikeModalComponent ⭐⭐
+    LikeModalComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PostComponent implements OnInit, OnDestroy {
   @ViewChild(IonInfiniteScroll) infiniteScroll!: IonInfiniteScroll;
 
-  posts: Post[] = [];
+  // Il tipo dell'array 'posts' deve essere 'PostWithUserDetails[]'
+  posts: PostWithUserDetails[] = [];
   newPostText: string = '';
   currentUserId: string | null = null;
   currentUserUsername: string = 'Eroe Anonimo';
@@ -54,6 +61,10 @@ export class PostComponent implements OnInit, OnDestroy {
   private userDataSubscription: Subscription | undefined;
   private routeSubscription: Subscription | undefined;
 
+  // Mappa per cachare i dati degli utenti (per avatar e nickname)
+  private usersCache: Map<string, UserDashboardCounts> = new Map();
+
+
   constructor(
     private postService: PostService,
     private userDataService: UserDataService,
@@ -67,7 +78,7 @@ export class PostComponent implements OnInit, OnDestroy {
     private commentService: CommentService
   ) { }
 
- ngOnInit() {
+  ngOnInit() {
     this.authStateUnsubscribe = getAuth().onAuthStateChanged(user => {
       if (user) {
         this.currentUserId = user.uid;
@@ -75,8 +86,9 @@ export class PostComponent implements OnInit, OnDestroy {
           next: (userData: UserDashboardCounts | null) => {
             if (userData) {
               this.currentUserUsername = userData.nickname || 'Eroe Anonimo';
-              // ⭐⭐ AGGIORNATO: Usa getUserPhoto per impostare l'avatar utente corrente ⭐⭐
               this.currentUserAvatar = this.getUserPhoto(userData.photo || userData.profilePictureUrl);
+              // Aggiungi l'utente corrente alla cache
+              this.usersCache.set(this.currentUserId!, userData);
             }
             this.cdr.detectChanges();
 
@@ -108,7 +120,6 @@ export class PostComponent implements OnInit, OnDestroy {
     });
   }
 
-
   ngOnDestroy(): void {
     this.unsubscribeAll();
     if (this.routeSubscription) {
@@ -128,7 +139,7 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
- loadInitialPosts() {
+  loadInitialPosts() {
     this.isLoadingPosts = true;
     this.postsSubscription?.unsubscribe();
     this.lastPostTimestamp = null;
@@ -137,7 +148,6 @@ export class PostComponent implements OnInit, OnDestroy {
     this.showCommentsModal = false;
     this.selectedPostIdForComments = null;
     this.selectedPostForComments = null;
-    // ⭐⭐ NUOVE RIGHE: Resetta lo stato del modale dei like all'inizio del caricamento dei post ⭐⭐
     this.showLikesModal = false;
     this.selectedPostIdForLikes = null;
 
@@ -153,14 +163,58 @@ export class PostComponent implements OnInit, OnDestroy {
       postsObservable = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp);
     }
 
-    this.postsSubscription = postsObservable.subscribe({
-      next: (postsData) => {
-        this.posts = postsData;
+    // Aggiungi la pipeline switchMap per arricchire i post con i dati degli utenti che hanno messo like
+    this.postsSubscription = postsObservable.pipe(
+      switchMap(postsData => {
+        if (!postsData || postsData.length === 0) {
+          return of([]); // Se non ci sono post, ritorna un observable vuoto
+        }
+
+        const postObservables = postsData.map(post => {
+          const likedUserIds = (post.likes || []).slice(0, 3); // Prendi solo i primi 3 per la preview
+          const userPromises = likedUserIds.map(userId => {
+            if (this.usersCache.has(userId)) {
+              return of(this.usersCache.get(userId)!); // Già in cache
+            } else {
+              return from(this.userDataService.getUserDataByUid(userId)).pipe(
+                map(userData => {
+                  if (userData) {
+                    this.usersCache.set(userId, userData); // Aggiungi alla cache globale
+                  }
+                  return userData;
+                }),
+                catchError(err => {
+                  console.error(`Errore nel caricamento dati utente ${userId}:`, err);
+                  return of(null); // Gestisci l'errore per un singolo utente
+                }),
+                take(1) // Prende solo il primo valore e completa
+              );
+            }
+          });
+
+          // Combina i dati del post con i profili degli utenti che hanno messo like
+          return combineLatest(userPromises.length > 0 ? userPromises : [of(null)]).pipe( // Gestisce il caso di zero likes
+            map(likedUsersProfiles => {
+              const likedUsersMap = new Map<string, UserDashboardCounts>();
+              likedUsersProfiles.forEach(profile => {
+                if (profile) {
+                  likedUsersMap.set(profile.uid, profile);
+                }
+              });
+              return { ...post, likesUsersMap: likedUsersMap } as PostWithUserDetails; // Aggiungi la mappa al post
+            })
+          );
+        });
+        return combineLatest(postObservables); // Combina tutti gli Observable dei post
+      })
+    ).subscribe({
+      next: (postsWithDetails) => {
+        this.posts = postsWithDetails;
         this.isLoadingPosts = false;
         if (this.posts.length > 0) {
           this.lastPostTimestamp = this.posts[this.posts.length - 1].timestamp;
         }
-        if (postsData.length < this.postsLimit) {
+        if (postsWithDetails.length < this.postsLimit) {
           this.canLoadMore = false;
           if (this.infiniteScroll) {
             this.infiniteScroll.disabled = true;
@@ -197,14 +251,56 @@ export class PostComponent implements OnInit, OnDestroy {
         postsObservable = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp);
       }
 
-      this.postsSubscription = postsObservable.subscribe({
-        next: (newPosts) => {
-          this.posts = [...this.posts, ...newPosts];
-          if (newPosts.length > 0) {
+      // Aggiungi la pipeline switchMap anche qui!
+      this.postsSubscription = postsObservable.pipe(
+        switchMap(newPostsData => {
+          if (!newPostsData || newPostsData.length === 0) {
+            return of([]);
+          }
+
+          const newPostObservables = newPostsData.map(post => {
+            const likedUserIds = (post.likes || []).slice(0, 3);
+            const userPromises = likedUserIds.map(userId => {
+              if (this.usersCache.has(userId)) {
+                return of(this.usersCache.get(userId)!);
+              } else {
+                return from(this.userDataService.getUserDataByUid(userId)).pipe(
+                  map(userData => {
+                    if (userData) {
+                      this.usersCache.set(userId, userData);
+                    }
+                    return userData;
+                  }),
+                  catchError(err => {
+                    console.error(`Errore nel caricamento dati utente ${userId}:`, err);
+                    return of(null);
+                  }),
+                  take(1)
+                );
+              }
+            });
+            return combineLatest(userPromises.length > 0 ? userPromises : [of(null)]).pipe( // Gestisce il caso di zero likes
+              map(likedUsersProfiles => {
+                const likedUsersMap = new Map<string, UserDashboardCounts>();
+                likedUsersProfiles.forEach(profile => {
+                  if (profile) {
+                    likedUsersMap.set(profile.uid, profile);
+                  }
+                });
+                return { ...post, likesUsersMap: likedUsersMap } as PostWithUserDetails;
+              })
+            );
+          });
+          return combineLatest(newPostObservables);
+        })
+      ).subscribe({
+        next: (newPostsWithDetails) => {
+          this.posts = [...this.posts, ...newPostsWithDetails];
+          if (newPostsWithDetails.length > 0) {
             this.lastPostTimestamp = this.posts[this.posts.length - 1].timestamp;
           }
 
-          if (newPosts.length < this.postsLimit) {
+          if (newPostsWithDetails.length < this.postsLimit) {
             this.canLoadMore = false;
             if (this.infiniteScroll) {
               this.infiniteScroll.disabled = true;
@@ -317,20 +413,29 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
- async toggleLike(post: Post) {
+  // 'post' deve essere di tipo 'PostWithUserDetails'
+  async toggleLike(post: PostWithUserDetails) {
     if (!this.currentUserId) {
       this.presentAppAlert('Accedi Necessario', 'Devi essere loggato per mostrare il tuo apprezzamento!');
       return;
     }
 
-    // Usa ?? [] per assicurare che 'likes' sia un array vuoto se undefined/null
     const hasLiked = (post.likes ?? []).includes(this.currentUserId);
     try {
       await this.postService.toggleLike(post.id, this.currentUserId, !hasLiked);
       if (!hasLiked) {
         post.likes = [...(post.likes ?? []), this.currentUserId]; // Aggiungi il like
+        // Aggiorna la mappa dei like di questo post
+        if (this.currentUserId && this.usersCache.has(this.currentUserId)) {
+          if (!post.likesUsersMap) { // Inizializza la mappa se non esiste
+            post.likesUsersMap = new Map();
+          }
+          post.likesUsersMap.set(this.currentUserId, this.usersCache.get(this.currentUserId)!);
+        }
       } else {
         post.likes = (post.likes ?? []).filter(id => id !== this.currentUserId); // Rimuovi il like
+        // Rimuovi l'utente corrente dalla mappa dei like di questo post
+        post.likesUsersMap?.delete(this.currentUserId!);
       }
       this.cdr.detectChanges();
     } catch (error) {
@@ -477,7 +582,6 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-    // ⭐⭐ NUOVO METODO: getUserPhoto per la gestione degli URL delle immagini profilo ⭐⭐
   /**
    * Restituisce l'URL della foto profilo, usando un avatar di default
    * se l'URL fornito è nullo, vuoto, o un URL generico di Google.
@@ -493,7 +597,7 @@ export class PostComponent implements OnInit, OnDestroy {
     return photoUrl;
   }
 
-    openLikesModal(postId: string) {
+  openLikesModal(postId: string) {
     this.selectedPostIdForLikes = postId;
     this.showLikesModal = true;
     this.cdr.detectChanges();
@@ -503,5 +607,39 @@ export class PostComponent implements OnInit, OnDestroy {
     this.showLikesModal = false;
     this.selectedPostIdForLikes = null;
     this.cdr.detectChanges();
+  }
+
+  /**
+   * Restituisce un array limitato di ID utente che hanno messo like.
+   * Utilizzato per mostrare solo un subset di avatar nella preview.
+   * @param likes L'array di ID utente che hanno messo like al post.
+   * @returns Un array contenente al massimo i primi 3 ID utente.
+   */
+  getLimitedLikedUsers(likes: string[]): string[] {
+    return (likes || []).slice(0, 3);
+  }
+
+  /**
+   * Recupera l'URL dell'avatar di un utente dato il suo ID, usando la mappa cache del post.
+   * @param userId L'ID dell'utente.
+   * @param usersMap La mappa specifica degli utenti che hanno messo like per questo post.
+   * @returns L'URL dell'avatar dell'utente, o undefined se non trovato.
+   */
+  getUserAvatarById(userId: string, usersMap?: Map<string, UserDashboardCounts>): string | undefined {
+    // Prima cerca nella mappa specifica del post, poi nella cache globale
+    const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
+    return userProfile ? this.getUserPhoto(userProfile.profilePictureUrl || userProfile.photo) : undefined;
+  }
+
+  /**
+   * Recupera il nickname di un utente dato il suo ID, usando la mappa cache del post.
+   * @param userId L'ID dell'utente.
+   * @param usersMap La mappa specifica degli utenti che hanno messo like per questo post.
+   * @returns Il nickname dell'utente, o 'Utente sconosciuto' come fallback.
+   */
+  getLikedUserName(userId: string, usersMap?: Map<string, UserDashboardCounts>): string {
+    // Prima cerca nella mappa specifica del post, poi nella cache globale
+    const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
+    return userProfile?.nickname || 'Utente sconosciuto';
   }
 }
