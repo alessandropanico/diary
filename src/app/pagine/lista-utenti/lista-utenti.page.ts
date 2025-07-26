@@ -95,8 +95,13 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
       .subscribe({
         next: ({ users, lastVisible }) => {
           this.ngZone.run(() => {
-            const filteredUsers = users.filter(u => u.uid !== this.currentUserId);
-            this.users = [...this.users, ...filteredUsers];
+            // const filteredUsers = users.filter(u => u.uid !== this.currentUserId);
+            // this.users = [...this.users, ...filteredUsers];
+
+            // const filteredUsers = users.filter(u => u.uid !== this.currentUserId);
+            this.users = [...this.users, ...users];
+
+
             this.lastVisible = lastVisible;
             this.isLoading = false;
             this.initialLoading = false;
@@ -233,7 +238,8 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
       })
     ).subscribe((results: AppUser[]) => {
       this.ngZone.run(() => {
-        this.searchResults = results.filter(user => user.uid !== this.currentUserId);
+        // this.searchResults = results.filter(user => user.uid !== this.currentUserId);
+        this.searchResults = results;
         this.isSearchingUsers = false;
       });
     });
