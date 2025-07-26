@@ -10,6 +10,5 @@ export interface Post {
   imageUrl?: string;
   likes: string[];
   commentsCount: number;
-    likesUsersMap?: Map<string, UserDashboardCounts>; // Mappa degli utenti che hanno messo like per questo post
-
+  likesUsersMap?: Map<string, UserDashboardCounts>;
 }
