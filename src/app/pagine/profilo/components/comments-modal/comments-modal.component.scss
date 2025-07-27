@@ -46,12 +46,12 @@
 /* Contenitore del contenuto del modale (la "finestra" centrale) */
 .modal-content-wrapper {
   position: fixed;
-  top: 50%;
+  top: 0;
   left: 50%;
   transform: translate(-50%, -50%); /* Centra il modale perfettamente */
   z-index: 1001; /* Sopra il backdrop */
 
-  background: var(--panel-solid-bg); /* Sfondo del modale */
+  background: rgba(20, 25, 50, ); /* Sfondo del modale */
   border: 1px solid var(--primary-glow);
   border-radius: 10px;
   box-shadow: 0 0 20px var(--glow-intensity-high); /* Ombra pronunciata con effetto glow */

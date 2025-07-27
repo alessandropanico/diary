@@ -392,6 +392,7 @@ a {
 .ff7-toggle-buttons {
   display: flex;
   position: relative;
+  z-index: 0;
   width: 100%;
   max-width: 300px; /* Limita la larghezza dello switch */
   margin: 0 auto 20px auto; /* Centra e aggiunge spazio sotto */
