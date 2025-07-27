@@ -90,6 +90,10 @@ const routes: Routes = [
     path: 'classifica',
     loadChildren: () => import('./pagine/classifica/classifica.module').then( m => m.ClassificaPageModule)
   },
+  {
+    path: 'chat-gruppo',
+    loadChildren: () => import('./pagine/chat-gruppo/chat-gruppo.module').then( m => m.ChatGruppoPageModule)
+  },
 
 
 

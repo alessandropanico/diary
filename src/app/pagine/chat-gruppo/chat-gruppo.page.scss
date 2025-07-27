@@ -1,0 +1,286 @@
+/* src/app/pagine/chat-gruppo/chat-gruppo.page.scss */
+
+:host {
+  --primary-glow: #00ffee;
+  --bg-blur: rgba(15, 15, 35, 0.8);
+  --text-light: #ffffff;
+  --label-color: #a0cfd8;
+  --danger-color: #ff4e4e;
+
+  // Assicurati che l'host della pagina riempia lo spazio disponibile
+  display: flex;
+  flex-direction: column;
+  height: 100%; // Non 100vh, ma 100% rispetto al suo genitore (il router-outlet)
+  width: 100%;
+}
+
+ion-content {
+  --background: url('/assets/immaginiGenerali/sfondo-chat-ff7.jpeg') no-repeat center center / cover;
+  // Aggiungi un overlay scuro per migliorare la leggibilità del testo
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5); /* Overlay scuro */
+    z-index: 0; // Sotto i messaggi
+  }
+}
+
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--bg-blur);
+  color: var(--text-light);
+  z-index: 10; // Assicurati che sia sopra il contenuto
+  p {
+    margin-top: 10px;
+    font-size: 1.1rem;
+  }
+  ion-spinner {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.message-container {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  padding-bottom: 150px;
+  flex-grow: 1;
+  position: relative;
+  z-index: 1; // Assicurati che sia sopra l'overlay dello sfondo
+}
+
+.chat-bubble {
+  max-width: 75%;
+  padding: 10px 12px;
+  border-radius: 15px;
+  margin-bottom: 8px;
+  position: relative;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  line-height: 1.4;
+
+  .message-text {
+    margin: 0;
+    word-wrap: break-word;
+    color: inherit;
+  }
+  .message-timestamp {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.7);
+    align-self: flex-end;
+    margin-top: 4px;
+  }
+
+  // ⭐ NUOVA CLASSE PER CHAT DI GRUPPO: Nome del mittente ⭐
+  .sender-name {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--primary-glow); /* Colore per far risaltare il nome */
+    margin-bottom: 2px;
+    align-self: flex-start; /* Allineato all'inizio della bolla */
+  }
+}
+
+.my-message {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #0080ff, #004080);
+  color: white;
+  border-bottom-right-radius: 0;
+}
+
+.other-message {
+  align-self: flex-start;
+  background: linear-gradient(135deg, #3a3a4c, #2a2a3b);
+  color: var(--text-light);
+  border-bottom-left-radius: 0;
+}
+
+/* Stili per il footer fisso */
+ion-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1002;
+  background: rgba(10, 15, 25, 0.9);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(0, 255, 238, 0.2);
+  padding: 5px 10px;
+  height: auto;
+  min-height: 60px;
+}
+
+
+ion-header {
+  ion-toolbar {
+    --background: var(--bg-blur); /* Sfondo per l'header con blur */
+    border-bottom: 1px solid rgba(0, 255, 238, 0.2); /* Bordo inferiore glow */
+    color: var(--text-light); /* Colore del testo nell'header */
+
+    ion-buttons {
+      ion-back-button {
+          --color: var(--primary-glow); /* Colore della freccia indietro */
+      }
+    }
+
+    .chat-custom-header {
+      display: flex;
+      align-items: center;
+      margin-inline-start: var(--ion-safe-area-left, 16px);
+      margin-left: 16px;
+      gap: 8px;
+      cursor: pointer;
+
+      .other-user-avatar {
+        --border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid var(--primary-glow); /* Bordo intorno all'avatar */
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+
+      // ⭐ NUOVA CLASSE PER CHAT DI GRUPPO: Icona di default per il gruppo ⭐
+      .default-group-icon {
+        font-size: 36px; /* Dimensione dell'icona */
+        color: var(--primary-glow); /* Colore dell'icona */
+        background: rgba(0,0,0,0.5); /* Sfondo per l'icona */
+        border-radius: 50%; /* Rende l'icona circolare */
+        // Assicura che l'icona sia centrata se l'elemento è un flex container (come 'other-user-avatar')
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .username {
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: calc(100vw - 150px);
+        color: var(--text-light); /* Colore del nome utente/gruppo */
+      }
+    }
+
+    // Stili per il titolo predefinito "Chat"
+    .chat-title-placeholder {
+      font-weight: bold;
+      color: var(--text-light); /* Colore del placeholder */
+      text-align: center;
+    }
+
+    // Rimuovi eventuali stili applicati direttamente a ion-title che potrebbero sovrapporsi
+    ion-title {
+      padding: 0;
+      margin: 0;
+      position: static;
+      transform: none;
+      left: auto; right: auto;
+      width: auto;
+    }
+  }
+}
+
+.message-input-item {
+  --background: transparent;
+  --inner-padding-end: 0;
+  --inner-border-width: 0;
+  --padding-start: 0;
+  margin-right: 8px;
+  width: 100%;
+}
+
+.ff7-input {
+  --background: rgba(0, 0, 0, 0.4);
+  --color: var(--text-light);
+  --placeholder-color: var(--label-color);
+  --padding-start: 12px;
+  --padding-end: 12px;
+  border-radius: 20px;
+  border: 1px solid var(--primary-glow);
+  box-shadow: 0 0 8px rgba(0, 255, 238, 0.3);
+  height: 48px;
+}
+
+.ff7-button.send-button {
+  --background: var(--primary-glow);
+  --color: black;
+  font-weight: bold;
+  box-shadow: 0 0 10px var(--primary-glow);
+  margin: 0;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  cursor: pointer;
+  ion-icon { /* Stile per l'icona all'interno del pulsante */
+    font-size: 24px;
+  }
+}
+
+// Stile per l'alert custom
+.ff7-alert {
+  .alert-wrapper {
+    background: var(--bg-blur);
+    border: 1px solid var(--primary-glow);
+    border-radius: 8px;
+    box-shadow: 0 0 20px var(--primary-glow);
+  }
+  .alert-head, .alert-message {
+    color: var(--text-light);
+    font-family: 'Orbitron', sans-serif;
+  }
+  .alert-button {
+    background: var(--primary-glow) !important;
+    color: black !important;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: bold;
+    border-radius: 4px;
+    margin: 5px;
+    box-shadow: 0 0 8px var(--primary-glow);
+  }
+}
+
+.date-divider{
+  text-align: center;
+  margin: 15px 0; /* Margine per separare meglio il divisore */
+  span {
+    background: rgba(0, 0, 0, 0.6); /* Sfondo scuro per il testo della data */
+    padding: 5px 10px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8); /* Colore del testo della data */
+  }
+}
+
+ion-fab-button {
+  margin-bottom: 120px;
+  margin-right: 16px;
+  --background: var(--primary-glow);
+  --color: black;
+  box-shadow: 0 0 15px var(--primary-glow);
+  border-radius: 50%;
+  transition: all 0.3s ease-in-out; /* Animazione per apparire/scomparire fluidamente */
+}
