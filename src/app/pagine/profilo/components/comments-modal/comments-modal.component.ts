@@ -1,8 +1,7 @@
-// src/app/componenti/comments-modal/comments-modal.component.ts
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular'; // ⭐ Importa ModalController ⭐
+import { IonicModule, ModalController } from '@ionic/angular';
 
 import { CommentSectionComponent } from '../comment-section/comment-section.component';
 
@@ -18,13 +17,11 @@ export class CommentsModalComponent implements OnInit, OnDestroy {
   @Input() postCreatorAvatar: string | undefined;
   @Input() postCreatorUsername: string | undefined;
   @Input() postText: string | undefined;
-  @Output() closeModalEvent = new EventEmitter<void>(); // Puoi ancora usarlo se vuoi emettere un evento
+  @Output() closeModalEvent = new EventEmitter<void>();
 
-  // ⭐ Iniettiamo ModalController ⭐
   constructor(private modalController: ModalController) { }
 
   ngOnInit(): void {
-    // ⭐ RIMUOVI QUESTE RIGHE: Ionic gestisce lo scroll del body automaticamente ⭐
     // document.body.style.overflow = 'hidden';
   }
 
@@ -34,8 +31,7 @@ export class CommentsModalComponent implements OnInit, OnDestroy {
   }
 
   closeModal(): void {
-    this.modalController.dismiss(); // ⭐ Usa il metodo dismiss di Ionic ⭐
-    // Puoi ancora emettere l'evento se altri componenti ci sono in ascolto
+    this.modalController.dismiss();
     this.closeModalEvent.emit();
   }
 }
