@@ -13,7 +13,7 @@ import { AlertController, LoadingController, Platform, IonInfiniteScroll, IonicM
 import { ExpService } from 'src/app/services/exp.service';
 import { CommentsModalComponent } from '../comments-modal/comments-modal.component';
 import { LikeModalComponent } from '../like-modal/like-modal.component';
-import {ModalController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
 
 
 interface PostWithUserDetails extends Post {
@@ -29,9 +29,8 @@ interface PostWithUserDetails extends Post {
     CommonModule,
     FormsModule,
     IonicModule,
-    CommentsModalComponent,
     LikeModalComponent
-  ],
+],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PostComponent implements OnInit, OnDestroy {
