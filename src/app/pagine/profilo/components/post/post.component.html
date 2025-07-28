@@ -71,9 +71,9 @@
   <div class="post-actions">
     <button class="post-action-button" [ngClass]="{'liked': currentUserId && post.likes.includes(currentUserId!)}"
       (click)="toggleLike(post)">
-      <span class="icon heart-icon"></span> Mi piace
+      <span class="icon heart-icon"></span> Like
     </button>
-    <button class="post-action-button" (click)="toggleCommentsVisibility(post)">
+    <button class="post-action-button" (click)="openCommentsModal(post)">
       <span class="icon comment-icon"></span> {{ post.commentsCount || 0 }} Commenti
     </button>
     <button class="post-action-button" (click)="sharePost(post)">
@@ -82,16 +82,9 @@
   </div>
 </div>
 
-
-<app-comments-modal *ngIf="showCommentsModal && selectedPostForComments" [postId]="selectedPostForComments.id"
-  [postCreatorAvatar]="selectedPostForComments.userAvatarUrl" [postCreatorUsername]="selectedPostForComments.username"
-  [postText]="selectedPostForComments.text" (closeModalEvent)="closeCommentsModal()">
-</app-comments-modal>
-
 <app-like-modal *ngIf="showLikesModal && selectedPostIdForLikes" [postId]="selectedPostIdForLikes"
   (closeModalEvent)="closeLikesModal()">
 </app-like-modal>
-
 
 <ion-infinite-scroll (ionInfinite)="loadMorePosts($event)" [disabled]="!canLoadMore">
   <ion-infinite-scroll-content loadingSpinner="circles"

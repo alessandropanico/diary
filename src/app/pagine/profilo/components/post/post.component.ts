@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { PostService } from 'src/app/services/post.service';
 import { CommentService } from 'src/app/services/comment.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
-import { Post } from 'src/app/interfaces/post'; // Assicurati che Post sia definito qui
+import { Post } from 'src/app/interfaces/post';
 import { Subscription, from, Observable, combineLatest, of } from 'rxjs';
 import { map, switchMap, catchError, take } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
@@ -13,10 +13,11 @@ import { AlertController, LoadingController, Platform, IonInfiniteScroll, IonicM
 import { ExpService } from 'src/app/services/exp.service';
 import { CommentsModalComponent } from '../comments-modal/comments-modal.component';
 import { LikeModalComponent } from '../like-modal/like-modal.component';
+import {ModalController } from '@ionic/angular';
 
-// Estendi l'interfaccia Post per includere i dettagli degli utenti che hanno messo like
+
 interface PostWithUserDetails extends Post {
-  likesUsersMap?: Map<string, UserDashboardCounts>; // Mappa degli utenti che hanno messo like per questo post
+  likesUsersMap?: Map<string, UserDashboardCounts>;
 }
 
 @Component({
@@ -36,7 +37,6 @@ interface PostWithUserDetails extends Post {
 export class PostComponent implements OnInit, OnDestroy {
   @ViewChild(IonInfiniteScroll) infiniteScroll!: IonInfiniteScroll;
 
-  // Il tipo dell'array 'posts' deve essere 'PostWithUserDetails[]'
   posts: PostWithUserDetails[] = [];
   newPostText: string = '';
   currentUserId: string | null = null;
@@ -55,13 +55,10 @@ export class PostComponent implements OnInit, OnDestroy {
   selectedPostIdForLikes: string | null = null;
 
   private userIdToDisplayPosts: string | null = null;
-
   private authStateUnsubscribe: (() => void) | undefined;
   private postsSubscription: Subscription | undefined;
   private userDataSubscription: Subscription | undefined;
   private routeSubscription: Subscription | undefined;
-
-  // Mappa per cachare i dati degli utenti (per avatar e nickname)
   private usersCache: Map<string, UserDashboardCounts> = new Map();
 
 
@@ -75,7 +72,9 @@ export class PostComponent implements OnInit, OnDestroy {
     private loadingCtrl: LoadingController,
     private platform: Platform,
     private expService: ExpService,
-    private commentService: CommentService
+    private commentService: CommentService,
+    private modalController: ModalController
+
   ) { }
 
   ngOnInit() {
@@ -87,7 +86,6 @@ export class PostComponent implements OnInit, OnDestroy {
             if (userData) {
               this.currentUserUsername = userData.nickname || 'Eroe Anonimo';
               this.currentUserAvatar = this.getUserPhoto(userData.photo || userData.profilePictureUrl);
-              // Aggiungi l'utente corrente alla cache
               this.usersCache.set(this.currentUserId!, userData);
             }
             this.cdr.detectChanges();
@@ -163,37 +161,35 @@ export class PostComponent implements OnInit, OnDestroy {
       postsObservable = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp);
     }
 
-    // Aggiungi la pipeline switchMap per arricchire i post con i dati degli utenti che hanno messo like
     this.postsSubscription = postsObservable.pipe(
       switchMap(postsData => {
         if (!postsData || postsData.length === 0) {
-          return of([]); // Se non ci sono post, ritorna un observable vuoto
+          return of([]);
         }
 
         const postObservables = postsData.map(post => {
-          const likedUserIds = (post.likes || []).slice(0, 3); // Prendi solo i primi 3 per la preview
+          const likedUserIds = (post.likes || []).slice(0, 3);
           const userPromises = likedUserIds.map(userId => {
             if (this.usersCache.has(userId)) {
-              return of(this.usersCache.get(userId)!); // Già in cache
+              return of(this.usersCache.get(userId)!);
             } else {
               return from(this.userDataService.getUserDataByUid(userId)).pipe(
                 map(userData => {
                   if (userData) {
-                    this.usersCache.set(userId, userData); // Aggiungi alla cache globale
+                    this.usersCache.set(userId, userData);
                   }
                   return userData;
                 }),
                 catchError(err => {
                   console.error(`Errore nel caricamento dati utente ${userId}:`, err);
-                  return of(null); // Gestisci l'errore per un singolo utente
+                  return of(null);
                 }),
-                take(1) // Prende solo il primo valore e completa
+                take(1)
               );
             }
           });
 
-          // Combina i dati del post con i profili degli utenti che hanno messo like
-          return combineLatest(userPromises.length > 0 ? userPromises : [of(null)]).pipe( // Gestisce il caso di zero likes
+          return combineLatest(userPromises.length > 0 ? userPromises : [of(null)]).pipe(
             map(likedUsersProfiles => {
               const likedUsersMap = new Map<string, UserDashboardCounts>();
               likedUsersProfiles.forEach(profile => {
@@ -201,11 +197,11 @@ export class PostComponent implements OnInit, OnDestroy {
                   likedUsersMap.set(profile.uid, profile);
                 }
               });
-              return { ...post, likesUsersMap: likedUsersMap } as PostWithUserDetails; // Aggiungi la mappa al post
+              return { ...post, likesUsersMap: likedUsersMap } as PostWithUserDetails;
             })
           );
         });
-        return combineLatest(postObservables); // Combina tutti gli Observable dei post
+        return combineLatest(postObservables);
       })
     ).subscribe({
       next: (postsWithDetails) => {
@@ -251,7 +247,6 @@ export class PostComponent implements OnInit, OnDestroy {
         postsObservable = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp);
       }
 
-      // Aggiungi la pipeline switchMap anche qui!
       this.postsSubscription = postsObservable.pipe(
         switchMap(newPostsData => {
           if (!newPostsData || newPostsData.length === 0) {
@@ -279,7 +274,7 @@ export class PostComponent implements OnInit, OnDestroy {
                 );
               }
             });
-            return combineLatest(userPromises.length > 0 ? userPromises : [of(null)]).pipe( // Gestisce il caso di zero likes
+            return combineLatest(userPromises.length > 0 ? userPromises : [of(null)]).pipe(
               map(likedUsersProfiles => {
                 const likedUsersMap = new Map<string, UserDashboardCounts>();
                 likedUsersProfiles.forEach(profile => {
@@ -413,7 +408,6 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-  // 'post' deve essere di tipo 'PostWithUserDetails'
   async toggleLike(post: PostWithUserDetails) {
     if (!this.currentUserId) {
       this.presentAppAlert('Accedi Necessario', 'Devi essere loggato per mostrare il tuo apprezzamento!');
@@ -424,17 +418,15 @@ export class PostComponent implements OnInit, OnDestroy {
     try {
       await this.postService.toggleLike(post.id, this.currentUserId, !hasLiked);
       if (!hasLiked) {
-        post.likes = [...(post.likes ?? []), this.currentUserId]; // Aggiungi il like
-        // Aggiorna la mappa dei like di questo post
+        post.likes = [...(post.likes ?? []), this.currentUserId];
         if (this.currentUserId && this.usersCache.has(this.currentUserId)) {
-          if (!post.likesUsersMap) { // Inizializza la mappa se non esiste
+          if (!post.likesUsersMap) {
             post.likesUsersMap = new Map();
           }
           post.likesUsersMap.set(this.currentUserId, this.usersCache.get(this.currentUserId)!);
         }
       } else {
-        post.likes = (post.likes ?? []).filter(id => id !== this.currentUserId); // Rimuovi il like
-        // Rimuovi l'utente corrente dalla mappa dei like di questo post
+        post.likes = (post.likes ?? []).filter(id => id !== this.currentUserId);
         post.likesUsersMap?.delete(this.currentUserId!);
       }
       this.cdr.detectChanges();
@@ -476,7 +468,7 @@ export class PostComponent implements OnInit, OnDestroy {
           text: shareText,
           url: postSpecificLink,
         });
-        this.expService.addExperience(20, 'postShared'); // Aggiungi esperienza per la condivisione
+        this.expService.addExperience(20, 'postShared');
       } else {
         console.warn('Web Share API non disponibile, copia negli appunti come fallback.');
         await navigator.clipboard.writeText(shareText);
@@ -638,8 +630,31 @@ export class PostComponent implements OnInit, OnDestroy {
    * @returns Il nickname dell'utente, o 'Utente sconosciuto' come fallback.
    */
   getLikedUserName(userId: string, usersMap?: Map<string, UserDashboardCounts>): string {
-    // Prima cerca nella mappa specifica del post, poi nella cache globale
     const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
     return userProfile?.nickname || 'Utente sconosciuto';
+  }
+
+  async openCommentsModal(post: Post) {
+    const modal = await this.modalController.create({
+      component: CommentsModalComponent,
+      componentProps: {
+        postId: post.id,
+        postCreatorAvatar: post.userAvatarUrl,
+        postCreatorUsername: post.username,
+        postText: post.text
+      },
+      cssClass: 'my-custom-comments-modal',
+      mode: 'ios',
+      breakpoints: [0, 0.25, 0.5, 0.75, 1],
+      initialBreakpoint: 1,
+      backdropDismiss: true,
+    });
+
+    modal.onWillDismiss().then((data) => {
+      this.loadInitialPosts();
+      this.cdr.detectChanges();
+    });
+
+    await modal.present();
   }
 }

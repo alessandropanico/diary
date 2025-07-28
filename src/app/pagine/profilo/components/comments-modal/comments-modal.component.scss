@@ -1,4 +1,3 @@
-/* Variabili globali o importate. Se le hai già definite globalmente (es. in styles.scss), puoi rimuoverle da qui. */
 :host {
   --primary-glow: #00ffee;
   --bg-blur: rgba(15, 15, 35, 0.8);
@@ -10,135 +9,83 @@
   --glow-intensity-low: rgba(0, 255, 238, 0.1);
   --glow-intensity-medium: rgba(0, 255, 238, 0.25);
   --glow-intensity-high: rgba(0, 255, 238, 0.4);
-
   --ion-color-primary: var(--primary-glow);
   --ion-color-primary-rgb: 0, 255, 238;
+  --height: 90%;
+  --border-radius: 10px;
+  --box-shadow: 0 0 20px var(--glow-intensity-high);
+  --background: var(--panel-solid-bg);
+  --backdrop-opacity: 0.7;
+  --backdrop-filter: blur(5px);
+
 }
 
-/* Stili per le icone. Se le hai già definite globalmente (es. in styles.scss), puoi rimuoverle da qui. */
-.icon {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  vertical-align: middle;
-  mask-size: cover;
-  background-color: var(--primary-glow);
-  -webkit-mask-size: cover;
-  filter: drop-shadow(0 0 1px var(--glow-intensity-low));
-}
 
-.close-icon {
-  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>');
-}
-
-/* Backdrop: copre l'intera pagina */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Sfondo scuro semi-trasparente */
-  z-index: 1000; /* Assicurati che sia sopra tutto il resto del contenuto della pagina */
-  backdrop-filter: blur(5px); /* Effetto sfocatura opzionale per lo sfondo */
-}
-
-/* Contenitore del contenuto del modale (la "finestra" centrale) */
-.modal-content-wrapper {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%); /* Centra il modale perfettamente */
-  z-index: 1001; /* Sopra il backdrop */
-
-  background: rgba(20, 25, 50, ); /* Sfondo del modale */
-  border: 1px solid var(--primary-glow);
-  border-radius: 10px;
-  box-shadow: 0 0 20px var(--glow-intensity-high); /* Ombra pronunciata con effetto glow */
-
-  width: 90%; /* Larghezza su schermi piccoli */
-  max-width: 600px; /* Larghezza massima su schermi grandi */
-  height: 90%; /* Altezza su schermi piccoli */
-  max-height: 80vh; /* Altezza massima su schermi grandi (80% dell'altezza della viewport) */
-
-  display: flex;
-  flex-direction: column; /* Organizza header e body in colonna */
-  overflow: hidden; /* Nasconde scrollbar indesiderate sul contenitore principale */
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  border-bottom: 1px solid var(--border-subtle); /* Linea divisoria */
-  background-color: rgba(0, 0, 0, 0.2); /* Leggero sfondo per l'header */
+.modal-header-toolbar {
+  --background: rgba(0, 0, 0, 0.2);
+  --border-width: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 5px;
 }
 
 .modal-title {
   color: var(--primary-glow);
   font-size: 1.2em;
-  margin: 0; /* Rimuovi i margini predefiniti del titolo */
+  margin: 0;
+  text-align: center;
+  text-shadow: 0 0 1px var(--glow-intensity-low);
 }
 
 .close-button {
-  background: none;
-  border: none;
-  color: var(--label-color); /* Colore del testo del pulsante */
-  font-size: 1.5em; /* Dimensione del testo/icona */
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 50%; /* Rende il pulsante circolare */
-  transition: background-color 0.2s ease;
+  --background: none;
+  --color: var(--label-color);
+  --padding-end: 10px;
+  --padding-start: 10px;
+  --transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: var(--button-hover-bg);
-    color: var(--text-light); /* Colore al passaggio del mouse */
+    --background: var(--button-hover-bg);
+    --color: var(--text-light);
   }
 
-  .icon {
-    background-color: var(--label-color); /* Colore dell'icona (usa il colore del testo del pulsante) */
-    width: 20px;
-    height: 20px;
+  ion-icon {
+    font-size: 24px;
+    filter: drop-shadow(0 0 1px var(--glow-intensity-low));
   }
 }
 
-.modal-body {
-  flex-grow: 1; /* Permette al body di occupare tutto lo spazio rimanente nel modale */
-  padding: 15px; /* Padding su tutti i lati per il contenuto del body */
-  overflow-y: auto; /* Abilita lo scroll solo se il contenuto dei commenti supera l'altezza */
-  -webkit-overflow-scrolling: touch; /* Migliora lo scrolling su dispositivi iOS */
-
-  display: flex; /* Utilizza flexbox per allineare gli elementi interni */
-  flex-direction: column; /* Impila gli elementi verticalmente */
-  gap: 15px; /* Spazio tra il post originale e la sezione commenti */
+.modal-body-content {
+  --background: transparent;
+  --padding-top: 15px;
+  --padding-bottom: 15px;
+  --padding-start: 15px;
+  --padding-end: 15px;
 }
 
-/* Stili per la visualizzazione del post originale all'interno del modale */
+
 .modal-post-info {
-  // Riutilizza le proprietà di .panel-glow-border per consistenza, se non lo è già per @extend
-  // Assicurati che .panel-glow-border sia definito o importato se lo estendi.
   background: var(--bg-blur);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   box-shadow: 0 0 6px var(--glow-intensity-low);
-  padding: 15px; // Padding interno per i dati del post
-  margin: 0; // Rimuovi margini esterni qui, il gap del .modal-body gestisce la spaziatura
-  flex-shrink: 0; // Non permette che si rimpicciolisca se i commenti sono molti
+  padding: 15px;
+  margin-bottom: 15px;
+  flex-shrink: 0;
 
   .post-header {
     display: flex;
-    align-items: center; // Centra verticalmente avatar e info utente
-    margin-bottom: 10px; // Spazio tra header del post e contenuto
-    gap: 10px; // Spazio tra avatar e post-info
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
 
     .post-avatar {
-      width: 44px; // Dimensione dell'avatar all'interno del modale
+      width: 44px;
       height: 44px;
       border-radius: 50%;
       border: 2px solid var(--primary-glow);
       overflow: hidden;
-      flex-shrink: 0; // Impedisce che l'avatar si rimpicciolisca
+      flex-shrink: 0;
+
       img {
         width: 100%;
         height: 100%;
@@ -148,8 +95,7 @@
 
     .post-info {
       display: flex;
-      flex-direction: column; // Impila username e tempo (se presente)
-      // flex-grow: 1; // Permette di occupare lo spazio rimanente
+      flex-direction: column;
     }
 
     .post-username {
@@ -158,7 +104,6 @@
       color: var(--primary-glow);
       text-shadow: 0 0 1px var(--glow-intensity-low);
     }
-    // .post-time { ... } se presente
   }
 
   .post-content {
@@ -166,58 +111,59 @@
       font-size: 0.95em;
       line-height: 1.4;
       color: var(--text-light);
-      white-space: pre-wrap; /* Mantiene gli spazi e i ritorni a capo */
-      word-wrap: break-word; /* Va a capo su parole lunghe */
+      white-space: pre-wrap;
+      word-wrap: break-word;
       text-align: left;
     }
   }
 }
 
-
-/* Media Queries per la Responsività su schermi più piccoli */
 @media (max-width: 768px) {
-  .modal-content-wrapper {
-    width: 95%;
-    height: 95%;
-    max-width: none; /* Rimuovi il limite di larghezza fisso */
-    max-height: none; /* Rimuovi il limite di altezza fisso */
-  }
 
-  .modal-header {
-    padding: 10px 15px;
+  .modal-header-toolbar {
+    padding: 0 5px;
   }
 
   .modal-title {
     font-size: 1.1em;
   }
 
-  .close-button {
-    font-size: 1.2em;
-    .icon {
-      width: 18px;
-      height: 18px;
-    }
+  .close-button ion-icon {
+    font-size: 20px;
   }
 
-  .modal-body {
-    padding: 10px; // Riduci il padding su schermi più piccoli
-    gap: 10px; // Riduci il gap su schermi più piccoli
+  .modal-body-content {
+    --padding-top: 10px;
+    --padding-bottom: 10px;
+    --padding-start: 10px;
+    --padding-end: 10px;
   }
 
   .modal-post-info {
-    padding: 10px; // Riduci il padding interno del post originale
+    padding: 10px;
+    margin-bottom: 10px;
+
     .post-header {
       gap: 8px;
+
       .post-avatar {
         width: 40px;
         height: 40px;
       }
+
       .post-username {
         font-size: 1em;
       }
     }
+
     .post-content .post-text {
       font-size: 0.85em;
     }
   }
+}
+
+
+.my-custom-comments-modal {
+  --border-color: var(--primary-glow);
+  --border-width: 1px;
 }

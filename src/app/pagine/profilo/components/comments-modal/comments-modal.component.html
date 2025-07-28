@@ -1,27 +1,26 @@
-<div class="modal-backdrop" (click)="closeModal()"></div>
+<ion-header class="ion-no-border">
+  <ion-toolbar class="modal-header-toolbar">
+    <ion-title class="modal-title">Commenti</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="closeModal()" class="close-button">
+        <ion-icon name="close-outline"></ion-icon> </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
 
-<div class="modal-content-wrapper">
-  <div class="modal-header">
-    <h2 class="modal-title">Commenti</h2>
-    <button class="close-button" (click)="closeModal()">
-      <span class="icon close-icon"></span>
-    </button>
-  </div>
-
-  <div class="modal-body">
-    <div class="modal-post-info panel-glow-border">
-      <div class="post-header">
-        <div class="post-avatar">
-          <img [src]="postCreatorAvatar || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
-        </div>
-        <div class="post-info">
-          <span class="post-username">{{ postCreatorUsername }}</span>
-        </div>
+<ion-content class="modal-body-content">
+  <div class="modal-post-info panel-glow-border">
+    <div class="post-header">
+      <div class="post-avatar">
+        <img [src]="postCreatorAvatar || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
       </div>
-      <div class="post-content">
-        <p class="post-text">{{ postText }}</p>
+      <div class="post-info">
+        <span class="post-username">{{ postCreatorUsername }}</span>
       </div>
     </div>
-    <app-comment-section [postId]="postId"></app-comment-section>
+    <div class="post-content">
+      <p class="post-text">{{ postText }}</p>
+    </div>
   </div>
-</div>
+  <app-comment-section [postId]="postId"></app-comment-section>
+</ion-content>
