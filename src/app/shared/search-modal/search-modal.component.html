@@ -13,6 +13,7 @@
   <ion-searchbar
     placeholder="Cerca per nickname o nome..."
     (ionInput)="onSearchInput($event)"
+    [(ngModel)]="searchQuery"  
     class="ff7-searchbar"
   ></ion-searchbar>
 
