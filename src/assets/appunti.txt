@@ -1,6 +1,8 @@
 --TO DO--
 
-**AGGIUSTARE SCSS DEI MODALI LIKE/LIKE COMMENTI**
+Migliorare chat-gruppo;
+Implementare blocca/sblocca utente in chat;
+Il gruppo prima si abbandona, poi si può eliminare;
 
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
