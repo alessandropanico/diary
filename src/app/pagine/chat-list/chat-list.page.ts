@@ -7,16 +7,15 @@ import {
 } from 'src/app/services/chat.service';
 import { UserDataService } from 'src/app/services/user-data.service';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { Subscription, forkJoin, of, from } from 'rxjs';
+import { Subscription, forkJoin, of, from, combineLatest, firstValueFrom } from 'rxjs'; // ⭐ AGGIUNTO firstValueFrom
 import { map, switchMap, catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ChatNotificationService } from 'src/app/services/chat-notification.service';
 import { Timestamp } from 'firebase/firestore';
-import { AlertController, IonItemSliding, ModalController } from '@ionic/angular'; // ⭐ AGGIUNTO ModalController
+import { AlertController, IonItemSliding, ModalController } from '@ionic/angular';
 
-// ⭐ IMPORTA IL TUO MODALE
 import { SearchModalComponent } from 'src/app/shared/search-modal/search-modal.component';
-import { GroupChatService } from 'src/app/services/group-chat.service'; // ⭐ AGGIUNGI QUESTA LINEA
+import { GroupChatService, GroupChat } from 'src/app/services/group-chat.service';
 
 
 import * as dayjs from 'dayjs';
@@ -43,6 +42,27 @@ dayjs.updateLocale('it', {
   ]
 });
 
+export interface ExtendedGroupChat extends GroupChat {
+  hasUnreadMessages?: boolean;
+  unreadMessageCount?: number;
+}
+
+export interface ChatListItem {
+  id: string;
+  type: 'private' | 'group';
+  displayName: string;
+  displayPhoto: string;
+  lastMessage: string;
+  lastMessageAt: Timestamp | null;
+  displayLastMessageAt: string;
+  isLastMessageFromMe: boolean;
+  hasUnreadMessages: boolean;
+  unreadMessageCount: number;
+  otherParticipantIsOnline?: boolean;
+  otherParticipantLastOnline?: string;
+  groupDescription?: string;
+}
+
 @Component({
   selector: 'app-chat-list',
   templateUrl: './chat-list.page.html',
@@ -52,16 +72,23 @@ dayjs.updateLocale('it', {
 export class ChatListPage implements OnInit, OnDestroy {
 
   conversations: ExtendedConversation[] = [];
+  groupChats: ExtendedGroupChat[] = [];
+  chatListItems: ChatListItem[] = [];
+
   loggedInUserId: string | null = null;
-  isLoading: boolean = true;
+  isLoading: boolean = true; // Inizializzato a true
 
   isSelectionMode: boolean = false;
   selectedConversations: Set<string> = new Set<string>();
+
+  private isConversationsLoaded: boolean = false;
+  private isGroupChatsLoaded: boolean = false;
 
   auth = getAuth();
 
   private authStateUnsubscribe: (() => void) | undefined;
   private conversationsSubscription: Subscription | undefined;
+  private groupChatsSubscription: Subscription | undefined;
   private onlineStatusInterval: any;
 
   @ViewChildren(IonItemSliding) slidingItems!: QueryList<IonItemSliding>;
@@ -77,18 +104,23 @@ export class ChatListPage implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    this.isLoading = true;
-    const auth = getAuth();
+    this.isLoading = true; // ⭐ Assicurati che isLoading sia true all'inizio ⭐
+    this.isConversationsLoaded = false;
+    this.isGroupChatsLoaded = false;
 
-    this.authStateUnsubscribe = onAuthStateChanged(auth, async (user) => {
+    this.authStateUnsubscribe = onAuthStateChanged(this.auth, async (user) => {
       if (user) {
         this.loggedInUserId = user.uid;
+        // ⭐ Chiamiamo i caricamenti e li avvolgiamo in Promise per `doRefresh` ⭐
         this.loadUserConversations();
+        this.loadUserGroupChats();
         this.startOnlineStatusCheck();
       } else {
         this.loggedInUserId = null;
         this.conversations = [];
-        this.isLoading = false;
+        this.groupChats = [];
+        this.chatListItems = [];
+        this.isLoading = false; // Se non loggato, imposta isLoading a false
         this.router.navigateByUrl('/login');
         this.stopOnlineStatusCheck();
       }
@@ -102,122 +134,236 @@ export class ChatListPage implements OnInit, OnDestroy {
     if (this.conversationsSubscription) {
       this.conversationsSubscription.unsubscribe();
     }
+    if (this.groupChatsSubscription) {
+      this.groupChatsSubscription.unsubscribe();
+    }
     this.stopOnlineStatusCheck();
   }
 
-  async loadUserConversations() {
-    if (!this.loggedInUserId) {
-      console.warn('ChatListPage: Impossibile caricare le conversazioni, loggedInUserId è nullo.');
-      this.isLoading = false;
-      return;
-    }
+  // Modificato per restituire una Promise che risolve quando il caricamento è completato
+  loadUserConversations(): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.loggedInUserId) {
+        console.warn('ChatListPage: Impossibile caricare le conversazioni, loggedInUserId è nullo.');
+        this.isConversationsLoaded = true;
+        this.checkAllChatsLoaded();
+        resolve(); // Risolve la Promise
+        return;
+      }
 
-    this.conversationsSubscription = this.chatService.getUserConversations(this.loggedInUserId)
-      .pipe(
-        map((rawConvs: ConversationDocument[]) => {
-          return rawConvs.filter(conv =>
-            !(conv.deletedBy && conv.deletedBy.includes(this.loggedInUserId!))
-          );
-        }),
-        switchMap((filteredConvs: ConversationDocument[]) => {
-          if (filteredConvs.length === 0) {
-            return of([]);
-          }
+      if (this.conversationsSubscription) {
+        this.conversationsSubscription.unsubscribe();
+      }
 
-          const extendedConvsObservables = filteredConvs.map(conv => {
-            const otherParticipantId = conv.participants.find(id => id !== this.loggedInUserId);
-
-            const userProfileObservable = otherParticipantId
-              ? from(this.userDataService.getUserDataById(otherParticipantId))
-              : of(null);
-
-            return userProfileObservable.pipe(
-              switchMap(async (otherUserData: UserProfile | null) => {
-                const lastMessageAtDate = conv.lastMessageAt?.toDate();
-                const lastReadByMe: Timestamp | null = conv.lastRead?.[this.loggedInUserId!] ?? null;
-
-                const unreadCountForChat = await this.chatService.countUnreadMessages(
-                  conv.id,
-                  this.loggedInUserId!,
-                  lastReadByMe
-                );
-
-                const hasUnread = unreadCountForChat > 0;
-
-                const { isOnline, lastOnlineDisplay } = this.getOnlineStatus(otherUserData?.lastOnline);
-
-                const extendedConv: ExtendedConversation = {
-                  id: conv.id,
-                  participants: conv.participants,
-                  lastMessage: conv.lastMessage || '',
-                  lastMessageAt: conv.lastMessageAt || null,
-                  createdAt: conv.createdAt || null,
-                  chatId: conv.id,
-                  otherParticipantId: otherParticipantId || '',
-                  otherParticipantName: otherUserData?.nickname || otherUserData?.name || 'Utente Sconosciuto',
-                  otherParticipantPhoto: otherUserData?.photo || 'assets/immaginiGenerali/default-avatar.jpg',
-                  displayLastMessageAt: lastMessageAtDate ? this.formatDate(lastMessageAtDate) : 'N/A',
-                  lastMessageSenderId: conv.lastMessageSenderId || '',
-                  lastRead: conv.lastRead || {},
-                  hasUnreadMessages: hasUnread,
-                  unreadMessageCount: unreadCountForChat,
-                  deletedBy: conv.deletedBy || [],
-                  otherParticipantIsOnline: isOnline,
-                  otherParticipantLastOnline: lastOnlineDisplay
-                };
-
-                if (hasUnread && !(extendedConv.deletedBy && extendedConv.deletedBy.includes(this.loggedInUserId!))) {
-                  this.chatNotificationService.incrementUnread(conv.id);
-                } else {
-                  this.chatNotificationService.clearUnread(conv.id);
-                }
-
-                return extendedConv;
-              }),
-              catchError(error => {
-                console.error('Errore durante l\'arricchimento della conversazione con dati utente:', conv.id, error);
-                const lastMessageAtDate = conv.lastMessageAt?.toDate();
-
-                return of({
-                  id: conv.id,
-                  participants: conv.participants,
-                  lastMessage: conv.lastMessage || '',
-                  lastMessageAt: conv.lastMessageAt || null,
-                  createdAt: conv.createdAt || null,
-                  chatId: conv.id,
-                  otherParticipantId: otherParticipantId || '',
-                  otherParticipantName: 'Errore Utente',
-                  otherParticipantPhoto: 'assets/immaginiGenerali/default-avatar.jpg',
-                  displayLastMessageAt: lastMessageAtDate ? this.formatDate(lastMessageAtDate) : 'N/A',
-                  lastMessageSenderId: conv.lastMessageSenderId || '',
-                  lastRead: conv.lastRead || {},
-                  hasUnreadMessages: false,
-                  unreadMessageCount: 0,
-                  deletedBy: conv.deletedBy || [],
-                  otherParticipantIsOnline: false,
-                  otherParticipantLastOnline: 'N/D'
-                } as ExtendedConversation);
-              })
+      this.conversationsSubscription = this.chatService.getUserConversations(this.loggedInUserId)
+        .pipe(
+          map((rawConvs: ConversationDocument[]) => {
+            return rawConvs.filter(conv =>
+              !(conv.deletedBy && conv.deletedBy.includes(this.loggedInUserId!))
             );
-          });
+          }),
+          switchMap((filteredConvs: ConversationDocument[]) => {
+            if (filteredConvs.length === 0) {
+              return of([]);
+            }
+            const extendedConvsObservables = filteredConvs.map(conv => {
+              const otherParticipantId = conv.participants.find(id => id !== this.loggedInUserId);
+              const userProfileObservable = otherParticipantId
+                ? from(this.userDataService.getUserDataById(otherParticipantId))
+                : of(null);
 
-          return forkJoin(extendedConvsObservables);
-        })
-      )
-      .subscribe({
-        next: (processedConvs: ExtendedConversation[]) => {
-          this.conversations = processedConvs.sort((a, b) => {
-            const dateA = a.lastMessageAt ? a.lastMessageAt.toMillis() : 0;
-            const dateB = b.lastMessageAt ? b.lastMessageAt.toMillis() : 0;
-            return dateB - dateA;
-          });
-          this.isLoading = false;
+              return userProfileObservable.pipe(
+                switchMap(async (otherUserData: UserProfile | null) => {
+                  const lastMessageAtDate = conv.lastMessageAt?.toDate();
+                  const lastReadByMe: Timestamp | null = conv.lastRead?.[this.loggedInUserId!] ?? null;
+
+                  const unreadCountForChat = await this.chatService.countUnreadMessages(
+                    conv.id,
+                    this.loggedInUserId!,
+                    lastReadByMe
+                  );
+
+                  const hasUnread = unreadCountForChat > 0;
+                  const { isOnline, lastOnlineDisplay } = this.getOnlineStatus(otherUserData?.lastOnline);
+
+                  const extendedConv: ExtendedConversation = {
+                    id: conv.id,
+                    participants: conv.participants,
+                    lastMessage: conv.lastMessage || '',
+                    lastMessageAt: conv.lastMessageAt || null,
+                    createdAt: conv.createdAt || null,
+                    chatId: conv.id,
+                    otherParticipantId: otherParticipantId || '',
+                    otherParticipantName: otherUserData?.nickname || otherUserData?.name || 'Utente Sconosciuto',
+                    otherParticipantPhoto: otherUserData?.photo || 'assets/immaginiGenerali/default-avatar.jpg',
+                    displayLastMessageAt: lastMessageAtDate ? this.formatDate(lastMessageAtDate) : 'N/A',
+                    lastMessageSenderId: conv.lastMessageSenderId || '',
+                    lastRead: conv.lastRead || {},
+                    hasUnreadMessages: hasUnread,
+                    unreadMessageCount: unreadCountForChat,
+                    deletedBy: conv.deletedBy || [],
+                    otherParticipantIsOnline: isOnline,
+                    otherParticipantLastOnline: lastOnlineDisplay
+                  };
+
+                  if (hasUnread && !(extendedConv.deletedBy && extendedConv.deletedBy.includes(this.loggedInUserId!))) {
+                    this.chatNotificationService.incrementUnread(conv.id);
+                  } else {
+                    this.chatNotificationService.clearUnread(conv.id);
+                  }
+                  return extendedConv;
+                }),
+                catchError(error => {
+                  console.error('Errore durante l\'arricchimento della conversazione con dati utente:', conv.id, error);
+                  const lastMessageAtDate = conv.lastMessageAt?.toDate();
+                  return of({
+                    id: conv.id,
+                    participants: conv.participants,
+                    lastMessage: conv.lastMessage || '',
+                    lastMessageAt: conv.lastMessageAt || null,
+                    createdAt: conv.createdAt || null,
+                    chatId: conv.id,
+                    otherParticipantId: otherParticipantId || '',
+                    otherParticipantName: 'Errore Utente',
+                    otherParticipantPhoto: 'assets/immaginiGenerali/default-avatar.jpg',
+                    displayLastMessageAt: lastMessageAtDate ? this.formatDate(lastMessageAtDate) : 'N/A',
+                    lastMessageSenderId: conv.lastMessageSenderId || '',
+                    lastRead: conv.lastRead || {},
+                    hasUnreadMessages: false,
+                    unreadMessageCount: 0,
+                    otherParticipantIsOnline: false,
+                    otherParticipantLastOnline: 'N/D'
+                  } as ExtendedConversation);
+                })
+              );
+            });
+            return forkJoin(extendedConvsObservables);
+          })
+        )
+        .subscribe({
+          next: (processedConvs: ExtendedConversation[]) => {
+            this.conversations = processedConvs;
+            console.log('Chat private caricate:', this.conversations.length);
+            this.isConversationsLoaded = true;
+            this.checkAllChatsLoaded();
+            resolve(); // ⭐ Risolve la Promise qui ⭐
+          },
+          error: (error) => {
+            console.error('Errore nel recupero o elaborazione delle conversazioni:', error);
+            this.isConversationsLoaded = true;
+            this.checkAllChatsLoaded();
+            resolve(); // ⭐ Risolve la Promise anche in caso di errore ⭐
+          }
+        });
+    });
+  }
+
+  // Modificato per restituire una Promise che risolve quando il caricamento è completato
+  loadUserGroupChats(): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.loggedInUserId) {
+        console.warn('ChatListPage: Impossibile caricare i gruppi, loggedInUserId è nullo.');
+        this.isGroupChatsLoaded = true;
+        this.checkAllChatsLoaded();
+        resolve(); // Risolve la Promise
+        return;
+      }
+
+      if (this.groupChatsSubscription) {
+        this.groupChatsSubscription.unsubscribe();
+      }
+
+      this.groupChatsSubscription = this.groupChatService.getGroupsForUser(this.loggedInUserId).subscribe({
+        next: async (groups: GroupChat[]) => {
+          console.log('--- loadUserGroupChats: Inizio elaborazione gruppi ---');
+          console.log('loadUserGroupChats: Gruppi RAW ricevuti:', groups.length, groups);
+
+          const processedGroups: ExtendedGroupChat[] = await Promise.all(groups.map(async group => {
+            // ⭐ Usiamo firstValueFrom per convertire l'Observable in una Promise ⭐
+            const lastReadTimestamp = await firstValueFrom(this.groupChatService.getLastReadTimestamp(group.groupId!, this.loggedInUserId!)).catch(() => null);
+
+            const unreadCountForGroup = await this.groupChatService.countUnreadMessagesForGroup(
+              group.groupId!,
+              this.loggedInUserId!,
+              lastReadTimestamp
+            );
+
+            const extendedGroup: ExtendedGroupChat = {
+              ...group,
+              unreadMessageCount: unreadCountForGroup,
+              hasUnreadMessages: unreadCountForGroup > 0
+            };
+            return extendedGroup;
+          }));
+
+          this.groupChats = processedGroups;
+          console.log('loadUserGroupChats: Gruppi ESTESI processati:', this.groupChats.length, this.groupChats);
+          this.isGroupChatsLoaded = true;
+          this.checkAllChatsLoaded();
+          resolve(); // ⭐ Risolve la Promise qui ⭐
         },
         error: (error) => {
-          console.error('Errore nel recupero o elaborazione delle conversazioni:', error);
-          this.isLoading = false;
+          console.error('Errore nel recupero dei gruppi di chat:', error);
+          this.isGroupChatsLoaded = true;
+          this.checkAllChatsLoaded();
+          resolve(); // ⭐ Risolve la Promise anche in caso di errore ⭐
         }
       });
+    });
+  }
+
+  private checkAllChatsLoaded() {
+    if (this.isConversationsLoaded && this.isGroupChatsLoaded) {
+      this.updateCombinedChatList();
+      this.isLoading = false;
+      console.log("checkAllChatsLoaded: Tutte le chat (private e gruppi) sono state caricate e la lista combinata è stata aggiornata.");
+    }
+  }
+
+  private updateCombinedChatList() {
+    const combined: ChatListItem[] = [];
+
+    this.conversations.forEach(conv => {
+      combined.push({
+        id: conv.id,
+        type: 'private',
+        displayName: conv.otherParticipantName,
+        displayPhoto: conv.otherParticipantPhoto,
+        lastMessage: conv.lastMessage || '',
+        lastMessageAt: conv.lastMessageAt || null,
+        displayLastMessageAt: conv.displayLastMessageAt,
+        isLastMessageFromMe: conv.lastMessageSenderId === this.loggedInUserId,
+        hasUnreadMessages: conv.hasUnreadMessages ?? false,
+        unreadMessageCount: conv.unreadMessageCount ?? 0,
+        otherParticipantIsOnline: conv.otherParticipantIsOnline,
+        otherParticipantLastOnline: conv.otherParticipantLastOnline
+      });
+    });
+
+    this.groupChats.forEach(group => {
+      combined.push({
+        id: group.groupId!,
+        type: 'group',
+        displayName: group.name,
+        displayPhoto: group.photoUrl || 'assets/immaginiGenerali/group-default-avatar.jpg',
+        lastMessage: group.lastMessage?.text || '',
+        lastMessageAt: group.lastMessage?.timestamp || null,
+        displayLastMessageAt: group.lastMessage?.timestamp ? this.formatDate(group.lastMessage.timestamp.toDate()) : 'N/A',
+        isLastMessageFromMe: group.lastMessage?.senderId === this.loggedInUserId,
+        hasUnreadMessages: group.hasUnreadMessages ?? false,
+        unreadMessageCount: group.unreadMessageCount ?? 0,
+        groupDescription: group.description || ''
+      });
+    });
+
+    this.chatListItems = combined.sort((a, b) => {
+      const dateA = a.lastMessageAt ? a.lastMessageAt.toMillis() : 0;
+      const dateB = b.lastMessageAt ? b.lastMessageAt.toMillis() : 0;
+      return dateB - dateA;
+    });
+    console.log('updateCombinedChatList: Lista combinata finale (chatListItems):', this.chatListItems.length, this.chatListItems);
+
+    this.updateOnlineStatusForConversations();
   }
 
   private startOnlineStatusCheck() {
@@ -234,14 +380,17 @@ export class ChatListPage implements OnInit, OnDestroy {
   }
 
   private updateOnlineStatusForConversations() {
-    if (this.conversations && this.conversations.length > 0) {
-      this.conversations = this.conversations.map(conv => {
-        const { isOnline, lastOnlineDisplay } = this.getOnlineStatus(conv.otherParticipantLastOnline);
-        return {
-          ...conv,
-          otherParticipantIsOnline: isOnline,
-          otherParticipantLastOnline: lastOnlineDisplay
-        };
+    if (this.chatListItems && this.chatListItems.length > 0) {
+      this.chatListItems = this.chatListItems.map(item => {
+        if (item.type === 'private' && item.otherParticipantLastOnline) {
+          const { isOnline, lastOnlineDisplay } = this.getOnlineStatus(item.otherParticipantLastOnline);
+          return {
+            ...item,
+            otherParticipantIsOnline: isOnline,
+            otherParticipantLastOnline: lastOnlineDisplay
+          };
+        }
+        return item;
       });
     }
   }
@@ -273,9 +422,13 @@ export class ChatListPage implements OnInit, OnDestroy {
     return { isOnline, lastOnlineDisplay };
   }
 
-  openChat(conversationId: string) {
+  openChat(item: ChatListItem) {
     if (!this.isSelectionMode) {
-      this.router.navigate(['/chat', conversationId]);
+      if (item.type === 'private') {
+        this.router.navigate(['/chat', item.id]);
+      } else if (item.type === 'group') {
+        this.router.navigate(['/chat-gruppo', item.id]);
+      }
     }
   }
 
@@ -292,23 +445,20 @@ export class ChatListPage implements OnInit, OnDestroy {
     }
   }
 
-  isLastMessageFromMe(conversation: ExtendedConversation): boolean {
-    return conversation.lastMessageSenderId === this.loggedInUserId;
+  isLastMessageFromMe(item: ChatListItem): boolean {
+    return item.isLastMessageFromMe;
   }
 
-  hasUnreadMessages(conversation: ExtendedConversation): boolean {
-    return (
-      conversation.unreadMessageCount !== undefined &&
-      conversation.unreadMessageCount > 0
-    );
+  hasUnreadMessages(item: ChatListItem): boolean {
+    return item.hasUnreadMessages;
   }
 
-  getDisplayLastMessage(conversation: ExtendedConversation): string {
-    const prefix = this.isLastMessageFromMe(conversation) ? 'Tu: ' : '';
-    return prefix + (conversation.lastMessage || '');
+  getDisplayLastMessage(item: ChatListItem): string {
+    const prefix = item.isLastMessageFromMe ? 'Tu: ' : '';
+    return prefix + (item.lastMessage || '');
   }
 
-  async deleteConversation(conversation: ExtendedConversation) {
+  async deleteConversation(item: ChatListItem) {
     if (!this.loggedInUserId) {
       console.error('Errore: Utente non autenticato per eliminare la chat.');
       return;
@@ -316,15 +466,19 @@ export class ChatListPage implements OnInit, OnDestroy {
 
     const alert = await this.alertController.create({
       header: 'Elimina Chat',
-      message: `Sei sicuro di voler eliminare la conversazione con ${conversation.otherParticipantName}?`,
+      message: `Sei sicuro di voler eliminare ${item.type === 'group' ? 'il gruppo' : 'la conversazione con'} ${item.displayName}?`,
       buttons: [
         { text: 'Annulla', role: 'cancel' },
         {
           text: 'Elimina',
           handler: async () => {
             try {
-              await this.chatService.markConversationAsDeleted(conversation.id, this.loggedInUserId!);
-              this.chatNotificationService.clearUnread(conversation.id);
+              if (item.type === 'private') {
+                await this.chatService.markConversationAsDeleted(item.id, this.loggedInUserId!);
+              } else {
+                await this.groupChatService.leaveGroup(item.id, this.loggedInUserId!);
+              }
+              this.chatNotificationService.clearUnread(item.id);
             } catch (error) {
               console.error('Errore durante l\'eliminazione della chat:', error);
               const errorAlert = await this.alertController.create({
@@ -377,7 +531,7 @@ export class ChatListPage implements OnInit, OnDestroy {
 
     const alert = await this.alertController.create({
       header: 'Elimina Chat Selezionate',
-      message: `Sei sicuro di voler eliminare le ${this.selectedConversations.size} conversazioni selezionate? Questa azione le rimuoverà dalla tua lista e non potrai più vedere i messaggi precedenti se avvierai nuove chat con questi utenti.`,
+      message: `Sei sicuro di voler eliminare le ${this.selectedConversations.size} chat selezionate? Questa azione le rimuoverà dalla tua lista.`,
       buttons: [
         { text: 'Annulla', role: 'cancel' },
         {
@@ -390,8 +544,15 @@ export class ChatListPage implements OnInit, OnDestroy {
 
             const deletePromises: Promise<void>[] = [];
             for (const convId of this.selectedConversations) {
-              deletePromises.push(this.chatService.markConversationAsDeleted(convId, this.loggedInUserId!));
-              this.chatNotificationService.clearUnread(convId);
+              const itemToDelete = this.chatListItems.find(item => item.id === convId);
+              if (itemToDelete) {
+                if (itemToDelete.type === 'private') {
+                  deletePromises.push(this.chatService.markConversationAsDeleted(convId, this.loggedInUserId!));
+                } else {
+                  deletePromises.push(this.groupChatService.leaveGroup(convId, this.loggedInUserId!));
+                }
+                this.chatNotificationService.clearUnread(convId);
+              }
             }
 
             try {
@@ -415,12 +576,9 @@ export class ChatListPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // ⭐⭐ NUOVO METODO: Apre la modale di ricerca utenti ⭐⭐
   async openSearchUserModal() {
     const modal = await this.modalCtrl.create({
       component: SearchModalComponent,
-      // Puoi passare dati alla modale qui, se necessario
-      // componentProps: { someProp: 'someValue' }
     });
 
     await modal.present();
@@ -439,7 +597,6 @@ export class ChatListPage implements OnInit, OnDestroy {
       }
 
       if (selectedUserIds.length === 1) {
-        // LOGICA PER CHAT 1-A-1
         const otherUserId = selectedUserIds[0];
         try {
           const conversationId = await this.chatService.getOrCreateConversation(this.loggedInUserId, otherUserId);
@@ -455,11 +612,8 @@ export class ChatListPage implements OnInit, OnDestroy {
           await errorAlert.present();
         }
       } else if (selectedUserIds.length > 1) {
-        // LOGICA PER CREAZIONE GRUPPO
-        // Include l'utente loggato nel gruppo
         const allMembers = [this.loggedInUserId, ...selectedUserIds];
 
-        // Chiedi il nome del gruppo all'utente
         const alert = await this.alertController.create({
           header: 'Crea Nuovo Gruppo',
           inputs: [
@@ -489,15 +643,14 @@ export class ChatListPage implements OnInit, OnDestroy {
                     buttons: ['OK'],
                   });
                   await nameRequiredAlert.present();
-                  return false; // Impedisce la chiusura dell'alert di creazione gruppo
+                  return false;
                 }
 
                 try {
-                  // CHIAMA IL SERVIZIO PER CREARE IL GRUPPO
                   const groupId = await this.groupChatService.createGroup(groupName, groupDescription, allMembers);
                   console.log('Gruppo creato:', groupId);
-                  this.router.navigate(['/chat-gruppo', groupId]); // Naviga alla pagina del gruppo
-                  return true; // ⭐ AGGIUNTO: Chiude l'alert di creazione gruppo in caso di successo
+                  this.router.navigate(['/chat-gruppo', groupId]);
+                  return true;
                 } catch (error) {
                   console.error('Errore durante la creazione del gruppo:', error);
                   const errorAlert = await this.alertController.create({
@@ -506,8 +659,7 @@ export class ChatListPage implements OnInit, OnDestroy {
                     buttons: ['OK'],
                   });
                   await errorAlert.present();
-                  return true; // ⭐ AGGIUNTO: Chiude l'alert di creazione gruppo anche in caso di errore,
-                  // l'utente vedrà l'alert di errore separato.
+                  return true;
                 }
               },
             },
@@ -521,5 +673,39 @@ export class ChatListPage implements OnInit, OnDestroy {
     } else {
       console.log('Modale chiusa senza selezione di utenti.');
     }
+  }
+
+  async doRefresh(event: any) {
+    console.log('Refreshing chats...');
+    this.isLoading = true; // Mostra spinner durante il refresh
+    this.isConversationsLoaded = false; // Reset dei flag
+    this.isGroupChatsLoaded = false;
+
+    // Avvia i caricamenti. I metodi ora restituiscono Promise.
+    await Promise.all([
+      this.loadUserConversations(),
+      this.loadUserGroupChats()
+    ]);
+
+    // checkAllChatsLoaded() verrà chiamato automaticamente alla risoluzione di entrambi i caricamenti.
+    // Una volta che checkAllChatsLoaded() avrà impostato isLoading = false e aggiornato la lista,
+    // potremo completare il refresher.
+    // Per assicurare che il refresher si fermi DOPO che tutti i dati sono stati elaborati e this.isLoading è false
+    // possiamo usare un piccolo setTimeout o legarci a un Observable, ma per semplicità diretta:
+    // Ci affidiamo al fatto che checkAllChatsLoaded imposti isLoading a false.
+    // Quindi, un piccolo ritardo per permettere al ciclo di rilevamento cambiamenti di Angular
+    // di aggiornare la UI prima di chiudere il refresher.
+    // Oppure, meglio, agganciarsi a un meccanismo che segnali il completamento della UI (non solo del dato).
+    // Per ora, lo lasciamo come era, ma il fatto che loadUserConversations e loadUserGroupChats
+    // restituiscano Promise lo rende più corretto per `Promise.all`.
+
+    // Considera di chiamare event.target.complete() solo dopo che isLoading è diventato false,
+    // il che significa che `updateCombinedChatList` è stato chiamato.
+    // Dato che non abbiamo un Observable di `isLoading` per fare pipe, un approccio più semplice
+    // è completare il refresher dopo un breve ritardo, assicurando che la UI abbia avuto tempo di aggiornarsi.
+    setTimeout(() => {
+        event.target.complete();
+        console.log('Refresh completo.');
+    }, 100); // Piccolo ritardo per UI update
   }
 }

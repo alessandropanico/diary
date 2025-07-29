@@ -21,63 +21,74 @@
 
 <ion-content [fullscreen]="true">
 
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
   <div *ngIf="isLoading" class="loading-overlay">
     <ion-spinner name="crescent" color="primary"></ion-spinner>
     <p>Caricamento chat...</p>
   </div>
 
   <ion-list *ngIf="!isLoading" class="ff7-list">
-    <div *ngIf="conversations.length === 0" class="ion-text-center ion-padding">
+    <div *ngIf="chatListItems.length === 0" class="ion-text-center ion-padding">
       <ion-icon name="chatbubbles-outline" size="large" color="medium"></ion-icon>
       <p>Non hai ancora conversazioni attive.</p>
       <ion-button (click)="openSearchUserModal()" shape="round">Inizia una nuova chat</ion-button>
     </div>
 
-    <ion-item-sliding *ngFor="let conv of conversations" class="ff7-list-item" #slidingItem>
+    <ion-item-sliding *ngFor="let item of chatListItems" class="ff7-list-item" #slidingItem>
       <ion-item
-        (click)="isSelectionMode ? toggleConversationSelection(conv.id) : openChat(conv.id)"
-        [class.selected-item]="isConversationSelected(conv.id)"
+        (click)="isSelectionMode ? toggleConversationSelection(item.id) : openChat(item)"
+        [class.selected-item]="isConversationSelected(item.id)"
       >
         <ion-checkbox
           slot="start"
-          [checked]="isConversationSelected(conv.id)"
+          [checked]="isConversationSelected(item.id)"
           *ngIf="isSelectionMode"
-          (ionChange)="toggleConversationSelection(conv.id); $event.stopPropagation()"
+          (ionChange)="toggleConversationSelection(item.id); $event.stopPropagation()"
         ></ion-checkbox>
 
         <div class="avatar-wrapper" slot="start" *ngIf="!isSelectionMode">
           <ion-avatar>
-            <img [src]="conv.otherParticipantPhoto" alt="Foto Profilo">
+            <img [src]="item.displayPhoto" alt="Foto Chat">
           </ion-avatar>
           <div
+            *ngIf="item.type === 'private'"
             class="online-status-indicator"
-            [class.online]="conv.otherParticipantIsOnline"
-            [class.offline]="!conv.otherParticipantIsOnline"
+            [class.online]="item.otherParticipantIsOnline"
+            [class.offline]="!item.otherParticipantIsOnline"
           ></div>
         </div>
 
         <ion-label>
           <div class="name-and-status">
-            <h2>{{ conv.otherParticipantName }}</h2>
-            <span class="online-status-text"
-                  [class.online-text]="conv.otherParticipantIsOnline"
-                  [class.offline-text]="!conv.otherParticipantIsOnline">
-              {{ conv.otherParticipantIsOnline ? 'Online' : 'Offline' }} </span>
+            <h2>{{ item.displayName }}</h2>
+            <span
+              *ngIf="item.type === 'private'"
+              class="online-status-text"
+              [class.online-text]="item.otherParticipantIsOnline"
+              [class.offline-text]="!item.otherParticipantIsOnline">
+              {{ item.otherParticipantIsOnline ? 'Online' : item.otherParticipantLastOnline }}
+            </span>
+            <span *ngIf="item.type === 'group' && item.groupDescription" class="group-description-text">
+              {{ item.groupDescription }}
+            </span>
           </div>
           <p>
-            {{ getDisplayLastMessage(conv) | slice:0:40 }}{{ conv.lastMessage && conv.lastMessage.length > 40 ? '...' : '' }}
+            {{ getDisplayLastMessage(item) | slice:0:40 }}{{ item.lastMessage && item.lastMessage.length > 40 ? '...' : '' }}
           </p>
         </ion-label>
         <ion-note slot="end">
-          {{ conv.displayLastMessageAt }}
-          <ion-badge color="danger" class="unread-count-badge" *ngIf="conv.unreadMessageCount && conv.unreadMessageCount > 0">
-            {{ conv.unreadMessageCount > 99 ? '99+' : conv.unreadMessageCount }}
+          {{ item.displayLastMessageAt }}
+          <ion-badge color="danger" class="unread-count-badge" *ngIf="item.hasUnreadMessages && item.unreadMessageCount && item.unreadMessageCount > 0">
+            {{ item.unreadMessageCount > 99 ? '99+' : item.unreadMessageCount }}
           </ion-badge>
         </ion-note>
       </ion-item>
 
       <ion-item-options side="end" *ngIf="!isSelectionMode">
-        <ion-item-option color="danger" (click)="deleteConversation(conv); slidingItem.close()">
+        <ion-item-option color="danger" (click)="deleteConversation(item); slidingItem.close()">
           <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
           Elimina
         </ion-item-option>
