@@ -674,24 +674,8 @@ export class ChatListPage implements OnInit, OnDestroy {
       this.loadUserGroupChats()
     ]);
 
-    // checkAllChatsLoaded() verrà chiamato automaticamente alla risoluzione di entrambi i caricamenti.
-    // Una volta che checkAllChatsLoaded() avrà impostato isLoading = false e aggiornato la lista,
-    // potremo completare il refresher.
-    // Per assicurare che il refresher si fermi DOPO che tutti i dati sono stati elaborati e this.isLoading è false
-    // possiamo usare un piccolo setTimeout o legarci a un Observable, ma per semplicità diretta:
-    // Ci affidiamo al fatto che checkAllChatsLoaded imposti isLoading a false.
-    // Quindi, un piccolo ritardo per permettere al ciclo di rilevamento cambiamenti di Angular
-    // di aggiornare la UI prima di chiudere il refresher.
-    // Oppure, meglio, agganciarsi a un meccanismo che segnali il completamento della UI (non solo del dato).
-    // Per ora, lo lasciamo come era, ma il fatto che loadUserConversations e loadUserGroupChats
-    // restituiscano Promise lo rende più corretto per `Promise.all`.
-
-    // Considera di chiamare event.target.complete() solo dopo che isLoading è diventato false,
-    // il che significa che `updateCombinedChatList` è stato chiamato.
-    // Dato che non abbiamo un Observable di `isLoading` per fare pipe, un approccio più semplice
-    // è completare il refresher dopo un breve ritardo, assicurando che la UI abbia avuto tempo di aggiornarsi.
     setTimeout(() => {
         event.target.complete();
-    }, 100); // Piccolo ritardo per UI update
+    }, 100);
   }
 }
