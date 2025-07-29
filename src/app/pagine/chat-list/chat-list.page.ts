@@ -243,7 +243,6 @@ export class ChatListPage implements OnInit, OnDestroy {
         .subscribe({
           next: (processedConvs: ExtendedConversation[]) => {
             this.conversations = processedConvs;
-            console.log('Chat private caricate:', this.conversations.length);
             this.isConversationsLoaded = true;
             this.checkAllChatsLoaded();
             resolve(); // ⭐ Risolve la Promise qui ⭐
@@ -275,8 +274,6 @@ export class ChatListPage implements OnInit, OnDestroy {
 
       this.groupChatsSubscription = this.groupChatService.getGroupsForUser(this.loggedInUserId).subscribe({
         next: async (groups: GroupChat[]) => {
-          console.log('--- loadUserGroupChats: Inizio elaborazione gruppi ---');
-          console.log('loadUserGroupChats: Gruppi RAW ricevuti:', groups.length, groups);
 
           const processedGroups: ExtendedGroupChat[] = await Promise.all(groups.map(async group => {
             // ⭐ Usiamo firstValueFrom per convertire l'Observable in una Promise ⭐
@@ -297,7 +294,6 @@ export class ChatListPage implements OnInit, OnDestroy {
           }));
 
           this.groupChats = processedGroups;
-          console.log('loadUserGroupChats: Gruppi ESTESI processati:', this.groupChats.length, this.groupChats);
           this.isGroupChatsLoaded = true;
           this.checkAllChatsLoaded();
           resolve(); // ⭐ Risolve la Promise qui ⭐
@@ -316,7 +312,6 @@ export class ChatListPage implements OnInit, OnDestroy {
     if (this.isConversationsLoaded && this.isGroupChatsLoaded) {
       this.updateCombinedChatList();
       this.isLoading = false;
-      console.log("checkAllChatsLoaded: Tutte le chat (private e gruppi) sono state caricate e la lista combinata è stata aggiornata.");
     }
   }
 
@@ -361,7 +356,6 @@ export class ChatListPage implements OnInit, OnDestroy {
       const dateB = b.lastMessageAt ? b.lastMessageAt.toMillis() : 0;
       return dateB - dateA;
     });
-    console.log('updateCombinedChatList: Lista combinata finale (chatListItems):', this.chatListItems.length, this.chatListItems);
 
     this.updateOnlineStatusForConversations();
   }
@@ -559,7 +553,6 @@ export class ChatListPage implements OnInit, OnDestroy {
               await Promise.all(deletePromises);
               this.selectedConversations.clear();
               this.isSelectionMode = false;
-              console.log('Chat selezionate eliminate con successo.');
             } catch (error) {
               console.error('Errore durante l\'eliminazione in blocco delle chat:', error);
               const errorAlert = await this.alertController.create({
@@ -586,10 +579,8 @@ export class ChatListPage implements OnInit, OnDestroy {
     const { data, role } = await modal.onWillDismiss();
 
     if (role === 'backdrop') {
-      console.log('Modale chiusa cliccando fuori.');
     } else if (data && data.selectedUserIds) {
       const selectedUserIds: string[] = data.selectedUserIds;
-      console.log('Utenti selezionati dalla modale:', selectedUserIds);
 
       if (!this.loggedInUserId) {
         console.warn('loggedInUserId non disponibile.');
@@ -600,7 +591,6 @@ export class ChatListPage implements OnInit, OnDestroy {
         const otherUserId = selectedUserIds[0];
         try {
           const conversationId = await this.chatService.getOrCreateConversation(this.loggedInUserId, otherUserId);
-          console.log('Conversazione 1-a-1 creata/ottenuta:', conversationId);
           this.router.navigate(['/chat', conversationId]);
         } catch (error) {
           console.error('Errore durante la creazione/ottenimento della conversazione 1-a-1:', error);
@@ -648,7 +638,6 @@ export class ChatListPage implements OnInit, OnDestroy {
 
                 try {
                   const groupId = await this.groupChatService.createGroup(groupName, groupDescription, allMembers);
-                  console.log('Gruppo creato:', groupId);
                   this.router.navigate(['/chat-gruppo', groupId]);
                   return true;
                 } catch (error) {
@@ -671,12 +660,10 @@ export class ChatListPage implements OnInit, OnDestroy {
         console.warn('Nessun utente selezionato dalla modale per avviare una chat o un gruppo.');
       }
     } else {
-      console.log('Modale chiusa senza selezione di utenti.');
     }
   }
 
   async doRefresh(event: any) {
-    console.log('Refreshing chats...');
     this.isLoading = true; // Mostra spinner durante il refresh
     this.isConversationsLoaded = false; // Reset dei flag
     this.isGroupChatsLoaded = false;
@@ -705,7 +692,6 @@ export class ChatListPage implements OnInit, OnDestroy {
     // è completare il refresher dopo un breve ritardo, assicurando che la UI abbia avuto tempo di aggiornarsi.
     setTimeout(() => {
         event.target.complete();
-        console.log('Refresh completo.');
     }, 100); // Piccolo ritardo per UI update
   }
 }
