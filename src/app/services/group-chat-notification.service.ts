@@ -104,7 +104,6 @@ export class GroupChatNotificationService implements OnDestroy {
         this.currentUserId = user ? user.uid : null;
 
         if (this.currentUserId) {
-          console.log('GroupChatNotificationService: Ascolto conversazioni di gruppo per utente:', this.currentUserId);
 
           // Ottieni la lista dei gruppi a cui l'utente appartiene
           return this.groupChatService.getGroupsForUser(this.currentUserId).pipe(
@@ -178,7 +177,6 @@ export class GroupChatNotificationService implements OnDestroy {
     // Rimuovi sottoscrizioni per gruppi a cui l'utente non appartiene più
     this.groupMessagesSubscriptions.forEach((sub, groupId) => {
       if (!currentGroupIds.has(groupId)) {
-        console.log(`GroupChatNotificationService: Rimozione listener per gruppo ${groupId}.`);
         sub.unsubscribe();
         this.groupMessagesSubscriptions.delete(groupId);
         this.lastNotifiedGroupMessageTimestamp.delete(groupId); // Pulizia
@@ -189,7 +187,6 @@ export class GroupChatNotificationService implements OnDestroy {
     // Aggiungi sottoscrizioni per i nuovi gruppi o quelli esistenti che devono essere monitorati
     currentGroups.forEach(group => {
       if (!this.groupMessagesSubscriptions.has(group.groupId!)) {
-        console.log(`GroupChatNotificationService: Aggiunta listener per gruppo ${group.groupId}.`);
 
         // Recupera l'ultimo timestamp di lettura per questo gruppo specifico
         this.groupChatService.getLastReadTimestamp(group.groupId!, this.currentUserId!).pipe(
@@ -315,10 +312,7 @@ export class GroupChatNotificationService implements OnDestroy {
 
     PushNotifications.addListener('pushNotificationReceived', notification => {
       this.ngZone.run(() => {
-        // Qui gestisci la visualizzazione di notifiche in-app se l'app è in foreground
         if (notification.data && notification.data['groupId'] && this.router.url !== `/group-chat/${notification.data['groupId']}`) {
-          console.log('Notifica push di gruppo ricevuta (foreground):', notification.title, notification.body);
-          // Esempio: potresti usare un ToastController per mostrare un piccolo banner
         }
       });
     });
@@ -334,9 +328,6 @@ export class GroupChatNotificationService implements OnDestroy {
 
     App.addListener('appStateChange', ({ isActive }) => {
       if (isActive && this.currentUserId) {
-        console.log('App tornata in foreground (gruppi), ricarico lo stato delle notifiche.');
-        // La pipeline in init() dovrebbe reagire automaticamente al ricaricamento dei dati di Firebase
-        // o a eventuali modifiche nello stato dell'utente.
       }
     });
   }
@@ -356,7 +347,6 @@ export class GroupChatNotificationService implements OnDestroy {
         },
         lastLoginTokenUpdate: serverTimestamp()
       });
-      console.log(`GroupChatNotificationService: FCM Token ${token} salvato per utente ${userId}.`);
     } catch (error) {
       console.error(`GroupChatNotificationService: Errore nel salvare il token FCM per utente ${userId}:`, error);
     }

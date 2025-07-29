@@ -88,19 +88,14 @@ export class ChatNotificationService implements OnDestroy {
         this.currentUserId = user ? user.uid : null;
 
         if (this.currentUserId) {
-          console.log('ChatNotificationService: Ascolto conversazioni per utente:', this.currentUserId);
           return this.chatService.getUserConversations(this.currentUserId).pipe(
             // AGGIUSTAMENTO QUI: Aggiungiamo un tap prima del checkForNewMessagesAndPlaySound
             tap((conversations: ConversationDocument[]) => {
               // Se è il primo caricamento dopo il login, inizializziamo lastKnownConversations
               if (!this.hasInitialConversationsLoaded) {
-                console.log('ChatNotificationService: Inizializzazione lastKnownConversations al primo caricamento.');
                 conversations.forEach(conv => {
                   this.lastKnownConversations.set(conv.id, conv);
-                  // Opzionalmente, se non vuoi notifiche per messaggi vecchi al primo login,
-                  // puoi aggiornare lastNotifiedTimestamp qui per tutti i messaggi correnti.
-                  // const currentLastMessageTime = (conv.lastMessageAt instanceof Timestamp) ? conv.lastMessageAt.toMillis() : 0;
-                  // this.lastNotifiedTimestamp.set(conv.id, currentLastMessageTime);
+
                 });
                 this.saveLastNotifiedTimestamps(); // Salva anche i timestamp iniziali se li aggiorni
                 this.hasInitialConversationsLoaded = true;
@@ -301,7 +296,6 @@ export class ChatNotificationService implements OnDestroy {
         if (notification.data && notification.data['chatId'] && this.router.url !== `/chat/${notification.data['chatId']}`) {
           // Logica per visualizzare una notifica in-app se l'app è in foreground
           // Ad esempio, potresti usare un toast o un alert
-          console.log('Notifica push ricevuta (foreground):', notification.title, notification.body);
           // if (isPlatform('web') || !isPlatform('capacitor')) {
           //   // Solo per web, dato che su mobile le notifiche sono gestite dal sistema
           //   alert(`Nuovo messaggio da ${notification.title}: ${notification.body}`);
@@ -322,7 +316,6 @@ export class ChatNotificationService implements OnDestroy {
         // Se l'app torna in foreground e abbiamo un utente loggato, possiamo ricaricare le conversazioni
         // per assicurarci che lo stato delle notifiche sia aggiornato.
         if (isActive && this.currentUserId) {
-            console.log('App tornata in foreground, ricarico lo stato delle notifiche.');
             // Il pipe in init() dovrebbe già reagire all'attività dell'observable
             // this.init(); // NON CHIAMARE INIT QUI, potrebbe creare sottoscrizioni duplicate.
             // L'Observer in init() si occuperà di reagire al cambiamento di stato di auth.
@@ -343,7 +336,6 @@ export class ChatNotificationService implements OnDestroy {
         },
         lastLoginTokenUpdate: serverTimestamp()
       });
-      console.log(`ChatNotificationService: FCM Token ${token} salvato per utente ${userId}.`);
     } catch (error) {
       console.error(`ChatNotificationService: Errore nel salvare il token FCM per utente ${userId}:`, error);
     }

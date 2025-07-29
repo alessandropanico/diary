@@ -70,8 +70,7 @@ export class GroupChatService {
   constructor(
     private firestore: Firestore,
     private userDataService: UserDataService
-  ) {  console.log('GroupChatService: Initialized.');
-}
+  ) {}
 
   /**
    * Crea un nuovo gruppo chat.
@@ -115,14 +114,7 @@ export class GroupChatService {
     try {
       const docRef = await addDoc(groupCollectionRef, newGroup);
 
-      // ⭐ IMPORTANTE: Rimosso il ciclo per aggiornare le sottocollezioni 'groups' di altri utenti.
-      // Questo è il punto che causava l'errore di permessi sul piano Spark.
-      // La logica per recuperare i gruppi dell'utente dovrà ora interrogare la collezione 'groups' globale.
-
-      // Invia il messaggio di sistema di creazione gruppo
       await this.sendMessage(docRef.id, 'system', `${currentUser.displayName || 'Un utente'} ha creato il gruppo.`, 'system');
-
-      console.log(`Gruppo "${name}" creato con ID: ${docRef.id} da utente ${currentUser.uid}`);
       return docRef.id;
     } catch (error) {
       console.error('Errore durante la creazione del gruppo:', error);
@@ -149,6 +141,7 @@ export class GroupChatService {
         const senderProfile: UserProfile | null = await this.userDataService.getUserDataById(senderId);
         senderNickname = senderProfile?.nickname || senderProfile?.name || 'Utente Sconosciuto';
       } catch (error) {
+        // ⭐ QUESTO BLOCCO CATCH ⭐
         console.warn(`Impossibile recuperare il nickname per l'utente ${senderId}. Usando 'Utente Sconosciuto'.`, error);
         senderNickname = 'Utente Sconosciuto';
       }
@@ -156,7 +149,7 @@ export class GroupChatService {
 
     const newMessage: GroupMessage = {
       senderId: senderId,
-      senderNickname: senderNickname,
+      senderNickname: senderNickname, // Usiamo il nickname recuperato (o 'Utente Sconosciuto')
       text,
       timestamp: serverTimestamp() as Timestamp,
       type,
@@ -164,9 +157,9 @@ export class GroupChatService {
     };
 
     try {
-      await addDoc(groupMessagesCollectionRef, newMessage);
+      await addDoc(groupMessagesCollectionRef, newMessage); // OPERAZIONE 1
 
-      await updateDoc(groupDocRef, {
+      await updateDoc(groupDocRef, { // OPERAZIONE 2 (che abbiamo cercato di proteggere con le regole)
         lastMessage: {
           senderId: newMessage.senderId,
           text: newMessage.text,
@@ -175,7 +168,7 @@ export class GroupChatService {
       });
     } catch (error) {
       console.error('Errore durante l\'invio del messaggio di gruppo:', error);
-      throw error;
+      throw error; // <<< Se un errore avviene qui, l'alert si attiva
     }
   }
 
@@ -372,7 +365,6 @@ export class GroupChatService {
       const currentUserName = currentUser?.displayName || 'Qualcuno';
 
       await this.sendMessage(groupId, 'system', `${currentUserName} ha aggiunto ${addedUserName} al gruppo.`, 'system');
-      console.log(`Membro ${userIdToAdd} aggiunto al gruppo ${groupId}.`);
     } catch (error) {
       console.error(`Errore nell'aggiungere il membro ${userIdToAdd} al gruppo ${groupId}:`, error);
       throw error;
@@ -408,7 +400,6 @@ export class GroupChatService {
       const currentUserName = currentUser?.displayName || 'Qualcuno';
 
       await this.sendMessage(groupId, 'system', `${currentUserName} ha rimosso ${removedUserName} dal gruppo.`, 'system');
-      console.log(`Membro ${userIdToRemove} rimosso dal gruppo ${groupId}.`);
     } catch (error) {
       console.error(`Errore nel rimuovere il membro ${userIdToRemove} dal gruppo ${groupId}:`, error);
       throw error;
@@ -438,7 +429,6 @@ export class GroupChatService {
       const leavingUserName = leavingUserProfile?.nickname || leavingUserProfile?.name || 'Un utente';
       await this.sendMessage(groupId, 'system', `${leavingUserName} ha abbandonato il gruppo.`, 'system');
 
-      console.log(`Utente ${userId} ha abbandonato il gruppo ${groupId}.`);
     } catch (error) {
       console.error(`Errore nell'abbandonare il gruppo ${groupId} per l'utente ${userId}:`, error);
       throw error;
@@ -475,7 +465,6 @@ export class GroupChatService {
     const groupDocRef = doc(this.firestore, 'groups', groupId);
     try {
       await updateDoc(groupDocRef, updates);
-      console.log(`Dettagli del gruppo ${groupId} aggiornati.`);
     } catch (error) {
       console.error(`Errore nell'aggiornare i dettagli del gruppo ${groupId}:`, error);
       throw error;
@@ -491,12 +480,10 @@ export class GroupChatService {
   async markGroupMessagesAsRead(groupId: string, userId: string): Promise<void> {
     const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
     try {
-      // Imposta il campo lastReadMessageTimestamp all'ora del server
-      // Questa scrittura è permessa perché l'utente sta modificando il proprio documento.
+
       await setDoc(userGroupDocRef, {
         lastReadMessageTimestamp: serverTimestamp() as Timestamp
       }, { merge: true });
-      console.log(`Gruppo ${groupId} marcato come letto per utente ${userId}.`);
     } catch (error: any) {
       console.error('Errore nel marcare i messaggi di gruppo come letti:', error);
       throw error;

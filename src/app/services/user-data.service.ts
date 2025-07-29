@@ -71,7 +71,6 @@ export class UserDataService {
   public userStatus$ = this._userStatus.asObservable();
 
   constructor(private expService: ExpService) {
-      console.log('UserDataService: Initialized.');
 
     this.auth.onAuthStateChanged(async (user) => {
       if (user) {
@@ -621,10 +620,8 @@ export class UserDataService {
     if (user) {
       const userDocRef = doc(this.firestore, 'users', user.uid);
       try {
-        // Aggiorna solo il campo 'lastOnline' per l'utente corrente
-        // { merge: true } è FONDAMENTALE per non cancellare gli altri campi del documento
+
         await setDoc(userDocRef, { lastOnline: new Date().toISOString() }, { merge: true });
-        // console.log(`lastOnline aggiornato per utente ${user.uid}`); // Debug
       } catch (error) {
         console.error("Errore nell'aggiornamento del timestamp lastOnline:", error);
       }

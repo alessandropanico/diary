@@ -1,3 +1,5 @@
+// src/app/pages/chat-gruppo/chat-gruppo.page.ts
+
 import { Component, OnInit, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IonContent, InfiniteScrollCustomEvent, NavController, AlertController, ModalController } from '@ionic/angular';
@@ -12,6 +14,10 @@ import 'dayjs/locale/it';
 import isToday from 'dayjs/plugin/isToday';
 import isYesterday from 'dayjs/plugin/isYesterday';
 import updateLocale from 'dayjs/plugin/updateLocale';
+
+// ⭐ IMPORTA IL NUOVO SERVIZIO DI NOTIFICA ⭐
+import { GroupChatNotificationService } from '../../services/group-chat-notification.service';
+
 
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
@@ -72,15 +78,13 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     private router: Router,
     private alertController: AlertController,
     private modalController: ModalController,
-    private cdr: ChangeDetectorRef
-  ) {
-    console.log('⭐⭐⭐ ChatGruppoPage Constructor Called ⭐⭐⭐');
-  }
+    private cdr: ChangeDetectorRef,
+    // ⭐ INIETTA IL SERVIZIO DI NOTIFICA ⭐
+    private groupChatNotificationService: GroupChatNotificationService
+  ) {}
 
   ngOnInit() {
-    console.log('ngOnInit: started.');
     this.currentUserId = this.auth.currentUser?.uid || null;
-    console.log('ngOnInit: Current User ID:', this.currentUserId);
 
     if (!this.currentUserId) {
       console.warn('ngOnInit: No current user ID found. Redirecting to login.');
@@ -95,15 +99,9 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
     this.routeParamSubscription = this.route.paramMap.subscribe(params => {
       const newGroupId = params.get('id');
-      console.log('ngOnInit: Route paramMap subscription received new ID:', newGroupId);
       if (this.groupId !== newGroupId) {
         this.groupId = newGroupId;
-        console.log('ngOnInit: Group ID updated to:', this.groupId);
-        // ⭐ Chiamata esplicita a resetChatState e logica di caricamento qui ⭐
-        // Questo è il cambiamento chiave. Se ionViewWillEnter non parte,
-        // almeno questa parte del codice si occupa dell'inizializzazione quando il parametro cambia.
         if (this.groupId) {
-          console.log('ngOnInit: Group ID changed. Resetting and loading chat state.');
           this.resetChatState();
           this.initializeGroupChat(); // Funzione che raggruppa la logica di ionViewWillEnter
         } else {
@@ -114,12 +112,10 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
         }
       }
     });
-    console.log('ngOnInit: finished.');
   }
 
-  // ⭐ Ho spostato la logica principale di ionViewWillEnter qui per poterla chiamare anche da ngOnInit ⭐
+  // ⭐ METODO initializeGroupChat AGGIUNTO QUI ⭐
   async initializeGroupChat() {
-    console.log('initializeGroupChat: Starting initialization for group.');
     this.isLoading = true; // Inizia il caricamento
     this.cdr.detectChanges(); // Aggiorna la vista per mostrare lo spinner
 
@@ -133,7 +129,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.groupDetailsSubscription?.unsubscribe();
     this.groupDetailsSubscription = this.groupChatService.getGroupDetails(this.groupId).subscribe(
       async (group) => {
-        console.log('groupDetailsSubscription: Received group data:', group);
         this.groupDetails = group;
         this.cdr.detectChanges(); // Aggiorna subito i dettagli del gruppo
 
@@ -155,7 +150,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
           return;
         }
 
-        console.log('groupDetailsSubscription: Group details valid. Loading member nicknames and initial messages.');
         await this.loadMemberNicknames();
         await this.loadInitialMessagesAndSetupListener();
         // isLoading viene settato a false in loadInitialMessagesAndSetupListener, se tutto va bene
@@ -168,125 +162,107 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
         this.cdr.detectChanges();
       }
     );
-    console.log('initializeGroupChat: Finished setting up subscriptions.');
   }
 
 
   async ionViewWillEnter() {
-    console.log('⭐⭐⭐ ionViewWillEnter: Initializing chat page for group. ⭐⭐⭐');
-    // Se groupId è già stato impostato da ngOnInit, la logica di initializeGroupChat sarà già partita.
-    // Altrimenti, la chiamiamo qui. Questo gestisce sia il primo carico che i ritorni alla pagina.
-    if (!this.groupId) { // Solo se il groupId non è ancora stato impostato
-      console.log('ionViewWillEnter: Group ID not yet set, relying on paramMap subscription in ngOnInit.');
-      // La logica di setup sarà gestita dal subscription di paramMap in ngOnInit
-      // In scenari standard di navigazione, ionViewWillEnter viene chiamato *dopo* ngOnInit
-      // e il paramMap subscription avrà già fornito l'ID.
-      // Se il groupId è già impostato, significa che ngOnInit ha già innescato initializeGroupChat.
+    if (!this.groupId) {
     } else {
-      console.log('ionViewWillEnter: Group ID already set. Ensuring chat state is correct.');
-      // Se si torna indietro alla pagina, assicuriamoci che lo stato sia pulito e i listener aggiornati.
-      // Non c'è bisogno di chiamare initializeGroupChat di nuovo se i listener sono già attivi.
-      // Se il gruppo è lo stesso, semplicemente resetta lo stato e controlla i listener.
-      // Se invece si cambia gruppo (e questo non è il primo accesso), ngOnInit avrà già chiamato initializeGroupChat.
-      // Quindi, qui è più un controllo di pulizia e stato.
       if (!this.groupDetailsSubscription || this.groupDetailsSubscription.closed) {
-        console.log('ionViewWillEnter: Group details subscription is not active, re-initializing chat.');
         this.resetChatState();
         this.initializeGroupChat();
       } else {
-        console.log('ionViewWillEnter: Group details subscription already active.');
-        // Potresti voler solo aggiornare i messaggi letti qui se non c'è un reset completo
         if (this.currentUserId && this.groupId) {
           try {
             await this.groupChatService.markGroupMessagesAsRead(this.groupId, this.currentUserId);
-            console.log(`ionViewWillEnter: Messages marked as read for group ${this.groupId} by user ${this.currentUserId}.`);
           } catch (error) {
             console.error('Errore nel marcare i messaggi di gruppo come letti in ionViewWillEnter:', error);
           }
         }
-        this.isLoading = false; // Se la chat è già caricata
+        this.isLoading = false;
         this.cdr.detectChanges();
       }
+    }
+
+    // ⭐ NOTIFICA AL SERVIZIO DI NOTIFICA CHE LA CHAT È ATTIVA ⭐
+    if (this.groupId) {
+      this.groupChatNotificationService.setCurrentActiveGroupChat(this.groupId);
     }
   }
 
   async ionViewWillLeave() {
-    console.log('ionViewWillLeave: Cleaning up listeners and marking messages as read.');
     this.groupDetailsSubscription?.unsubscribe();
     this.newMessagesListener?.unsubscribe();
-    this.routeParamSubscription?.unsubscribe(); // Assicurati di disiscriverti qui
+    this.routeParamSubscription?.unsubscribe();
 
     if (this.currentUserId && this.groupId) {
       try {
         await this.groupChatService.markGroupMessagesAsRead(this.groupId, this.currentUserId);
-        console.log(`ionViewWillLeave: Messages marked as read for group ${this.groupId} by user ${this.currentUserId}.`);
       } catch (error) {
         console.error('Errore nel marcare i messaggi di gruppo come letti in ionViewWillLeave:', error);
       }
     }
+
+    // ⭐ NOTIFICA AL SERVIZIO DI NOTIFICA CHE LA CHAT NON È PIÙ ATTIVA ⭐
+    this.groupChatNotificationService.setCurrentActiveGroupChat(null);
   }
 
   ngAfterViewInit() {
-    console.log('ngAfterViewInit: Observing scroll.');
     this.observeScroll();
   }
 
   ngOnDestroy() {
-    console.log('ngOnDestroy: Final component cleanup.');
     this.routeParamSubscription?.unsubscribe();
     this.groupDetailsSubscription?.unsubscribe();
     this.newMessagesListener?.unsubscribe();
+    // Non è necessario chiamare setCurrentActiveGroupChat(null) qui
+    // perché è già gestito in ionViewWillLeave, che si attiva prima di ngOnDestroy
+    // quando l'utente lascia la pagina tramite navigazione.
   }
 
   /**
    * Resetta lo stato della chat quando si cambia gruppo o si ricarica.
    */
   private resetChatState() {
-    console.log('resetChatState: Resetting chat state...');
     this.messages = [];
     this.lastVisibleMessageDoc = null;
     this.firstVisibleMessageTimestamp = null;
     this.hasMoreMessages = true;
-    this.isLoading = true; // ⭐ Assicurati che isLoading sia TRUE all'inizio ⭐
+    this.isLoading = true;
     this.isLoadingMoreMessages = false;
     this.initialScrollDone = false;
     this.showScrollToBottom = false;
     this.lastScrollTop = 0;
     this.newMessageText = '';
     this.memberNicknamesMap = {};
-    // this.cdr.detectChanges(); // Rimosso qui, sarà chiamato da initializeGroupChat o ngOnInit
-    console.log('resetChatState: Chat state reset.');
   }
 
   /**
    * Carica i nickname di tutti i membri del gruppo per visualizzarli nel popover/modal.
    */
   private async loadMemberNicknames() {
-    console.log('loadMemberNicknames: Starting to load member nicknames.');
     if (!this.groupDetails || !this.groupDetails.members) {
       console.warn('loadMemberNicknames: No group details or members found. Skipping nickname load.');
       return;
     }
-    const memberIds = this.groupDetails.members.filter(id => id); // Filter out null/undefined IDs
+    const memberIds = this.groupDetails.members.filter(id => id);
 
     const memberPromises = memberIds.map(async (memberId) => {
       try {
         const userData = await this.userDataService.getUserDataById(memberId);
         if (userData && userData['nickname']) {
           this.memberNicknamesMap[memberId] = userData['nickname'];
-          console.log(`loadMemberNicknames: Loaded nickname for ${memberId}: ${userData['nickname']}`);
         } else {
           this.memberNicknamesMap[memberId] = 'Utente Sconosciuto';
           console.warn(`loadMemberNicknames: No nickname found for ${memberId}, set to 'Utente Sconosciuto'.`);
         }
       } catch (e) {
         console.error(`loadMemberNicknames: Error fetching user data for ${memberId}:`, e);
-        this.memberNicknamesMap[memberId] = 'Utente Sconosciuto (Errore)'; // Fallback in case of error
+        this.memberNicknamesMap[memberId] = 'Utente Sconosciuto (Errore)';
       }
     });
     await Promise.all(memberPromises);
     this.cdr.detectChanges();
-    console.log('loadMemberNicknames: All nicknames loaded. Map:', this.memberNicknamesMap);
   }
 
   /**
@@ -304,7 +280,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
    * Carica i messaggi iniziali e imposta un listener per i nuovi messaggi.
    */
   private async loadInitialMessagesAndSetupListener() {
-    console.log('loadInitialMessagesAndSetupListener: Starting to load initial messages.');
     if (!this.groupId) {
       console.warn('loadInitialMessagesAndSetupListener: Group ID not available, cannot load messages.');
       this.isLoading = false;
@@ -316,32 +291,23 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.cdr.detectChanges();
 
     try {
-      console.log(`loadInitialMessagesAndSetupListener: Calling getInitialGroupMessages for group ${this.groupId}.`);
       const pagedData = await this.groupChatService.getInitialGroupMessages(this.groupId, this.messagesLimit);
       this.messages = pagedData.messages;
       this.lastVisibleMessageDoc = pagedData.lastVisibleDoc;
       this.hasMoreMessages = pagedData.hasMore;
 
-      console.log('loadInitialMessagesAndSetupListener: Initial messages loaded. Count:', this.messages.length);
-      console.log('loadInitialMessagesAndSetupListener: Last visible doc:', this.lastVisibleMessageDoc);
-      console.log('loadInitialMessagesAndSetupListener: Has more messages:', this.hasMoreMessages);
-
       if (this.messages.length > 0) {
         this.firstVisibleMessageTimestamp = this.messages[this.messages.length - 1].timestamp;
-        console.log('loadInitialMessagesAndSetupListener: First visible message timestamp (oldest loaded):', this.firstVisibleMessageTimestamp?.toDate());
       } else {
         this.firstVisibleMessageTimestamp = Timestamp.now();
-        console.log('loadInitialMessagesAndSetupListener: No initial messages, setting firstVisibleMessageTimestamp to now.');
       }
 
       this.isLoading = false;
       this.cdr.detectChanges();
 
       this.setupNewMessagesListener();
-      console.log('loadInitialMessagesAndSetupListener: New messages listener set up.');
 
       setTimeout(async () => {
-        console.log('loadInitialMessagesAndSetupListener: Scrolling to bottom after initial load.');
         await this.scrollToBottom(0);
         this.initialScrollDone = true;
         this.cdr.detectChanges();
@@ -359,7 +325,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
    * Imposta un listener per i nuovi messaggi che arrivano dopo il caricamento iniziale.
    */
   private setupNewMessagesListener() {
-    console.log('setupNewMessagesListener: Setting up listener for new messages.');
     this.newMessagesListener?.unsubscribe();
     if (!this.groupId || !this.firstVisibleMessageTimestamp) {
       console.warn('setupNewMessagesListener: Cannot set up listener, Group ID or firstVisibleMessageTimestamp missing.');
@@ -368,14 +333,11 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
     this.newMessagesListener = this.groupChatService.getNewGroupMessages(this.groupId, this.firstVisibleMessageTimestamp).subscribe(
       async (newIncomingMessages: GroupMessage[]) => {
-        console.log('newMessagesListener: Received new incoming messages:', newIncomingMessages.length);
         if (newIncomingMessages.length > 0) {
           const wasAtBottomBeforeUpdate = await this.isUserNearBottomCheckNeeded();
-          console.log('newMessagesListener: User was at bottom before update:', wasAtBottomBeforeUpdate);
 
           const existingMessageIds = new Set(this.messages.map(m => m.messageId));
           const uniqueNewMessages = newIncomingMessages.filter(msg => msg.messageId && !existingMessageIds.has(msg.messageId));
-          console.log('newMessagesListener: Unique new messages:', uniqueNewMessages.length);
 
           if (uniqueNewMessages.length > 0) {
             this.messages = [...this.messages, ...uniqueNewMessages].sort((a, b) => {
@@ -386,14 +348,11 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
             this.cdr.detectChanges();
 
             this.firstVisibleMessageTimestamp = this.messages[this.messages.length - 1].timestamp;
-            console.log('newMessagesListener: Messages updated. New first visible timestamp:', this.firstVisibleMessageTimestamp?.toDate());
 
             if (wasAtBottomBeforeUpdate) {
-              console.log('newMessagesListener: Scrolling to bottom due to new messages and user at bottom.');
               setTimeout(() => this.scrollToBottom(300), 50);
             } else {
               this.showScrollToBottom = true;
-              console.log('newMessagesListener: Showing scroll to bottom button.');
             }
           }
         }
@@ -496,19 +455,16 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
    * Invia un nuovo messaggio nel gruppo.
    */
   async sendMessage() {
-    console.log('sendMessage: Attempting to send message.');
     if (!this.newMessageText.trim() || !this.groupId || !this.currentUserId) {
       console.warn('sendMessage: Cannot send message: empty text, group ID, or current user ID missing.');
       return;
     }
 
     try {
-      console.log(`sendMessage: Sending message to group ${this.groupId} from user ${this.currentUserId}: "${this.newMessageText.trim()}".`);
       await this.groupChatService.sendMessage(this.groupId, this.currentUserId, this.newMessageText.trim());
       this.newMessageText = '';
       this.cdr.detectChanges();
       setTimeout(() => this.scrollToBottom(), 50);
-      console.log('sendMessage: Message sent successfully.');
     } catch (error) {
       console.error('Errore durante l\'invio del messaggio di gruppo:', error);
       await this.presentFF7Alert('Impossibile inviare il messaggio di gruppo.');
@@ -597,14 +553,12 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
    * Presenta la modal con le informazioni del gruppo.
    */
   async presentGroupInfoModal() {
-    console.log('presentGroupInfoModal: Attempting to present group info modal.');
     if (!this.groupDetails) {
       console.warn('presentGroupInfoModal: Group details not available. Cannot open modal.');
       await this.presentFF7Alert('Dettagli del gruppo non disponibili.');
       return;
     }
     if (this.groupInfoModal) {
-      console.log('presentGroupInfoModal: Opening group info modal.');
       await this.groupInfoModal.present();
     } else {
       console.error('presentGroupInfoModal: groupInfoModal reference is null/undefined. This might be due to a timing issue if the modal is not yet rendered.');
