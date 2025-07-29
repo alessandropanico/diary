@@ -1,6 +1,6 @@
 // src/app/app.component.ts
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core'; // ⭐ AGGIUNTI NgZone e ChangeDetectorRef
 import { MenuController, AlertController, ModalController } from '@ionic/angular';
 import { Subject, Subscription, interval } from 'rxjs';
 import { takeWhile } from 'rxjs/operators';
@@ -11,6 +11,7 @@ import { getAuth, onAuthStateChanged, User as FirebaseUser, signOut } from 'fire
 
 import { SearchModalComponent } from './shared/search-modal/search-modal.component';
 import { ChatNotificationService } from './services/chat-notification.service';
+import { GroupChatNotificationService } from './services/group-chat-notification.service';
 import { FirebaseAuthStateService } from './services/firebase-auth-state.service';
 
 import { environment } from 'src/environments/environment';
@@ -26,6 +27,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   profile: any = null;
   unreadCountSub: Subscription | undefined;
+  unreadGroupCountSub: Subscription | undefined;
   profilePhotoUrl: string | null = null;
 
   deferredPrompt: any;
@@ -39,6 +41,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private searchTerms = new Subject<string>();
   private searchSubscription: Subscription | undefined;
   unreadCount = 0;
+  unreadGroupCount = 0;
+  totalUnreadCount = 0;
 
   firebaseIsLoggedIn: boolean | null = null;
   private onlineStatusUpdateSubscription: Subscription | undefined;
@@ -50,7 +54,10 @@ export class AppComponent implements OnInit, OnDestroy {
     private userDataService: UserDataService,
     private modalCtrl: ModalController,
     private chatNotificationService: ChatNotificationService,
+    private groupChatNotificationService: GroupChatNotificationService,
     private firebaseAuthStateService: FirebaseAuthStateService,
+    private ngZone: NgZone, // ⭐ Iniettato NgZone
+    private cdRef: ChangeDetectorRef // ⭐ Iniettato ChangeDetectorRef
   ) {
     window.addEventListener('beforeinstallprompt', (e: any) => {
       e.preventDefault();
@@ -64,18 +71,23 @@ export class AppComponent implements OnInit, OnDestroy {
       this.firebaseIsLoggedIn = isLoggedIn;
       await this.loadProfilePhoto();
 
-      // ⭐ Logica per l'aggiornamento dello stato online ⭐
       if (isLoggedIn) {
-        // Se l'utente è loggato, avvia l'aggiornamento periodico
         this.startOnlineStatusUpdater();
       } else {
-        // Se l'utente non è loggato (o ha fatto il logout), ferma l'aggiornamento
         this.stopOnlineStatusUpdater();
       }
     });
 
+    // Sottoscrizione al conteggio dei messaggi non letti delle chat 1-a-1
     this.unreadCountSub = this.chatNotificationService.getUnreadCount$().subscribe(count => {
       this.unreadCount = count;
+      this.updateTotalUnreadCount();
+    });
+
+    // Sottoscrizione al conteggio dei messaggi non letti delle chat di gruppo
+    this.unreadGroupCountSub = this.groupChatNotificationService.getUnreadGroupCount$().subscribe(count => {
+      this.unreadGroupCount = count;
+      this.updateTotalUnreadCount();
     });
 
     setTimeout(() => {
@@ -85,37 +97,38 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.unreadCountSub?.unsubscribe();
+    this.unreadGroupCountSub?.unsubscribe();
     this.searchSubscription?.unsubscribe();
-    this.stopOnlineStatusUpdater(); // ⭐ Assicurati di fermare l'aggiornamento all'uscita dal componente ⭐
+    this.stopOnlineStatusUpdater();
   }
 
-  // ⭐ NUOVO METODO: Avvia l'aggiornamento periodico di lastOnline ⭐
-  private startOnlineStatusUpdater() {
-    // Evita di avviare più subscription contemporaneamente
-    this.stopOnlineStatusUpdater();
+  // ⭐ Metodo per calcolare e aggiornare il conteggio totale delle notifiche con NgZone e ChangeDetectionRef ⭐
+  private updateTotalUnreadCount() {
+    // Esegui l'aggiornamento all'interno della zona di Angular per garantire il rilevamento delle modifiche
+    this.ngZone.run(() => {
+      this.totalUnreadCount = this.unreadCount + this.unreadGroupCount;
+      // Forza un ciclo di rilevamento delle modifiche per assicurare che la UI si aggiorni
+      this.cdRef.detectChanges();
+    });
+  }
 
-    // Aggiorna lastOnline ogni 30 secondi (30000 ms)
-    // Puoi modificare l'intervallo a seconda delle tue esigenze (es. 1 minuto = 60000 ms)
+  private startOnlineStatusUpdater() {
+    this.stopOnlineStatusUpdater();
     this.onlineStatusUpdateSubscription = interval(30000)
       .pipe(
-        // Continua finché l'utente è loggato
         takeWhile(() => this.firebaseIsLoggedIn === true)
       )
       .subscribe(() => {
-        // Chiama il metodo setLastOnline del tuo UserDataService
         this.userDataService.setLastOnline().catch(err => {
           console.error("Errore nell'aggiornamento dello stato online:", err);
         });
       });
-      console.log('Aggiornamento stato online avviato.');
   }
 
-  // ⭐ NUOVO METODO: Ferma l'aggiornamento periodico di lastOnline ⭐
   private stopOnlineStatusUpdater() {
     if (this.onlineStatusUpdateSubscription) {
       this.onlineStatusUpdateSubscription.unsubscribe();
       this.onlineStatusUpdateSubscription = undefined;
-      console.log('Aggiornamento stato online fermato.');
     }
   }
 
@@ -133,7 +146,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.deferredPrompt.prompt();
     const choiceResult = await this.deferredPrompt.userChoice;
     if (choiceResult.outcome === 'accepted') {
+      // User accepted the A2HS prompt
     } else {
+      // User dismissed the A2HS prompt
     }
     this.deferredPrompt = null;
     this.showInstallButton = false;
@@ -152,7 +167,10 @@ export class AppComponent implements OnInit, OnDestroy {
     await signOut(authInstance);
 
     this.closeMenu();
-    this.stopOnlineStatusUpdater(); // ⭐ Ferma l'aggiornamento anche al logout esplicito ⭐
+    this.stopOnlineStatusUpdater();
+    // Le righe seguenti sono state rimosse per rispettare la tua indicazione:
+    // this.chatNotificationService.markAllNotificationsAsRead();
+    // this.groupChatNotificationService.markAllNotificationsAsRead();
 
     this.router.navigateByUrl('/login');
 
@@ -168,9 +186,8 @@ export class AppComponent implements OnInit, OnDestroy {
   async loadProfilePhoto() {
     const currentUser = getAuth().currentUser;
     if (currentUser) {
-      // ⭐ Rimosso l'argomento dalla chiamata a getUserData() ⭐
       const userData = await this.userDataService.getUserData();
-      if (userData && (userData.profilePictureUrl || userData.photo)) { // Ho aggiunto profilePictureUrl dato che l'interfaccia UserDashboardCounts lo ha
+      if (userData && (userData.profilePictureUrl || userData.photo)) {
         this.profilePhotoUrl = userData.profilePictureUrl || userData.photo;
       }
       else if (currentUser.photoURL) {

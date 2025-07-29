@@ -35,7 +35,7 @@
           <ion-icon slot="start" name="chatbubbles-outline"></ion-icon>
           <ion-label>
             Chat
-            <ion-icon name="mail-unread-outline" color="danger" *ngIf="unreadCount > 0"
+            <ion-icon name="mail-unread-outline" color="danger" *ngIf="totalUnreadCount > 0"
               class="notification-icon"></ion-icon>
           </ion-label>
         </ion-item>
@@ -56,7 +56,7 @@
           <ion-icon slot="start" name="book-outline"></ion-icon> <ion-label>Note</ion-label>
         </ion-item>
 
-         <ion-item routerLink="/classifica" (click)="closeMenu()">
+        <ion-item routerLink="/classifica" (click)="closeMenu()">
           <ion-icon slot="start" name="trophy-outline"></ion-icon> <ion-label>Classifica</ion-label>
         </ion-item>
 

@@ -6,14 +6,13 @@ import { BehaviorSubject, Observable, Subscription, from, of, forkJoin } from 'r
 import { switchMap, tap, map, catchError, distinctUntilChanged, filter } from 'rxjs/operators';
 import { getAuth, User as FirebaseUser } from 'firebase/auth';
 
-// ⭐⭐⭐ AGGIUNGI QUESTI IMPORT DI FIRESTORE ⭐⭐⭐
-import { doc, updateDoc, serverTimestamp, Timestamp } from '@angular/fire/firestore';
+import { doc, updateDoc, serverTimestamp, Timestamp, getFirestore, Firestore } from '@angular/fire/firestore';
 
 import { GroupChatService, GroupChat, GroupMessage } from './group-chat.service';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { App } from '@capacitor/app';
 import { isPlatform } from '@ionic/angular';
-import { UserDataService } from './user-data.service'; // Per salvare il token FCM nel profilo utente
+import { UserDataService } from './user-data.service';
 
 @Injectable({
   providedIn: 'root'
@@ -22,38 +21,36 @@ export class GroupChatNotificationService implements OnDestroy {
 
   private unreadGroupCount$ = new BehaviorSubject<number>(0);
   private authSubscription: Subscription | undefined;
-  private groupMessagesSubscriptions: Map<string, Subscription> = new Map(); // Mappa per le sottoscrizioni ai messaggi di ciascun gruppo
+  private groupMessagesSubscriptions: Map<string, Subscription> = new Map();
 
   private currentUserId: string | null = null;
   private audio: HTMLAudioElement;
 
   private lastSoundPlayedTimestamp: number = 0;
-  private minSoundInterval: number = 2000; // Intervallo minimo tra i suoni (2 secondi)
+  private minSoundInterval: number = 2000;
 
-  // Mappa per tenere traccia dell'ultimo timestamp notificato per ciascun gruppo
-  // per evitare notifiche duplicate per lo stesso messaggio in caso di ri-render
   private lastNotifiedGroupMessageTimestamp: Map<string, number> = new Map();
-
-  // Mappa per tenere traccia dell'ultimo timestamp di lettura dell'utente per ciascun gruppo
   private lastReadTimestampsForGroups: Map<string, Timestamp | null> = new Map();
 
   private readonly LOCAL_STORAGE_KEY_GROUP_TIMESTAMPS = 'groupChatNotificationLastNotifiedTimestamps';
 
-  // ID del gruppo chat attualmente attivo (l'utente è su questa pagina chat)
   private currentActiveGroupChatId: string | null = null;
 
-  // Variabili per la gestione delle notifiche push (simili al ChatNotificationService)
   private fcmToken: string | null = null;
   private pushNotificationsInitialized = false;
+
+  private hasInitialGroupsLoaded = false;
+  private lastKnownGroups = new Map<string, GroupChat>();
 
   constructor(
     private groupChatService: GroupChatService,
     private router: Router,
     private ngZone: NgZone,
-    private userDataService: UserDataService // Iniettato per salvare FCM token
+    private userDataService: UserDataService,
+    private firestore: Firestore
   ) {
     this.audio = new Audio('assets/sound/notification.mp3');
-    this.loadLastNotifiedTimestamps(); // Carica i timestamp salvati
+    this.loadLastNotifiedTimestamps();
     this.init();
     this.initPushNotifications();
   }
@@ -62,32 +59,22 @@ export class GroupChatNotificationService implements OnDestroy {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
-    this.groupMessagesSubscriptions.forEach(sub => sub.unsubscribe());
-    this.groupMessagesSubscriptions.clear();
-
     this.saveLastNotifiedTimestamps();
-    this.setCurrentActiveGroupChat(null); // Resetta la chat attiva alla distruzione
+    this.setCurrentActiveGroupChat(null);
 
     if (isPlatform('capacitor')) {
       PushNotifications.removeAllListeners();
     }
   }
 
-  /**
-   * Imposta l'ID del gruppo chat che l'utente sta visualizzando attivamente.
-   * Quando l'utente entra in una chat di gruppo, i messaggi in quella chat non dovrebbero suonare.
-   * @param groupId L'ID del gruppo chat, o null se l'utente non è in nessuna chat di gruppo.
-   */
   public async setCurrentActiveGroupChat(groupId: string | null) {
     this.currentActiveGroupChatId = groupId;
     if (this.currentUserId && this.currentActiveGroupChatId) {
-      // Quando l'utente entra in una chat, marca tutti i messaggi come letti per quella chat
       await this.groupChatService.markGroupMessagesAsRead(this.currentActiveGroupChatId, this.currentUserId)
-        .catch(error => console.error('Errore nel marcare i messaggi di gruppo come letti all\'ingresso chat:', error));
+        .catch(error => console.error('GroupChatNotificationService: Errore nel marcare i messaggi di gruppo come letti all\'ingresso chat:', error));
 
-      // Resetta il timestamp di ultima notifica per questa specifica chat
       this.lastNotifiedGroupMessageTimestamp.delete(this.currentActiveGroupChatId);
-      this.saveLastNotifiedTimestamps(); // Salva immediatamente per persistenza
+      this.saveLastNotifiedTimestamps();
     }
   }
 
@@ -100,29 +87,42 @@ export class GroupChatNotificationService implements OnDestroy {
       });
       return unsubscribe;
     }).pipe(
+      tap(user => console.log('GroupChatNotificationService: Stato autenticazione cambiato. Utente ID:', user ? user.uid : 'Nessuno')),
       switchMap((user: FirebaseUser | null) => {
         this.currentUserId = user ? user.uid : null;
 
         if (this.currentUserId) {
-
-          // Ottieni la lista dei gruppi a cui l'utente appartiene
           return this.groupChatService.getGroupsForUser(this.currentUserId).pipe(
-            // All'arrivo di nuovi gruppi o modifiche ai gruppi dell'utente
-            tap((groups: GroupChat[]) => this.manageGroupMessageListeners(groups)),
-            // Calcola il totale dei messaggi non letti per la badge
+            tap((groups: GroupChat[]) => {
+              if (!this.hasInitialGroupsLoaded) {
+                groups.forEach(group => {
+                  this.lastKnownGroups.set(group.groupId!, group);
+                  const currentLastMessageTime = (group.lastMessage && group.lastMessage.timestamp instanceof Timestamp) ? group.lastMessage.timestamp.toMillis() : 0;
+                  this.lastNotifiedGroupMessageTimestamp.set(group.groupId!, currentLastMessageTime);
+                });
+                this.saveLastNotifiedTimestamps();
+                this.hasInitialGroupsLoaded = true;
+              } else {
+                this.checkForNewGroupMessagesAndPlaySound(groups);
+              }
+              this.manageGroupMessageListeners(groups);
+            }),
             switchMap((groups: GroupChat[]) => {
               if (groups.length === 0) {
                 return of(0);
               }
               const unreadCountsObservables: Observable<number>[] = groups.map(group => {
-                // Carica il lastReadTimestamp specifico per questo gruppo e utente
                 return this.groupChatService.getLastReadTimestamp(group.groupId!, this.currentUserId!).pipe(
-                  switchMap(lastReadTs => {
-                    this.lastReadTimestampsForGroups.set(group.groupId!, lastReadTs); // Salva per riutilizzo
-                    return from(this.groupChatService.countUnreadMessagesForGroup(group.groupId!, this.currentUserId!, lastReadTs));
+                  tap(lastReadTs => {
+                    this.lastReadTimestampsForGroups.set(group.groupId!, lastReadTs);
                   }),
+                  switchMap(lastReadTs => {
+                    const queryTimestamp = lastReadTs || new Timestamp(0, 0);
+                    return from(this.groupChatService.countUnreadMessagesForGroup(group.groupId!, this.currentUserId!, queryTimestamp));
+                  }),
+                  tap(count => console.log(`GroupChatNotificationService: Messaggi non letti calcolati per gruppo ${group.groupId}:`, count)),
                   catchError(err => {
-                    console.error(`Errore nel conteggio messaggi non letti per gruppo ${group.groupId}:`, err);
+                    console.error(`GroupChatNotificationService: Errore nel conteggio messaggi non letti per gruppo ${group.groupId}:`, err);
                     return of(0);
                   })
                 );
@@ -130,7 +130,7 @@ export class GroupChatNotificationService implements OnDestroy {
               return forkJoin(unreadCountsObservables).pipe(
                 map(counts => counts.reduce((sum, current) => sum + current, 0)),
                 distinctUntilChanged(),
-                tap(total => console.log('GroupChatNotificationService: Totale messaggi non letti (gruppi) calcolato:', total)),
+                tap(total => console.log('GroupChatNotificationService: Totale messaggi non letti (gruppi) calcolato PRIMA dell\'emissione del Subject:', total)),
                 catchError(err => {
                   console.error('GroupChatNotificationService: Errore durante la somma dei messaggi non letti (gruppi):', err);
                   return of(0);
@@ -143,13 +143,14 @@ export class GroupChatNotificationService implements OnDestroy {
             })
           );
         } else {
-          // Utente disconnesso o non loggato
           this.unreadGroupCount$.next(0);
           this.groupMessagesSubscriptions.forEach(sub => sub.unsubscribe());
           this.groupMessagesSubscriptions.clear();
           this.lastNotifiedGroupMessageTimestamp.clear();
           this.lastReadTimestampsForGroups.clear();
+          this.lastKnownGroups.clear();
           this.saveLastNotifiedTimestamps();
+          this.hasInitialGroupsLoaded = false;
           return of(0);
         }
       })
@@ -164,88 +165,104 @@ export class GroupChatNotificationService implements OnDestroy {
     });
   }
 
-  /**
-   * Gestisce le sottoscrizioni ai messaggi per ogni gruppo dell'utente.
-   * Aggiunge listener per i nuovi gruppi e rimuove per quelli a cui non appartiene più.
-   * @param currentGroups La lista aggiornata dei gruppi a cui l'utente appartiene.
-   */
   private manageGroupMessageListeners(currentGroups: GroupChat[]) {
-    if (!this.currentUserId) return;
+    if (!this.currentUserId) {
+      return;
+    }
 
     const currentGroupIds = new Set(currentGroups.map(g => g.groupId!));
 
-    // Rimuovi sottoscrizioni per gruppi a cui l'utente non appartiene più
     this.groupMessagesSubscriptions.forEach((sub, groupId) => {
       if (!currentGroupIds.has(groupId)) {
         sub.unsubscribe();
         this.groupMessagesSubscriptions.delete(groupId);
-        this.lastNotifiedGroupMessageTimestamp.delete(groupId); // Pulizia
-        this.lastReadTimestampsForGroups.delete(groupId); // Pulizia
+        this.lastNotifiedGroupMessageTimestamp.delete(groupId);
+        this.lastReadTimestampsForGroups.delete(groupId);
+        this.lastKnownGroups.delete(groupId);
       }
     });
 
-    // Aggiungi sottoscrizioni per i nuovi gruppi o quelli esistenti che devono essere monitorati
     currentGroups.forEach(group => {
       if (!this.groupMessagesSubscriptions.has(group.groupId!)) {
-
-        // Recupera l'ultimo timestamp di lettura per questo gruppo specifico
-        this.groupChatService.getLastReadTimestamp(group.groupId!, this.currentUserId!).pipe(
+        const subscription = this.groupChatService.getLastReadTimestamp(group.groupId!, this.currentUserId!).pipe(
           switchMap(lastReadTs => {
-            this.lastReadTimestampsForGroups.set(group.groupId!, lastReadTs); // Aggiorna la mappa
-            // Ascolta i messaggi che sono arrivati DOPO l'ultimo messaggio letto dall'utente
-            // (o tutti se non ci sono letture precedenti)
-            const queryTimestamp = lastReadTs || new Timestamp(0, 0); // Inizia da 0,0 se non c'è lastRead
+            this.lastReadTimestampsForGroups.set(group.groupId!, lastReadTs);
+            const queryTimestamp = lastReadTs || new Timestamp(0, 0);
             return this.groupChatService.getNewGroupMessages(group.groupId!, queryTimestamp);
           }),
-          // Filtra i messaggi che non devono generare una notifica sonora
-          filter(messages => messages.some(msg =>
-            msg.senderId !== this.currentUserId && // Non inviato da me
-            msg.type !== 'system' && // Non è un messaggio di sistema
-            msg.timestamp.toMillis() > (this.lastNotifiedGroupMessageTimestamp.get(group.groupId!) || 0) && // Non notificato in precedenza
-            this.currentActiveGroupChatId !== group.groupId! // Non sono nella chat attiva
-          )),
-          tap(newMessages => {
-            // Controlla se c'è almeno un messaggio che dovrebbe far suonare la notifica
-            const shouldPlaySound = newMessages.some(msg =>
-              msg.senderId !== this.currentUserId &&
-              msg.type !== 'system' &&
-              msg.timestamp.toMillis() > (this.lastNotifiedGroupMessageTimestamp.get(group.groupId!) || 0) &&
-              this.currentActiveGroupChatId !== group.groupId!
-            );
-
-            if (shouldPlaySound) {
-              const currentTime = Date.now();
-              if (currentTime - this.lastSoundPlayedTimestamp > this.minSoundInterval) {
-                this.playNotificationSound();
-                this.lastSoundPlayedTimestamp = currentTime;
-              }
-              // Aggiorna l'ultimo timestamp notificato per tutti i messaggi appena arrivati
-              newMessages.forEach(msg => {
-                this.lastNotifiedGroupMessageTimestamp.set(group.groupId!, msg.timestamp.toMillis());
-              });
-              this.saveLastNotifiedTimestamps(); // Salva per persistenza
-            }
+          tap(messages => {
           }),
           catchError(err => {
-            console.error(`Errore nel listener messaggi per gruppo ${group.groupId}:`, err);
+            console.error(`GroupChatNotificationService: Errore nel listener messaggi per gruppo ${group.groupId} (per dati freschi):`, err);
             return of([]);
           })
         ).subscribe(
-          () => {
-            // Non facciamo nulla qui nel next, la logica di notifica è nel tap
-          },
+          () => { },
           err => {
-            console.error('Errore nella sottoscrizione del gruppo:', err);
+            console.error('GroupChatNotificationService: Errore nella sottoscrizione del gruppo (listener specifico):', err);
           }
         );
+        this.groupMessagesSubscriptions.set(group.groupId!, subscription);
       }
     });
-    this.saveLastNotifiedTimestamps(); // Salva lo stato aggiornato dei timestamp di notifica
+    this.saveLastNotifiedTimestamps();
+  }
+
+  private async checkForNewGroupMessagesAndPlaySound(currentGroups: GroupChat[]) {
+    if (!this.currentUserId) {
+      console.warn('GroupChatNotificationService: checkForNewGroupMessagesAndPlaySound chiamato senza currentUserId.');
+      return;
+    }
+
+    let shouldPlaySoundForAnyGroup = false;
+    const newKnownGroups = new Map<string, GroupChat>();
+
+    for (const group of currentGroups) {
+      const lastKnownGroup = this.lastKnownGroups.get(group.groupId!);
+      const isCurrentActiveGroupChat = this.currentActiveGroupChatId && (this.currentActiveGroupChatId === group.groupId!);
+
+      // ⭐⭐ Dati rilevanti per il debug ⭐⭐
+      const currentLastMessageTime = (group.lastMessage && group.lastMessage.timestamp instanceof Timestamp) ? group.lastMessage.timestamp.toMillis() : 0;
+      const lastKnownMessageTime = (lastKnownGroup?.lastMessage && lastKnownGroup.lastMessage.timestamp instanceof Timestamp) ? lastKnownGroup.lastMessage.timestamp.toMillis() : 0;
+      const lastNotifiedTime = this.lastNotifiedGroupMessageTimestamp.get(group.groupId!) || 0;
+      const senderId = group.lastMessage?.senderId || 'N/A';
+      const messageText = group.lastMessage?.text || '';
+      const condition1 = currentLastMessageTime > 0;
+      const condition2 = senderId !== this.currentUserId;
+      const condition3 = !isCurrentActiveGroupChat;
+      const condition4 = currentLastMessageTime > lastKnownMessageTime;
+      const condition5 = currentLastMessageTime > lastNotifiedTime;
+      const condition6 = messageText.trim() !== '';
+
+      if (
+        condition1 &&
+        condition2 &&
+        condition3 &&
+        condition4 &&
+        condition5 &&
+        condition6
+      ) {
+        shouldPlaySoundForAnyGroup = true;
+        this.lastNotifiedGroupMessageTimestamp.set(group.groupId!, currentLastMessageTime);
+      } else {
+      }
+      newKnownGroups.set(group.groupId!, group);
+    }
+
+    const currentTime = Date.now();
+    if (shouldPlaySoundForAnyGroup && (currentTime - this.lastSoundPlayedTimestamp > this.minSoundInterval)) {
+      this.playNotificationSound();
+      this.lastSoundPlayedTimestamp = currentTime;
+    } else if (shouldPlaySoundForAnyGroup) {
+    }
+
+    this.lastKnownGroups = newKnownGroups;
+    this.saveLastNotifiedTimestamps();
   }
 
   private playNotificationSound() {
     this.audio.currentTime = 0;
-    this.audio.play().catch((e: any) => console.warn("Errore durante la riproduzione del suono (GroupChatNotificationService):", e));
+    this.audio.play().catch((e: any) => console.warn("GroupChatNotificationService: Errore durante la riproduzione del suono:", e));
   }
 
   getUnreadGroupCount$(): Observable<number> {
@@ -267,6 +284,7 @@ export class GroupChatNotificationService implements OnDestroy {
       if (savedData) {
         const parsedData: [string, number][] = JSON.parse(savedData);
         this.lastNotifiedGroupMessageTimestamp = new Map(parsedData);
+      } else {
       }
     } catch (e) {
       console.error('GroupChatNotificationService: Errore nel caricare lastNotifiedTimestamps dal localStorage:', e);
@@ -274,7 +292,6 @@ export class GroupChatNotificationService implements OnDestroy {
     }
   }
 
-  // --- Implementazione per Notifiche Push (simile al ChatNotificationService) ---
   async initPushNotifications() {
     if (!isPlatform('capacitor') || this.pushNotificationsInitialized) {
       return;
@@ -284,7 +301,6 @@ export class GroupChatNotificationService implements OnDestroy {
 
     let permStatus = await PushNotifications.requestPermissions();
     if (permStatus.receive === 'prompt') {
-      // Potresti mostrare un messaggio all'utente per chiedere il permesso
     }
     if (permStatus.receive !== 'granted') {
       console.warn('GroupChatNotificationService: Permessi di notifica non concessi. Impossibile ricevere push.');
@@ -313,6 +329,8 @@ export class GroupChatNotificationService implements OnDestroy {
     PushNotifications.addListener('pushNotificationReceived', notification => {
       this.ngZone.run(() => {
         if (notification.data && notification.data['groupId'] && this.router.url !== `/group-chat/${notification.data['groupId']}`) {
+          // Logica per visualizzare una notifica in-app se l'app è in foreground ma non sulla chat specifica
+          // o per aggiornare il conteggio se necessario.
         }
       });
     });
@@ -328,6 +346,8 @@ export class GroupChatNotificationService implements OnDestroy {
 
     App.addListener('appStateChange', ({ isActive }) => {
       if (isActive && this.currentUserId) {
+        // Potresti voler ri-calcolare il conteggio non letto qui o forzare un refresh
+        // per assicurarti che lo stato sia aggiornato quando l'app torna in foreground.
       }
     });
   }
@@ -338,9 +358,7 @@ export class GroupChatNotificationService implements OnDestroy {
       return;
     }
     try {
-      // ⭐⭐ CORREZIONE QUI: UserDataService espone 'firestore' non 'afs' ⭐⭐
-      // Usiamo l'istanza di firestore da userDataService
-      const userDocRef = doc(this.userDataService['firestore'], 'users', userId);
+      const userDocRef = doc(this.firestore, 'users', userId);
       await updateDoc(userDocRef, {
         fcmTokens: {
           [token]: true
@@ -349,6 +367,28 @@ export class GroupChatNotificationService implements OnDestroy {
       });
     } catch (error) {
       console.error(`GroupChatNotificationService: Errore nel salvare il token FCM per utente ${userId}:`, error);
+    }
+  }
+
+  async markAllNotificationsAsRead() {
+    const user = getAuth().currentUser;
+    if (!user) {
+      console.warn('GroupChatNotificationService: Impossibile marcare notifiche come lette, utente non loggato.');
+      return;
+    }
+
+    try {
+      const markPromises = Array.from(this.lastKnownGroups.keys()).map(groupId => {
+        return this.groupChatService.markGroupMessagesAsRead(groupId, user.uid);
+      });
+      await Promise.all(markPromises);
+
+      this.unreadGroupCount$.next(0);
+      this.lastNotifiedGroupMessageTimestamp.clear();
+      this.saveLastNotifiedTimestamps();
+
+    } catch (error) {
+      console.error('GroupChatNotificationService: Errore nel marcare tutti i messaggi di gruppo come letti:', error);
     }
   }
 }
