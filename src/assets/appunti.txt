@@ -4,6 +4,8 @@ Migliorare chat-gruppo;
 Implementare blocca/sblocca utente in chat;
 Il gruppo prima si abbandona, poi si può eliminare;
 
+Cosi come è il profilo personale, dobbiamo mostrare "profilo-altro-utente";
+
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
 Integrazione con AI (anche semplice):
@@ -17,6 +19,9 @@ Nella dashboard:
 Creare sezione notizie (in questa sezione mettiamo pure i banner pubblcitari!)
 Fare header per bene;
 Finestra "Notifiche"
+
+**CERCA DI CONCLUDERE PER FINE AGOSTO!**
+P.S. Se lavori da puok sei giustificato e va bene terminare anche dopo.
 
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ---------------------------------------------------------
