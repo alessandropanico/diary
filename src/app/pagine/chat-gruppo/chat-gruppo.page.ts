@@ -1,4 +1,4 @@
-// src/app/pages/chat-gruppo/chat-gruppo.page.ts
+// Nel tuo src/app/pages/chat-gruppo/chat-gruppo.page.ts
 
 import { Component, OnInit, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,9 +15,7 @@ import isToday from 'dayjs/plugin/isToday';
 import isYesterday from 'dayjs/plugin/isYesterday';
 import updateLocale from 'dayjs/plugin/updateLocale';
 
-// ⭐ IMPORTA IL NUOVO SERVIZIO DI NOTIFICA ⭐
 import { GroupChatNotificationService } from '../../services/group-chat-notification.service';
-
 
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
@@ -79,7 +77,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     private alertController: AlertController,
     private modalController: ModalController,
     private cdr: ChangeDetectorRef,
-    // ⭐ INIETTA IL SERVIZIO DI NOTIFICA ⭐
     private groupChatNotificationService: GroupChatNotificationService
   ) {}
 
@@ -92,7 +89,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
         .then(() => this.router.navigateByUrl('/login'))
         .finally(() => {
           this.isLoading = false;
-          this.cdr.detectChanges(); // Assicura che la UI si aggiorni in caso di reindirizzamento
+          this.cdr.detectChanges();
         });
       return;
     }
@@ -103,7 +100,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
         this.groupId = newGroupId;
         if (this.groupId) {
           this.resetChatState();
-          this.initializeGroupChat(); // Funzione che raggruppa la logica di ionViewWillEnter
+          this.initializeGroupChat();
         } else {
           console.warn('ngOnInit: Group ID is null/undefined after route param update. Redirecting.');
           this.presentFF7Alert('ID del gruppo mancante. Reindirizzamento.').then(() => {
@@ -114,10 +111,9 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  // ⭐ METODO initializeGroupChat AGGIUNTO QUI ⭐
   async initializeGroupChat() {
-    this.isLoading = true; // Inizia il caricamento
-    this.cdr.detectChanges(); // Aggiorna la vista per mostrare lo spinner
+    this.isLoading = true;
+    this.cdr.detectChanges();
 
     if (!this.currentUserId || !this.groupId) {
       console.warn('initializeGroupChat: Cannot initialize chat. User ID or Group ID missing.');
@@ -130,7 +126,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.groupDetailsSubscription = this.groupChatService.getGroupDetails(this.groupId).subscribe(
       async (group) => {
         this.groupDetails = group;
-        this.cdr.detectChanges(); // Aggiorna subito i dettagli del gruppo
+        this.cdr.detectChanges();
 
         if (!group) {
           console.error('groupDetailsSubscription: Group not found or inaccessible (null group object).');
@@ -164,17 +160,19 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     );
   }
 
-
   async ionViewWillEnter() {
     if (!this.groupId) {
+      // nothing to do
     } else {
       if (!this.groupDetailsSubscription || this.groupDetailsSubscription.closed) {
         this.resetChatState();
         this.initializeGroupChat();
       } else {
+        // ⭐ CHIAMIAMO updateLastReadTimestampInService() QUI ⭐
+        // Questo è il punto chiave per azzerare il contatore quando l'utente entra nella chat.
         if (this.currentUserId && this.groupId) {
           try {
-            await this.groupChatService.markGroupMessagesAsRead(this.groupId, this.currentUserId);
+            await this.updateLastReadTimestampInService(); // Chiamata al nuovo metodo (rinominato)
           } catch (error) {
             console.error('Errore nel marcare i messaggi di gruppo come letti in ionViewWillEnter:', error);
           }
@@ -184,7 +182,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
       }
     }
 
-    // ⭐ NOTIFICA AL SERVIZIO DI NOTIFICA CHE LA CHAT È ATTIVA ⭐
+    // Notifica al servizio di notifica che la chat è attiva
     if (this.groupId) {
       this.groupChatNotificationService.setCurrentActiveGroupChat(this.groupId);
     }
@@ -195,15 +193,16 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.newMessagesListener?.unsubscribe();
     this.routeParamSubscription?.unsubscribe();
 
+    // ⭐ CHIAMIAMO updateLastReadTimestampInService() QUI ANCHE QUANDO SI ESCE DALLA CHAT ⭐
     if (this.currentUserId && this.groupId) {
       try {
-        await this.groupChatService.markGroupMessagesAsRead(this.groupId, this.currentUserId);
+        await this.updateLastReadTimestampInService(); // Chiamata al nuovo metodo (rinominato)
       } catch (error) {
         console.error('Errore nel marcare i messaggi di gruppo come letti in ionViewWillLeave:', error);
       }
     }
 
-    // ⭐ NOTIFICA AL SERVIZIO DI NOTIFICA CHE LA CHAT NON È PIÙ ATTIVA ⭐
+    // Notifica al servizio di notifica che la chat non è più attiva
     this.groupChatNotificationService.setCurrentActiveGroupChat(null);
   }
 
@@ -215,14 +214,8 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.routeParamSubscription?.unsubscribe();
     this.groupDetailsSubscription?.unsubscribe();
     this.newMessagesListener?.unsubscribe();
-    // Non è necessario chiamare setCurrentActiveGroupChat(null) qui
-    // perché è già gestito in ionViewWillLeave, che si attiva prima di ngOnDestroy
-    // quando l'utente lascia la pagina tramite navigazione.
   }
 
-  /**
-   * Resetta lo stato della chat quando si cambia gruppo o si ricarica.
-   */
   private resetChatState() {
     this.messages = [];
     this.lastVisibleMessageDoc = null;
@@ -237,9 +230,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.memberNicknamesMap = {};
   }
 
-  /**
-   * Carica i nickname di tutti i membri del gruppo per visualizzarli nel popover/modal.
-   */
   private async loadMemberNicknames() {
     if (!this.groupDetails || !this.groupDetails.members) {
       console.warn('loadMemberNicknames: No group details or members found. Skipping nickname load.');
@@ -265,10 +255,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.cdr.detectChanges();
   }
 
-  /**
-   * Restituisce il nickname di un membro o un fallback.
-   * Usato nel template della modal.
-   */
   getMemberDisplay(memberId: string): string {
     if (memberId === this.currentUserId) {
       return `${this.memberNicknamesMap[memberId] || memberId} (Tu)`;
@@ -276,9 +262,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     return this.memberNicknamesMap[memberId] || memberId;
   }
 
-  /**
-   * Carica i messaggi iniziali e imposta un listener per i nuovi messaggi.
-   */
   private async loadInitialMessagesAndSetupListener() {
     if (!this.groupId) {
       console.warn('loadInitialMessagesAndSetupListener: Group ID not available, cannot load messages.');
@@ -298,6 +281,9 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
       if (this.messages.length > 0) {
         this.firstVisibleMessageTimestamp = this.messages[this.messages.length - 1].timestamp;
+
+        // ⭐ AGGIORNAMENTO ULTIMA LETTURA QUI DOPO AVER CARICATO I MESSAGGI ⭐
+        await this.updateLastReadTimestampInService();
       } else {
         this.firstVisibleMessageTimestamp = Timestamp.now();
       }
@@ -321,9 +307,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  /**
-   * Imposta un listener per i nuovi messaggi che arrivano dopo il caricamento iniziale.
-   */
   private setupNewMessagesListener() {
     this.newMessagesListener?.unsubscribe();
     if (!this.groupId || !this.firstVisibleMessageTimestamp) {
@@ -354,6 +337,11 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
             } else {
               this.showScrollToBottom = true;
             }
+
+            // ⭐ AGGIORNAMENTO ULTIMA LETTURA QUANDO ARRIVANO NUOVI MESSAGGI ⭐
+            if (wasAtBottomBeforeUpdate && this.currentUserId && this.groupId) {
+                 await this.updateLastReadTimestampInService();
+            }
           }
         }
       },
@@ -364,9 +352,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     );
   }
 
-  /**
-   * Helper per controllare se l'utente è vicino al fondo.
-   */
   private async isUserNearBottomCheckNeeded(): Promise<boolean> {
     if (!this.content) return true;
     const scrollElement = await this.content.getScrollElement();
@@ -377,9 +362,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     return (scrollHeight - scrollTop - clientHeight) < threshold;
   }
 
-  /**
-   * Osserva gli eventi di scroll per mostrare/nascondere il pulsante "scorri in basso".
-   */
   observeScroll() {
     if (!this.content) return;
     this.content.ionScroll.subscribe(async (event) => {
@@ -395,6 +377,10 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
         this.showScrollToBottom = true;
       } else if (isAtBottom) {
         this.showScrollToBottom = false;
+        // ⭐ QUANDO L'UTENTE SCORRE FINO IN FONDO, SEGNA I MESSAGGI COME LETTI ⭐
+        if (this.currentUserId && this.groupId) {
+          await this.updateLastReadTimestampInService();
+        }
       }
 
       this.lastScrollTop = currentScrollTop <= 0 ? 0 : currentScrollTop;
@@ -402,10 +388,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  /**
-   * Carica più messaggi quando l'utente scorre in alto (infinite scroll).
-   * @param event L'evento di infinite scroll.
-   */
   async loadMoreMessages(event: InfiniteScrollCustomEvent) {
     if (!this.hasMoreMessages || this.isLoadingMoreMessages || !this.groupId || !this.lastVisibleMessageDoc) {
       event.target.complete();
@@ -451,9 +433,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  /**
-   * Invia un nuovo messaggio nel gruppo.
-   */
   async sendMessage() {
     if (!this.newMessageText.trim() || !this.groupId || !this.currentUserId) {
       console.warn('sendMessage: Cannot send message: empty text, group ID, or current user ID missing.');
@@ -465,34 +444,28 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
       this.newMessageText = '';
       this.cdr.detectChanges();
       setTimeout(() => this.scrollToBottom(), 50);
+
+      // ⭐ AGGIORNAMENTO ULTIMA LETTURA DOPO AVER INVIATO UN MESSAGGIO ⭐
+      if (this.currentUserId && this.groupId) {
+        await this.updateLastReadTimestampInService();
+      }
+
     } catch (error) {
       console.error('Errore durante l\'invio del messaggio di gruppo:', error);
       await this.presentFF7Alert('Impossibile inviare il messaggio di gruppo.');
     }
   }
 
-  /**
-   * Scrolla la chat fino in fondo.
-   * @param duration Durata dello scroll in millisecondi.
-   */
   async scrollToBottom(duration: number = 300) {
     if (this.content) {
       await this.content.scrollToBottom(duration);
     }
   }
 
-  /**
-   * Determina se un messaggio è stato inviato dall'utente attualmente loggato.
-   * @param senderId L'ID del mittente del messaggio.
-   * @returns Vero se il messaggio è stato inviato dall'utente loggato, falso altrimenti.
-   */
   isMyMessage(senderId: string): boolean {
     return senderId === this.currentUserId;
   }
 
-  /**
-   * Decide se mostrare il divisore della data sopra un messaggio.
-   */
   shouldShowDate(message: GroupMessage, index: number): boolean {
     if (!message || !message.timestamp) {
       return false;
@@ -509,9 +482,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     return !currentMessageDate.isSame(previousMessageDate, 'day');
   }
 
-  /**
-   * Formatta il timestamp di un messaggio per la visualizzazione come intestazione della data.
-   */
   formatDateHeader(timestamp: Timestamp): string {
     const d = dayjs(timestamp.toDate());
     const today = dayjs().startOf('day');
@@ -527,9 +497,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  /**
-   * Presenta un alert personalizzato stile Final Fantasy VII.
-   */
   async presentFF7Alert(message: string) {
     const alert = await this.alertController.create({
       cssClass: 'ff7-alert',
@@ -549,9 +516,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     await alert.present();
   }
 
-  /**
-   * Presenta la modal con le informazioni del gruppo.
-   */
   async presentGroupInfoModal() {
     if (!this.groupDetails) {
       console.warn('presentGroupInfoModal: Group details not available. Cannot open modal.');
@@ -565,11 +529,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  /**
-   * Chiede conferma all'utente prima di abbandonare il gruppo.
-   */
   async confirmLeaveGroup() {
-    // Prima chiudi la modal di informazione, poi chiedi conferma
     if (this.groupInfoModal) {
       await this.groupInfoModal.dismiss();
     }
@@ -603,5 +563,29 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
       ]
     });
     await alert.present();
+  }
+
+  // ⭐ NUOVO METODO: Incaricato di aggiornare il timestamp dell'ultima lettura nel servizio ⭐
+  private async updateLastReadTimestampInService() {
+    if (!this.groupId || !this.currentUserId) {
+      console.warn('updateLastReadTimestampInService: Group ID or current user ID missing.');
+      return;
+    }
+
+    try {
+      // Ottieni il timestamp dell'ultimo messaggio attualmente visualizzato nella chat
+      // Se non ci sono messaggi, usa il timestamp corrente.
+      const latestMessageTimestamp = this.messages.length > 0
+                                     ? this.messages[this.messages.length - 1].timestamp
+                                     : Timestamp.now();
+
+      if (latestMessageTimestamp) {
+        // Chiama il metodo markGroupMessagesAsRead del servizio, passandogli il timestamp specifico
+        await this.groupChatService.markGroupMessagesAsRead(this.groupId, this.currentUserId, latestMessageTimestamp);
+        // console.log(`Last read timestamp updated for group ${this.groupId} by user ${this.currentUserId}`);
+      }
+    } catch (error) {
+      console.error('Errore durante l\'aggiornamento del timestamp di ultima lettura:', error);
+    }
   }
 }

@@ -471,24 +471,26 @@ export class GroupChatService {
     }
   }
 
-  /**
-   * Marca tutti i messaggi di un gruppo come letti per un utente specifico.
-   * Aggiorna il timestamp dell'ultima lettura nella sottocollezione 'groups' dell'utente.
-   * @param groupId L'ID del gruppo.
-   * @param userId L'ID dell'utente.
-   */
-  async markGroupMessagesAsRead(groupId: string, userId: string): Promise<void> {
-    const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
-    try {
-
-      await setDoc(userGroupDocRef, {
-        lastReadMessageTimestamp: serverTimestamp() as Timestamp
-      }, { merge: true });
-    } catch (error: any) {
-      console.error('Errore nel marcare i messaggi di gruppo come letti:', error);
-      throw error;
-    }
-  }
+ /**
+   * Marca tutti i messaggi di un gruppo come letti per un utente specifico.
+   * Aggiorna il timestamp dell'ultima lettura nella sottocollezione 'groups' dell'utente.
+   * @param groupId L'ID del gruppo.
+   * @param userId L'ID dell'utente.
+   * @param timestamp L'ultimo timestamp di messaggio da registrare come "letto".
+    * Se non fornito, verrà usato serverTimestamp().
+   */
+  async markGroupMessagesAsRead(groupId: string, userId: string, timestamp: Timestamp | null = null): Promise<void> {
+    const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
+    try {
+      await setDoc(userGroupDocRef, {
+        // Usa il timestamp fornito, altrimenti serverTimestamp()
+        lastReadMessageTimestamp: timestamp || serverTimestamp() as Timestamp
+      }, { merge: true });
+    } catch (error: any) {
+      console.error('Errore nel marcare i messaggi di gruppo come letti:', error);
+      throw error;
+    }
+  }
 
   /**
    * Ottiene il timestamp dell'ultima lettura di un utente per un gruppo specifico.
