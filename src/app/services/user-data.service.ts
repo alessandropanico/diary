@@ -3,6 +3,17 @@ import { getAuth, User } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit, getFirestore, updateDoc, increment, DocumentData, QueryDocumentSnapshot, startAfter } from 'firebase/firestore'; // Importa DocumentData, QueryDocumentSnapshot, startAfter
 import { ExpService } from './exp.service';
 import { BehaviorSubject, Observable, from } from 'rxjs';
+import { Timestamp } from '@angular/fire/firestore';
+
+export interface UserProfile {
+  uid: string; // Assicurati che l'UID sia sempre presente
+  name?: string;
+  nickname?: string;
+  photoUrl?: string; // Standardizziamo a 'photoUrl'
+  bio?: string;
+  email?: string;
+  lastOnline?: Timestamp; // Meglio un Timestamp per la data/ora
+}
 
 
 export interface UserDashboardCounts {
@@ -60,6 +71,8 @@ export class UserDataService {
   public userStatus$ = this._userStatus.asObservable();
 
   constructor(private expService: ExpService) {
+      console.log('UserDataService: Initialized.');
+
     this.auth.onAuthStateChanged(async (user) => {
       if (user) {
         const userData = await this.getUserData();

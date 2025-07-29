@@ -16,8 +16,24 @@
     class="ff7-searchbar"
   ></ion-searchbar>
 
+  <div *ngIf="selectedUsers.length > 0" class="selected-users-container">
+    <ion-list-header>
+      <ion-label>Partecipanti selezionati ({{ selectedUsers.length }})</ion-label>
+    </ion-list-header>
+    <ion-chip *ngFor="let user of selectedUsers" outline color="primary" class="selected-user-chip">
+      <ion-avatar>
+        <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'">
+      </ion-avatar>
+      <ion-label>{{ user.nickname }}</ion-label>
+      <ion-icon name="close" (click)="removeSelectedUser(user.uid)"></ion-icon>
+    </ion-chip>
+    <ion-button expand="block" class="create-group-button" (click)="createGroup()">
+      Crea Gruppo
+    </ion-button>
+  </div>
+
   <ion-list *ngIf="!isSearchingUsers && searchResults.length > 0">
-    <ion-item *ngFor="let user of searchResults" class="ff7-search-result-item" (click)="selectUser(user.uid)">
+    <ion-item *ngFor="let user of searchResults" class="ff7-search-result-item" (click)="toggleUserSelection(user)">
       <ion-avatar slot="start">
         <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto Profilo">
       </ion-avatar>
@@ -25,6 +41,8 @@
         <h2>{{ user.nickname }}</h2>
         <p>{{ user.name }}</p>
       </ion-label>
+      <ion-icon slot="end" [name]="isSelected(user.uid) ? 'checkmark-circle' : 'add-circle-outline'"
+                [color]="isSelected(user.uid) ? 'success' : 'medium'"></ion-icon>
     </ion-item>
   </ion-list>
 

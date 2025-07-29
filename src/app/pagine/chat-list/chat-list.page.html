@@ -12,6 +12,9 @@
       <ion-button *ngIf="isSelectionMode && selectedConversations.size > 0" (click)="deleteSelectedConversations()">
         <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
       </ion-button>
+      <ion-button *ngIf="!isSelectionMode" (click)="openSearchUserModal()">
+        <ion-icon slot="icon-only" name="person-add-outline"></ion-icon>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -27,7 +30,7 @@
     <div *ngIf="conversations.length === 0" class="ion-text-center ion-padding">
       <ion-icon name="chatbubbles-outline" size="large" color="medium"></ion-icon>
       <p>Non hai ancora conversazioni attive.</p>
-      <ion-button routerLink="/cerca-utenti" shape="round">Inizia una nuova chat</ion-button>
+      <ion-button (click)="openSearchUserModal()" shape="round">Inizia una nuova chat</ion-button>
     </div>
 
     <ion-item-sliding *ngFor="let conv of conversations" class="ff7-list-item" #slidingItem>

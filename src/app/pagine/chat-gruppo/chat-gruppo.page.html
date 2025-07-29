@@ -4,7 +4,7 @@
       <ion-back-button defaultHref="/chat-list"></ion-back-button>
     </ion-buttons>
 
-    <div class="chat-custom-header" *ngIf="!isLoading && groupDetails" (click)="goToGroupDetailsPage()">
+    <div class="chat-custom-header" *ngIf="!isLoading && groupDetails" (click)="presentGroupInfoModal()">
       <ion-avatar *ngIf="groupDetails.photoUrl" class="other-user-avatar">
         <img [src]="groupDetails.photoUrl" alt="Immagine gruppo">
       </ion-avatar>
@@ -13,6 +13,12 @@
     </div>
 
     <ion-title *ngIf="isLoading || !groupDetails" class="chat-title-placeholder"></ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="presentGroupInfoModal()" *ngIf="groupDetails">
+        <ion-icon name="information-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
 
   </ion-toolbar>
 </ion-header>
@@ -69,3 +75,46 @@
     </ion-fab-button>
   </ion-fab>
 </ion-content>
+
+<ion-modal #groupInfoModal trigger="open-group-info-modal">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Dettagli Gruppo</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="groupInfoModal.dismiss()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <div *ngIf="groupDetails">
+        <ion-item lines="none">
+          <ion-avatar slot="start" *ngIf="groupDetails.photoUrl">
+            <img [src]="groupDetails.photoUrl" alt="Immagine gruppo">
+          </ion-avatar>
+          <ion-icon slot="start" *ngIf="!groupDetails.photoUrl" name="people-circle-outline" class="default-group-icon large-icon"></ion-icon>
+          <ion-label>
+            <h2>{{ groupDetails.name }}</h2>
+            <p>{{ groupDetails.description || 'Nessuna descrizione.' }}</p>
+          </ion-label>
+        </ion-item>
+
+        <ion-list lines="inset">
+          <ion-list-header>
+            <ion-label>Membri ({{ groupDetails.members.length }})</ion-label>
+          </ion-list-header>
+          <ion-item *ngFor="let memberId of groupDetails.members">
+            <ion-label>{{ getMemberDisplay(memberId) }}</ion-label>
+          </ion-item>
+        </ion-list>
+
+        <ion-button expand="block" color="danger" class="ion-margin-top ff7-button" (click)="confirmLeaveGroup()">
+          <ion-icon slot="start" name="log-out-outline"></ion-icon>
+          Abbandona Gruppo
+        </ion-button>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

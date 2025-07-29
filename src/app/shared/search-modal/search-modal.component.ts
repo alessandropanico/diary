@@ -1,7 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ModalController } from '@ionic/angular';
-import { Router } from '@angular/router';
-import { UserDataService } from 'src/app/services/user-data.service';
+import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service'; // ⭐ AGGIORNATO QUI ⭐
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
@@ -15,17 +14,19 @@ import { getAuth } from 'firebase/auth';
 export class SearchModalComponent implements OnInit, OnDestroy {
 
   searchQuery: string = '';
-  searchResults: any[] = [];
+  searchResults: UserDashboardCounts[] = []; // ⭐ AGGIORNATO QUI ⭐
   isSearchingUsers: boolean = false;
   searchPerformed: boolean = false;
   loggedInUserId: string | null = null;
+  selectedUsers: UserDashboardCounts[] = []; // ⭐ AGGIORNATO QUI ⭐
+
   private searchTerms = new Subject<string>();
   private searchSubscription: Subscription | undefined;
 
   constructor(
     private modalCtrl: ModalController,
     private userDataService: UserDataService,
-    private router: Router
+    // private router: Router // Non più necessario se il suo unico scopo era la navigazione chat 1-a-1
   ) { }
 
   ngOnInit() {
@@ -42,9 +43,15 @@ export class SearchModalComponent implements OnInit, OnDestroy {
           return [];
         }
         try {
-          const results = await this.userDataService.searchUsers(term);
+          // Assicurati che searchUsers restituisca UserDashboardCounts[]
+          const results: UserDashboardCounts[] = await this.userDataService.searchUsers(term); // ⭐ AGGIORNATO QUI ⭐
           this.isSearchingUsers = false;
-          return results;
+          // Filtra l'utente attualmente loggato dai risultati della ricerca
+          // e filtra anche gli utenti già selezionati
+          return results.filter(user =>
+            user.uid !== this.loggedInUserId &&
+            !this.selectedUsers.some(selected => selected.uid === user.uid)
+          );
         } catch (error) {
           console.error('Errore durante la ricerca utenti:', error);
           this.isSearchingUsers = false;
@@ -62,8 +69,9 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  dismissModal() {
-    this.modalCtrl.dismiss();
+  // Chiamato quando si chiude la modale, con o senza dati
+  dismissModal(data?: { selectedUserIds?: string[], groupId?: string, groupName?: string }) {
+    this.modalCtrl.dismiss(data);
   }
 
   onSearchInput(event: any) {
@@ -71,13 +79,38 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     this.searchTerms.next(this.searchQuery);
   }
 
-  selectUser(uid: string) {
-    this.dismissModal();
-
-    if (this.loggedInUserId && uid === this.loggedInUserId) {
-      this.router.navigateByUrl('/profilo');
+  // Gestisce la selezione/deselezione di un utente
+  toggleUserSelection(user: UserDashboardCounts) { // ⭐ AGGIORNATO QUI ⭐
+    const index = this.selectedUsers.findIndex(u => u.uid === user.uid);
+    if (index > -1) {
+      // Selezionato, deseleziona
+      this.selectedUsers.splice(index, 1);
     } else {
-      this.router.navigate(['/profilo-altri-utenti', uid]);
+      // Non selezionato, seleziona
+      this.selectedUsers.push(user);
     }
+    // Rimuovi l'utente dalla lista dei risultati di ricerca per non selezionarlo due volte
+    this.searchResults = this.searchResults.filter(u => u.uid !== user.uid);
+  }
+
+  // Rimuove un utente dalla lista dei selezionati (dal chip)
+  removeSelectedUser(uid: string) {
+    this.selectedUsers = this.selectedUsers.filter(user => user.uid !== uid);
+  }
+
+  // Verifica se un utente è selezionato
+  isSelected(uid: string): boolean {
+    return this.selectedUsers.some(user => user.uid === uid);
+  }
+
+  // Crea il gruppo con gli utenti selezionati
+  async createGroup() {
+    if (this.selectedUsers.length === 0) {
+      console.warn('Seleziona almeno un utente per creare un gruppo.');
+      return;
+    }
+
+    const memberUids = this.selectedUsers.map(user => user.uid);
+    this.dismissModal({ selectedUserIds: memberUids });
   }
 }

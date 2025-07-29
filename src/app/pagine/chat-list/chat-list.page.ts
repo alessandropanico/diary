@@ -1,4 +1,3 @@
-// src/app/pagine/chat-list/chat-list.page.ts
 import { Component, OnInit, OnDestroy, ViewChildren, QueryList } from '@angular/core';
 import {
   ChatService,
@@ -13,7 +12,12 @@ import { map, switchMap, catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ChatNotificationService } from 'src/app/services/chat-notification.service';
 import { Timestamp } from 'firebase/firestore';
-import { AlertController, IonItemSliding } from '@ionic/angular';
+import { AlertController, IonItemSliding, ModalController } from '@ionic/angular'; // ⭐ AGGIUNTO ModalController
+
+// ⭐ IMPORTA IL TUO MODALE
+import { SearchModalComponent } from 'src/app/shared/search-modal/search-modal.component';
+import { GroupChatService } from 'src/app/services/group-chat.service'; // ⭐ AGGIUNGI QUESTA LINEA
+
 
 import * as dayjs from 'dayjs';
 import 'dayjs/locale/it';
@@ -58,7 +62,7 @@ export class ChatListPage implements OnInit, OnDestroy {
 
   private authStateUnsubscribe: (() => void) | undefined;
   private conversationsSubscription: Subscription | undefined;
-  private onlineStatusInterval: any; // ⭐ Aggiunto per il controllo dello stato online
+  private onlineStatusInterval: any;
 
   @ViewChildren(IonItemSliding) slidingItems!: QueryList<IonItemSliding>;
 
@@ -67,7 +71,9 @@ export class ChatListPage implements OnInit, OnDestroy {
     private userDataService: UserDataService,
     private router: Router,
     private chatNotificationService: ChatNotificationService,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private modalCtrl: ModalController,
+    private groupChatService: GroupChatService
   ) { }
 
   ngOnInit() {
@@ -78,13 +84,13 @@ export class ChatListPage implements OnInit, OnDestroy {
       if (user) {
         this.loggedInUserId = user.uid;
         this.loadUserConversations();
-        this.startOnlineStatusCheck(); // ⭐ Avvia il controllo dello stato online
+        this.startOnlineStatusCheck();
       } else {
         this.loggedInUserId = null;
         this.conversations = [];
         this.isLoading = false;
         this.router.navigateByUrl('/login');
-        this.stopOnlineStatusCheck(); // ⭐ Ferma il controllo dello stato online
+        this.stopOnlineStatusCheck();
       }
     });
   }
@@ -96,7 +102,7 @@ export class ChatListPage implements OnInit, OnDestroy {
     if (this.conversationsSubscription) {
       this.conversationsSubscription.unsubscribe();
     }
-    this.stopOnlineStatusCheck(); // ⭐ Assicurati che l'intervallo sia fermato alla distruzione del componente
+    this.stopOnlineStatusCheck();
   }
 
   async loadUserConversations() {
@@ -138,7 +144,6 @@ export class ChatListPage implements OnInit, OnDestroy {
 
                 const hasUnread = unreadCountForChat > 0;
 
-                // ⭐ Calcolo dello stato online dell'altro partecipante
                 const { isOnline, lastOnlineDisplay } = this.getOnlineStatus(otherUserData?.lastOnline);
 
                 const extendedConv: ExtendedConversation = {
@@ -157,7 +162,6 @@ export class ChatListPage implements OnInit, OnDestroy {
                   hasUnreadMessages: hasUnread,
                   unreadMessageCount: unreadCountForChat,
                   deletedBy: conv.deletedBy || [],
-                  // ⭐ Assegna i valori calcolati
                   otherParticipantIsOnline: isOnline,
                   otherParticipantLastOnline: lastOnlineDisplay
                 };
@@ -190,7 +194,6 @@ export class ChatListPage implements OnInit, OnDestroy {
                   hasUnreadMessages: false,
                   unreadMessageCount: 0,
                   deletedBy: conv.deletedBy || [],
-                  // ⭐ In caso di errore, imposta lo stato online di default
                   otherParticipantIsOnline: false,
                   otherParticipantLastOnline: 'N/D'
                 } as ExtendedConversation);
@@ -217,13 +220,10 @@ export class ChatListPage implements OnInit, OnDestroy {
       });
   }
 
-  // ⭐⭐ NUOVI METODI PER LA GESTIONE DELLO STATO ONLINE ⭐⭐
-
   private startOnlineStatusCheck() {
-    // Aggiorna lo stato ogni 30 secondi (o il valore desiderato)
     this.onlineStatusInterval = setInterval(() => {
       this.updateOnlineStatusForConversations();
-    }, 30000); // 30 secondi
+    }, 30000);
   }
 
   private stopOnlineStatusCheck() {
@@ -233,15 +233,9 @@ export class ChatListPage implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Aggiorna lo stato online per tutte le conversazioni esistenti.
-   * Chiamato periodicamente dall'intervallo.
-   */
   private updateOnlineStatusForConversations() {
     if (this.conversations && this.conversations.length > 0) {
       this.conversations = this.conversations.map(conv => {
-        // Non abbiamo i dati UserProfile qui, ma abbiamo otherParticipantLastOnline
-        // che ci è stato passato dal chat.service
         const { isOnline, lastOnlineDisplay } = this.getOnlineStatus(conv.otherParticipantLastOnline);
         return {
           ...conv,
@@ -249,15 +243,9 @@ export class ChatListPage implements OnInit, OnDestroy {
           otherParticipantLastOnline: lastOnlineDisplay
         };
       });
-      // console.log('Stato online conversazioni aggiornato:', this.conversations.map(c => ({ id: c.id, online: c.otherParticipantIsOnline, lastOnline: c.otherParticipantLastOnline })));
     }
   }
 
-  /**
-   * Determina se un utente è online e restituisce una stringa formattata per l'ultima attività.
-   * @param lastOnlineTimestamp La stringa ISO del timestamp dell'ultima attività.
-   * @returns Un oggetto con 'isOnline' (boolean) e 'lastOnlineDisplay' (stringa formattata).
-   */
   getOnlineStatus(lastOnlineTimestamp: string | undefined): { isOnline: boolean, lastOnlineDisplay: string } {
     if (!lastOnlineTimestamp) {
       return { isOnline: false, lastOnlineDisplay: 'Offline' };
@@ -267,8 +255,7 @@ export class ChatListPage implements OnInit, OnDestroy {
     const now = dayjs();
     const diffSeconds = now.diff(lastOnline, 'second');
 
-    // Considera online se l'ultima attività è avvenuta negli ultimi X secondi (es. 60 secondi)
-    const isOnline = diffSeconds <= 60; // 60 secondi di tolleranza per considerare online
+    const isOnline = diffSeconds <= 60;
 
     let lastOnlineDisplay: string;
     if (isOnline) {
@@ -285,8 +272,6 @@ export class ChatListPage implements OnInit, OnDestroy {
 
     return { isOnline, lastOnlineDisplay };
   }
-
-  // ⭐⭐ FINE NUOVI METODI ⭐⭐
 
   openChat(conversationId: string) {
     if (!this.isSelectionMode) {
@@ -428,5 +413,113 @@ export class ChatListPage implements OnInit, OnDestroy {
       ],
     });
     await alert.present();
+  }
+
+  // ⭐⭐ NUOVO METODO: Apre la modale di ricerca utenti ⭐⭐
+  async openSearchUserModal() {
+    const modal = await this.modalCtrl.create({
+      component: SearchModalComponent,
+      // Puoi passare dati alla modale qui, se necessario
+      // componentProps: { someProp: 'someValue' }
+    });
+
+    await modal.present();
+
+    const { data, role } = await modal.onWillDismiss();
+
+    if (role === 'backdrop') {
+      console.log('Modale chiusa cliccando fuori.');
+    } else if (data && data.selectedUserIds) {
+      const selectedUserIds: string[] = data.selectedUserIds;
+      console.log('Utenti selezionati dalla modale:', selectedUserIds);
+
+      if (!this.loggedInUserId) {
+        console.warn('loggedInUserId non disponibile.');
+        return;
+      }
+
+      if (selectedUserIds.length === 1) {
+        // LOGICA PER CHAT 1-A-1
+        const otherUserId = selectedUserIds[0];
+        try {
+          const conversationId = await this.chatService.getOrCreateConversation(this.loggedInUserId, otherUserId);
+          console.log('Conversazione 1-a-1 creata/ottenuta:', conversationId);
+          this.router.navigate(['/chat', conversationId]);
+        } catch (error) {
+          console.error('Errore durante la creazione/ottenimento della conversazione 1-a-1:', error);
+          const errorAlert = await this.alertController.create({
+            header: 'Errore Chat',
+            message: 'Impossibile avviare la chat 1-a-1 con l\'utente selezionato. Riprova.',
+            buttons: ['OK'],
+          });
+          await errorAlert.present();
+        }
+      } else if (selectedUserIds.length > 1) {
+        // LOGICA PER CREAZIONE GRUPPO
+        // Include l'utente loggato nel gruppo
+        const allMembers = [this.loggedInUserId, ...selectedUserIds];
+
+        // Chiedi il nome del gruppo all'utente
+        const alert = await this.alertController.create({
+          header: 'Crea Nuovo Gruppo',
+          inputs: [
+            {
+              name: 'groupName',
+              type: 'text',
+              placeholder: 'Nome del gruppo (obbligatorio)',
+            },
+            {
+              name: 'groupDescription',
+              type: 'textarea',
+              placeholder: 'Descrizione del gruppo (opzionale)',
+            },
+          ],
+          buttons: [
+            { text: 'Annulla', role: 'cancel' },
+            {
+              text: 'Crea',
+              handler: async (alertData) => {
+                const groupName = alertData.groupName.trim();
+                const groupDescription = alertData.groupDescription.trim();
+
+                if (!groupName) {
+                  const nameRequiredAlert = await this.alertController.create({
+                    header: 'Attenzione',
+                    message: 'Il nome del gruppo è obbligatorio.',
+                    buttons: ['OK'],
+                  });
+                  await nameRequiredAlert.present();
+                  return false; // Impedisce la chiusura dell'alert di creazione gruppo
+                }
+
+                try {
+                  // CHIAMA IL SERVIZIO PER CREARE IL GRUPPO
+                  const groupId = await this.groupChatService.createGroup(groupName, groupDescription, allMembers);
+                  console.log('Gruppo creato:', groupId);
+                  this.router.navigate(['/chat-gruppo', groupId]); // Naviga alla pagina del gruppo
+                  return true; // ⭐ AGGIUNTO: Chiude l'alert di creazione gruppo in caso di successo
+                } catch (error) {
+                  console.error('Errore durante la creazione del gruppo:', error);
+                  const errorAlert = await this.alertController.create({
+                    header: 'Errore Gruppo',
+                    message: 'Impossibile creare il gruppo. Riprova.',
+                    buttons: ['OK'],
+                  });
+                  await errorAlert.present();
+                  return true; // ⭐ AGGIUNTO: Chiude l'alert di creazione gruppo anche in caso di errore,
+                  // l'utente vedrà l'alert di errore separato.
+                }
+              },
+            },
+          ],
+        });
+        await alert.present();
+
+      } else {
+        console.warn('Nessun utente selezionato dalla modale per avviare una chat o un gruppo.');
+      }
+    } else {
+      console.log('Modale chiusa senza selezione di utenti.');
+    }
   }
 }
