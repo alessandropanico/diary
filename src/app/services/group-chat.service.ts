@@ -70,7 +70,7 @@ export class GroupChatService {
   constructor(
     private firestore: Firestore,
     private userDataService: UserDataService
-  ) {}
+  ) { }
 
   /**
    * Crea un nuovo gruppo chat.
@@ -88,9 +88,10 @@ export class GroupChatService {
   async createGroup(name: string, description: string = '', memberUids: string[] = [], photoUrl: string = ''): Promise<string> {
     const currentUser = this.auth.currentUser;
     if (!currentUser) {
-      console.error('GroupChatService: User not authenticated to create a group.');
+      console.error('GroupChatService: User not authenticated to create a group. Aborting.');
       throw new Error('User not authenticated to create a group.');
     }
+
 
     // Assicurati che l'utente corrente sia sempre incluso e che non ci siano duplicati
     const initialMembers = Array.from(new Set([currentUser.uid, ...memberUids.filter(uid => uid !== currentUser.uid)]));
@@ -117,7 +118,8 @@ export class GroupChatService {
       await this.sendMessage(docRef.id, 'system', `${currentUser.displayName || 'Un utente'} ha creato il gruppo.`, 'system');
       return docRef.id;
     } catch (error) {
-      console.error('Errore durante la creazione del gruppo:', error);
+      console.error('ERRORE durante la creazione del gruppo:', error);
+      console.error('Controlla le regole di sicurezza per la creazione (allow create) di documenti nella collezione "groups".');
       throw error;
     }
   }
@@ -132,8 +134,13 @@ export class GroupChatService {
    * @param imageUrl L'URL dell'immagine (se il tipo è 'image').
    */
   async sendMessage(groupId: string, senderId: string, text: string, type: 'text' | 'image' | 'video' | 'system' = 'text', imageUrl?: string): Promise<void> {
+    // Riferimenti ai documenti
     const groupMessagesCollectionRef = collection(this.firestore, `groups/${groupId}/messages`);
     const groupDocRef = doc(this.firestore, 'groups', groupId);
+
+    if (imageUrl) {
+      console.log(`URL immagine: ${imageUrl}`);
+    }
 
     let senderNickname = 'Sistema'; // Default per messaggi di sistema
     if (senderId !== 'system') {
@@ -141,34 +148,46 @@ export class GroupChatService {
         const senderProfile: UserProfile | null = await this.userDataService.getUserDataById(senderId);
         senderNickname = senderProfile?.nickname || senderProfile?.name || 'Utente Sconosciuto';
       } catch (error) {
-        // ⭐ QUESTO BLOCCO CATCH ⭐
-        console.warn(`Impossibile recuperare il nickname per l'utente ${senderId}. Usando 'Utente Sconosciuto'.`, error);
+        console.warn(`WARN: Impossibile recuperare il nickname per l'utente ${senderId}. Usando 'Utente Sconosciuto'. Errore:`, error);
         senderNickname = 'Utente Sconosciuto';
       }
+    } else {
+      console.log('Sender è "system", nickname impostato a "Sistema".');
     }
 
     const newMessage: GroupMessage = {
       senderId: senderId,
-      senderNickname: senderNickname, // Usiamo il nickname recuperato (o 'Utente Sconosciuto')
+      senderNickname: senderNickname,
       text,
-      timestamp: serverTimestamp() as Timestamp,
+      timestamp: serverTimestamp() as Timestamp, // Firestore popolerà questo
       type,
       ...(imageUrl && { imageUrl })
     };
 
     try {
-      await addDoc(groupMessagesCollectionRef, newMessage); // OPERAZIONE 1
+      const messageDocRef = await addDoc(groupMessagesCollectionRef, newMessage); // OPERAZIONE 1
 
-      await updateDoc(groupDocRef, { // OPERAZIONE 2 (che abbiamo cercato di proteggere con le regole)
-        lastMessage: {
-          senderId: newMessage.senderId,
-          text: newMessage.text,
-          timestamp: serverTimestamp()
-        }
+      // Preparo l'oggetto per l'ultimo messaggio da aggiornare nel documento del gruppo
+      const lastMessageData = {
+        senderId: newMessage.senderId,
+        text: newMessage.text,
+        timestamp: serverTimestamp() // Anche questo verrà popolato da Firestore
+      };
+
+      await updateDoc(groupDocRef, { // OPERAZIONE 2
+        lastMessage: lastMessageData
       });
+
     } catch (error) {
-      console.error('Errore durante l\'invio del messaggio di gruppo:', error);
-      throw error; // <<< Se un errore avviene qui, l'alert si attiva
+      console.error('ERRORE CRITICO durante l\'invio o l\'aggiornamento del messaggio di gruppo:', error);
+      console.error('Causa probabile: Regole di sicurezza di Firestore.');
+      console.error(`Controlla le regole per:`);
+      console.error(`  - Scrittura (create) su 'groups/${groupId}/messages'`);
+      console.error(`    -> Deve permettere request.resource.data.senderId == request.auth.uid (o 'system')`);
+      console.error(`    -> Deve permettere get(/databases/.../groups/${groupId}).data.members.hasAny([request.auth.uid])`);
+      console.error(`  - Aggiornamento (update) su 'groups/${groupId}' (solo per il campo 'lastMessage')`);
+      console.error(`    -> Deve permettere request.resource.data.keys().hasOnly(['lastMessage'])`);
+      throw error; // Rilancia l'errore per essere gestito dal componente chiamante (e mostrare l'alert)
     }
   }
 
@@ -200,7 +219,9 @@ export class GroupChatService {
         observer.error(error);
       });
 
-      return () => unsubscribe(); // Funzione di cleanup
+      return () => {
+        unsubscribe(); // Funzione di cleanup
+      };
     });
   }
 
@@ -226,18 +247,19 @@ export class GroupChatService {
 
       if (querySnapshot.docs.length > 0) {
         lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+      } else {
       }
 
       const hasMore = querySnapshot.docs.length === limitMessages;
 
       // Inverti per avere i messaggi dal più vecchio al più recente
-      return {
+      const result = {
         messages: messages.reverse(),
         lastVisibleDoc: lastVisibleDoc,
         hasMore: hasMore
       };
+      return result;
     } catch (error) {
-      console.error(`Errore nel caricamento dei messaggi iniziali del gruppo ${groupId}:`, error);
       throw error;
     }
   }
@@ -269,16 +291,18 @@ export class GroupChatService {
 
       if (querySnapshot.docs.length > 0) {
         newLastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+      } else {
       }
 
       const hasMore = querySnapshot.docs.length === limitMessages;
 
       // Inverti per avere i messaggi dal più vecchio al più recente
-      return {
+      const result = {
         messages: messages.reverse(),
         lastVisibleDoc: newLastVisibleDoc,
         hasMore: hasMore
       };
+      return result;
     } catch (error) {
       console.error(`Errore nel caricamento dei messaggi più vecchi del gruppo ${groupId}:`, error);
       throw error;
@@ -293,7 +317,13 @@ export class GroupChatService {
   getGroupDetails(groupId: string): Observable<GroupChat | null> {
     const groupDocRef = doc(this.firestore, 'groups', groupId);
     return docData(groupDocRef, { idField: 'groupId' }).pipe(
-      map(group => (group as GroupChat) || null)
+      map(group => {
+        const groupData = (group as GroupChat) || null;
+        if (groupData) {
+        } else {
+        }
+        return groupData;
+      })
     );
   }
 
@@ -305,23 +335,14 @@ export class GroupChatService {
    * @returns Un Observable di un array di GroupChat.
    */
   getGroupsForUser(userId: string): Observable<GroupChat[]> {
-    // ⭐ MODIFICA QUI: Query diretta sulla collezione 'groups' globale
     const groupsCollectionRef = collection(this.firestore, 'groups');
     const q = query(
       groupsCollectionRef,
       where('members', 'array-contains', userId)
-      // ATTENZIONE: Se hai bisogno di ordinare per lastMessage.timestamp o altri campi,
-      // dovrai creare un indice composto in Firebase Console.
-      // Esempio: orderBy('lastMessage.timestamp', 'desc')
-      // Se combini `where('members', 'array-contains', userId)` con `orderBy('lastMessage.timestamp', 'desc')`,
-      // avrai bisogno di un indice composto su `members` e `lastMessage.timestamp`.
     );
 
     return collectionData(q, { idField: 'groupId' }).pipe(
       map(groups => {
-        // Ordina i gruppi client-side se non puoi farlo direttamente nella query Firestore
-        // a causa di limitazioni di indici o query complesse.
-        // Fai attenzione alle performance se l'utente ha moltissimi gruppi.
         return (groups as GroupChat[]).sort((a, b) => {
           const timestampA = a.lastMessage?.timestamp?.toMillis() || 0;
           const timestampB = b.lastMessage?.timestamp?.toMillis() || 0;
@@ -340,33 +361,23 @@ export class GroupChatService {
    */
   async addMemberToGroup(groupId: string, userIdToAdd: string): Promise<void> {
     const groupDocRef = doc(this.firestore, 'groups', groupId);
-    const userGroupDocRef = doc(this.firestore, `users/${userIdToAdd}/groups`, groupId); // Questa scrittura è permessa se userIdToAdd è l'utente corrente
+    const userGroupDocRef = doc(this.firestore, `users/${userIdToAdd}/groups`, groupId);
 
     try {
-      // Aggiorna l'array 'members' nel documento del gruppo principale
       await updateDoc(groupDocRef, {
         members: arrayUnion(userIdToAdd)
       });
-
-      // Se l'utente che sta aggiungendo è anche userIdToAdd (cioè sta aggiungendo se stesso o sta agendo come "aggiunto"),
-      // questa scrittura sarà permessa dalle regole. Altrimenti, le regole potrebbero bloccarla.
-      // Se la chiamata a `addMemberToGroup` può essere fatta da un utente A che aggiunge un utente B,
-      // e l'utente B non è l'utente A, allora `setDoc(userGroupDocRef, ...)` fallirà per l'utente B.
-      // In questo scenario (no Cloud Functions), l'utente B dovrà "aggiungersi" autonomamente al suo profilo.
-      // Per semplicità, si assume che questa funzione venga chiamata dall'utente che sta aggiungendo se stesso
-      // o dal creatore del gruppo (che potrebbe aver bisogno di privilegi più ampi se non usi CF).
-      // Data l'architettura attuale, questa operazione sulla sottocollezione userGroupDocRef
-      // sarà permessa solo se `userIdToAdd` è l'utente autenticato (`request.auth.uid`).
       await setDoc(userGroupDocRef, { joinedAt: serverTimestamp() as Timestamp }, { merge: true });
-
       const addedUserProfile: UserProfile | null = await this.userDataService.getUserDataById(userIdToAdd);
       const addedUserName = addedUserProfile?.nickname || addedUserProfile?.name || 'Un utente';
       const currentUser = this.auth.currentUser;
       const currentUserName = currentUser?.displayName || 'Qualcuno';
-
       await this.sendMessage(groupId, 'system', `${currentUserName} ha aggiunto ${addedUserName} al gruppo.`, 'system');
     } catch (error) {
-      console.error(`Errore nell'aggiungere il membro ${userIdToAdd} al gruppo ${groupId}:`, error);
+      console.error(`ERRORE nell'aggiungere il membro ${userIdToAdd} al gruppo ${groupId}:`, error);
+      console.error('Verifica le regole di sicurezza per:');
+      console.error(`- Aggiornamento (update) di 'groups/${groupId}' (per arrayUnion)`);
+      console.error(`- Scrittura (set/update) di 'users/${userIdToAdd}/groups/${groupId}' (per il documento di join)`);
       throw error;
     }
   }
@@ -380,28 +391,25 @@ export class GroupChatService {
    */
   async removeMemberFromGroup(groupId: string, userIdToRemove: string): Promise<void> {
     const groupDocRef = doc(this.firestore, 'groups', groupId);
-    const userGroupDocRef = doc(this.firestore, `users/${userIdToRemove}/groups`, groupId); // Questa scrittura è permessa solo se userIdToRemove è l'utente corrente
+    const userGroupDocRef = doc(this.firestore, `users/${userIdToRemove}/groups`, groupId);
 
     try {
       await updateDoc(groupDocRef, {
         members: arrayRemove(userIdToRemove)
       });
 
-      // Questa deleteDoc sarà permessa dalle regole solo se `userIdToRemove` è l'utente autenticato.
-      // Se un "amministratore" (creatore del gruppo) tenta di rimuovere un altro utente,
-      // questa operazione fallirà con "Missing or insufficient permissions".
-      // Con il piano Spark, l'utente rimosso dovrà eliminare manualmente il riferimento dal proprio profilo,
-      // oppure dovrai allargare le regole di sicurezza (sconsigliato).
       await deleteDoc(userGroupDocRef);
 
       const removedUserProfile: UserProfile | null = await this.userDataService.getUserDataById(userIdToRemove);
       const removedUserName = removedUserProfile?.nickname || removedUserProfile?.name || 'Un utente';
       const currentUser = this.auth.currentUser;
       const currentUserName = currentUser?.displayName || 'Qualcuno';
-
       await this.sendMessage(groupId, 'system', `${currentUserName} ha rimosso ${removedUserName} dal gruppo.`, 'system');
     } catch (error) {
-      console.error(`Errore nel rimuovere il membro ${userIdToRemove} dal gruppo ${groupId}:`, error);
+      console.error(`ERRORE nel rimuovere il membro ${userIdToRemove} dal gruppo ${groupId}:`, error);
+      console.error('Verifica le regole di sicurezza per:');
+      console.error(`- Aggiornamento (update) di 'groups/${groupId}' (per arrayRemove)`);
+      console.error(`- Eliminazione (delete) di 'users/${userIdToRemove}/groups/${groupId}'`);
       throw error;
     }
   }
@@ -422,15 +430,16 @@ export class GroupChatService {
         members: arrayRemove(userId)
       });
 
-      // Questa deleteDoc è permessa in quanto l'utente rimuove il riferimento dal proprio profilo.
       await deleteDoc(userGroupDocRef);
 
       const leavingUserProfile: UserProfile | null = await this.userDataService.getUserDataById(userId);
       const leavingUserName = leavingUserProfile?.nickname || leavingUserProfile?.name || 'Un utente';
       await this.sendMessage(groupId, 'system', `${leavingUserName} ha abbandonato il gruppo.`, 'system');
-
     } catch (error) {
-      console.error(`Errore nell'abbandonare il gruppo ${groupId} per l'utente ${userId}:`, error);
+      console.error(`ERRORE nell'abbandonare il gruppo ${groupId} per l'utente ${userId}:`, error);
+      console.error('Verifica le regole di sicurezza per:');
+      console.error(`- Aggiornamento (update) di 'groups/${groupId}' (per arrayRemove)`);
+      console.error(`- Eliminazione (delete) di 'users/${userId}/groups/${groupId}'`);
       throw error;
     }
   }
@@ -450,7 +459,10 @@ export class GroupChatService {
         const memberPromises = group.members.map(uid => this.userDataService.getUserDataById(uid));
         return from(Promise.all(memberPromises)).pipe(
           // Filtra i profili nulli se qualche utente non esiste più (sebbene raro)
-          map(members => members.filter(Boolean) as UserProfile[])
+          map(members => {
+            const validMembers = members.filter(Boolean) as UserProfile[];
+            return validMembers;
+          })
         );
       })
     );
@@ -462,35 +474,40 @@ export class GroupChatService {
    * @param updates Un oggetto Partial<GroupChat> con i campi da aggiornare.
    */
   async updateGroupDetails(groupId: string, updates: Partial<GroupChat>): Promise<void> {
+
     const groupDocRef = doc(this.firestore, 'groups', groupId);
     try {
       await updateDoc(groupDocRef, updates);
+
     } catch (error) {
-      console.error(`Errore nell'aggiornare i dettagli del gruppo ${groupId}:`, error);
+      console.error(`ERRORE nell'aggiornare i dettagli del gruppo ${groupId}:`, error);
+      console.error('Verifica le regole di sicurezza per l\'aggiornamento (update) sul documento del gruppo.');
       throw error;
     }
   }
 
- /**
-   * Marca tutti i messaggi di un gruppo come letti per un utente specifico.
-   * Aggiorna il timestamp dell'ultima lettura nella sottocollezione 'groups' dell'utente.
-   * @param groupId L'ID del gruppo.
-   * @param userId L'ID dell'utente.
-   * @param timestamp L'ultimo timestamp di messaggio da registrare come "letto".
-    * Se non fornito, verrà usato serverTimestamp().
-   */
-  async markGroupMessagesAsRead(groupId: string, userId: string, timestamp: Timestamp | null = null): Promise<void> {
-    const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
-    try {
-      await setDoc(userGroupDocRef, {
-        // Usa il timestamp fornito, altrimenti serverTimestamp()
-        lastReadMessageTimestamp: timestamp || serverTimestamp() as Timestamp
-      }, { merge: true });
-    } catch (error: any) {
-      console.error('Errore nel marcare i messaggi di gruppo come letti:', error);
-      throw error;
-    }
-  }
+  /**
+   * Marca tutti i messaggi di un gruppo come letti per un utente specifico.
+   * Aggiorna il timestamp dell'ultima lettura nella sottocollezione 'groups' dell'utente.
+   * @param groupId L'ID del gruppo.
+   * @param userId L'ID dell'utente.
+   * @param timestamp L'ultimo timestamp di messaggio da registrare come "letto".
+   * Se non fornito, verrà usato serverTimestamp().
+   */
+  async markGroupMessagesAsRead(groupId: string, userId: string, timestamp: Timestamp | null = null): Promise<void> {
+    const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
+    const timestampToSet = timestamp || serverTimestamp() as Timestamp;
+
+    try {
+      await setDoc(userGroupDocRef, {
+        lastReadMessageTimestamp: timestampToSet
+      }, { merge: true });
+    } catch (error: any) {
+      console.error('ERRORE nel marcare i messaggi di gruppo come letti:', error);
+      console.error('Verifica le regole di sicurezza per la scrittura (set/update) su `users/${userId}/groups/${groupId}`.');
+      throw error;
+    }
+  }
 
   /**
    * Ottiene il timestamp dell'ultima lettura di un utente per un gruppo specifico.
@@ -501,7 +518,10 @@ export class GroupChatService {
   getLastReadTimestamp(groupId: string, userId: string): Observable<Timestamp | null> {
     const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
     return docData(userGroupDocRef).pipe(
-      map(data => (data ? (data['lastReadMessageTimestamp'] as Timestamp) || null : null))
+      map(data => {
+        const timestamp = (data ? (data['lastReadMessageTimestamp'] as Timestamp) || null : null);
+        return timestamp;
+      })
     );
   }
 
@@ -535,13 +555,15 @@ export class GroupChatService {
       let unreadCount = 0;
       querySnapshot.forEach(doc => {
         const message = doc.data() as GroupMessage;
+        // Non contare i messaggi di sistema o i messaggi inviati dall'utente stesso come "non letti"
         if (message.type !== 'system' && message.senderId !== userId) {
           unreadCount++;
         }
       });
       return unreadCount;
     } catch (error) {
-      console.error(`Errore nel contare i messaggi non letti per il gruppo ${groupId} per l'utente ${userId}:`, error);
+      console.error(`ERRORE nel contare i messaggi non letti per il gruppo ${groupId} per l'utente ${userId}:`, error);
+      console.error('Verifica le regole di sicurezza per la lettura su `groups/${groupId}/messages`.');
       return 0;
     }
   }
