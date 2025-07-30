@@ -2,7 +2,6 @@
 
 Migliorare chat-gruppo;
 Implementare blocca/sblocca utente in chat;
-Il gruppo prima si abbandona, poi si può eliminare;
 
 Cosi come è il profilo personale, dobbiamo mostrare "profilo-altro-utente";
 
