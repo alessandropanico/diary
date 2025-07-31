@@ -62,6 +62,8 @@
         </div>
         <span class="xp-compact-text">{{ userXP }} / {{ xpForNextLevel }} XP</span>
       </div>
+
+      
       <p>{{ profile.bio || 'Descrizione assente' }}</p>
       <p *ngIf="profile.link && !editing">
         <a [href]="profile.link" target="_blank" rel="noopener noreferrer">
