@@ -16,6 +16,7 @@ import { DocumentSnapshot } from '@angular/fire/firestore';
 
 import { CommentItemComponent } from '../comment-item/comment-item.component';
 import { CommentLikesModalComponent } from '../comment-likes-modal/comment-likes-modal.component'; // ⭐ NUOVO: Importa il modale dei likes ⭐
+import { Output, EventEmitter } from '@angular/core';
 
 export interface TagUser {
   uid: string;
@@ -39,6 +40,9 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
   @Input() postId!: string;
   @Input() initialCommentsCount: number = 0;
+
+  @Output() goToUserProfileEvent = new EventEmitter<string>(); // ⭐ AGGIUNGI QUESTO ⭐
+
 
   comments: Comment[] = [];
   newCommentText: string = '';
@@ -418,40 +422,40 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   async handleGoToProfile(identifier: string) {
-    let uidToNavigate: string | null = identifier;
-    const isLikelyNickname = identifier.length < 20 || identifier.includes('-') || identifier.includes('.');
+  let uidToNavigate: string | null = identifier;
+  const isLikelyNickname = identifier.length < 20 || identifier.includes('-') || identifier.includes('.');
 
-    if (isLikelyNickname) {
-      const loading = await this.loadingCtrl.create({
-        message: 'Ricerca utente...',
-        spinner: 'dots',
-        duration: 3000 // Timeout per evitare blocchi
-      });
-      await loading.present();
+  if (isLikelyNickname) {
+    const loading = await this.loadingCtrl.create({
+      message: 'Ricerca utente...',
+      spinner: 'dots',
+      duration: 3000 // Timeout per evitare blocchi
+    });
+    await loading.present();
 
-      try {
-        uidToNavigate = await this.userDataService.getUidByNickname(identifier);
-      } catch (error) {
-        console.error(`Errore nel risolvere nickname '${identifier}':`, error);
-        this.presentAppAlert('Errore', `Impossibile trovare l'utente con nickname @${identifier}.`);
-        uidToNavigate = null; // Forza a null per impedire la navigazione se fallisce
-      } finally {
-        await loading.dismiss();
-      }
-    } else {
-      console.log(`CommentSectionComponent: '${identifier}' è probabilmente un UID. Navigazione diretta.`);
+    try {
+      uidToNavigate = await this.userDataService.getUidByNickname(identifier);
+    } catch (error) {
+      console.error(`Errore nel risolvere nickname '${identifier}':`, error);
+      this.presentAppAlert('Errore', `Impossibile trovare l'utente con nickname @${identifier}.`);
+      uidToNavigate = null; // Forza a null per impedire la navigazione se fallisce
+    } finally {
+      await loading.dismiss();
     }
-
-    if (uidToNavigate) {
-      if (uidToNavigate === this.currentUserId) {
-        this.router.navigateByUrl('/profilo');
-      } else {
-        this.router.navigate(['/profilo-altri-utenti', uidToNavigate]);
-      }
-    } else {
-      console.warn(`CommentSectionComponent: Impossibile navigare. UID non disponibile per l'identifier: ${identifier}`);
-    }
+  } else {
+    console.log(`CommentSectionComponent: '${identifier}' è probabilmente un UID. Navigazione diretta.`);
   }
+
+  if (uidToNavigate) {
+    // ⭐ NON NAVIGARE DIRETTAMENTE DA QUI, MA EMETTI L'EVENTO ⭐
+    this.goToUserProfileEvent.emit(uidToNavigate);
+    console.log(`CommentSectionComponent: Emitting goToUserProfileEvent with UID: ${uidToNavigate}`);
+    // Rimuovi la navigazione diretta con this.router.navigate qui!
+    // La navigazione avverrà nel CommentsModalComponent
+  } else {
+    console.warn(`CommentSectionComponent: Impossibile navigare. UID non disponibile per l'identifier: ${identifier}`);
+  }
+}
 
 
   formatCommentTime(timestamp: string): string {

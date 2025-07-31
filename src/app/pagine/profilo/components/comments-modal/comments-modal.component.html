@@ -22,5 +22,6 @@
       <p class="post-text">{{ postText }}</p>
     </div>
   </div>
-  <app-comment-section [postId]="postId"></app-comment-section>
-</ion-content>
+<app-comment-section
+    [postId]="postId"
+    (goToUserProfileEvent)="handleGoToUserProfile($event)"> </app-comment-section></ion-content>
