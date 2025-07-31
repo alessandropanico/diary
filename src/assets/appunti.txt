@@ -1,9 +1,9 @@
 --TO DO--
 
-Migliorare chat-gruppo;
-Implementare blocca/sblocca utente in chat;
+Migliore sezione sveglie per "profilo-altri-utenti";
+Riguarda un attimo quando "condividi" un post di un altro utente
 
-Cosi come è il profilo personale, dobbiamo mostrare "profilo-altro-utente";
+Implementare blocca/sblocca utente in chat;
 
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
