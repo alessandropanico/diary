@@ -5,6 +5,8 @@ Riguarda un attimo quando "condividi" un post di un altro utente;
 Implementare blocca/sblocca utente in chat;
 Fare page "progetti";
 
+PULSANTE SUPPORTO CREATORE!;
+
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
 Integrazione con AI (anche semplice):
