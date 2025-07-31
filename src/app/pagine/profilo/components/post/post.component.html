@@ -82,10 +82,6 @@
   </div>
 </div>
 
-<app-like-modal *ngIf="showLikesModal && selectedPostIdForLikes" [postId]="selectedPostIdForLikes"
-  (closeModalEvent)="closeLikesModal()">
-</app-like-modal>
-
 <ion-infinite-scroll (ionInfinite)="loadMorePosts($event)" [disabled]="!canLoadMore">
   <ion-infinite-scroll-content loadingSpinner="circles"
     loadingText="Caricamento altri post..."></ion-infinite-scroll-content>

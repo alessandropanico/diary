@@ -1,10 +1,10 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, ModalController } from '@ionic/angular';
+import { IonicModule, ModalController } from '@ionic/angular'; // Assicurati che ModalController sia importato
 import { Subscription, from, combineLatest, of } from 'rxjs';
 import { switchMap, map, catchError } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
-import { Router } from '@angular/router'; // Importa il Router
+import { Router } from '@angular/router';
 
 import { PostService } from 'src/app/services/post.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
@@ -21,12 +21,12 @@ import { Post } from 'src/app/interfaces/post';
 })
 export class LikeModalComponent implements OnInit, OnDestroy {
   @Input() postId!: string;
-  @Output() closeModalEvent = new EventEmitter<void>();
+  // @Output() closeModalEvent = new EventEmitter<void>(); // Rimuovi o commenta questa riga, non è più necessaria
 
   likedUsers: { profile: UserDashboardCounts & { uid: string }, isFollowing: boolean }[] = [];
   isLoading: boolean = true;
-  currentUserId: string | null = null; // Già presente
-  loggedInUserId: string | null = null; // <-- NUOVA PROPRIETÀ
+  currentUserId: string | null = null;
+  loggedInUserId: string | null = null;
   private subscriptions: Subscription = new Subscription();
 
   constructor(
@@ -34,13 +34,13 @@ export class LikeModalComponent implements OnInit, OnDestroy {
     private userDataService: UserDataService,
     private followService: FollowService,
     private cdr: ChangeDetectorRef,
-    private modalController: ModalController,
+    private modalController: ModalController, // Iniettato correttamente
     private router: Router
   ) { }
 
   ngOnInit() {
     this.currentUserId = getAuth().currentUser?.uid || null;
-    this.loggedInUserId = this.currentUserId; // Inizializza l'ID utente loggato
+    this.loggedInUserId = this.currentUserId;
 
     if (this.postId) {
       this.subscriptions.add(
@@ -126,8 +126,10 @@ export class LikeModalComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
-  closeModal() {
-    this.closeModalEvent.emit();
+  // ⭐⭐ METODO close Modal AGGIORNATO ⭐⭐
+  async closeModal() {
+    // Usa il ModalController per chiudere il modale
+    await this.modalController.dismiss();
   }
 
   async toggleFollow(userToFollow: { profile: UserDashboardCounts & { uid: string }, isFollowing: boolean }) {
@@ -155,14 +157,13 @@ export class LikeModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ⭐⭐⭐ METODO goToUserProfile AGGIORNATO ⭐⭐⭐
   goToUserProfile(userId: string) {
-    this.closeModal(); // Chiudi il modale
+    this.closeModal(); // Chiudi il modale prima di navigare
 
     if (userId === this.loggedInUserId) {
-      this.router.navigate(['/profilo']); // Naviga alla rotta del proprio profilo
+      this.router.navigate(['/profilo']);
     } else {
-      this.router.navigate(['/profilo-altri-utenti', userId]); // Naviga alla rotta per gli altri profili con l'ID
+      this.router.navigate(['/profilo-altri-utenti', userId]);
     }
   }
 

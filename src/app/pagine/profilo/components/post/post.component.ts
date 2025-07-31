@@ -29,8 +29,7 @@ interface PostWithUserDetails extends Post {
     CommonModule,
     FormsModule,
     IonicModule,
-    LikeModalComponent
-],
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PostComponent implements OnInit, OnDestroy {
@@ -588,10 +587,27 @@ export class PostComponent implements OnInit, OnDestroy {
     return photoUrl;
   }
 
-  openLikesModal(postId: string) {
-    this.selectedPostIdForLikes = postId;
-    this.showLikesModal = true;
-    this.cdr.detectChanges();
+  // Modifica questa funzione per aprire il modale dei likes con ModalController
+  async openLikesModal(postId: string) {
+    const modal = await this.modalController.create({
+      component: LikeModalComponent, // Specifica il componente LikeModalComponent
+      componentProps: {
+        postId: postId,
+      },
+      cssClass: 'my-custom-likes-modal', // Puoi definire una classe CSS personalizzata per il modale dei likes
+      mode: 'ios',
+      breakpoints: [0, 0.25, 0.5, 0.75, 1],
+      initialBreakpoint: 1,
+      backdropDismiss: true,
+    });
+
+    modal.onWillDismiss().then(() => {
+      // Quando il modale viene chiuso, ricarica i post per aggiornare i conteggi/stati dei like
+      this.loadInitialPosts();
+      this.cdr.detectChanges();
+    });
+
+    await modal.present();
   }
 
   closeLikesModal(): void {
