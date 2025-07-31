@@ -1,9 +1,9 @@
 --TO DO--
 
 Migliore sezione sveglie per "profilo-altri-utenti";
-Riguarda un attimo quando "condividi" un post di un altro utente
-
+Riguarda un attimo quando "condividi" un post di un altro utente;
 Implementare blocca/sblocca utente in chat;
+Fare page "progetti";
 
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
