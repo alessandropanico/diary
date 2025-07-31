@@ -3,11 +3,11 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>Profilo Utente</ion-title>
+    <ion-title class="ff7-title">Profilo Utente</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content fullscreen class="ion-padding ion-text-center">
+<div class="content">
 
   <div *ngIf="isLoading" class="loading-overlay">
     <ion-spinner name="crescent" color="primary"></ion-spinner>
@@ -25,11 +25,9 @@
         <img [src]="getUserPhoto(profileData.photo)" alt="Foto profilo" />
       </ion-avatar>
 
-      <app-emoji-status
-        [status]="profileData.status || ''"
-        [editing]="false"
-      ></app-emoji-status>
+      <app-emoji-status [status]="profileData.status || ''" [editing]="false"></app-emoji-status>
     </div>
+
     <div class="profile-view">
       <h2>{{ profileData.nickname || 'Nickname non disponibile' }}</h2>
       <h3>{{ profileData.name || 'Nome e Cognome non disponibili' }}</h3>
@@ -42,7 +40,13 @@
         </div>
         <span class="xp-compact-text">{{ targetUserXP }} / {{ targetXpForNextLevel }} XP</span>
       </div>
+
       <p>{{ profileData.bio || 'Descrizione assente' }}</p>
+      <p *ngIf="profileData.link">
+        <a [href]="profileData.link" target="_blank" rel="noopener noreferrer">
+          {{ profileData.linkText || profileData.link }}
+        </a>
+      </p>
 
       <div class="follow-stats-wrapper">
         <div *ngIf="isLoadingStats" class="loading-stats-local-overlay">
@@ -70,11 +74,29 @@
           Messaggia
         </ion-button>
       </div>
+
+      <div class="profile-content-switcher">
+        <div class="ff7-toggle-buttons">
+          <ion-button (click)="selectedSegment = 'posts'" [class.active]="selectedSegment === 'posts'"
+            class="ff7-toggle-button" fill="clear" expand="block">
+            Post
+          </ion-button>
+          <ion-button (click)="selectedSegment = 'dashboard'" [class.active]="selectedSegment === 'dashboard'"
+            class="ff7-toggle-button" fill="clear" expand="block">
+            Informazioni
+          </ion-button>
+          <div class="toggle-indicator" [class.shift-right]="selectedSegment === 'dashboard'"></div>
+        </div>
+
+        <div>
+          <div *ngIf="selectedSegment === 'posts'" class="content-fade-in">
+            <app-user-posts [userId]="profileData.uid"></app-user-posts>
+          </div>
+          <div *ngIf="selectedSegment === 'dashboard'" class="content-fade-in">
+            <app-user-dashboard [userId]="profileData.uid"></app-user-dashboard>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-
-  <div *ngIf="!isLoading && !profileData">
-    <p>Impossibile caricare il profilo utente. Potrebbe non esistere o esserci stato un errore.</p>
-  </div>
-
-</ion-content>
+</div>

@@ -8,6 +8,8 @@ import { ProfiloAltriUtentiPageRoutingModule } from './profilo-altri-utenti-rout
 
 import { ProfiloAltriUtentiPage } from './profilo-altri-utenti.page';
 import { EmojiStatusComponent } from "../profilo/components/emoji-status/emoji-status.component";
+import { UserPostsComponent } from "./components/user-posts/user-posts.component";
+import { UserDashboardComponent } from "./components/user-dashboard/user-dashboard.component";
 
 @NgModule({
   imports: [
@@ -15,7 +17,9 @@ import { EmojiStatusComponent } from "../profilo/components/emoji-status/emoji-s
     FormsModule,
     IonicModule,
     ProfiloAltriUtentiPageRoutingModule,
-    EmojiStatusComponent
+    EmojiStatusComponent,
+    UserPostsComponent,
+    UserDashboardComponent
 ],
   declarations: [ProfiloAltriUtentiPage]
 })

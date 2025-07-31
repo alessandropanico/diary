@@ -37,10 +37,8 @@
         <img [src]="(editing ? profileEdit.photo : profile.photo) || 'assets/immaginiGenerali/default-avatar.jpg'"
           alt="Foto profilo" />
       </ion-avatar>
-      <app-emoji-status
-        [status]="(editing ? profileEdit.status : profile.status) || ''" [editing]="editing"
-        (statusSelected)="onStatusSelected($event)"
-      ></app-emoji-status>
+      <app-emoji-status [status]="(editing ? profileEdit.status : profile.status) || ''" [editing]="editing"
+        (statusSelected)="onStatusSelected($event)"></app-emoji-status>
     </div>
 
 
@@ -63,7 +61,7 @@
         <span class="xp-compact-text">{{ userXP }} / {{ xpForNextLevel }} XP</span>
       </div>
 
-      
+
       <p>{{ profile.bio || 'Descrizione assente' }}</p>
       <p *ngIf="profile.link && !editing">
         <a [href]="profile.link" target="_blank" rel="noopener noreferrer">
@@ -89,22 +87,12 @@
 
     <div class="profile-content-switcher" *ngIf="!editing">
       <div class="ff7-toggle-buttons">
-        <ion-button
-          (click)="selectedSegment = 'posts'"
-          [class.active]="selectedSegment === 'posts'"
-          class="ff7-toggle-button"
-          fill="clear"
-          expand="block"
-        >
+        <ion-button (click)="selectedSegment = 'posts'" [class.active]="selectedSegment === 'posts'"
+          class="ff7-toggle-button" fill="clear" expand="block">
           Post
         </ion-button>
-        <ion-button
-          (click)="selectedSegment = 'dashboard'"
-          [class.active]="selectedSegment === 'dashboard'"
-          class="ff7-toggle-button"
-          fill="clear"
-          expand="block"
-        >
+        <ion-button (click)="selectedSegment = 'dashboard'" [class.active]="selectedSegment === 'dashboard'"
+          class="ff7-toggle-button" fill="clear" expand="block">
           Informazioni
         </ion-button>
         <div class="toggle-indicator" [class.shift-right]="selectedSegment === 'dashboard'"></div>
@@ -138,14 +126,15 @@
 
         <ion-item class="ff7-item">
           <ion-label position="stacked">Link (URL)</ion-label>
-          <ion-input [(ngModel)]="profileEdit.link" name="link" type="url" placeholder="https://tuosito.com"></ion-input>
+          <ion-input [(ngModel)]="profileEdit.link" name="link" type="url"
+            placeholder="https://tuosito.com"></ion-input>
         </ion-item>
 
         <ion-item class="ff7-item">
           <ion-label position="stacked">Testo del Link (es. "Canale YouTube")</ion-label>
           <ion-input [(ngModel)]="profileEdit.linkText" name="linkText" placeholder="Il mio sito web"></ion-input>
         </ion-item>
-        </ion-list>
+      </ion-list>
 
       <ion-button expand="block" type="submit">Salva</ion-button>
     </form>

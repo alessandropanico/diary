@@ -15,6 +15,8 @@ import { ExpService, UserExpData } from 'src/app/services/exp.service';
   selector: 'app-profilo-altri-utenti',
   templateUrl: './profilo-altri-utenti.page.html',
   styleUrls: ['./profilo-altri-utenti.page.scss'],
+  // Ricorda di impostare 'standalone: true' e aggiungere 'imports' se stai usando componenti standalone
+  // Questo esempio mantiene 'standalone: false' come nel tuo codice fornito.
   standalone: false,
 })
 export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
@@ -40,6 +42,9 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
   targetXpForNextLevel: number = 0; // XP mancanti al prossimo livello
   targetXpPercentage: number = 0; // Percentuale di progresso nel livello
   // ⭐ FINE proprietà XP ⭐
+
+  // ⭐ NOVITÀ: Proprietà per gestire lo switch tra Post e Dashboard ⭐
+  selectedSegment: 'posts' | 'dashboard' = 'posts'; // Default a 'posts'
 
   constructor(
     private route: ActivatedRoute,

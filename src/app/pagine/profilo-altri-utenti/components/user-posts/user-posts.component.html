@@ -1,0 +1,63 @@
+<div *ngIf="isLoadingPosts" class="loading-indicator panel-glow-border">
+  <p>Caricamento post... <span class="loading-dots"></span></p>
+</div>
+
+<div *ngIf="!isLoadingPosts && posts.length === 0" class="no-posts-message panel-glow-border">
+  <p>Ancora nessun post da visualizzare per questo utente.</p>
+</div>
+
+<div *ngFor="let post of posts" class="post-card panel-glow-border">
+  <div class="post-header">
+    <div class="post-avatar" (click)="goToUserProfile(post.userId)">
+      <img [src]="getUserPhoto(post.userAvatarUrl)" alt="User Avatar">
+    </div>
+    <div class="post-info">
+      <span class="post-username" (click)="goToUserProfile(post.userId)">{{ post.username }}</span>
+      <span class="post-time">{{ formatPostTime(post.timestamp) }}</span>
+    </div>
+    </div>
+
+  <div class="post-content">
+    <p class="post-text" [innerHTML]="formatTextWithLinks(post.text)"></p>
+  </div>
+
+  <div class="post-likes-info" *ngIf="post.likes && post.likes.length > 0" (click)="openLikesModal(post.id)">
+    <div class="liked-avatars-preview">
+      <img *ngFor="let userId of getLimitedLikedUsers(post.likes)"
+        [src]="getUserPhoto(getUserAvatarById(userId, post.likesUsersMap))" alt="Liked User Avatar"
+        class="liked-avatar-thumbnail">
+    </div>
+    <span class="likes-count-text">
+      Piace a
+      <ng-container *ngIf="post.likes.length === 1">
+        <strong>{{ getLikedUserName(post.likes[0], post.likesUsersMap) }}</strong>
+      </ng-container>
+      <ng-container *ngIf="post.likes.length === 2">
+        <strong>{{ getLikedUserName(post.likes[0], post.likesUsersMap) }}</strong> e <strong>{{
+          getLikedUserName(post.likes[1], post.likesUsersMap) }}</strong>
+      </ng-container>
+      <ng-container *ngIf="post.likes.length > 2">
+        <strong>{{ getLikedUserName(post.likes[0], post.likesUsersMap) }}</strong> e altri <strong>{{ post.likes.length
+          - 1 }}</strong>
+      </ng-container>
+    </span>
+  </div>
+
+  <div class="post-actions">
+    <button class="post-action-button" [ngClass]="{'liked': currentUserId && post.likes.includes(currentUserId!)}"
+      (click)="toggleLike(post)">
+      <span class="icon heart-icon"></span> Like
+    </button>
+    <button class="post-action-button" (click)="openCommentsModal(post)">
+      <span class="icon comment-icon"></span> {{ post.commentsCount || 0 }} Commenti
+    </button>
+    <button class="post-action-button" (click)="sharePost(post)">
+      <span class="icon share-icon"></span> Condividi
+    </button>
+  </div>
+</div>
+
+<ion-infinite-scroll (ionInfinite)="loadMorePosts($event)" [disabled]="!canLoadMore">
+  <ion-infinite-scroll-content loadingSpinner="circles"
+    loadingText="Caricamento altri post..."></ion-infinite-scroll-content>
+</ion-infinite-scroll>

@@ -1,0 +1,161 @@
+<div class="ff7-dashboard-container">
+  <h2 class="ff7-dashboard-title">
+    <i class="icon-user-profile"></i> Informazioni Utente
+  </h2>
+
+  <div class="ff7-dashboard-section level-1-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-analytics"></i> Panoramica Generale
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultima Attività Globale</div>
+        <div class="ff7-data-value ff7-primary-value">{{ getDisplayDate(lastGlobalActivityTimestamp) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ff7-section-divider"></div>
+
+  <div class="ff7-dashboard-section level-2-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-notes"></i> Note Utente
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Note Totali</div>
+        <div class="ff7-data-value">{{ totalNotesCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultima Modifica Nota</div>
+        <div class="ff7-data-value">{{ getDisplayDate(lastNoteInteraction) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ff7-section-divider"></div>
+
+  <div class="ff7-dashboard-section level-2-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-tasks"></i> Task Utente
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Liste Task Totali</div>
+        <div class="ff7-data-value">{{ totalListsCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Task Incompiute</div>
+        <div class="ff7-data-value ff7-warning-value">{{ incompleteTaskItems }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultima Modifica Task</div>
+        <div class="ff7-data-value">{{ getDisplayDate(lastTaskInteraction) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ff7-section-divider"></div>
+
+  <div class="ff7-dashboard-section level-2-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-alarm"></i> Gestione Sveglie
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Sveglie Attive</div>
+        <div class="ff7-data-value ff7-positive-value">{{ activeAlarmsCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Sveglie Totali</div>
+        <div class="ff7-data-value">{{ totalAlarmsCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultima Modifica</div>
+        <div class="ff7-data-value">{{ getDisplayDate(lastAlarmInteraction) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ff7-section-divider"></div>
+
+  <div class="ff7-dashboard-section level-2-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-camera"></i> Foto Condivise
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Foto Totali Condivise</div>
+        <div class="ff7-data-value">{{ totalPhotosShared }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultima Condivisione</div>
+        <div class="ff7-data-value">{{ getDisplayDate(lastPhotoSharedInteraction) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ff7-section-divider"></div>
+
+  <div class="ff7-dashboard-section level-2-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-book"></i> Diario Utente
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Voci Totali</div>
+        <div class="ff7-data-value">{{ diaryEntryCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Parole Scritte</div>
+        <div class="ff7-data-value">{{ diaryTotalWords }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultima Voce</div>
+        <div class="ff7-data-value">{{ getDisplayDate(diaryLastInteraction) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="ff7-section-divider"></div>
+
+  <div class="ff7-dashboard-section level-3-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-trophy"></i> Obiettivi & Statistiche
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Livello Attuale</div>
+        <div class="ff7-data-value ff7-primary-value">{{ userLevel }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">XP Totali</div>
+        <div class="ff7-data-value">{{ totalXP }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">XP Attuali</div>
+        <div class="ff7-data-value">{{ currentXP }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">XP Prossimo Livello</div>
+        <div class="ff7-data-value">{{ xpForNextLevel }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Follower</div>
+        <div class="ff7-data-value">{{ followersCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Seguiti</div>
+        <div class="ff7-data-value">{{ followingCount }}</div>
+      </div>
+    </div>
+
+    <p class="ff7-message">
+      *Progressione di livello basata sulle attività dell'utente.*
+    </p>
+
+    <div class="ff7-progress-bar-container">
+      <div class="ff7-progress-bar" [style.width]="progressPercentage + '%'"></div>
+      <span class="ff7-progress-text">Progresso al prossimo livello: {{ progressPercentage | number:'1.0-0' }}%</span>
+    </div>
+  </div>
+</div>
