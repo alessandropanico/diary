@@ -1,3 +1,5 @@
+// src/app/pages/profilo-altri-utenti/profilo-altri-utenti.page.ts
+
 import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UserDataService } from 'src/app/services/user-data.service';
@@ -6,6 +8,8 @@ import { ChatService } from 'src/app/services/chat.service';
 import { AlertController } from '@ionic/angular';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { Subscription } from 'rxjs';
+// ⭐ Importa ExpService e UserExpData ⭐
+import { ExpService, UserExpData } from 'src/app/services/exp.service';
 
 @Component({
   selector: 'app-profilo-altri-utenti',
@@ -27,9 +31,15 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
   private followersSub: Subscription | undefined;
   private followingSub: Subscription | undefined;
 
-  // Un'unica Subscription per gestire tutte le sottoscrizioni RxJS in ngOnDestroy
   private allSubscriptions: Subscription = new Subscription();
-  private authStateUnsubscribe: (() => void) | undefined; // Per la funzione di unsubscribe di onAuthStateChanged
+  private authStateUnsubscribe: (() => void) | undefined;
+
+  // ⭐ Aggiungi le proprietà per i dati XP dell'utente target ⭐
+  targetUserLevel: number = 0;
+  targetUserXP: number = 0; // XP attuale nel livello
+  targetXpForNextLevel: number = 0; // XP mancanti al prossimo livello
+  targetXpPercentage: number = 0; // Percentuale di progresso nel livello
+  // ⭐ FINE proprietà XP ⭐
 
   constructor(
     private route: ActivatedRoute,
@@ -39,15 +49,17 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
     private followService: FollowService,
     private alertCtrl: AlertController,
     private ngZone: NgZone,
+    // ⭐ Inietta ExpService ⭐
+    private expService: ExpService,
   ) { }
 
   async ngOnInit() {
     this.isLoading = true;
-    this.isLoadingStats = true; // Inizializza a true anche qui
+    this.isLoadingStats = true;
 
     const auth = getAuth();
     this.authStateUnsubscribe = onAuthStateChanged(auth, async (user) => {
-      this.ngZone.run(async () => { // Assicurati che gli aggiornamenti avvengano nell'Angular zone
+      this.ngZone.run(async () => {
         if (user) {
           this.loggedInUserId = user.uid;
         } else {
@@ -68,6 +80,7 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
       if (userId) {
         this.isLoading = true;
         try {
+          // Recupera i dati del profilo, che ora dovrebbero includere totalXP
           this.profileData = await this.userDataService.getUserDataById(userId);
 
           if (!this.profileData) {
@@ -75,19 +88,30 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
             await this.presentFF7Alert('Profilo utente non trovato.');
           } else {
             this.profileData.uid = userId;
-            this.subscribeToFollowData(userId); // Sottoscriviti ai dati di follow
+            this.subscribeToFollowData(userId);
+
+            // ⭐ Gestione dell'XP dell'utente target ⭐
+            const totalXPFromProfile = this.profileData.totalXP || 0; // Recupera totalXP (default 0 se non esiste)
+            // Calcola i dati del livello usando il metodo pubblico di ExpService
+            const expData: UserExpData = this.expService.calculateLevelAndProgress(totalXPFromProfile);
+
+            this.targetUserLevel = expData.userLevel;
+            this.targetUserXP = expData.currentXP;
+            this.targetXpForNextLevel = expData.xpForNextLevel;
+            this.targetXpPercentage = expData.progressPercentage;
+            // ⭐ FINE Gestione dell'XP dell'utente target ⭐
           }
         } catch (error) {
           console.error('loadUserProfile - Errore nel caricamento del profilo utente:', error);
           await this.presentFF7Alert('Si è verificato un errore durante il caricamento del profilo.');
-          this.isLoadingStats = false; // In caso di errore nel profilo, nascondi anche le stats
+          this.isLoadingStats = false;
         } finally {
           this.isLoading = false;
         }
       } else {
         console.warn('loadUserProfile - Nessun ID utente fornito nell\'URL per il profilo esterno.');
         this.isLoading = false;
-        this.isLoadingStats = false; // Se non c'è ID, non c'è nulla da caricare
+        this.isLoadingStats = false;
         await this.presentFF7Alert('ID utente mancante.');
         this.router.navigateByUrl('/home');
       }
@@ -96,15 +120,14 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
   }
 
   private subscribeToFollowData(targetUserId: string) {
-    this.isLoadingStats = true; // Inizia il caricamento delle stats
-    this.unsubscribeFollowCounts(); // Assicurati di pulire le precedenti sottoscrizioni
+    this.isLoadingStats = true;
+    this.unsubscribeFollowCounts();
 
-    let loadedCount = 0; // Contatore per il completamento delle sottoscrizioni
+    let loadedCount = 0;
 
     const checkCompletion = () => {
       loadedCount++;
       if (loadedCount === (this.loggedInUserId && this.loggedInUserId !== targetUserId ? 3 : 2)) {
-        // 3 se controlliamo isFollowing, 2 altrimenti
         this.ngZone.run(() => {
           this.isLoadingStats = false;
         });
@@ -113,7 +136,7 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
 
     if (this.loggedInUserId && this.loggedInUserId !== targetUserId) {
       const isFollowingSub = this.followService.isFollowing(this.loggedInUserId, targetUserId).subscribe(isFollowing => {
-        this.ngZone.run(() => { // Esegui nel contesto di Angular
+        this.ngZone.run(() => {
           this.isFollowingUser = isFollowing;
           checkCompletion();
         });
@@ -218,7 +241,6 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
     }
   }
 
-  // --- METODI DI NAVIGAZIONE AGGIORNATI PER LE NUOVE PAGINE ---
   goToFollowersList() {
     if (this.profileData && this.profileData.uid) {
       this.router.navigate(['/followers-altro-list', this.profileData.uid]);
@@ -234,43 +256,23 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
       console.warn('goToFollowingList: ID utente del profilo non disponibile per la navigazione.');
     }
   }
-  // --- FINE METODI DI NAVIGAZIONE AGGIORNATI ---
 
   ngOnDestroy(): void {
-    // Esegui la funzione di unsubscribe di onAuthStateChanged
     if (this.authStateUnsubscribe) {
       this.authStateUnsubscribe();
     }
-    // Rimuovi tutte le sottoscrizioni RxJS dalla lista
     this.allSubscriptions.unsubscribe();
   }
 
-  // Questo metodo ora rimuove solo le sottoscrizioni relative al follow
-  // in modo che possano essere ri-aggiunte correttamente se l'utente del profilo cambia
-  private unsubscribeFollowSubscriptions(): void {
-    // Per disiscrivere sottoscrizioni specifiche da allSubscriptions
-    // senza disiscrivere tutto, dovremmo rimuoverle singolarmente.
-    // Un modo più semplice è ricreare l'oggetto Subscription ogni volta
-    // che chiamiamo subscribeToFollowData, ma questo sarebbe meno efficiente.
-    // L'approccio attuale (aggiungere a allSubscriptions e fare unsubscribe di tutto in ngOnDestroy)
-    // è accettabile se le sottoscrizioni di follow vengono sempre "rimpiazzate"
-    // quando l'ID del profilo cambia.
-
-    // Poiché isFollowingSubscription, followersCountSubscription, etc. non sono più proprietà
-    // separate, non possiamo fare l'unsubscribe direttamente su di esse.
-    // La pulizia avviene tramite allSubscriptions.unsubscribe() in ngOnDestroy.
-    // Se vuoi una gestione più precisa, dovresti dichiararle di nuovo come proprietà
-    // e gestirle singolarmente.
-    // Per mantenere il tuo codice pulito e funzionante con `allSubscriptions`,
-    // il metodo `unsubscribeFollowSubscriptions` come lo intendevi tu
-    // non è più strettamente necessario in questa forma.
-    // Se volessimo comunque disiscrivere solo quelle di follow, dovremmo
-    // tenere traccia dei riferimenti a quelle sottoscrizioni in modo esplicito
-    // e rimuoverle da allSubscriptions o disiscriverle individualmente.
-    // Per ora, l'approccio è che ngOnDestroy le pulirà tutte.
-    // Quindi, questo metodo, se non usato per una logica specifica di "reset parziale",
-    // può essere rimosso o lasciato vuoto, dato che la pulizia finale è in ngOnDestroy.
-    // Lo lascio qui come un commento per indicare la logica precedente, ma per ora è "vuoto" funzionalmente.
+  private unsubscribeFollowCounts(): void {
+    if (this.followersSub) {
+      this.followersSub.unsubscribe();
+      this.followersSub = undefined;
+    }
+    if (this.followingSub) {
+      this.followingSub.unsubscribe();
+      this.followingSub = undefined;
+    }
   }
 
   async presentFF7Alert(message: string) {
@@ -292,28 +294,8 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  private unsubscribeFollowCounts(): void {
-    if (this.followersSub) {
-      this.followersSub.unsubscribe();
-      this.followersSub = undefined;
-    }
-    if (this.followingSub) {
-      this.followingSub.unsubscribe();
-      this.followingSub = undefined;
-    }
-    // L'isFollowingSub non è più una proprietà separata, è aggiunta a allSubscriptions.
-    // L'approccio attuale con `loadedCount` e `checkCompletion` gestirà questo implicitamente
-    // quando `subscribeToFollowData` viene chiamato di nuovo.
-  }
-
-    /**
-   * Restituisce l'URL della foto profilo, usando un avatar di default
-   * se l'URL fornito è nullo, vuoto, o un URL generico di Google.
-   * @param photoUrl L'URL della foto profilo dell'utente.
-   * @returns L'URL effettivo dell'immagine da visualizzare.
-   */
   getUserPhoto(photoUrl: string | null | undefined): string {
-    const defaultGoogleProfilePicture = 'https://lh3.googleusercontent.com/a/ACg8ocK-pW1q9zsWi1DHCcamHuNOTLOvotU44G2v2qtMUtWu3LI0FOE=s96-c'; // L'URL che hai identificato
+    const defaultGoogleProfilePicture = 'https://lh3.googleusercontent.com/a/ACg8ocK-pW1q9zsWi1DHCcamHuNOTLOvotU44G2v2qtMUtWu3LI0FOE=s96-c';
 
     if (!photoUrl || photoUrl === '' || photoUrl === defaultGoogleProfilePicture) {
       return 'assets/immaginiGenerali/default-avatar.jpg';

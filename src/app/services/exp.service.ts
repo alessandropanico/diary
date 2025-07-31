@@ -1,3 +1,5 @@
+// src/app/services/exp.service.ts
+
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -84,17 +86,17 @@ export class ExpService {
     }
 
     const calculatedXP = xpAtLastInitialLevel +
-                         Math.floor(this.BASE_XP_PER_LEVEL * Math.pow(effectiveLevel, this.EXPONENT_FACTOR) * this.XP_GROWTH_FACTOR);
+                          Math.floor(this.BASE_XP_PER_LEVEL * Math.pow(effectiveLevel, this.EXPONENT_FACTOR) * this.XP_GROWTH_FACTOR);
 
     return calculatedXP;
   }
 
   /**
-   * Metodo privato per calcolare il livello, XP attuali nel livello, XP per il prossimo livello e percentuale di progresso.
+   * Metodo PUBBLICO per calcolare il livello, XP attuali nel livello, XP per il prossimo livello e percentuale di progresso.
    * @param totalXP I punti esperienza totali accumulati dall'utente.
    * @returns Un oggetto UserExpData con i dettagli del livello.
    */
-  private calculateLevelAndProgress(totalXP: number): UserExpData {
+  public calculateLevelAndProgress(totalXP: number): UserExpData { // ⭐ MODIFICA QUI: da 'private' a 'public' ⭐
     let userLevel = 1;
     let xpForCurrentLevel = 0;
     let xpForNextLevelThreshold = 0;
@@ -147,12 +149,10 @@ export class ExpService {
   }
 
   /**
- * Calcola il livello dell'utente a partire dai suoi XP totali.
- * Usato esternamente (es. nella classifica).
- */
-getLevelFromXP(totalXP: number): number {
-  return this.calculateLevelAndProgress(totalXP).userLevel;
-}
-
-
+   * Calcola il livello dell'utente a partire dai suoi XP totali.
+   * Usato esternamente (es. nella classifica).
+   */
+  getLevelFromXP(totalXP: number): number {
+    return this.calculateLevelAndProgress(totalXP).userLevel;
+  }
 }

@@ -22,7 +22,7 @@
 
     <div class="avatar-wrapper">
       <ion-avatar class="profile-avatar">
-        <img [src]="profileData.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto profilo" />
+        <img [src]="getUserPhoto(profileData.photo)" alt="Foto profilo" />
       </ion-avatar>
 
       <app-emoji-status
@@ -33,6 +33,15 @@
     <div class="profile-view">
       <h2>{{ profileData.nickname || 'Nickname non disponibile' }}</h2>
       <h3>{{ profileData.name || 'Nome e Cognome non disponibili' }}</h3>
+
+      <div class="level-compact-info">
+        <span class="level-label">Livello</span>
+        <span class="level-number">{{ targetUserLevel }}</span>
+        <div class="xp-bar-compact-container">
+          <div class="xp-bar-compact" [style.width]="targetXpPercentage + '%'"></div>
+        </div>
+        <span class="xp-compact-text">{{ targetUserXP }} / {{ targetXpForNextLevel }} XP</span>
+      </div>
       <p>{{ profileData.bio || 'Descrizione assente' }}</p>
 
       <div class="follow-stats-wrapper">
