@@ -1,12 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
 :host {
-  --primary-glow: #00f0ff;
-  --bg-blur: rgba(20, 20, 30, 0.75);
-  --text-light: #e0faff;
+  font-family: 'Orbitron', sans-serif;
+
+  // Variabili principali consolidate e aggiornate
+  --primary-glow: #00ffee;
+  /* Usiamo questa come accento principale */
+  --bg-blur: rgba(15, 15, 35, 0.8);
+  --text-light: #ffffff;
   --label-color: #a0cfd8;
   --danger-color: #ff4e4e;
-  font-family: 'Orbitron', sans-serif;
-}
 
+  // Variabili aggiunte per il livello/XP, mappate a quelle esistenti o nuove
+  --primary-accent-calm: var(--primary-glow);
+  /* Mappiamo a primary-glow */
+  --secondary-accent-soft: #70aeff;
+  /* Un blu più morbido per la sfumatura, o scegli il tuo */
+  --bg-dark-deep: #0e122b; // Se usi questa altrove
+  --bg-dark-medium: #151a3d; // Se usi questa altrove
+  --panel-solid-bg: rgba(20, 25, 50, 0.95);
+  /* Simile a bg-blur ma più solido */
+  --border-subtle: rgba(0, 255, 238, 0.2);
+  /* Usa un colore coerente col glow */
+  --text-main: var(--text-light);
+  /* Mappiamo a text-light */
+  --text-secondary-subtle: var(--label-color);
+  /* Mappiamo a label-color o ne crei una specifica */
+  --text-placeholder-subtle: #6c8ea8; // Se usi questa altrove
+  --danger-muted: #d46a6a; // Se usi questa altrow
+  --success-muted: #6ad46a; // Se usi questa altrove
+  --warning-muted: #d4b16a; // Se usi questa altrove
+
+  color: var(--text-light);
+  /* Colore di testo di default per l'host */
+}
 
 .profile-avatar {
   width: 140px;
@@ -38,7 +65,7 @@
 .profile-view h2 {
   font-size: 1.8rem;
   font-weight: 600;
-  margin: 10px 0 5px;
+  margin-top: -20px;
 }
 
 .profile-view h3 {
@@ -53,7 +80,8 @@
 }
 
 ion-label {
-  color: #00ffe0;
+  color: var(--label-color);
+  /* Usa la variabile */
 }
 
 .label-stacked.sc-ion-label-md-h {
@@ -62,7 +90,8 @@ ion-label {
 
 ion-input,
 ion-textarea {
-  color: white;
+  color: var(--text-light);
+  /* Usa la variabile */
 }
 
 ion-button[type="submit"] {
@@ -73,31 +102,36 @@ ion-button[type="submit"] {
   box-shadow: 0 0 10px var(--primary-glow);
 }
 
-
+ion-list {
+  background-color: transparent;
+}
 
 .ff7-item {
-  background: var(--bg-blur);
-  border: 1px solid #00ffee50;
-  border-radius: 0px;
-  margin-bottom: 16px;
-  padding: 10px 12px;
-  box-shadow: 0 0 8px #00ffee20;
-  transition: box-shadow 0.3s ease;
+  --background: var(--bg-blur);
+  /* Usa la variabile */
+  --color: var(--primary-glow);
+  /* Usa la variabile */
+  --highlight-color-focused: var(--primary-glow);
+  /* Usa la variabile */
+  --border-color: var(--primary-glow);
+  /* Usa la variabile */
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--primary-glow);
+  /* Usa la variabile */
 }
 
-.ff7-item:hover {
-  box-shadow: 0 0 12px #00ffee60;
-}
-
-ion-label {
+.ff7-item ion-label {
   color: var(--label-color);
-  font-family: 'Orbitron', sans-serif;
+  /* Usa la variabile */
 }
 
-ion-input,
-ion-textarea {
-  color: var(--text-light);
-  font-family: 'Orbitron', sans-serif;
+.ff7-item ion-input,
+.ff7-item ion-textarea {
+  --color: var(--primary-glow);
+  /* Usa la variabile */
+  caret-color: var(--primary-glow);
+  /* Usa la variabile */
 }
 
 ion-item.ff7-item {
@@ -106,14 +140,16 @@ ion-item.ff7-item {
   --padding-start: 0;
   --inner-padding-end: 0;
   --min-height: auto;
-  background: rgba(15, 15, 35, 0.8);
-  border: 1px solid #00ffee50;
-  box-shadow: 0 0 8px #00ffee20;
+  background: var(--bg-blur);
+  /* Usa la variabile */
+  border: 1px solid rgba(0, 255, 238, 0.5);
+  /* Usa primary-glow con opacità */
+  box-shadow: 0 0 8px rgba(0, 255, 238, 0.2);
+  /* Usa primary-glow con opacità */
   border-radius: 0;
   margin-bottom: 16px;
   padding: 12px;
 }
-
 
 .loading-overlay {
   display: flex;
@@ -133,12 +169,14 @@ ion-item.ff7-item {
   ion-spinner {
     width: 64px;
     height: 64px;
-    color: #00ffee;
+    color: var(--primary-glow);
+    /* Usa la variabile */
     animation: pulse 1.2s infinite ease-in-out;
   }
 
   p {
-    color: #00ffee;
+    color: var(--primary-glow);
+    /* Usa la variabile */
     font-family: 'Orbitron', 'Segoe UI', monospace;
     font-size: 1.2rem;
     letter-spacing: 1px;
@@ -162,19 +200,15 @@ ion-item.ff7-item {
 
 //----------------------------
 
-/* Aggiungi questi stili al tuo profilo.page.scss */
-
+/* Stili per il banner */
 .profile-banner-container {
   width: 100%;
   height: 150px;
-  /* Altezza fissa per il banner */
   overflow: hidden;
   position: relative;
   margin-bottom: 20px;
-  /* Spazio sotto il banner */
   border-radius: 8px;
-  /* Bordi arrotondati, se preferisci */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); // Ombra leggera
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 
   &.editable {
     cursor: pointer;
@@ -189,7 +223,6 @@ ion-item.ff7-item {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Assicura che l'immagine copra l'area senza distorsioni */
   display: block;
 }
 
@@ -216,33 +249,29 @@ ion-item.ff7-item {
 }
 
 .remove-banner-button {
-  margin-top: 10px; // Spazio tra banner e pulsante
-  margin-bottom: 20px; // Spazio tra pulsante e avatar
+  margin-top: 10px;
+  margin-bottom: 20px;
 }
-
 
 /* Rivedi gli stili dell'avatar per posizionarlo correttamente rispetto al banner */
 .profile-avatar {
   width: 120px;
-  /* Rendi l'avatar un po' più grande per Facebook-like */
   height: 120px;
-  border: 4px solid var(--ion-color-primary);
-  /* Colore del bordo */
+  border: 4px solid var(--primary-glow);
+  /* Usa la tua variabile primary-glow */
   border-radius: 50%;
   overflow: hidden;
   margin: -60px auto 20px auto;
-  /* Sposta l'avatar in alto sopra il banner e aggiungi spazio sotto */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  /* Ombra per farlo risaltare */
-  background-color: var(--ion-color-dark);
-  /* Background per l'avatar */
+  background-color: var(--bg-blur);
+  /* Usa la tua variabile bg-blur */
   z-index: 99999;
   position: relative;
 
   &.editable {
     cursor: pointer;
-    border: 4px dashed var(--ion-color-secondary);
-    /* Bordo tratteggiato in modalità modifica */
+    border: 4px dashed var(--label-color);
+    /* Usa una delle tue variabili per il tratteggio */
   }
 
   img {
@@ -255,45 +284,264 @@ ion-item.ff7-item {
 /* Assicurati che il resto degli stili del profilo si adatti al nuovo layout */
 .profile-view,
 form {
-  margin-top: 20px; // Spazio aggiuntivo per compensare l'avatar che sporge
+  margin-top: 20px;
 }
 
 // Stili FF7 per gli input e i bottoni
 .ff7-item {
-  --background: #1a1a1a;
-  --color: #00ffe0;
-  --highlight-color-focused: #00ffe0;
-  --border-color: #00ffe0; // Colore del bordo/linea per gli item
+  --background: var(--bg-blur);
+  /* Usa la variabile */
+  --color: var(--primary-glow);
+  /* Usa la variabile */
+  --highlight-color-focused: var(--primary-glow);
+  /* Usa la variabile */
+  --border-color: var(--primary-glow);
+  /* Usa la variabile */
   margin-bottom: 10px;
   border-radius: 5px;
-  border: 1px solid #00ffe0;
+  border: 1px solid var(--primary-glow);
+  /* Usa la variabile */
 }
 
 .ff7-item ion-label {
-  color: #00ffe0;
+  color: var(--label-color);
+  /* Usa la variabile */
 }
 
 .ff7-item ion-input,
 .ff7-item ion-textarea {
-  --color: #00ffe0;
-  caret-color: #00ffe0;
+  --color: var(--primary-glow);
+  /* Usa la variabile */
+  caret-color: var(--primary-glow);
+  /* Usa la variabile */
 }
 
-.ff7-button.message-button {
-  --background: #0080ff;
-  --background-activated: #0056b3;
-  --color: white;
-  font-weight: bold;
-  letter-spacing: 1px;
-  box-shadow: 0 0 15px rgba(0, 128, 255, 0.7);
-  transition: all 0.3s ease;
+//--------------------------------------------
 
-  &:hover {
-    box-shadow: 0 0 20px rgba(0, 128, 255, 1);
-    transform: translateY(-2px);
+/* Stili per i conteggi Follower/Following */
+.follow-stats {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin: 20px 0;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-subtle);
+  /* Usa la variabile */
+  border-bottom: 1px solid var(--border-subtle);
+  /* Usa la variabile */
+  background: rgba(15, 15, 35, 0.5); // Puoi renderlo una variabile se vuoi più controllo
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-light);
+
+  strong {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-glow);
+    text-shadow: 0 0 5px var(--primary-glow);
+  }
+
+  span {
+    font-size: 0.9rem;
+    color: var(--label-color);
+    margin-top: 5px;
   }
 }
 
+.content {
+  padding: 10px;
+  text-align: center;
+}
+
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+a {
+  text-decoration: none;
+  color: var(--primary-glow);
+}
+
+/* ⭐ NUOVI STILI PER LA SEZIONE LIVELLO MINIMALISTA */
+.level-compact-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Centra orizzontalmente */
+  background: #11111B;
+  /* Sfondo coerente */
+  border: 1px solid var(--border-subtle);
+  /* Bordo sottile */
+  border-radius: 6px;
+  /* Leggermente arrotondato */
+  padding: 8px 15px;
+  /* Padding ridotto */
+  margin: 15px auto;
+  /* Centra e aggiunge spazio */
+  max-width: 300px;
+  /* Limita la larghezza */
+  box-shadow: 0 0 8px rgba(var(--primary-glow), 0.1);
+  /* Ombra sottile */
+  font-family: 'Orbitron', sans-serif;
+  /* Font coerente */
+  gap: 10px;
+  /* Spazio tra gli elementi */
+}
+
+.level-label {
+  font-size: 0.9em;
+  color: var(--label-color);
+  white-space: nowrap;
+  /* Evita che vada a capo */
+}
+
+.level-number {
+  font-size: 1.5em;
+  /* Dimensione ridotta per il numero del livello */
+  font-weight: bold;
+  color: var(--primary-glow);
+  text-shadow: 0 0 8px rgba(var(--primary-glow), 0.6);
+  /* Effetto glow */
+  line-height: 1;
+  /* Assicura che sia ben allineato */
+}
+
+.xp-bar-compact-container {
+  flex-grow: 1;
+  /* Occupa lo spazio disponibile */
+  height: 8px;
+  /* Barra più sottile */
+  background: rgba(var(--text-secondary-subtle), 0.1);
+  /* Sfondo barra più discreto */
+  border-radius: 4px;
+  /* Angoli più piccoli */
+  overflow: hidden;
+  border: 1px solid rgba(var(--primary-glow), 0.1);
+  /* Bordo sottile */
+}
+
+.xp-bar-compact {
+  height: 100%;
+  background: linear-gradient(90deg, var(--secondary-accent-soft), var(--primary-glow));
+  /* Sfumatura FF7 */
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+  box-shadow: 0 0 5px rgba(var(--primary-glow), 0.4);
+  /* Glow ridotto */
+}
+
+.xp-compact-text {
+  font-size: 0.8em;
+  /* Testo XP più piccolo */
+  color: var(--text-secondary-subtle);
+  white-space: nowrap;
+  /* Evita che vada a capo */
+}
+
+/* ⭐ STILI PER IL TOGGLE PERSONALIZZATO */
+.profile-content-switcher {
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+
+.ff7-toggle-buttons {
+  display: flex;
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  max-width: 300px;
+  /* Limita la larghezza dello switch */
+  margin: 0 auto 20px auto;
+  /* Centra e aggiunge spazio sotto */
+  background: var(--bg-blur);
+  /* Sfondo base dello switch */
+  border: 1px solid var(--primary-glow);
+  /* Bordo esterno */
+  border-radius: 8px;
+  /* Angoli arrotondati */
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(var(--primary-glow), 0.5);
+  /* Glow dello switch */
+}
+
+.ff7-toggle-button {
+  flex: 1;
+  --background: transparent;
+  --background-hover: transparent;
+  --background-focused: transparent;
+  --background-activated: transparent;
+  --color: var(--text-light);
+  --border-radius: 0px;
+  font-weight: bold;
+  font-family: 'Orbitron', sans-serif;
+  padding: 12px 0;
+  z-index: 1;
+  /* Assicura che il testo sia sopra l'indicatore */
+  transition: color 0.3s ease;
+  /* Transizione per il colore del testo */
+
+  &.active {
+    color: var(--bg-dark-deep);
+    /* Colore del testo quando attivo */
+  }
+}
+
+.toggle-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  /* Larghezza di un bottone */
+  height: 100%;
+  background: var(--primary-glow);
+  /* Colore dell'indicatore */
+  border-radius: 8px;
+  transition: transform 0.3s ease-in-out, background 0.3s ease;
+  /* Animazione fluida */
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+  /* Ombra interna */
+  z-index: 0;
+  /* Mettilo sotto i bottoni */
+
+  &.shift-right {
+    transform: translateX(100%);
+    /* Sposta a destra per il secondo bottone */
+  }
+}
+
+.segment-content-area {
+  background: var(--panel-solid-bg);
+  /* Sfondo per l'area del contenuto */
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 0 15px rgba(0, 255, 238, 0.3);
+  /* Glow leggero per il contenitore dei contenuti */
+}
+
+/* ⭐ NUOVE ANIMAZIONI DI FADE PER IL CONTENUTO */
+.content-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+  /* Applica l'animazione di fade-in */
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    /* Opzionale: un leggero movimento verso l'alto */
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 .profile-actions {
   margin-top: 20px;
@@ -328,38 +576,5 @@ form {
   &:hover {
     box-shadow: 0 0 20px rgba(255, 78, 78, 1);
     transform: translateY(-2px);
-  }
-}
-
-/* Stili per i conteggi Follower/Following (copiati dal tuo profilo.page.scss) */
-.follow-stats {
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-  /* Spazio tra "Follower" e "Seguiti" */
-  margin: 20px 0;
-  padding: 10px 0;
-  border-top: 1px solid rgba(0, 255, 238, 0.2);
-  border-bottom: 1px solid rgba(0, 255, 238, 0.2);
-  background: rgba(15, 15, 35, 0.5); // Sfondo leggermente scuro
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: var(--text-light);
-
-  strong {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--primary-glow);
-    text-shadow: 0 0 5px var(--primary-glow);
-  }
-
-  span {
-    font-size: 0.9rem;
-    color: var(--label-color);
-    margin-top: 5px;
   }
 }

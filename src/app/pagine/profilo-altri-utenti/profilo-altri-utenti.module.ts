@@ -7,14 +7,16 @@ import { IonicModule } from '@ionic/angular';
 import { ProfiloAltriUtentiPageRoutingModule } from './profilo-altri-utenti-routing.module';
 
 import { ProfiloAltriUtentiPage } from './profilo-altri-utenti.page';
+import { EmojiStatusComponent } from "../profilo/components/emoji-status/emoji-status.component";
 
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    ProfiloAltriUtentiPageRoutingModule
-  ],
+    ProfiloAltriUtentiPageRoutingModule,
+    EmojiStatusComponent
+],
   declarations: [ProfiloAltriUtentiPage]
 })
 export class ProfiloAltriUtentiPageModule {}

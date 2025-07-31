@@ -344,7 +344,7 @@ export class UserDataService {
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
         const data = userDocSnap.data();
-        return { uid: userDocSnap.id, ...data };
+        return { uid: userDocSnap.id, status: data['status'] ?? '', ...data }; // Assicurati che 'status' sia sempre presente
       }
       return null;
     } catch (error) {
