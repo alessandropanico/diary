@@ -92,7 +92,7 @@ export class CommentService {
     const commentToSave = {
       ...commentData,
       id: newCommentRef.id,
-      timestamp: new Date().toISOString(),
+      timestamp: serverTimestamp(), // ⭐ MODIFICA QUI ⭐
       likes: [],
       replies: [],
       isRootComment: commentData.parentId === null
