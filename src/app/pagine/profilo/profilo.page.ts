@@ -64,6 +64,9 @@ export class ProfiloPage implements OnInit, OnDestroy {
   // ⭐ NOVITÀ: Proprietà per gestire lo switch tra Post e Dashboard
   selectedSegment: 'posts' | 'dashboard' = 'posts'; // Default a 'posts'
 
+  private userEmojiStatusSubscription: Subscription | undefined;
+
+
   constructor(
     private ngZone: NgZone,
     private alertCtrl: AlertController,
@@ -84,7 +87,8 @@ export class ProfiloPage implements OnInit, OnDestroy {
           this.loggedInUserId = user.uid;
           await this.loadProfileData(user);
           this.subscribeToFollowCounts(user.uid);
-          this.subscribeToUserStatus();
+          // ⭐ NUOVO: Sostituisci la vecchia sottoscrizione con quella dedicata
+          this.subscribeToUserEmojiStatus();
           this.subscribeToUserExp();
         } else {
           this.loggedInUserId = null;
@@ -96,6 +100,19 @@ export class ProfiloPage implements OnInit, OnDestroy {
           this.userXP = 0;
           this.xpForNextLevel = 100;
           this.xpPercentage = 0;
+        }
+      });
+    });
+  }
+
+  private subscribeToUserEmojiStatus() {
+    if (this.userEmojiStatusSubscription) this.userEmojiStatusSubscription.unsubscribe();
+
+    this.userEmojiStatusSubscription = this.userDataService.userEmojiStatus$.subscribe(status => {
+      this.ngZone.run(() => {
+        this.profile.status = status ?? '';
+        if (this.editing) {
+          this.profileEdit.status = this.profile.status;
         }
       });
     });
@@ -232,20 +249,31 @@ export class ProfiloPage implements OnInit, OnDestroy {
   async saveProfile() {
     this.isLoading = true;
 
-    this.profile = {
-      photo: this.profileEdit.photo,
-      banner: this.profileEdit.banner,
-      nickname: this.profileEdit.nickname || '',
-      name: this.profileEdit.name || '',
-      email: this.profileEdit.email || '',
-      bio: this.profileEdit.bio || '',
-      status: this.profileEdit.status ?? '',
-      link: this.profileEdit.link || '',
-      linkText: this.profileEdit.linkText || ''
-    };
-
     try {
-      await this.userDataService.saveUserData(this.profile);
+      // Salva tutti i dati del profilo tranne lo status, che è gestito separatamente
+      const dataToSave = {
+        photo: this.profileEdit.photo,
+        banner: this.profileEdit.banner,
+        nickname: this.profileEdit.nickname || '',
+        name: this.profileEdit.name || '',
+        email: this.profileEdit.email || '',
+        bio: this.profileEdit.bio || '',
+        link: this.profileEdit.link || '',
+        linkText: this.profileEdit.linkText || ''
+      };
+
+      await this.userDataService.saveUserData(dataToSave);
+
+      // ⭐ NOVITÀ: Salva lo stato emoji separatamente, usando il nuovo metodo
+      await this.userDataService.updateUserEmojiStatus(this.profileEdit.status);
+
+      // Aggiorna la vista locale solo dopo un salvataggio riuscito
+      this.profile = {
+        ...this.profile,
+        ...dataToSave,
+        status: this.profileEdit.status
+      };
+
       await this.presentFF7Alert('Profilo aggiornato e salvato!');
     } catch (error: unknown) {
       console.error('Errore durante il salvataggio del profilo:', error);
@@ -258,11 +286,14 @@ export class ProfiloPage implements OnInit, OnDestroy {
     }
   }
 
+
+
   onStatusSelected(newStatus: string) {
-    this.ngZone.run(async () => {
+    this.ngZone.run(() => {
       this.profileEdit.status = newStatus;
     });
   }
+
 
   goToFollowersList() {
     if (this.loggedInUserId) {
@@ -343,11 +374,12 @@ export class ProfiloPage implements OnInit, OnDestroy {
     if (this.followingCountSubscription) {
       this.followingCountSubscription.unsubscribe();
     }
-    if (this.userStatusSubscription) {
-      this.userStatusSubscription.unsubscribe();
-    }
     if (this.userExpSubscription) {
       this.userExpSubscription.unsubscribe();
+    }
+    // ⭐ NOVITÀ: Rimuovi la sottoscrizione allo stato emoji
+    if (this.userEmojiStatusSubscription) {
+      this.userEmojiStatusSubscription.unsubscribe();
     }
   }
 }

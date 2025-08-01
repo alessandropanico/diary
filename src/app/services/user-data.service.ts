@@ -13,6 +13,8 @@ export interface UserProfile {
   bio?: string;
   email?: string;
   lastOnline?: Timestamp; // Meglio un Timestamp per la data/ora
+  status?: string; // Aggiunto il campo status
+
 }
 
 
@@ -66,6 +68,9 @@ export class UserDataService {
   private firestore = getFirestore();
   private auth = getAuth();
 
+  // ⭐ NUOVO: Utilizziamo un BehaviorSubject dedicato per lo stato emoji
+  private _userEmojiStatus = new BehaviorSubject<string>('');
+  public userEmojiStatus$: Observable<string> = this._userEmojiStatus.asObservable();
 
   // private _userStatus = new BehaviorSubject<string>('');
   // public userStatus$ = this._userStatus.asObservable();
@@ -74,23 +79,22 @@ export class UserDataService {
   public userStatus$: Observable<string | null> = this._userStatus.asObservable();
 
   constructor(private expService: ExpService) {
-
-    // ⭐⭐ PUNTO CHIAVE ⭐⭐: Gestisci l'emissione dell'ID utente qui
+    // ⭐ CORRETTO: La logica di onAuthStateChanged ora gestisce solo l'inizializzazione dello stato, non l'UID
     this.auth.onAuthStateChanged(async (user) => {
       if (user) {
-        // L'utente si è loggato, emetti il suo UID
-        this._userStatus.next(user.uid);
-
-        // Il resto della tua logica può rimanere qui, ma dopo aver emesso l'ID
         const userData = await this.getUserData();
+        if (userData && userData.status !== undefined) {
+          this._userEmojiStatus.next(userData.status);
+        } else {
+          this._userEmojiStatus.next('');
+        }
         if (userData && typeof userData['totalXP'] === 'number') {
           this.expService.setTotalXP(userData['totalXP']);
         } else {
           this.expService.setTotalXP(0);
         }
       } else {
-        // L'utente si è disconnesso, emetti null
-        this._userStatus.next(null);
+        this._userEmojiStatus.next('');
         this.expService.setTotalXP(0);
       }
     });
@@ -107,7 +111,6 @@ export class UserDataService {
       }
     });
   }
-
   // Aggiungi questo metodo per ottenere l'ID utente in modo sincrono
   // utile in alcuni casi ma evita di farci affidamento per la logica asincrona
   public getCurrentUserId(): string | null {
@@ -125,21 +128,10 @@ export class UserDataService {
       const userDocRef = doc(this.firestore, 'users', user.uid);
       const dataToSave: any = { ...data };
 
-
       if (dataToSave.nickname !== undefined) {
         dataToSave.nicknameLowercase = (dataToSave.nickname || '').toLowerCase().trim();
       }
 
-      if (dataToSave.name !== undefined) {
-        dataToSave.nameLowercase = (dataToSave.name || '').toLowerCase().trim();
-      }
-
-      // NOVITÀ: Salva la versione in minuscolo di nickname per la ricerca
-      if (dataToSave.nickname !== undefined) {
-        dataToSave.nicknameLowercase = (dataToSave.nickname || '').toLowerCase().trim();
-      }
-
-      // NOVITÀ: Salva la versione in minuscolo di name per la ricerca
       if (dataToSave.name !== undefined) {
         dataToSave.nameLowercase = (dataToSave.name || '').toLowerCase().trim();
       }
@@ -148,7 +140,7 @@ export class UserDataService {
         await setDoc(userDocRef, dataToSave, { merge: true });
 
         if (dataToSave.status !== undefined) {
-          this._userStatus.next(dataToSave.status ?? '');
+          this._userEmojiStatus.next(dataToSave.status);
         }
 
       } catch (error) {
@@ -282,6 +274,7 @@ export class UserDataService {
             data.nameLowercase = (data['name'] || '').toLowerCase().trim();
           }
 
+
           data.status = data.status ?? '';
           data.diaryTotalWords = data.diaryTotalWords ?? 0;
           data.diaryLastInteraction = data.diaryLastInteraction ?? '';
@@ -326,7 +319,7 @@ export class UserDataService {
           data = initialData;
         }
 
-        // this._userStatus.next(data.status);
+        this._userEmojiStatus.next(data.status);
 
         return data;
       } catch (error) {
@@ -338,6 +331,23 @@ export class UserDataService {
       console.warn("Nessun utente loggato. Impossibile recuperare i dati utente.");
       this._userStatus.next('');
       return null;
+    }
+  }
+
+  async updateUserEmojiStatus(status: string): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) {
+      const userDocRef = doc(this.firestore, 'users', uid);
+      try {
+        await updateDoc(userDocRef, { status: status });
+        this._userEmojiStatus.next(status);
+      } catch (error) {
+        console.error("Errore nell'aggiornamento dello stato emoji:", error);
+        throw error;
+      }
+    } else {
+      console.warn("Nessun utente loggato. Impossibile aggiornare lo stato emoji.");
+      throw new Error("Utente non autenticato.");
     }
   }
 
