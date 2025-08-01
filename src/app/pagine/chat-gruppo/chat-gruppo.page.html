@@ -5,10 +5,9 @@
     </ion-buttons>
 
     <div class="chat-custom-header" *ngIf="!isLoading && groupDetails" (click)="presentGroupInfoModal()">
-      <ion-avatar *ngIf="groupDetails.photoUrl" class="other-user-avatar">
-        <img [src]="groupDetails.photoUrl" alt="Immagine gruppo">
+      <ion-avatar class="other-user-avatar">
+        <img [src]="groupDetails.photoUrl || 'assets/immaginiGenerali/group-default-avatar.jpg'" alt="Immagine gruppo">
       </ion-avatar>
-      <ion-icon *ngIf="!groupDetails.photoUrl" name="people-circle-outline" class="other-user-avatar default-group-icon"></ion-icon>
       <span class="username">{{ groupDetails.name || 'Gruppo' }}</span>
     </div>
 
@@ -30,11 +29,10 @@
   </div>
 
   <div *ngIf="!isLoading" class="message-container">
-    <ion-infinite-scroll (ionInfinite)="loadMoreMessages($event)" threshold="100px" position="top" [disabled]="!hasMoreMessages">
-      <ion-infinite-scroll-content
-        loadingSpinner="crescent"
-        loadingText="Caricando messaggi precedenti..."
-      ></ion-infinite-scroll-content>
+    <ion-infinite-scroll (ionInfinite)="loadMoreMessages($event)" threshold="100px" position="top"
+      [disabled]="!hasMoreMessages">
+      <ion-infinite-scroll-content loadingSpinner="crescent"
+        loadingText="Caricando messaggi precedenti..."></ion-infinite-scroll-content>
     </ion-infinite-scroll>
 
     <ng-container *ngFor="let message of messages; let i = index">
@@ -42,11 +40,8 @@
         <span>{{ formatDateHeader(message.timestamp) }}</span>
       </div>
 
-      <div
-        [class.my-message]="isMyMessage(message.senderId)"
-        [class.other-message]="!isMyMessage(message.senderId)"
-        class="chat-bubble"
-      >
+      <div [class.my-message]="isMyMessage(message.senderId)" [class.other-message]="!isMyMessage(message.senderId)"
+        class="chat-bubble">
         <div *ngIf="!isMyMessage(message.senderId) && message.senderNickname !== 'Sistema'" class="sender-name">
           {{ message.senderNickname }}
         </div>
@@ -94,7 +89,8 @@
           <ion-avatar slot="start" *ngIf="groupDetails.photoUrl">
             <img [src]="groupDetails.photoUrl" alt="Immagine gruppo">
           </ion-avatar>
-          <ion-icon slot="start" *ngIf="!groupDetails.photoUrl" name="people-circle-outline" class="default-group-icon large-icon"></ion-icon>
+          <ion-icon slot="start" *ngIf="!groupDetails.photoUrl" name="people-circle-outline"
+            class="default-group-icon large-icon"></ion-icon>
           <ion-label>
             <h2>{{ groupDetails.name }}</h2>
             <p>{{ groupDetails.description || 'Nessuna descrizione.' }}</p>
