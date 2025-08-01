@@ -75,84 +75,92 @@ export class ChatNotificationService implements OnDestroy {
     }
   }
 
-  private init() {
-    const auth = getAuth();
 
-    this.authSubscription = new Observable<FirebaseUser | null>(observer => {
-      const unsubscribe = auth.onAuthStateChanged(user => {
-        observer.next(user);
-      });
-      return unsubscribe;
-    }).pipe(
-      switchMap((user: FirebaseUser | null) => {
-        this.currentUserId = user ? user.uid : null;
 
-        if (this.currentUserId) {
-          return this.chatService.getUserConversations(this.currentUserId).pipe(
-            // AGGIUSTAMENTO QUI: Aggiungiamo un tap prima del checkForNewMessagesAndPlaySound
-            tap((conversations: ConversationDocument[]) => {
-              // Se è il primo caricamento dopo il login, inizializziamo lastKnownConversations
-              if (!this.hasInitialConversationsLoaded) {
-                conversations.forEach(conv => {
-                  this.lastKnownConversations.set(conv.id, conv);
+private init() {
+  const auth = getAuth();
 
-                });
-                this.saveLastNotifiedTimestamps(); // Salva anche i timestamp iniziali se li aggiorni
-                this.hasInitialConversationsLoaded = true;
-              }
-            }),
-            tap((conversations: ConversationDocument[]) => this.checkForNewMessagesAndPlaySound(conversations)),
-            switchMap((conversations: ConversationDocument[]) => {
-              if (conversations.length === 0) {
-                return of(0);
-              }
+  this.authSubscription = new Observable<FirebaseUser | null>(observer => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      observer.next(user);
+    });
+    return unsubscribe;
+  }).pipe(
+    switchMap((user: FirebaseUser | null) => {
+      this.currentUserId = user ? user.uid : null;
 
-              const unreadCountsObservables: Observable<number>[] = conversations.map(conv => {
-                const lastReadByMe = conv.lastRead?.[this.currentUserId!] ?? null;
-                return from(this.chatService.countUnreadMessages(conv.id, this.currentUserId!, lastReadByMe)).pipe(
-                  catchError(err => {
-                    console.error(`Errore nel conteggio messaggi non letti per chat ${conv.id}:`, err);
-                    return of(0);
-                  })
-                );
+      if (this.currentUserId) {
+        return this.chatService.getUserConversations(this.currentUserId).pipe(
+          // ⭐ NUOVO: Filtra le conversazioni eliminate prima di procedere
+          map((conversations: ConversationDocument[]) =>
+            conversations.filter(conv => {
+              // Rimuoviamo le conversazioni che l'utente corrente ha marcato come eliminate
+              const isDeleted = conv.deletedBy?.includes(this.currentUserId!);
+              return !isDeleted;
+            })
+          ),
+          // ... (il resto della pipeline rimane invariato)
+          tap((conversations: ConversationDocument[]) => {
+            if (!this.hasInitialConversationsLoaded) {
+              conversations.forEach(conv => {
+                this.lastKnownConversations.set(conv.id, conv);
               });
+              this.saveLastNotifiedTimestamps();
+              this.hasInitialConversationsLoaded = true;
+            }
+          }),
+          tap((conversations: ConversationDocument[]) => this.checkForNewMessagesAndPlaySound(conversations)),
+          switchMap((conversations: ConversationDocument[]) => {
+            if (conversations.length === 0) {
+              return of(0);
+            }
 
-              return forkJoin(unreadCountsObservables).pipe(
-                map(counts => counts.reduce((sum, current) => sum + current, 0)),
-                distinctUntilChanged(),
-                tap(total => console.log('ChatNotificationService: Totale messaggi non letti calcolato:', total)),
+            const unreadCountsObservables: Observable<number>[] = conversations.map(conv => {
+              const lastReadByMe = conv.lastRead?.[this.currentUserId!] ?? null;
+              return from(this.chatService.countUnreadMessages(conv.id, this.currentUserId!, lastReadByMe)).pipe(
                 catchError(err => {
-                  console.error('ChatNotificationService: Errore durante la somma dei messaggi non letti:', err);
+                  console.error(`Errore nel conteggio messaggi non letti per chat ${conv.id}:`, err);
                   return of(0);
                 })
               );
-            }),
-            catchError(err => {
-              console.error('ChatNotificationService: Errore nel recupero delle conversazioni:', err);
-              return of(0);
-            })
-          );
-        } else {
-          // Utente disconnesso o non loggato
-          this.unreadMessages = {};
-          this.unreadCount$.next(0);
-          this.lastKnownConversations.clear();
-          this.lastNotifiedTimestamp.clear();
-          this.saveLastNotifiedTimestamps();
-          this.hasInitialConversationsLoaded = false; // Reset dello stato al logout
-          return of(0);
-        }
-      })
-    ).subscribe({
-      next: (totalUnread: number) => {
-        this.unreadCount$.next(totalUnread);
-      },
-      error: (err) => {
-        console.error('ChatNotificationService: Errore nella pipeline principale (authSubscription):', err);
+            });
+
+            return forkJoin(unreadCountsObservables).pipe(
+              map(counts => counts.reduce((sum, current) => sum + current, 0)),
+              distinctUntilChanged(),
+              tap(total => console.log('ChatNotificationService: Totale messaggi non letti calcolato:', total)),
+              catchError(err => {
+                console.error('ChatNotificationService: Errore durante la somma dei messaggi non letti:', err);
+                return of(0);
+              })
+            );
+          }),
+          catchError(err => {
+            console.error('ChatNotificationService: Errore nel recupero delle conversazioni:', err);
+            return of(0);
+          })
+        );
+      } else {
+        // ... (logica di logout rimane invariata)
+        this.unreadMessages = {};
         this.unreadCount$.next(0);
+        this.lastKnownConversations.clear();
+        this.lastNotifiedTimestamp.clear();
+        this.saveLastNotifiedTimestamps();
+        this.hasInitialConversationsLoaded = false;
+        return of(0);
       }
-    });
-  }
+    })
+  ).subscribe({
+    next: (totalUnread: number) => {
+      this.unreadCount$.next(totalUnread);
+    },
+    error: (err) => {
+      console.error('ChatNotificationService: Errore nella pipeline principale (authSubscription):', err);
+      this.unreadCount$.next(0);
+    }
+  });
+}
 
   private async checkForNewMessagesAndPlaySound(currentConversations: ConversationDocument[]) {
     // Se non abbiamo ancora caricato le conversazioni iniziali, non facciamo suonare nulla
