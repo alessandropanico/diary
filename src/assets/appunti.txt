@@ -1,11 +1,17 @@
 --TO DO--
 
-Migliore sezione sveglie per "profilo-altri-utenti";
+**CORREGGERE CHAT DI GRUPPO CON LE NOTIFICHE**;
+
 Riguarda un attimo quando "condividi" un post di un altro utente;
 Implementare blocca/sblocca utente in chat;
 Fare page "progetti";
 
+TEST CONNENTENDO CELLULARE AL PC;
+
 PULSANTE SUPPORTO CREATORE!;
+IMPORTA BENE GOOGLE ADMOB;
+
+*****CAMBIARE COLORE ALLO STILE*****
 
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
