@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Subject, Subscription } from 'rxjs';
@@ -22,6 +22,7 @@ export class SearchModalComponent implements OnInit, OnDestroy {
 
   private searchTerms = new Subject<string>();
   private searchSubscription: Subscription | undefined;
+  @Input() isAddingToGroup: boolean = false;
 
   constructor(
     private modalCtrl: ModalController,
@@ -109,4 +110,10 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     }
     this.dismissModal({ selectedUserIds: memberUids });
   }
+
+  // NUOVO METODO
+  async addMembersToExistingGroup() {
+    const memberUids = this.selectedUsers.map(user => user.uid);
+    this.dismissModal({ selectedUserIds: memberUids });
+  }
 }

@@ -567,4 +567,46 @@ export class GroupChatService {
       return 0;
     }
   }
+
+  // NUOVO METODO
+  /**
+   * Aggiunge più membri a un gruppo esistente.
+   * @param groupId L'ID del gruppo.
+   * @param userIdsToAdd Un array di ID degli utenti da aggiungere.
+   * @returns Una Promise che risolve nel numero di membri aggiunti.
+   */
+  async addMembersToGroup(groupId: string, userIdsToAdd: string[]): Promise<number> {
+    if (userIdsToAdd.length === 0) {
+      console.warn('addMembersToGroup: Nessun membro da aggiungere.');
+      return 0;
+    }
+
+    const groupDocRef = doc(this.firestore, 'groups', groupId);
+    const currentUser = this.auth.currentUser;
+    const currentUserName = currentUser?.displayName || 'Qualcuno';
+
+    try {
+      await updateDoc(groupDocRef, {
+        members: arrayUnion(...userIdsToAdd)
+      });
+
+      const newMemberNicknames = await Promise.all(
+        userIdsToAdd.map(async uid => {
+          const userProfile = await this.userDataService.getUserDataById(uid);
+          return userProfile?.nickname || userProfile?.name || 'Un utente';
+        })
+      );
+      const newMemberNicknamesString = newMemberNicknames.join(', ');
+
+      const systemMessage = `${currentUserName} ha aggiunto ${newMemberNicknamesString} al gruppo.`;
+      await this.sendMessage(groupId, 'system', systemMessage, 'system');
+
+      return userIdsToAdd.length;
+    } catch (error) {
+      console.error(`ERRORE nell'aggiungere membri al gruppo ${groupId}:`, error);
+      throw error;
+    }
+  }
+
+  
 }

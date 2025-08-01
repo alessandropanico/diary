@@ -15,6 +15,7 @@
 }
 
 ion-content {
+
   // --background: url('/assets/immaginiGenerali/sfondo-chat-ff7.jpeg') no-repeat center center / cover;
   // Aggiungi un overlay scuro per migliorare la leggibilità del testo
   &::before {
@@ -24,7 +25,8 @@ ion-content {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5); /* Overlay scuro */
+    background: rgba(0, 0, 0, 0.5);
+    /* Overlay scuro */
     z-index: 0; // Sotto i messaggi
   }
 }
@@ -42,10 +44,12 @@ ion-content {
   background: var(--bg-blur);
   color: var(--text-light);
   z-index: 10; // Assicurati che sia sopra il contenuto
+
   p {
     margin-top: 10px;
     font-size: 1.1rem;
   }
+
   ion-spinner {
     width: 40px;
     height: 40px;
@@ -79,6 +83,7 @@ ion-content {
     word-wrap: break-word;
     color: inherit;
   }
+
   .message-timestamp {
     font-size: 0.7rem;
     color: rgba(255, 255, 255, 0.7);
@@ -90,9 +95,11 @@ ion-content {
   .sender-name {
     font-size: 0.75rem;
     font-weight: bold;
-    color: var(--primary-glow); /* Colore per far risaltare il nome */
+    color: var(--primary-glow);
+    /* Colore per far risaltare il nome */
     margin-bottom: 2px;
-    align-self: flex-start; /* Allineato all'inizio della bolla */
+    align-self: flex-start;
+    /* Allineato all'inizio della bolla */
   }
 }
 
@@ -128,12 +135,15 @@ ion-footer {
 
 ion-header {
   ion-toolbar {
-    border-bottom: 1px solid rgba(0, 255, 238, 0.2); /* Bordo inferiore glow */
-    color: var(--text-light); /* Colore del testo nell'header */
+    border-bottom: 1px solid rgba(0, 255, 238, 0.2);
+    /* Bordo inferiore glow */
+    color: var(--text-light);
+    /* Colore del testo nell'header */
 
     ion-buttons {
       ion-back-button {
-          --color: var(--primary-glow); /* Colore della freccia indietro */
+        --color: var(--primary-glow);
+        /* Colore della freccia indietro */
       }
     }
 
@@ -153,7 +163,8 @@ ion-header {
         display: flex;
         justify-content: center;
         align-items: center;
-        border: 1px solid var(--primary-glow); /* Bordo intorno all'avatar */
+        border: 1px solid var(--primary-glow);
+        /* Bordo intorno all'avatar */
 
         img {
           width: 100%;
@@ -164,10 +175,14 @@ ion-header {
 
       // ⭐ NUOVA CLASSE PER CHAT DI GRUPPO: Icona di default per il gruppo ⭐
       .default-group-icon {
-        font-size: 36px; /* Dimensione dell'icona */
-        color: var(--primary-glow); /* Colore dell'icona */
-        background: rgba(0,0,0,0.5); /* Sfondo per l'icona */
-        border-radius: 50%; /* Rende l'icona circolare */
+        font-size: 36px;
+        /* Dimensione dell'icona */
+        color: var(--primary-glow);
+        /* Colore dell'icona */
+        background: rgba(0, 0, 0, 0.5);
+        /* Sfondo per l'icona */
+        border-radius: 50%;
+        /* Rende l'icona circolare */
         // Assicura che l'icona sia centrata se l'elemento è un flex container (come 'other-user-avatar')
         display: flex;
         align-items: center;
@@ -180,14 +195,16 @@ ion-header {
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: calc(100vw - 150px);
-        color: var(--text-light); /* Colore del nome utente/gruppo */
+        color: var(--text-light);
+        /* Colore del nome utente/gruppo */
       }
     }
 
     // Stili per il titolo predefinito "Chat"
     .chat-title-placeholder {
       font-weight: bold;
-      color: var(--text-light); /* Colore del placeholder */
+      color: var(--text-light);
+      /* Colore del placeholder */
       text-align: center;
     }
 
@@ -197,7 +214,8 @@ ion-header {
       margin: 0;
       position: static;
       transform: none;
-      left: auto; right: auto;
+      left: auto;
+      right: auto;
       width: auto;
     }
   }
@@ -234,8 +252,33 @@ ion-header {
   min-width: 48px;
   border-radius: 50%;
   cursor: pointer;
-  ion-icon { /* Stile per l'icona all'interno del pulsante */
+
+  ion-icon {
+    /* Stile per l'icona all'interno del pulsante */
     font-size: 24px;
+  }
+}
+
+/* Stili per il bottone "AGGIUNGI MEMBRI" nella modale */
+.ff7-add-members-button {
+  background: rgba(0, 255, 238, 0.2);
+  color: #00ffee;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 255, 238, 0.5);
+  height: 48px;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 10px;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5vw;
+
+
+  // Stili per l'icona interna al bottone
+  ion-icon {
+    font-size: 1.3rem; // Dimensione dell'icona
   }
 }
 
@@ -247,10 +290,13 @@ ion-header {
     border-radius: 8px;
     box-shadow: 0 0 20px var(--primary-glow);
   }
-  .alert-head, .alert-message {
+
+  .alert-head,
+  .alert-message {
     color: var(--text-light);
     font-family: 'Orbitron', sans-serif;
   }
+
   .alert-button {
     background: var(--primary-glow) !important;
     color: black !important;
@@ -262,15 +308,19 @@ ion-header {
   }
 }
 
-.date-divider{
+.date-divider {
   text-align: center;
-  margin: 15px 0; /* Margine per separare meglio il divisore */
+  margin: 15px 0;
+
+  /* Margine per separare meglio il divisore */
   span {
-    background: rgba(0, 0, 0, 0.6); /* Sfondo scuro per il testo della data */
+    background: rgba(0, 0, 0, 0.6);
+    /* Sfondo scuro per il testo della data */
     padding: 5px 10px;
     border-radius: 10px;
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.8); /* Colore del testo della data */
+    color: rgba(255, 255, 255, 0.8);
+    /* Colore del testo della data */
   }
 }
 
@@ -281,5 +331,6 @@ ion-fab-button {
   --color: black;
   box-shadow: 0 0 15px var(--primary-glow);
   border-radius: 50%;
-  transition: all 0.3s ease-in-out; /* Animazione per apparire/scomparire fluidamente */
+  transition: all 0.3s ease-in-out;
+  /* Animazione per apparire/scomparire fluidamente */
 }

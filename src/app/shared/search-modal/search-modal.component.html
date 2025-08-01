@@ -13,7 +13,7 @@
   <ion-searchbar
     placeholder="Cerca per nickname o nome..."
     (ionInput)="onSearchInput($event)"
-    [(ngModel)]="searchQuery"  
+    [(ngModel)]="searchQuery"
     class="ff7-searchbar"
   ></ion-searchbar>
 
@@ -28,8 +28,12 @@
       <ion-label>{{ user.nickname }}</ion-label>
       <ion-icon name="close" (click)="removeSelectedUser(user.uid)"></ion-icon>
     </ion-chip>
-    <ion-button expand="block" class="create-group-button" (click)="createGroup()">
+
+    <ion-button *ngIf="!isAddingToGroup" expand="block" class="create-group-button" (click)="createGroup()">
       Crea Gruppo
+    </ion-button>
+    <ion-button *ngIf="isAddingToGroup" expand="block" class="create-group-button" (click)="addMembersToExistingGroup()">
+      Aggiungi Membri
     </ion-button>
   </div>
 
@@ -43,7 +47,7 @@
         <p>{{ user.name }}</p>
       </ion-label>
       <ion-icon slot="end" [name]="isSelected(user.uid) ? 'checkmark-circle' : 'add-circle-outline'"
-                [color]="isSelected(user.uid) ? 'success' : 'medium'"></ion-icon>
+        [color]="isSelected(user.uid) ? 'success' : 'medium'"></ion-icon>
     </ion-item>
   </ion-list>
 

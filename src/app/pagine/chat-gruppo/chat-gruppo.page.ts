@@ -1,5 +1,3 @@
-// Nel tuo src/app/pages/chat-gruppo/chat-gruppo.page.ts
-
 import { Component, OnInit, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router'; // Corretto: nessun ".angular" di troppo
 import { IonContent, InfiniteScrollCustomEvent, NavController, AlertController, ModalController } from '@ionic/angular';
@@ -16,6 +14,7 @@ import isYesterday from 'dayjs/plugin/isYesterday';
 import updateLocale from 'dayjs/plugin/updateLocale';
 
 import { GroupChatNotificationService } from '../../services/group-chat-notification.service';
+import { SearchModalComponent } from 'src/app/shared/search-modal/search-modal.component';
 
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
@@ -76,6 +75,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
   // Flag per evitare invii multipli o ricaricamenti indesiderati durante l'invio
   private isSendingMessage: boolean = false;
+  isModalOpen:boolean = false;
 
 
   constructor(
@@ -371,7 +371,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
             }
 
             if (wasAtBottomBeforeUpdate && this.currentUserId && this.groupId) {
-                 await this.updateLastReadTimestampInService();
+                  await this.updateLastReadTimestampInService();
             }
           }
         }
@@ -555,17 +555,9 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     await alert.present();
   }
 
+  // Ho sostituito questo metodo per usare la variabile isModalOpen
   async presentGroupInfoModal() {
-    if (!this.groupDetails) {
-      console.warn('presentGroupInfoModal: Group details not available. Cannot open modal.');
-      await this.presentFF7Alert('Dettagli del gruppo non disponibili.');
-      return;
-    }
-    if (this.groupInfoModal) {
-      await this.groupInfoModal.present();
-    } else {
-      console.error('presentGroupInfoModal: groupInfoModal reference is null/undefined. This might be due to a timing issue if the modal is not yet rendered.');
-    }
+    this.isModalOpen = true;
   }
 
   async confirmLeaveGroup() {
@@ -622,4 +614,50 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
       console.error('Errore durante l\'aggiornamento del timestamp di ultima lettura:', error);
     }
   }
+
+  onModalDismiss() {
+    this.isModalOpen = false;
+  }
+
+  // NUOVO METODO
+  async openAddMembersModal() {
+    // Chiudi la modale corrente dei dettagli del gruppo
+    if (this.groupInfoModal) {
+      this.groupInfoModal.dismiss();
+    }
+
+    if (!this.groupDetails || !this.groupDetails.groupId) {
+      await this.presentFF7Alert('Impossibile aggiungere membri: dettagli del gruppo mancanti.');
+      return;
+    }
+
+    const existingMembers = this.groupDetails.members;
+
+    const modal = await this.modalController.create({
+      component: SearchModalComponent,
+      componentProps: {
+        existingMembers: existingMembers,
+        isAddingToGroup: true
+      }
+    });
+
+    await modal.present();
+
+    const { data } = await modal.onWillDismiss();
+
+    if (data && data.selectedUserIds && data.selectedUserIds.length > 0) {
+      const newMembersIds = data.selectedUserIds;
+      try {
+        const addedMembersCount = await this.groupChatService.addMembersToGroup(this.groupDetails.groupId, newMembersIds);
+        await this.presentFF7Alert(`${addedMembersCount} membri aggiunti con successo!`);
+        await this.loadMemberNicknames();
+        this.cdr.detectChanges();
+      } catch (error) {
+        console.error('Errore nell\'aggiungere membri al gruppo:', error);
+        await this.presentFF7Alert('Errore nell\'aggiungere membri al gruppo. Riprova.');
+      }
+    }
+  }
+
+
 }
