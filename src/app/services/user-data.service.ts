@@ -67,13 +67,21 @@ export class UserDataService {
   private auth = getAuth();
 
 
-  private _userStatus = new BehaviorSubject<string>('');
-  public userStatus$ = this._userStatus.asObservable();
+  // private _userStatus = new BehaviorSubject<string>('');
+  // public userStatus$ = this._userStatus.asObservable();
+
+  private _userStatus = new BehaviorSubject<string | null>(null);
+  public userStatus$: Observable<string | null> = this._userStatus.asObservable();
 
   constructor(private expService: ExpService) {
 
+    // ⭐⭐ PUNTO CHIAVE ⭐⭐: Gestisci l'emissione dell'ID utente qui
     this.auth.onAuthStateChanged(async (user) => {
       if (user) {
+        // L'utente si è loggato, emetti il suo UID
+        this._userStatus.next(user.uid);
+
+        // Il resto della tua logica può rimanere qui, ma dopo aver emesso l'ID
         const userData = await this.getUserData();
         if (userData && typeof userData['totalXP'] === 'number') {
           this.expService.setTotalXP(userData['totalXP']);
@@ -81,8 +89,9 @@ export class UserDataService {
           this.expService.setTotalXP(0);
         }
       } else {
+        // L'utente si è disconnesso, emetti null
+        this._userStatus.next(null);
         this.expService.setTotalXP(0);
-        this._userStatus.next('');
       }
     });
 
@@ -97,6 +106,12 @@ export class UserDataService {
         }
       }
     });
+  }
+
+  // Aggiungi questo metodo per ottenere l'ID utente in modo sincrono
+  // utile in alcuni casi ma evita di farci affidamento per la logica asincrona
+  public getCurrentUserId(): string | null {
+    return this._userStatus.value;
   }
 
   private getUserUid(): string | null {
@@ -311,7 +326,7 @@ export class UserDataService {
           data = initialData;
         }
 
-        this._userStatus.next(data.status);
+        // this._userStatus.next(data.status);
 
         return data;
       } catch (error) {
@@ -344,7 +359,7 @@ export class UserDataService {
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
         const data = userDocSnap.data();
-        return { uid: userDocSnap.id, status: data['status'] ?? '', ...data }; // Assicurati che 'status' sia sempre presente
+        return { uid: userDocSnap.id, status: data['status'] ?? '', ...data }; // Assicurati che 'status' sia sempre presente
       }
       return null;
     } catch (error) {
@@ -589,7 +604,7 @@ export class UserDataService {
           diaryTotalWords: userData['diaryTotalWords'] as number ?? 0,
           diaryLastInteraction: userData['diaryLastInteraction'] as string ?? '',
           diaryEntryCount: userData['diaryEntryCount'] as number ?? 0,
-                totalLikesGiven: userData['totalLikesGiven'] as number ?? 0, // Assicurati di leggerlo
+          totalLikesGiven: userData['totalLikesGiven'] as number ?? 0, // Assicurati di leggerlo
 
         });
       });
@@ -629,13 +644,13 @@ export class UserDataService {
   }
 
   // Aggiungi questo nuovo metodo alla classe UserDataService
-async updateLikeGivenCount(change: number): Promise<void> {
-  const uid = this.getUserUid();
-  if (uid) {
-    await this.updateNumericField(uid, 'totalLikesGiven', change);
-    await this.setLastGlobalActivityTimestamp(new Date().toISOString()); // Aggiorna anche l'attività globale
+  async updateLikeGivenCount(change: number): Promise<void> {
+    const uid = this.getUserUid();
+    if (uid) {
+      await this.updateNumericField(uid, 'totalLikesGiven', change);
+      await this.setLastGlobalActivityTimestamp(new Date().toISOString()); // Aggiorna anche l'attività globale
+    }
   }
-}
 
 }
 

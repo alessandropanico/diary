@@ -8,13 +8,17 @@ import { ViewChild, ElementRef } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { UserAlarmDataService } from 'src/app/services/user-alarm-data-service.service';
 
+import { OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
+import { UserDataService } from 'src/app/services/user-data.service';
+
 @Component({
   selector: 'app-sveglie',
   templateUrl: './sveglie.page.html',
   styleUrls: ['./sveglie.page.scss'],
   standalone: false
 })
-export class SvegliePage implements OnInit {
+export class SvegliePage implements OnInit, OnDestroy  {
   alarmTime = '';
   alarmNote = '';
   alarms: any[] = [];
@@ -32,28 +36,44 @@ export class SvegliePage implements OnInit {
   selectedSoundUrl: string | null = null;
   private currentUserId: string | null = null;
 
+  private userStatusSubscription: Subscription | null = null;
+
 
   constructor(
     private storage: Storage,
     private alertController: AlertController,
-    private userAlarmDataService: UserAlarmDataService
+    private userAlarmDataService: UserAlarmDataService,
+    private userDataService: UserDataService // Inietta il servizio
   ) {
     // this.init();
   }
 
-    async ngOnInit() { // **MODIFICATO / NUOVO**: Assicurati che sia presente e asincrono
-    await this.storage.create(); // Inizializza lo storage
-    // **NUOVO**: Recupera l'ID utente.
-    // ASSUNZIONE FONDAMENTALE: l'ID utente è stato salvato in 'loggedInUserId'
-    // in Ionic Storage al momento del login o dell'inizializzazione della sessione.
-    this.currentUserId = await this.storage.get('loggedInUserId');
 
-    if (!this.currentUserId) {
-      console.warn('ID utente non trovato nella SvegliePage. Le metriche delle sveglie non saranno inviate a Firebase.');
-      // Potresti considerare qui di mostrare un messaggio all'utente
-      // o di disabilitare funzionalità che dipendono dall'invio dati a Firebase.
+    ngOnDestroy() {
+    if (this.userStatusSubscription) {
+      this.userStatusSubscription.unsubscribe();
     }
-    await this.loadAlarms(); // Carica le sveglie solo dopo aver tentato di ottenere l'ID utente
+  }
+
+
+  //   async ngOnInit() {
+  //   await this.storage.create();
+  //   this.currentUserId = await this.storage.get('loggedInUserId');
+  //   if (!this.currentUserId) {
+  //     console.warn('ID utente non trovato nella SvegliePage. Le metriche delle sveglie non saranno inviate a Firebase.');
+  //   }
+  //   await this.loadAlarms();
+  // }
+
+    async ngOnInit() {
+    await this.storage.create();
+
+    // Sottoscrivi all'Observable per ricevere l'ID utente in tempo reale
+    this.userStatusSubscription = this.userDataService.userStatus$.subscribe(userId => {
+      this.currentUserId = userId;
+      console.log(`SvegliePage: L'ID utente è stato aggiornato a: ${this.currentUserId}`);
+      this.loadAlarms(); // Ricarica le sveglie per il nuovo utente
+    });
   }
 
   onOverlayClick(event: MouseEvent) {
@@ -66,10 +86,18 @@ export class SvegliePage implements OnInit {
   //   await this.loadAlarms();
   // }
 
-  async loadAlarms() {
-    const savedAlarms = await this.storage.get('alarms');
-    this.alarms = savedAlarms || [];
+   async loadAlarms() {
+    if (this.currentUserId) {
+      const storageKey = `alarms_${this.currentUserId}`;
+      const savedAlarms = await this.storage.get(storageKey);
+      this.alarms = savedAlarms || [];
+      console.log(`Sveglie caricate per utente ${this.currentUserId}:`, this.alarms);
+    } else {
+      this.alarms = [];
+      console.warn("Nessun utente loggato, le sveglie non sono state caricate.");
+    }
   }
+
 
   isMobile(): boolean {
     return /android|iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -432,8 +460,14 @@ async openInfo(index: number | null = null) {
     this.resetForm();
   }
 
-  private async saveAlarms() {
-    await this.storage.set('alarms', this.alarms);
+   private async saveAlarms() {
+    if (this.currentUserId) {
+      const storageKey = `alarms_${this.currentUserId}`;
+      await this.storage.set(storageKey, this.alarms);
+      console.log(`Sveglie salvate per utente ${this.currentUserId}.`);
+    } else {
+      console.warn("Tentativo di salvare le sveglie senza un utente loggato.");
+    }
   }
 
   private resetForm() {
@@ -624,16 +658,18 @@ onSoundFileSelected(event: Event): void {
   await alert.present();
 }
 
-  private async triggerAlarmDataUpdate() {
+   private async triggerAlarmDataUpdate() {
     if (this.currentUserId) {
       const activeCount = this.alarms.filter(alarm => alarm.active).length;
-      const totalCreated = this.alarms.length; // Puoi modificare questa logica se vuoi un contatore cumulativo che non diminuisce
+      const totalCreated = this.alarms.length;
 
       await this.userAlarmDataService.updateAlarmData(
         this.currentUserId,
         activeCount,
         totalCreated
       );
+    } else {
+      console.warn("Nessun utente loggato, impossibile aggiornare i dati delle sveglie su Firebase.");
     }
   }
 }
