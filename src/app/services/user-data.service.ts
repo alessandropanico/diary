@@ -79,25 +79,30 @@ export class UserDataService {
   public userStatus$: Observable<string | null> = this._userStatus.asObservable();
 
   constructor(private expService: ExpService) {
-    // ⭐ CORRETTO: La logica di onAuthStateChanged ora gestisce solo l'inizializzazione dello stato, non l'UID
-    this.auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        const userData = await this.getUserData();
-        if (userData && userData.status !== undefined) {
-          this._userEmojiStatus.next(userData.status);
-        } else {
-          this._userEmojiStatus.next('');
-        }
-        if (userData && typeof userData['totalXP'] === 'number') {
-          this.expService.setTotalXP(userData['totalXP']);
-        } else {
-          this.expService.setTotalXP(0);
-        }
-      } else {
-        this._userEmojiStatus.next('');
-        this.expService.setTotalXP(0);
-      }
-    });
+   // ⭐ MODIFICA QUI ⭐
+    this.auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        // ✅ AGGIUNGI QUESTA RIGA PER AGGIORNARE LO STATO DELL'UTENTE!
+        this._userStatus.next(user.uid);
+
+        const userData = await this.getUserData();
+        if (userData && userData.status !== undefined) {
+          this._userEmojiStatus.next(userData.status);
+        } else {
+          this._userEmojiStatus.next('');
+        }
+        if (userData && typeof userData['totalXP'] === 'number') {
+          this.expService.setTotalXP(userData['totalXP']);
+        } else {
+          this.expService.setTotalXP(0);
+        }
+      } else {
+        // ✅ AGGIUNGI QUESTA RIGA PER GESTIRE IL LOGOUT!
+        this._userStatus.next(null);
+        this._userEmojiStatus.next('');
+        this.expService.setTotalXP(0);
+      }
+    });
 
     this.expService.totalXP$.subscribe(async (newTotalXP) => {
       const user = this.auth.currentUser;
