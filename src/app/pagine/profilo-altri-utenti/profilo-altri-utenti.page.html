@@ -65,7 +65,6 @@
       </div>
 
       <div class="profile-actions">
-
         <ion-button *ngIf="loggedInUserId && loggedInUserId !== profileData.uid" expand="block"
           [class.follow-button]="!isFollowingUser" [class.unfollow-button]="isFollowingUser" (click)="toggleFollow()">
           {{ isFollowingUser ? 'Non seguire più' : 'Segui' }}
@@ -75,12 +74,13 @@
           class="ff7-button message-button" (click)="startChat()">
           Messaggia
         </ion-button>
+      </div>
 
+      <div class="profile-actions2">
         <ion-button *ngIf="loggedInUserId && loggedInUserId !== profileData.uid" expand="block"          
           [color]="isUserBlockedByMe ? 'medium' : 'danger'" (click)="toggleBlockUser()">
                     {{ isUserBlockedByMe ? 'Sblocca Utente' : 'Blocca Utente' }}
                   </ion-button>
-
       </div>
 
       <div class="profile-content-switcher">
