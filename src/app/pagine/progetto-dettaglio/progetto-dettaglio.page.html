@@ -40,14 +40,6 @@
           <strong>{{ project.dueDate | date:'dd/MM/yyyy' }}</strong>
         </div>
 
-        <div class="detail-item">
-          <span>Progresso:</span>
-          <div class="progress-bar-container">
-            <div class="progress-bar-fill" [style.width]="project.progress + '%'"></div>
-          </div>
-          <strong class="progress-text">{{ project.progress }}%</strong>
-        </div>
-
       </ion-card-content>
     </ion-card>
   </div>

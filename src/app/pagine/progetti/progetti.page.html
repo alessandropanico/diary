@@ -31,9 +31,6 @@
             </div>
             <div class="project-details">
               <p *ngIf="project.dueDate">Scadenza: {{ project.dueDate | date:'dd/MM/yyyy' }}</p>
-              <div class="progress-bar-container">
-                <div class="progress-bar-fill" [style.width]="project.progress + '%'"></div>
-              </div>
             </div>
           </ion-label>
         </ion-item>
