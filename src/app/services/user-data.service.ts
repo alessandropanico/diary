@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit,
 import { ExpService } from './exp.service';
 import { BehaviorSubject, Observable, from } from 'rxjs';
 import { Timestamp } from '@angular/fire/firestore';
+import { arrayUnion, arrayRemove } from 'firebase/firestore'; // Importa arrayUnion e arrayRemove
 
 export interface UserProfile {
   uid: string; // Assicurati che l'UID sia sempre presente
@@ -79,30 +80,30 @@ export class UserDataService {
   public userStatus$: Observable<string | null> = this._userStatus.asObservable();
 
   constructor(private expService: ExpService) {
-   // ⭐ MODIFICA QUI ⭐
-    this.auth.onAuthStateChanged(async (user) => {
-      if (user) {
+    // ⭐ MODIFICA QUI ⭐
+    this.auth.onAuthStateChanged(async (user) => {
+      if (user) {
         // ✅ AGGIUNGI QUESTA RIGA PER AGGIORNARE LO STATO DELL'UTENTE!
         this._userStatus.next(user.uid);
 
-        const userData = await this.getUserData();
-        if (userData && userData.status !== undefined) {
-          this._userEmojiStatus.next(userData.status);
-        } else {
-          this._userEmojiStatus.next('');
-        }
-        if (userData && typeof userData['totalXP'] === 'number') {
-          this.expService.setTotalXP(userData['totalXP']);
-        } else {
-          this.expService.setTotalXP(0);
-        }
-      } else {
+        const userData = await this.getUserData();
+        if (userData && userData.status !== undefined) {
+          this._userEmojiStatus.next(userData.status);
+        } else {
+          this._userEmojiStatus.next('');
+        }
+        if (userData && typeof userData['totalXP'] === 'number') {
+          this.expService.setTotalXP(userData['totalXP']);
+        } else {
+          this.expService.setTotalXP(0);
+        }
+      } else {
         // ✅ AGGIUNGI QUESTA RIGA PER GESTIRE IL LOGOUT!
         this._userStatus.next(null);
-        this._userEmojiStatus.next('');
-        this.expService.setTotalXP(0);
-      }
-    });
+        this._userEmojiStatus.next('');
+        this.expService.setTotalXP(0);
+      }
+    });
 
     this.expService.totalXP$.subscribe(async (newTotalXP) => {
       const user = this.auth.currentUser;
@@ -664,6 +665,99 @@ export class UserDataService {
     if (uid) {
       await this.updateNumericField(uid, 'totalLikesGiven', change);
       await this.setLastGlobalActivityTimestamp(new Date().toISOString()); // Aggiorna anche l'attività globale
+    }
+  }
+
+
+  /**
+   * Blocca un utente. Aggiunge l'UID dell'utente target alla lista `blockedUsers` dell'utente loggato.
+   * @param targetUserId L'UID dell'utente da bloccare.
+   * @returns Una Promise che si risolve al completamento.
+   */
+  async blockUser(targetUserId: string): Promise<void> {
+    const userId = this.getUserUid();
+    if (!userId) {
+      throw new Error("Utente non autenticato. Impossibile bloccare.");
+    }
+    const userDocRef = doc(this.firestore, 'users', userId);
+    try {
+      await updateDoc(userDocRef, {
+        blockedUsers: arrayUnion(targetUserId)
+      });
+    } catch (error) {
+      console.error("Errore nel blocco dell'utente:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Sblocca un utente. Rimuove l'UID dell'utente target dalla lista `blockedUsers` dell'utente loggato.
+   * @param targetUserId L'UID dell'utente da sbloccare.
+   * @returns Una Promise che si risolve al completamento.
+   */
+  async unblockUser(targetUserId: string): Promise<void> {
+    const userId = this.getUserUid();
+    if (!userId) {
+      throw new Error("Utente non autenticato. Impossibile sbloccare.");
+    }
+    const userDocRef = doc(this.firestore, 'users', userId);
+    try {
+      await updateDoc(userDocRef, {
+        blockedUsers: arrayRemove(targetUserId)
+      });
+    } catch (error) {
+      console.error("Errore nello sblocco dell'utente:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Controlla se un utente è bloccato dall'utente loggato.
+   * @param targetUserId L'UID dell'utente da controllare.
+   * @returns Una Promise che si risolve con `true` se è bloccato, `false` altrimenti.
+   */
+  async isUserBlocked(targetUserId: string): Promise<boolean> {
+    const userId = this.getUserUid();
+    if (!userId) {
+      return false; // Se non sei loggato, non puoi aver bloccato nessuno
+    }
+    const userDocRef = doc(this.firestore, 'users', userId);
+    try {
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const blockedUsers = data['blockedUsers'] as string[] || [];
+        return blockedUsers.includes(targetUserId);
+      }
+      return false;
+    } catch (error) {
+      console.error("Errore nel controllo del blocco utente:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Controlla se l'utente loggato è bloccato dall'utente target.
+   * @param targetUserId L'UID dell'utente target.
+   * @returns Una Promise che si risolve con `true` se sei bloccato, `false` altrimenti.
+   */
+  async isBlockedByTargetUser(targetUserId: string): Promise<boolean> {
+    const userId = this.getUserUid();
+    if (!userId) {
+      return false; // Se non sei loggato, nessuno ti può bloccare
+    }
+    const targetUserDocRef = doc(this.firestore, 'users', targetUserId);
+    try {
+      const docSnap = await getDoc(targetUserDocRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const blockedUsers = data['blockedUsers'] as string[] || [];
+        return blockedUsers.includes(userId);
+      }
+      return false;
+    } catch (error) {
+      console.error("Errore nel controllo del blocco da parte dell'utente target:", error);
+      return false;
     }
   }
 

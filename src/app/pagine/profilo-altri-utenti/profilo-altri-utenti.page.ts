@@ -46,6 +46,8 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
   // ⭐ NOVITÀ: Proprietà per gestire lo switch tra Post e Dashboard ⭐
   selectedSegment: 'posts' | 'dashboard' = 'posts'; // Default a 'posts'
 
+  isUserBlockedByMe: boolean = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -85,7 +87,6 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
       if (userId) {
         this.isLoading = true;
         try {
-          // Recupera i dati del profilo, che ora dovrebbero includere totalXP
           this.profileData = await this.userDataService.getUserDataById(userId);
 
           if (!this.profileData) {
@@ -95,16 +96,19 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
             this.profileData.uid = userId;
             this.subscribeToFollowData(userId);
 
-            // ⭐ Gestione dell'XP dell'utente target ⭐
-            const totalXPFromProfile = this.profileData.totalXP || 0; // Recupera totalXP (default 0 se non esiste)
-            // Calcola i dati del livello usando il metodo pubblico di ExpService
+            // ⭐ NUOVO: Controlla lo stato di blocco dell'utente ⭐
+            if (this.loggedInUserId) {
+              this.isUserBlockedByMe = await this.userDataService.isUserBlocked(userId);
+            }
+            // ⭐ FINE NUOVO ⭐
+
+            const totalXPFromProfile = this.profileData.totalXP || 0;
             const expData: UserExpData = this.expService.calculateLevelAndProgress(totalXPFromProfile);
 
             this.targetUserLevel = expData.userLevel;
             this.targetUserXP = expData.currentXP;
             this.targetXpForNextLevel = expData.xpForNextLevel;
             this.targetXpPercentage = expData.progressPercentage;
-            // ⭐ FINE Gestione dell'XP dell'utente target ⭐
           }
         } catch (error) {
           console.error('loadUserProfile - Errore nel caricamento del profilo utente:', error);
@@ -123,6 +127,7 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
     });
     this.allSubscriptions.add(routeSub);
   }
+
 
   private subscribeToFollowData(targetUserId: string) {
     this.isLoadingStats = true;
@@ -213,6 +218,13 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
   }
 
   async startChat() {
+
+    if (this.isUserBlockedByMe) {
+      await this.presentFF7Alert(`Non puoi messaggiare un utente che hai bloccato.`);
+      return;
+    }
+
+
     if (!this.loggedInUserId) {
       console.error('STARTCHAT - Errore: Utente non loggato al momento della richiesta di chat.');
       await this.presentFF7Alert('Devi essere loggato per avviare una chat.');
@@ -306,5 +318,67 @@ export class ProfiloAltriUtentiPage implements OnInit, OnDestroy {
       return 'assets/immaginiGenerali/default-avatar.jpg';
     }
     return photoUrl;
+  }
+
+  async toggleBlockUser() {
+    if (!this.loggedInUserId) {
+      await this.presentFF7Alert('Devi essere loggato per bloccare un utente.');
+      return;
+    }
+    if (!this.profileData || !this.profileData.uid) {
+      await this.presentFF7Alert('Errore: ID utente del profilo non disponibile.');
+      return;
+    }
+
+    try {
+      if (this.isUserBlockedByMe) {
+        // Sblocca l'utente
+        await this.userDataService.unblockUser(this.profileData.uid);
+        this.isUserBlockedByMe = false;
+        await this.presentFF7Alert(`Hai sbloccato ${this.profileData.nickname}.`);
+      } else {
+        // Blocca l'utente
+        const confirmation = await this.presentBlockConfirmationAlert();
+        if (confirmation) {
+          await this.userDataService.blockUser(this.profileData.uid);
+          this.isUserBlockedByMe = true;
+          // Se l'utente era seguito, annulla il follow
+          if (this.isFollowingUser) {
+            await this.followService.unfollowUser(this.loggedInUserId, this.profileData.uid);
+          }
+          await this.presentFF7Alert(`Hai bloccato ${this.profileData.nickname}.`);
+        }
+      }
+    } catch (error) {
+      console.error('Errore durante l\'operazione di blocco/sblocco:', error);
+      await this.presentFF7Alert('Si è verificato un errore. Riprova.');
+    }
+  }
+
+  // ⭐ NUOVO METODO: alert di conferma prima del blocco ⭐
+  private async presentBlockConfirmationAlert(): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertCtrl.create({
+        cssClass: 'ff7-alert',
+        header: 'Conferma Blocco',
+        message: `Sei sicuro di voler bloccare ${this.profileData.nickname}? Questa azione impedirà a entrambi di interagire.`,
+        buttons: [
+          {
+            text: 'Annulla',
+            role: 'cancel',
+            handler: () => resolve(false)
+          },
+          {
+            text: 'Blocca',
+            cssClass: 'ff7-alert-button danger-button',
+            handler: () => resolve(true)
+          }
+        ],
+        backdropDismiss: false,
+        animated: true,
+        mode: 'ios'
+      });
+      await alert.present();
+    });
   }
 }

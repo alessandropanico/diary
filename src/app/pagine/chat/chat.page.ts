@@ -67,6 +67,9 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewInit {
   showScrollToBottom: boolean = false;
   private lastScrollTop = 0;
 
+  isOtherUserBlocked: boolean = false;
+  isBlockedByOtherUser: boolean = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -94,6 +97,12 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewInit {
 
       if (this.conversationId) {
         await this.loadOtherUserDetails();
+        // ⭐ Queste sono le righe che devi aggiungere qui ⭐
+        if (this.otherUser) {
+          this.isOtherUserBlocked = await this.userDataService.isUserBlocked(this.otherUser.uid);
+          this.isBlockedByOtherUser = await this.userDataService.isBlockedByTargetUser(this.otherUser.uid);
+        }
+        // ⭐ Fine delle righe da aggiungere ⭐
         this.loadInitialMessages();
       } else {
         await this.presentFF7Alert('ID conversazione mancante.');
@@ -109,8 +118,8 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewInit {
     }
 
     if (this.loggedInUserId && this.conversationId) {
-        this.chatService.markMessagesAsRead(this.conversationId, this.loggedInUserId)
-            .catch(error => console.error('Errore nel marcare i messaggi come letti in ngOnDestroy:', error));
+      this.chatService.markMessagesAsRead(this.conversationId, this.loggedInUserId)
+        .catch(error => console.error('Errore nel marcare i messaggi come letti in ngOnDestroy:', error));
     }
   }
 
@@ -158,29 +167,29 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-observeScroll() {
-  this.content.ionScroll.subscribe(async () => {
-    const scrollElement = await this.content.getScrollElement();
-    const currentScrollTop = scrollElement.scrollTop;
-    const maxScrollTop = scrollElement.scrollHeight - scrollElement.clientHeight;
+  observeScroll() {
+    this.content.ionScroll.subscribe(async () => {
+      const scrollElement = await this.content.getScrollElement();
+      const currentScrollTop = scrollElement.scrollTop;
+      const maxScrollTop = scrollElement.scrollHeight - scrollElement.clientHeight;
 
-    const threshold = 100;
-    const isAtBottom = maxScrollTop - currentScrollTop < threshold;
-    const isScrollingUp = currentScrollTop < this.lastScrollTop;
+      const threshold = 100;
+      const isAtBottom = maxScrollTop - currentScrollTop < threshold;
+      const isScrollingUp = currentScrollTop < this.lastScrollTop;
 
-    if (isScrollingUp && !isAtBottom) {
-      this.showScrollToBottom = true;
-    } else if (isAtBottom) {
-      this.showScrollToBottom = false;
-    }
+      if (isScrollingUp && !isAtBottom) {
+        this.showScrollToBottom = true;
+      } else if (isAtBottom) {
+        this.showScrollToBottom = false;
+      }
 
-    this.lastScrollTop = currentScrollTop <= 0 ? 0 : currentScrollTop;
-  });
-}
+      this.lastScrollTop = currentScrollTop <= 0 ? 0 : currentScrollTop;
+    });
+  }
 
-ngAfterViewInit() {
-  this.observeScroll();
-}
+  ngAfterViewInit() {
+    this.observeScroll();
+  }
 
 
   /**
@@ -250,32 +259,85 @@ ngAfterViewInit() {
     }
   }
 
- async sendMessage() {
-  if (!this.newMessageText.trim() || !this.loggedInUserId || !this.otherUser!.uid!) {
-    console.warn('SENDMESSAGE - Impossibile inviare: testo vuoto, utente loggato o destinatario mancante.');
-    return;
-  }
 
-  try {
-    if (!this.conversationId) {
-      this.conversationId = await this.chatService.getOrCreateConversation(this.loggedInUserId!, this.otherUser!.uid!);
-      this.loadInitialMessages();
+  async sendMessage() {
+    if (!this.newMessageText.trim() || !this.loggedInUserId || !this.otherUser?.uid) {
+      console.warn('SENDMESSAGE - Impossibile inviare: testo vuoto, utente loggato o destinatario mancante.');
+      return;
     }
 
-    await this.chatService.sendMessage(this.conversationId, this.loggedInUserId, this.newMessageText.trim());
-    this.newMessageText = '';
-    setTimeout(() => this.scrollToBottom(), 100);
+    // ⭐⭐ MODIFICA QUI: USA LE VARIABILI DI STATO DEL COMPONENTE ⭐⭐
+    this.isOtherUserBlocked = await this.userDataService.isUserBlocked(this.otherUser.uid);
+    this.isBlockedByOtherUser = await this.userDataService.isBlockedByTargetUser(this.otherUser.uid);
 
-  } catch (error) {
-    console.error('Errore durante l\'invio del messaggio o la creazione della chat:', error);
-    await this.presentFF7Alert('Impossibile inviare il messaggio.');
+    if (this.isOtherUserBlocked) {
+      this.presentUnblockAlert();
+      return;
+    }
+    if (this.isBlockedByOtherUser) {
+      this.presentFF7Alert('Non puoi inviare messaggi. Sei stato bloccato da questo utente.');
+      return;
+    }
+    // ⭐⭐ FINE MODIFICA ⭐⭐
+
+    try {
+      if (!this.conversationId) {
+        this.conversationId = await this.chatService.getOrCreateConversation(this.loggedInUserId!, this.otherUser!.uid!);
+        this.loadInitialMessages();
+      }
+
+      await this.chatService.sendMessage(this.conversationId, this.loggedInUserId, this.newMessageText.trim());
+      this.newMessageText = '';
+      setTimeout(() => this.scrollToBottom(), 100);
+
+    } catch (error: any) {
+      console.error('Errore durante l\'invio del messaggio o la creazione della chat:', error);
+      if (error?.code === 'permission-denied' || error?.code === 'missing-or-insufficient-permissions') {
+        this.presentFF7Alert('Impossibile inviare il messaggio: Permessi insufficienti. L\'utente potrebbe averti bloccato.');
+      } else {
+        this.presentFF7Alert('Impossibile inviare il messaggio.');
+      }
+    }
   }
-}
 
   scrollToBottom() {
     if (this.content) {
       this.content.scrollToBottom(300);
     }
+  }
+
+  // Aggiungi questo metodo nel tuo componente ChatPage
+  async presentUnblockAlert() {
+    const alert = await this.alertCtrl.create({
+      cssClass: 'ff7-alert',
+      header: 'Utente bloccato',
+      message: 'Hai bloccato questo utente. Vuoi sbloccarlo per inviare un messaggio?',
+      buttons: [
+        {
+          text: 'Sblocca',
+          handler: async () => {
+            try {
+              console.log('Chiamata a unblockUser() iniziata.'); // Aggiungi qui
+              await this.userDataService.unblockUser(this.otherUser!.uid);
+
+              // ⭐ Aggiungi questi console.log() per verificare l'aggiornamento dello stato
+              this.isOtherUserBlocked = false;
+              console.log('Stato del blocco aggiornato nel componente: isOtherUserBlocked è ora', this.isOtherUserBlocked);
+
+              await this.presentFF7Alert('Utente sbloccato. Ora puoi inviare il tuo messaggio!');
+
+            } catch (error) {
+              console.error('Errore durante lo sblocco:', error);
+              this.presentFF7Alert('Si è verificato un errore durante lo sblocco.');
+            }
+          }
+        }
+      ],
+      backdropDismiss: true,
+      animated: true,
+      mode: 'ios'
+    });
+    await alert.present();
   }
 
   /**
