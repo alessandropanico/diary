@@ -1,14 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonList, IonItemSliding } from '@ionic/angular';
-
-interface Project {
-  id: string;
-  name: string;
-  status: 'In corso' | 'Completato' | 'In pausa';
-  dueDate?: Date;
-  progress: number; // Percentuale di completamento
-}
+import { ProgettiService, Project } from 'src/app/services/progetti.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-progetti',
@@ -17,78 +11,59 @@ interface Project {
   standalone: false,
 })
 export class ProgettiPage implements OnInit {
-
   @ViewChild(IonList) list!: IonList;
-  projects: Project[] = [];
+  projects$!: Observable<Project[]>;
   isLoading: boolean = true;
 
-  constructor(private router: Router) { }
+  constructor(
+    private router: Router,
+    private progettiService: ProgettiService
+  ) { }
 
   ngOnInit() {
     this.loadProjects();
   }
 
-  /**
-   * Placeholder per la logica di caricamento dei progetti
-   * dal database.
-   */
   loadProjects() {
     this.isLoading = true;
-    // Qui andrà la logica per chiamare un servizio e caricare i dati
-    // Simulazione di dati
-    setTimeout(() => {
-      this.projects = [
-        { id: '1', name: 'Ristrutturazione del garage', status: 'In corso', dueDate: new Date('2025-12-31'), progress: 50 },
-        { id: '2', name: 'Preparare l\'esame di storia', status: 'In pausa', dueDate: new Date('2025-09-15'), progress: 20 },
-        { id: '3', name: 'Creare una nuova app mobile', status: 'Completato', dueDate: new Date('2025-07-20'), progress: 100 },
-      ];
-      this.isLoading = false;
-    }, 1500);
+    this.projects$ = this.progettiService.getProjects();
+
+    this.projects$.subscribe({
+      next: () => this.isLoading = false,
+      error: (err) => {
+        console.error("Errore nel caricamento dei progetti:", err);
+        this.isLoading = false;
+      }
+    });
   }
 
-  /**
-   * Reindirizza l'utente alla pagina di dettaglio del progetto.
-   * @param projectId L'ID del progetto da visualizzare.
-   */
-  goToProjectDetails(projectId: string) {
-    this.router.navigate(['/progetti', projectId]);
+  goToProjectDetails(projectId: string | undefined) {
+    if (projectId) {
+      this.router.navigate(['/progetti', projectId]);
+    }
   }
 
-  /**
-   * Gestisce la creazione di un nuovo progetto.
-   */
   createNewProject() {
-    console.log('Creare un nuovo progetto');
-    // Qui andrà la logica per aprire un modale o navigare a una pagina di creazione
+    this.router.navigate(['/progetti/new']);
   }
 
-  /**
-   * Placeholder per la logica di eliminazione di un progetto.
-   * @param projectId L'ID del progetto da eliminare.
-   * @param slidingItem L'elemento IonItemSliding per chiuderlo dopo l'eliminazione.
-   */
-  deleteProject(projectId: string, slidingItem: IonItemSliding) {
-    console.log('Eliminare il progetto:', projectId);
-    // Qui andrà la logica per eliminare il progetto dal database
-    this.projects = this.projects.filter(p => p.id !== projectId);
-    slidingItem.close();
+  deleteProject(projectId: string | undefined, slidingItem: IonItemSliding) {
+    if (projectId) {
+      this.progettiService.deleteProject(projectId).then(() => {
+        slidingItem.close();
+      }).catch(err => {
+        console.error('Errore durante l\'eliminazione del progetto:', err);
+      });
+    }
   }
 
-  /**
-   * Restituisce un colore basato sullo stato del progetto.
-   * @param status Lo stato del progetto.
-   * @returns Il nome del colore Ionic.
-   */
-  getStatusColor(status: string): 'primary' | 'success' | 'warning' {
+  getStatusColor(status: string): 'primary' | 'success' | 'warning' | 'danger' {
     switch (status) {
-      case 'In corso':
-        return 'primary';
-      case 'Completato':
-        return 'success';
-      case 'In pausa':
-        return 'warning';
-      default:
-        return 'primary';
+      case 'In corso': return 'primary';
+      case 'Completato': return 'success';
+      case 'In pausa': return 'warning';
+      case 'Archiviato': return 'danger';
+      default: return 'primary';
     }
   }
 }

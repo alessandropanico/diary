@@ -1,17 +1,18 @@
 import { Injectable } from '@angular/core';
 import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, query, where, getDocs, getDoc } from 'firebase/firestore';
 import { Observable, from, switchMap, map } from 'rxjs';
-import { UserDataService } from './user-data.service'; // ⭐ Importazione corretta ⭐
+import { UserDataService } from 'src/app/services/user-data.service';
 
 export interface Project {
   id?: string;
   name: string;
-  status: 'In corso' | 'Completato' | 'In pausa';
-  dueDate?: Date;
-  progress: number;
-  uid: string; // ID dell'utente proprietario del progetto
   description: string;
-  tasks: string[];
+  status: 'In corso' | 'Completato' | 'In pausa' | 'Archiviato';
+  progress: number;
+  dueDate?: Date;
+  createdAt: Date;
+  lastUpdated: Date;
+  uid: string;
 }
 
 @Injectable({
@@ -21,18 +22,14 @@ export class ProgettiService {
   private db = getFirestore();
 
   constructor(
-    private userDataService: UserDataService // ⭐ Iniezione del tuo servizio ⭐
+    private userDataService: UserDataService
   ) {}
 
-  /**
-   * Ottiene tutti i progetti dell'utente loggato.
-   * @returns Observable di un array di progetti.
-   */
   getProjects(): Observable<Project[]> {
     return this.userDataService.userStatus$.pipe(
       switchMap(uid => {
         if (!uid) {
-          return from([[]]); // Ritorna un Observable di un array vuoto se l'utente non è loggato
+          return from([[]]);
         }
         const projectsCollection = collection(this.db, 'projects');
         const q = query(projectsCollection, where('uid', '==', uid));
@@ -50,11 +47,6 @@ export class ProgettiService {
     );
   }
 
-  /**
-   * Ottiene un singolo progetto tramite ID.
-   * @param id L'ID del progetto.
-   * @returns Observable del progetto o undefined.
-   */
   getProjectById(id: string): Observable<Project | undefined> {
     return this.userDataService.userStatus$.pipe(
       switchMap(uid => {
@@ -75,11 +67,6 @@ export class ProgettiService {
     );
   }
 
-  /**
-   * Aggiunge un nuovo progetto.
-   * @param project Il progetto da aggiungere (senza ID).
-   * @returns Una Promise con l'ID del documento.
-   */
   async addProject(project: Partial<Project>): Promise<string> {
     const userId = this.userDataService.getCurrentUserId();
     if (!userId) {
@@ -88,31 +75,24 @@ export class ProgettiService {
     const newProject: Project = {
       ...project,
       uid: userId,
+      description: project.description || '',
       status: project.status || 'In corso',
       progress: project.progress || 0,
-      description: project.description || '',
-      tasks: project.tasks || []
+      createdAt: new Date(),
+      lastUpdated: new Date()
     } as Project;
     const docRef = await addDoc(collection(this.db, 'projects'), newProject);
     return docRef.id;
   }
 
-  /**
-   * Aggiorna un progetto esistente.
-   * @param id L'ID del progetto da aggiornare.
-   * @param data I dati da aggiornare.
-   * @returns Una Promise.
-   */
   async updateProject(id: string, data: Partial<Project>): Promise<void> {
     const projectDocRef = doc(this.db, 'projects', id);
-    return updateDoc(projectDocRef, data);
+    return updateDoc(projectDocRef, {
+      ...data,
+      lastUpdated: new Date()
+    });
   }
 
-  /**
-   * Elimina un progetto.
-   * @param id L'ID del progetto da eliminare.
-   * @returns Una Promise.
-   */
   async deleteProject(id: string): Promise<void> {
     const projectDocRef = doc(this.db, 'projects', id);
     return deleteDoc(projectDocRef);

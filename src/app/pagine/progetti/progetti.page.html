@@ -18,33 +18,35 @@
     <p>Caricamento progetti...</p>
   </div>
 
-  <ion-list class="ff7-list" *ngIf="!isLoading && projects.length > 0">
-    <ion-item-sliding *ngFor="let project of projects" #slidingItem>
-      <ion-item (click)="goToProjectDetails(project.id)" class="ff7-list-item">
-        <ion-label>
-          <div class="project-header">
-            <h3>{{ project.name }}</h3>
-            <ion-text [color]="getStatusColor(project.status)">
-              <p>{{ project.status }}</p>
-            </ion-text>
-          </div>
-          <div class="project-details">
-            <p *ngIf="project.dueDate">Scadenza: {{ project.dueDate | date:'mediumDate' }}</p>
-            <div class="progress-bar-container">
-              <div class="progress-bar-fill" [style.width]="project.progress + '%'"></div>
+  <ng-container *ngIf="projects$ | async as projects">
+    <ion-list class="ff7-list" *ngIf="!isLoading && projects.length > 0">
+      <ion-item-sliding *ngFor="let project of projects" #slidingItem>
+        <ion-item (click)="goToProjectDetails(project.id)" class="ff7-list-item">
+          <ion-label>
+            <div class="project-header">
+              <h3>{{ project.name }}</h3>
+              <ion-text [color]="getStatusColor(project.status)">
+                <p>{{ project.status }}</p>
+              </ion-text>
             </div>
-          </div>
-        </ion-label>
-      </ion-item>
-      <ion-item-options slot="end">
-        <ion-item-option color="danger" (click)="deleteProject(project.id, slidingItem)">
-          <ion-icon slot="icon-only" name="trash"></ion-icon>
-        </ion-item-option>
-      </ion-item-options>
-    </ion-item-sliding>
-  </ion-list>
+            <div class="project-details">
+              <p *ngIf="project.dueDate">Scadenza: {{ project.dueDate | date:'mediumDate' }}</p>
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" [style.width]="project.progress + '%'"></div>
+              </div>
+            </div>
+          </ion-label>
+        </ion-item>
+        <ion-item-options slot="end">
+          <ion-item-option color="danger" (click)="deleteProject(project.id, slidingItem)">
+            <ion-icon slot="icon-only" name="trash"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </ion-list>
 
-  <div *ngIf="!isLoading && projects.length === 0" class="no-projects-message">
-    <p>Nessun progetto trovato. <br> Clicca sul pulsante "+" per aggiungerne uno nuovo.</p>
-  </div>
+    <div *ngIf="!isLoading && projects.length === 0" class="no-projects-message">
+      <p>Nessun progetto trovato. <br> Clicca sul pulsante "+" per aggiungerne uno nuovo.</p>
+    </div>
+  </ng-container>
 </ion-content>
