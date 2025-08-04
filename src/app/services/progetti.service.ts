@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, query, where, getDocs, getDoc } from 'firebase/firestore';
 import { Observable, from, switchMap, map } from 'rxjs';
 import { UserDataService } from 'src/app/services/user-data.service';
+import { Timestamp } from 'firebase/firestore';
 
 export interface Project {
   id?: string;
@@ -37,8 +38,15 @@ export class ProgettiService {
           map(snapshot => {
             const projects: Project[] = [];
             snapshot.forEach(doc => {
-              const data = doc.data() as Project;
-              projects.push({ id: doc.id, ...data });
+              const data = doc.data() as any;
+              projects.push({
+                id: doc.id,
+                ...data,
+                // ⭐ CONVERSIONE DEL TIMESTAMP
+                dueDate: data.dueDate instanceof Timestamp ? data.dueDate.toDate() : data.dueDate,
+                createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+                lastUpdated: data.lastUpdated instanceof Timestamp ? data.lastUpdated.toDate() : data.lastUpdated
+              });
             });
             return projects;
           })
@@ -57,8 +65,15 @@ export class ProgettiService {
         return from(getDoc(projectDocRef)).pipe(
           map(docSnapshot => {
             if (docSnapshot.exists() && docSnapshot.data()?.['uid'] === uid) {
-              const data = docSnapshot.data() as Project;
-              return { id: docSnapshot.id, ...data };
+              const data = docSnapshot.data() as any;
+              return {
+                id: docSnapshot.id,
+                ...data,
+                // ⭐ CONVERSIONE DEL TIMESTAMP
+                dueDate: data.dueDate instanceof Timestamp ? data.dueDate.toDate() : data.dueDate,
+                createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+                lastUpdated: data.lastUpdated instanceof Timestamp ? data.lastUpdated.toDate() : data.lastUpdated
+              };
             }
             return undefined;
           })
