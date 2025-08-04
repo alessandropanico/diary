@@ -152,3 +152,27 @@ ion-card-subtitle {
     color: var(--success-muted);
   }
 }
+
+/* Stile per il popup del calendario ion-datetime */
+.ff7-datetime::part(calendar-pane) {
+  background-color: var(--panel-solid-bg) !important;
+  color: var(--text-light) !important;
+  font-family: 'Orbitron', sans-serif;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 0 10px var(--primary-glow);
+  border-radius: 8px;
+}
+
+.ff7-datetime::part(calendar-header) {
+  background-color: var(--panel-solid-bg);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ff7-datetime::part(calendar-day) {
+  color: var(--text-light);
+}
+
+.ff7-datetime::part(calendar-day-active) {
+  background-color: var(--primary-glow);
+  color: var(--panel-solid-bg);
+}

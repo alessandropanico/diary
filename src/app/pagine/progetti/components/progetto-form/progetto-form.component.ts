@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ProgettiService, Project } from 'src/app/services/progetti.service';
 import { CommonModule } from '@angular/common';
@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./progetto-form.component.scss'],
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class ProgettoFormComponent implements OnInit {
   @Input() projectToEdit: Project | undefined;
@@ -29,7 +30,7 @@ export class ProgettoFormComponent implements OnInit {
       description: [this.projectToEdit?.description || '', Validators.required],
       status: [this.projectToEdit?.status || 'In corso', Validators.required],
       progress: [this.projectToEdit?.progress || 0, [Validators.required, Validators.min(0), Validators.max(100)]],
-      dueDate: [this.projectToEdit?.dueDate ? this.formatDate(this.projectToEdit.dueDate) : '']
+      dueDate: [this.projectToEdit?.dueDate || '']
     });
   }
 
@@ -63,7 +64,6 @@ export class ProgettoFormComponent implements OnInit {
     this.modalDismissed.emit({ data: projectData, role: 'confirm' });
   }
 
-  // ⭐ Metodo corretto per la chiusura al click sul backdrop
   onBackdropClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
       this.dismiss();
