@@ -1,21 +1,18 @@
-import { Component, OnInit, Input } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ProgettiService, Project } from 'src/app/services/progetti.service';
-import { Subject } from 'rxjs';
-import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-progetto-form',
   templateUrl: './progetto-form.component.html',
   styleUrls: ['./progetto-form.component.scss'],
-  imports: [FormsModule, CommonModule, ReactiveFormsModule]
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule], // Solo moduli Angular puri
 })
 export class ProgettoFormComponent implements OnInit {
-
   @Input() projectToEdit: Project | undefined;
-  @Input() modalController: any; // Inietta il ModalController dal componente padre
+  @Output() modalDismissed = new EventEmitter<{ data: any, role: string }>();
 
   projectForm!: FormGroup;
   title: string = 'Nuovo Progetto';
@@ -63,12 +60,10 @@ export class ProgettoFormComponent implements OnInit {
       await this.progettiService.addProject(projectData);
     }
 
-    this.closeModal(projectData, 'confirm');
+    this.modalDismissed.emit({ data: projectData, role: 'confirm' });
   }
 
-  closeModal(data: any, role: string) {
-    if (this.modalController) {
-      this.modalController.dismiss(data, role);
-    }
+  dismiss() {
+    this.modalDismissed.emit({ data: null, role: 'cancel' });
   }
 }

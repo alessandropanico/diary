@@ -1,40 +1,44 @@
-<div class="modal-header">
-  <h2>{{ title }}</h2>
-  <button (click)="closeModal(null, 'cancel')" class="close-button">×</button>
-</div>
-
-<div class="modal-content">
-  <form [formGroup]="projectForm" class="project-form">
-    <div class="form-group">
-      <label for="name">Nome Progetto</label>
-      <input id="name" type="text" formControlName="name" placeholder="Inserisci il nome" [ngClass]="{'is-invalid': projectForm.get('name')?.invalid && projectForm.get('name')?.touched}">
+<div class="modal-backdrop">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>{{ title }}</h2>
+      <button (click)="dismiss()" class="close-button">×</button>
     </div>
 
-    <div class="form-group">
-      <label for="description">Descrizione</label>
-      <textarea id="description" formControlName="description" placeholder="Descrivi il tuo progetto" [ngClass]="{'is-invalid': projectForm.get('description')?.invalid && projectForm.get('description')?.touched}"></textarea>
-    </div>
+    <form [formGroup]="projectForm" class="project-form">
+      <div class="form-group">
+        <label for="name">Nome Progetto</label>
+        <input id="name" type="text" formControlName="name" placeholder="Inserisci il nome"
+          [ngClass]="{'is-invalid': projectForm.get('name')?.invalid && projectForm.get('name')?.touched}">
+      </div>
 
-    <div class="form-group">
-      <label for="status">Stato</label>
-      <select id="status" formControlName="status">
-        <option value="In corso">In corso</option>
-        <option value="Completato">Completato</option>
-        <option value="In pausa">In pausa</option>
-        <option value="Archiviato">Archiviato</option>
-      </select>
-    </div>
+      <div class="form-group">
+        <label for="description">Descrizione</label>
+        <textarea id="description" formControlName="description" placeholder="Descrivi il tuo progetto"
+          [ngClass]="{'is-invalid': projectForm.get('description')?.invalid && projectForm.get('description')?.touched}"></textarea>
+      </div>
 
-    <div class="form-group">
-      <label for="progress">Progresso: {{ projectForm.get('progress')?.value }}%</label>
-      <input id="progress" type="range" formControlName="progress" min="0" max="100">
-    </div>
+      <div class="form-group">
+        <label for="status">Stato</label>
+        <select id="status" formControlName="status">
+          <option value="In corso">In corso</option>
+          <option value="Completato">Completato</option>
+          <option value="In pausa">In pausa</option>
+          <option value="Archiviato">Archiviato</option>
+        </select>
+      </div>
 
-    <div class="form-group">
-      <label for="dueDate">Scadenza</label>
-      <input id="dueDate" type="date" formControlName="dueDate">
-    </div>
+      <div class="form-group">
+        <label for="progress">Progresso: {{ projectForm.get('progress')?.value }}%</label>
+        <input id="progress" type="range" formControlName="progress" min="0" max="100">
+      </div>
 
-    <button type="submit" (click)="saveProject()" class="submit-button">Salva</button>
-  </form>
+      <div class="form-group">
+        <label for="dueDate">Scadenza</label>
+        <input id="dueDate" type="date" formControlName="dueDate">
+      </div>
+
+      <button type="submit" (click)="saveProject()" class="submit-button">Salva</button>
+    </form>
+  </div>
 </div>

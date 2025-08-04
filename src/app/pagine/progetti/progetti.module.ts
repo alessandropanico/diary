@@ -7,14 +7,16 @@ import { IonicModule } from '@ionic/angular';
 import { ProgettiPageRoutingModule } from './progetti-routing.module';
 
 import { ProgettiPage } from './progetti.page';
+import { ProgettoFormComponent } from "./components/progetto-form/progetto-form.component";
 
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    ProgettiPageRoutingModule
-  ],
+    ProgettiPageRoutingModule,
+    ProgettoFormComponent
+],
   declarations: [ProgettiPage]
 })
 export class ProgettiPageModule {}

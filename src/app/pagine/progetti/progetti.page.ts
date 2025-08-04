@@ -15,6 +15,11 @@ export class ProgettiPage implements OnInit {
   projects$!: Observable<Project[]>;
   isLoading: boolean = true;
 
+  // Variabile per mostrare/nascondere il modale
+  showModal: boolean = false;
+  // Variabile per passare il progetto da modificare
+  projectToEdit: Project | undefined = undefined;
+
   constructor(
     private router: Router,
     private progettiService: ProgettiService
@@ -43,8 +48,21 @@ export class ProgettiPage implements OnInit {
     }
   }
 
+  /**
+   * Apre il modale per un nuovo progetto
+   */
   createNewProject() {
-    this.router.navigate(['/progetti/new']);
+    this.projectToEdit = undefined;
+    this.showModal = true;
+  }
+
+  /**
+   * Apre il modale per modificare un progetto esistente
+   */
+  editProject(project: Project, slidingItem: IonItemSliding) {
+    slidingItem.close();
+    this.projectToEdit = project;
+    this.showModal = true;
   }
 
   deleteProject(projectId: string | undefined, slidingItem: IonItemSliding) {
@@ -54,6 +72,21 @@ export class ProgettiPage implements OnInit {
       }).catch(err => {
         console.error('Errore durante l\'eliminazione del progetto:', err);
       });
+    }
+  }
+
+  /**
+   * Gestisce la chiusura del modale e il ricaricamento dei dati.
+   * Il metodo viene chiamato quando il componente figlio (il modale)
+   * emette l'evento 'modalDismissed'.
+   */
+  onModalDismiss(event: any) {
+    // ⭐ Questa linea è fondamentale per nascondere il modale
+    this.showModal = false;
+
+    // Controlla se il modale è stato chiuso con un'azione di 'salvataggio'
+    if (event && event.role === 'confirm') {
+      this.loadProjects(); // Ricarica i progetti per mostrare i cambiamenti
     }
   }
 
