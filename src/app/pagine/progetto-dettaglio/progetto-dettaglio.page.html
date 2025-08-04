@@ -39,7 +39,6 @@
           <span>Scadenza:</span>
           <strong>{{ project.dueDate | date:'dd/MM/yyyy' }}</strong>
         </div>
-
       </ion-card-content>
     </ion-card>
   </div>
@@ -47,4 +46,10 @@
   <div *ngIf="!isLoading && !project" class="no-project-message">
     <p>Progetto non trovato.</p>
   </div>
+
+  <ion-modal [isOpen]="showEditModal" (didDismiss)="onModalDismiss($event)">
+    <ng-template>
+      <app-progetto-form [projectToEdit]="projectToEdit" (modalDismissed)="onModalDismiss($event)"></app-progetto-form>
+    </ng-template>
+  </ion-modal>
 </ion-content>
