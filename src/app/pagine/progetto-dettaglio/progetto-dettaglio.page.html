@@ -50,16 +50,6 @@
 
       </ion-card-content>
     </ion-card>
-
-    <ion-list class="ff7-list-tasks">
-      <ion-list-header class="ff7-list-header">
-        <ion-label>Task Associati</ion-label>
-      </ion-list-header>
-      <ion-item *ngFor="let task of project.tasks" class="ff7-list-task-item">
-        <ion-label>{{ task }}</ion-label>
-        <ion-icon slot="end" name="checkmark-done-outline"></ion-icon>
-      </ion-item>
-    </ion-list>
   </div>
 
   <div *ngIf="!isLoading && !project" class="no-project-message">
