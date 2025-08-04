@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './progetto-form.component.html',
   styleUrls: ['./progetto-form.component.scss'],
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule], // Solo moduli Angular puri
+  imports: [CommonModule, ReactiveFormsModule],
 })
 export class ProgettoFormComponent implements OnInit {
   @Input() projectToEdit: Project | undefined;
@@ -61,6 +61,13 @@ export class ProgettoFormComponent implements OnInit {
     }
 
     this.modalDismissed.emit({ data: projectData, role: 'confirm' });
+  }
+
+  // ⭐ Metodo corretto per la chiusura al click sul backdrop
+  onBackdropClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
+      this.dismiss();
+    }
   }
 
   dismiss() {

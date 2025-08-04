@@ -18,11 +18,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 10px;
   border-bottom: 1px solid var(--border-subtle);
   background-color: transparent;
   color: var(--text-main);
-  font-family: 'Orbitron', sans-serif;
+  font-family: "Orbitron", sans-serif;
 }
 
 .modal-header h2 {

@@ -1,4 +1,4 @@
-<div class="modal-backdrop">
+<div class="modal-backdrop" (click)="onBackdropClick($event)">
   <div class="modal-content">
     <div class="modal-header">
       <h2>{{ title }}</h2>
@@ -26,11 +26,6 @@
           <option value="In pausa">In pausa</option>
           <option value="Archiviato">Archiviato</option>
         </select>
-      </div>
-
-      <div class="form-group">
-        <label for="progress">Progresso: {{ projectForm.get('progress')?.value }}%</label>
-        <input id="progress" type="range" formControlName="progress" min="0" max="100">
       </div>
 
       <div class="form-group">
