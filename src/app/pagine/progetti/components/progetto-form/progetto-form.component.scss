@@ -49,7 +49,6 @@
   background-color: var(--panel-solid-bg);
   border-radius: 8px;
   width: 90%;
-  max-width: 500px;
   padding: 1.5rem;
   border: 1px solid var(--border-subtle);
   box-shadow: 0 0 10px var(--primary-glow);
@@ -151,7 +150,8 @@
 
   /* Stile per l'icona del calendario e il testo */
   &::-webkit-calendar-picker-indicator {
-    filter: invert(1); /* Inverte i colori per renderlo bianco */
+    filter: invert(1);
+    /* Inverte i colori per renderlo bianco */
     cursor: pointer;
   }
 }
@@ -182,7 +182,8 @@
 
 /* Aggiunge l'icona personalizzata */
 .form-group input[type="date"] {
-  position: relative; /* Necessario per posizionare l'icona SVG */
+  position: relative;
+  /* Necessario per posizionare l'icona SVG */
 
   /* L'icona SVG incorporata come background */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13zm-3-9h-5v5h5v-5z'/%3E%3C/svg%3E");
@@ -190,7 +191,8 @@
   background-position: right 8px center;
   background-size: 24px;
 
-  padding-right: 40px; /* Lascia spazio per l'icona a destra */
+  padding-right: 40px;
+  /* Lascia spazio per l'icona a destra */
 }
 
 /* ... il tuo CSS esistente continua ... */
