@@ -2,9 +2,8 @@
 
 **CORREGGERE CHAT DI GRUPPO CON LE NOTIFICHE**;
 
-Riguarda un attimo quando "condividi" un post di un altro utente;
-Implementare blocca/sblocca utente in chat;
 Fare page "progetti";
+Fare page "notizie";
 
 TEST CONNENTENDO CELLULARE AL PC;
 
@@ -16,9 +15,6 @@ IMPORTA BENE GOOGLE ADMOB;
 Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
 Integrazione con AI (anche semplice):
-[suggerimenti per ottimizzare la giornata;
-sintesi delle note;
-generazione automatica di to-do da note vocali.];
 
 Nella dashboard:
 - Attività supporto creatore App;
