@@ -13,7 +13,12 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ff7-content">
-  <ion-list class="ff7-list">
+  <div *ngIf="isLoading" class="loading-overlay">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Caricamento progetti...</p>
+  </div>
+
+  <ion-list class="ff7-list" *ngIf="!isLoading && projects.length > 0">
     <ion-item-sliding *ngFor="let project of projects" #slidingItem>
       <ion-item (click)="goToProjectDetails(project.id)" class="ff7-list-item">
         <ion-label>
@@ -37,9 +42,9 @@
         </ion-item-option>
       </ion-item-options>
     </ion-item-sliding>
-
-    <div *ngIf="projects.length === 0" class="no-projects-message">
-      <p>Nessun progetto trovato. <br> Clicca sul pulsante "+" per aggiungerne uno nuovo.</p>
-    </div>
   </ion-list>
+
+  <div *ngIf="!isLoading && projects.length === 0" class="no-projects-message">
+    <p>Nessun progetto trovato. <br> Clicca sul pulsante "+" per aggiungerne uno nuovo.</p>
+  </div>
 </ion-content>

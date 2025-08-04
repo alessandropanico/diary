@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+:host {
+  font-family: 'Orbitron', sans-serif;
+  --primary-glow: #00ffee;
+  --bg-blur: rgba(15, 15, 35, 0.8);
+  --text-light: #ffffff;
+  --label-color: #a0cfd8;
+  --danger-color: #ff4e4e;
+  --primary-accent-calm: var(--primary-glow);
+  --secondary-accent-soft: #70aeff;
+  --panel-solid-bg: rgba(20, 25, 50, 0.95);
+  --border-subtle: rgba(0, 255, 238, 0.2);
+  --text-main: var(--text-light);
+  --text-secondary-subtle: var(--label-color);
+  --success-muted: #6ad46a;
+  --warning-muted: #d4b16a;
+
+  color: var(--text-light);
+}
+
+ion-toolbar.ff7-toolbar {
+  --background: var(--bg-blur);
+  --color: var(--text-light);
+  font-family: 'Orbitron', sans-serif;
+  border-bottom: 1px solid var(--border-subtle);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+ion-title {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--text-light);
+  text-shadow: 0 0 5px var(--primary-glow);
+}
+
+ion-content.ff7-content {
+  --background: #0e122b;
+  color: var(--text-light);
+  font-family: 'Orbitron', sans-serif;
+}
+
+.loading-overlay, .no-project-message {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+  color: var(--label-color);
+
+  ion-spinner {
+    color: var(--primary-glow);
+  }
+}
+
+.project-detail-container {
+  padding: 16px;
+}
+
+.ff7-card {
+  --background: var(--bg-blur);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 0 10px rgba(0, 255, 238, 0.2);
+  margin: 0 0 24px 0;
+}
+
+.header-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+ion-card-title {
+  color: var(--text-main);
+  text-shadow: 0 0 5px var(--primary-glow);
+  font-size: 1.5rem;
+}
+
+ion-card-subtitle {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.project-description {
+  color: var(--text-secondary-subtle);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+
+  span {
+    color: var(--label-color);
+    margin-right: 8px;
+  }
+
+  strong {
+    color: var(--text-main);
+  }
+
+  .progress-text {
+    margin-left: 8px;
+    font-weight: bold;
+    color: var(--primary-glow);
+  }
+}
+
+.progress-bar-container {
+  flex-grow: 1;
+  height: 8px;
+  background-color: var(--panel-solid-bg);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--secondary-accent-soft), var(--primary-glow));
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+  box-shadow: 0 0 5px var(--primary-glow);
+}
+
+.ff7-list-tasks {
+  background: var(--bg-blur);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 0 10px rgba(0, 255, 238, 0.2);
+  border-radius: 8px;
+}
+
+.ff7-list-header {
+  --background: var(--panel-solid-bg);
+  color: var(--primary-glow);
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 255, 238, 0.5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ff7-list-task-item {
+  --background: transparent;
+  --inner-border-width: 0;
+  --border-width: 0;
+  color: var(--text-light);
+
+  ion-icon {
+    color: var(--success-muted);
+  }
+}
