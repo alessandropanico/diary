@@ -14,6 +14,7 @@ export interface Project {
   createdAt: Date;
   lastUpdated: Date;
   uid: string;
+  members: string[]; // ⭐ Assicurati che questa riga sia presente ⭐
 }
 
 @Injectable({

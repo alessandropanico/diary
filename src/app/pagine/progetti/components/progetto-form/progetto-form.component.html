@@ -33,6 +33,40 @@
         <input id="dueDate" type="date" formControlName="dueDate">
       </div>
 
+      <div class="form-group">
+        <label for="members">Membri del Progetto</label>
+        <div class="user-search-container">
+          <input
+            type="text"
+            id="members"
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="searchUsers()"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Cerca per nome o nickname"
+          >
+        </div>
+
+        <div *ngIf="searchResults.length > 0" class="search-results-list">
+          <div *ngFor="let user of searchResults" class="user-result-item" (click)="selectUser(user)">
+            <img [src]="user.photo" class="profile-image">
+            <div class="user-info">
+              <span>{{ user.name || user.nickname }}</span>
+              <small>{{ '@' + user.nickname }}</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="selected-users-list">
+          <div *ngFor="let user of selectedUsers" class="selected-user-item">
+            <img [src]="user.photo" class="profile-image">
+            <div class="user-info">
+              <span>{{ user.name || user.nickname }}</span>
+              <small>{{ '@' + user.nickname }}</small>
+            </div>
+            <ion-icon name="close-circle" (click)="removeUser(user)"></ion-icon>
+          </div>
+        </div>
+      </div>
       <button type="submit" (click)="saveProject()" class="submit-button">Salva</button>
     </form>
   </div>
