@@ -4,6 +4,8 @@ import { ProgettiService, Project } from 'src/app/services/progetti.service';
 import { CommonModule } from '@angular/common';
 import { IonicModule, AlertController, ToastController } from '@ionic/angular';
 import { Observable } from 'rxjs';
+// ⭐ Importa UserDataService e l'interfaccia UserDashboardCounts
+import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 
 @Component({
   selector: 'app-progetto-dettaglio',
@@ -17,6 +19,9 @@ export class ProgettoDettaglioPage implements OnInit {
   isLoading: boolean = true;
   projectId: string | null = null;
 
+  // ⭐ Nuova proprietà per memorizzare i membri del progetto
+  projectMembers: UserDashboardCounts[] = [];
+
   showEditModal: boolean = false;
   projectToEdit: Project | undefined = undefined;
 
@@ -25,7 +30,9 @@ export class ProgettoDettaglioPage implements OnInit {
     private router: Router,
     private progettiService: ProgettiService,
     private alertController: AlertController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    // ⭐ Inietta UserDataService
+    private userDataService: UserDataService
   ) { }
 
   ngOnInit() {
@@ -37,18 +44,37 @@ export class ProgettoDettaglioPage implements OnInit {
     }
   }
 
-  loadProjectDetails(id: string) {
+  async loadProjectDetails(id: string) {
     this.isLoading = true;
     this.progettiService.getProjectById(id).subscribe({
-      next: (projectData) => {
+      next: async (projectData) => { // ⭐ Rendi la callback asincrona
         this.project = projectData;
         this.isLoading = false;
+
+        // ⭐ Chiamata al nuovo metodo per caricare i dettagli dei membri
+        if (this.project?.members && this.project.members.length > 0) {
+          await this.loadProjectMembers(this.project.members);
+        } else {
+          this.projectMembers = [];
+        }
       },
       error: (err) => {
         console.error("Errore nel caricamento del progetto:", err);
         this.isLoading = false;
       }
     });
+  }
+
+  // ⭐ Nuovo metodo per caricare i dettagli dei membri
+  async loadProjectMembers(memberUids: string[]) {
+    this.projectMembers = [];
+    for (const uid of memberUids) {
+      const user = await this.userDataService.getUserDataByUid(uid);
+      if (user) {
+        // Aggiunge l'utente all'array, assicurati che la proprietà 'photo' esista
+        this.projectMembers.push(user as UserDashboardCounts);
+      }
+    }
   }
 
   getStatusColor(status: string): 'primary' | 'success' | 'warning' {
@@ -70,6 +96,7 @@ export class ProgettoDettaglioPage implements OnInit {
   onModalDismiss(event: any) {
     this.showEditModal = false;
     if (event && event.role === 'confirm' && this.projectId) {
+      // ⭐ Ricarica i dettagli del progetto e dei membri dopo la modifica
       this.loadProjectDetails(this.projectId);
       this.presentToast('Progetto aggiornato con successo!');
     }

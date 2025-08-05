@@ -39,7 +39,20 @@
           <span>Scadenza:</span>
           <strong>{{ project.dueDate | date:'dd/MM/yyyy' }}</strong>
         </div>
-      </ion-card-content>
+
+        <div class="members-container" *ngIf="projectMembers && projectMembers.length > 0">
+          <h4 class="members-title">Membri del Progetto</h4>
+          <div class="members-list">
+            <div *ngFor="let member of projectMembers" class="member-item">
+              <img [src]="member.photo || 'assets/immaginiGenerali/default-avatar.jpg'" class="profile-image">
+              <div class="member-info">
+                <span>{{ member.name || member.nickname }}</span>
+                <small>{{ '@' + member.nickname }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        </ion-card-content>
     </ion-card>
   </div>
 

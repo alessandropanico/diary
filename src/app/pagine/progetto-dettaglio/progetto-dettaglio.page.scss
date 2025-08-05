@@ -176,3 +176,63 @@ ion-card-subtitle {
   background-color: var(--primary-glow);
   color: var(--panel-solid-bg);
 }
+
+/* Stili per la sezione dei membri del progetto */
+
+.members-container {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.members-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  color: var(--label-color);
+  margin-bottom: 1rem;
+}
+
+.members-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  transition: background-color 0.2s ease-in-out;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+}
+
+.profile-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 0.75rem;
+  border: 2px solid var(--primary-glow);
+}
+
+.member-info {
+  display: flex;
+  flex-direction: column;
+
+  span {
+    font-weight: bold;
+    color: var(--text-main);
+  }
+
+  small {
+    font-size: 0.8rem;
+    color: var(--text-light);
+  }
+}
