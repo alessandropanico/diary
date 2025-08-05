@@ -125,6 +125,6 @@ export class ProgettoFormComponent implements OnInit {
   }
 
   getAvatarUrl(user: any): string {
-  return user.photo || 'assets/immaginiGenerali/default-avatar.jpg';
-}
+    return user.photo || 'assets/immaginiGenerali/default-avatar.jpg';
+  }
 }

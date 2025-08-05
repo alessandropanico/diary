@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
-
 :host {
   font-family: 'Orbitron', sans-serif;
   --primary-glow: #00ffee;
@@ -15,7 +13,6 @@
   --text-secondary-subtle: var(--label-color);
   --success-muted: #6ad46a;
   --warning-muted: #d4b16a;
-
   color: var(--text-light);
 }
 
@@ -39,7 +36,8 @@ ion-content.ff7-content {
   font-family: 'Orbitron', sans-serif;
 }
 
-.loading-overlay, .no-project-message {
+.loading-overlay,
+.no-project-message {
   display: flex;
   flex-direction: column;
   justify-content: center;
