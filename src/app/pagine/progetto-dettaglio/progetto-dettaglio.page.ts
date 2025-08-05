@@ -4,8 +4,9 @@ import { ProgettiService, Project } from 'src/app/services/progetti.service';
 import { CommonModule } from '@angular/common';
 import { IonicModule, AlertController, ToastController } from '@ionic/angular';
 import { Observable } from 'rxjs';
-// ⭐ Importa UserDataService e l'interfaccia UserDashboardCounts
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
+// ⭐ Importa il servizio Auth
+import { Auth } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-progetto-dettaglio',
@@ -18,8 +19,6 @@ export class ProgettoDettaglioPage implements OnInit {
   project: Project | undefined;
   isLoading: boolean = true;
   projectId: string | null = null;
-
-  // ⭐ Nuova proprietà per memorizzare i membri del progetto
   projectMembers: UserDashboardCounts[] = [];
 
   showEditModal: boolean = false;
@@ -31,8 +30,8 @@ export class ProgettoDettaglioPage implements OnInit {
     private progettiService: ProgettiService,
     private alertController: AlertController,
     private toastController: ToastController,
-    // ⭐ Inietta UserDataService
-    private userDataService: UserDataService
+    private userDataService: UserDataService,
+    private auth: Auth // ⭐ Inietta Auth per l'utente corrente
   ) { }
 
   ngOnInit() {
@@ -47,11 +46,10 @@ export class ProgettoDettaglioPage implements OnInit {
   async loadProjectDetails(id: string) {
     this.isLoading = true;
     this.progettiService.getProjectById(id).subscribe({
-      next: async (projectData) => { // ⭐ Rendi la callback asincrona
+      next: async (projectData) => {
         this.project = projectData;
         this.isLoading = false;
 
-        // ⭐ Chiamata al nuovo metodo per caricare i dettagli dei membri
         if (this.project?.members && this.project.members.length > 0) {
           await this.loadProjectMembers(this.project.members);
         } else {
@@ -65,15 +63,36 @@ export class ProgettoDettaglioPage implements OnInit {
     });
   }
 
-  // ⭐ Nuovo metodo per caricare i dettagli dei membri
+  // ⭐ Metodo corretto per caricare i dettagli dei membri
   async loadProjectMembers(memberUids: string[]) {
     this.projectMembers = [];
     for (const uid of memberUids) {
       const user = await this.userDataService.getUserDataByUid(uid);
       if (user) {
-        // Aggiunge l'utente all'array, assicurati che la proprietà 'photo' esista
-        this.projectMembers.push(user as UserDashboardCounts);
+        // ⭐ Crea un nuovo oggetto unendo i dati dell'utente con il suo UID ⭐
+        const memberWithUid = {
+          ...user, // Copia tutte le proprietà dell'oggetto utente
+          uid: uid  // Aggiungi esplicitamente la proprietà uid
+        };
+        this.projectMembers.push(memberWithUid as UserDashboardCounts);
       }
+    }
+  }
+
+  // ⭐ Aggiungi un controllo per sicurezza anche in goToProfile ⭐
+  goToProfile(memberUid: string) {
+    const currentUserUid = this.auth.currentUser?.uid;
+
+    // ⭐ Controlla che memberUid esista prima di navigare ⭐
+    if (!memberUid) {
+      console.error('ID utente mancante per la navigazione al profilo.');
+      return; // Interrompe la navigazione
+    }
+
+    if (currentUserUid && currentUserUid === memberUid) {
+      this.router.navigate(['/profilo']);
+    } else {
+      this.router.navigate(['/profilo-altri-utenti', memberUid]);
     }
   }
 
@@ -96,7 +115,6 @@ export class ProgettoDettaglioPage implements OnInit {
   onModalDismiss(event: any) {
     this.showEditModal = false;
     if (event && event.role === 'confirm' && this.projectId) {
-      // ⭐ Ricarica i dettagli del progetto e dei membri dopo la modifica
       this.loadProjectDetails(this.projectId);
       this.presentToast('Progetto aggiornato con successo!');
     }

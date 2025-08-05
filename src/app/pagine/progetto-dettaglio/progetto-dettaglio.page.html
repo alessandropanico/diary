@@ -1,5 +1,5 @@
 <ion-header>
-  <ion-toolbar class="ff7-toolbar">
+  <ion-toolbar>
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/progetti"></ion-back-button>
     </ion-buttons>
@@ -43,7 +43,7 @@
         <div class="members-container" *ngIf="projectMembers && projectMembers.length > 0">
           <h4 class="members-title">Membri del Progetto</h4>
           <div class="members-list">
-            <div *ngFor="let member of projectMembers" class="member-item">
+            <div *ngFor="let member of projectMembers" class="member-item" (click)="goToProfile(member.uid)">
               <img [src]="member.photo || 'assets/immaginiGenerali/default-avatar.jpg'" class="profile-image">
               <div class="member-info">
                 <span>{{ member.name || member.nickname }}</span>
@@ -52,7 +52,8 @@
             </div>
           </div>
         </div>
-        </ion-card-content>
+
+      </ion-card-content>
     </ion-card>
   </div>
 
