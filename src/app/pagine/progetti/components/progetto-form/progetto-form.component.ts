@@ -123,4 +123,8 @@ export class ProgettoFormComponent implements OnInit {
   dismiss() {
     this.modalDismissed.emit({ data: null, role: 'cancel' });
   }
+
+  getAvatarUrl(user: any): string {
+  return user.photo || 'assets/immaginiGenerali/default-avatar.jpg';
+}
 }

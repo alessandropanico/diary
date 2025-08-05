@@ -42,7 +42,7 @@
 
         <div *ngIf="searchResults.length > 0" class="search-results-list">
           <div *ngFor="let user of searchResults" class="user-result-item" (click)="selectUser(user)">
-            <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" class="profile-image">
+            <img [src]="getAvatarUrl(user)" class="profile-image">
             <div class="user-info">
               <span>{{ user.name || user.nickname }}</span>
               <small>{{ user.nickname }}</small>
@@ -52,7 +52,7 @@
 
         <div class="selected-users-list">
           <div *ngFor="let user of selectedUsers" class="selected-user-item">
-            <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" class="profile-image">
+            <img [src]="getAvatarUrl(user)" class="profile-image">
             <div class="user-info">
               <span>{{ user.name || user.nickname }}</span>
               <small>{{ user.nickname }}</small>
