@@ -1,8 +1,11 @@
 // src/app/services/exp.service.ts
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, from } from 'rxjs'; // Aggiunto 'from'
-import { map, switchMap, catchError } from 'rxjs/operators'; // Aggiunti 'switchMap' e 'catchError'
-import { doc, getDoc, Firestore } from '@angular/fire/firestore'; // Importa Firestore e doc/getDoc
+import { BehaviorSubject, Observable, from } from 'rxjs';
+import { map, switchMap, catchError } from 'rxjs/operators';
+// ⭐ Importa updateDoc e Auth per ottenere l'utente corrente
+import { doc, getDoc, updateDoc, Firestore } from '@angular/fire/firestore';
+import { Auth, user } from '@angular/fire/auth'; // ⭐ Aggiungi 'user' per l'Observable
+import { take } from 'rxjs/operators'; // ⭐ Aggiungi 'take'
 
 export interface UserExpData {
   totalXP: number;
@@ -18,8 +21,6 @@ export interface UserExpData {
 })
 export class ExpService {
 
-  // Questo BehaviorSubject dovrebbe essere gestito dall'utente LOGGATO.
-  // Per gli altri utenti, leggeremo direttamente da Firestore.
   private _totalXP = new BehaviorSubject<number>(870);
   readonly totalXP$: Observable<number> = this._totalXP.asObservable();
 
@@ -41,26 +42,17 @@ export class ExpService {
     { level: 10, xpRequired: 13850 },
   ];
 
-  constructor(private firestore: Firestore) {} // ⭐ INIETTA FIRESTORE ⭐
+  constructor(private firestore: Firestore, private auth: Auth) {} // ⭐ INIETTA AUTH ⭐
 
-
-  // Questo metodo rimane per l'utente loggato.
   getUserExpData(): Observable<UserExpData> {
     return this.totalXP$.pipe(
       map(totalXP => this.calculateLevelAndProgress(totalXP))
     );
   }
 
-  /**
-   * ⭐ NUOVO METODO: Recupera i dati di esperienza per un UID specifico. ⭐
-   * Legge gli XP totali da Firestore e calcola il livello e il progresso.
-   * @param uid L'ID dell'utente di cui recuperare i dati.
-   * @returns Un Observable di UserExpData.
-   */
   getUserExpDataByUid(uid: string): Observable<UserExpData> {
     if (!uid) {
       console.warn('getUserExpDataByUid: UID non fornito.');
-      // Restituisce dati predefiniti o un errore Observable
       return new BehaviorSubject<UserExpData>({
         totalXP: 0, userLevel: 1, currentXP: 0, xpForNextLevel: 100, progressPercentage: 0, maxLevelReached: false
       }).asObservable();
@@ -70,13 +62,11 @@ export class ExpService {
     return from(getDoc(userDocRef)).pipe(
       map(docSnap => {
         if (docSnap.exists()) {
-          // Supponiamo che gli XP totali siano memorizzati nel campo 'totalXP' del documento utente
           const userData = docSnap.data();
-          const totalXP = userData['totalXP'] as number || 0; // Prendi totalXP, default 0
+          const totalXP = userData['totalXP'] as number || 0;
           return this.calculateLevelAndProgress(totalXP);
         } else {
           console.log(`Documento utente non trovato per UID: ${uid}. Restituisco dati di default.`);
-          // Utente non trovato, restituisci dati di default
           return {
             totalXP: 0, userLevel: 1, currentXP: 0, xpForNextLevel: 100, progressPercentage: 0, maxLevelReached: false
           };
@@ -84,7 +74,6 @@ export class ExpService {
       }),
       catchError(error => {
         console.error(`Errore nel recupero dati EXP per UID ${uid}:`, error);
-        // In caso di errore, restituisci dati di default o propaga l'errore
         return new BehaviorSubject<UserExpData>({
           totalXP: 0, userLevel: 1, currentXP: 0, xpForNextLevel: 100, progressPercentage: 0, maxLevelReached: false
         }).asObservable();
@@ -93,27 +82,40 @@ export class ExpService {
   }
 
   /**
-   * Aggiunge Punti Esperienza (XP) all'utente.
-   * Chiamato quando l'utente compie un'azione che conferisce XP.
+   * ⭐ METODO AGGIORNATO: Aggiunge XP all'utente loggato e aggiorna Firestore. ⭐
    * @param xpAmount La quantità di XP da aggiungere.
-   * @param reason Una stringa per descrivere la ragione (es. 'Diario Salvato').
+   * @param reason Una stringa per descrivere la ragione.
    */
-  addExperience(xpAmount: number, reason: string = 'unknown'): void {
-    const currentTotalXP = this._totalXP.getValue();
-    const newTotalXP = currentTotalXP + xpAmount;
-    this._totalXP.next(newTotalXP);
-    // In un'applicazione reale, qui dovresti anche AGGIORNARE GLI XP nel database Firestore
-    // per l'utente attualmente loggato.
-    // Esempio: updateDoc(doc(this.firestore, `users/${currentUserUid}`), { totalXP: newTotalXP });
+  async addExperience(xpAmount: number, reason: string = 'unknown'): Promise<void> {
+    const currentUser = this.auth.currentUser;
+
+    if (currentUser) {
+      const userDocRef = doc(this.firestore, `users/${currentUser.uid}`);
+      try {
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          const currentTotalXP = userData['totalXP'] as number || 0;
+          const newTotalXP = currentTotalXP + xpAmount;
+
+          // Aggiorna il documento su Firestore
+          await updateDoc(userDocRef, { totalXP: newTotalXP });
+
+          // Aggiorna il BehaviorSubject locale per mantenere la UI sincronizzata
+          this._totalXP.next(newTotalXP);
+
+          console.log(`XP aggiornati per l'utente ${currentUser.uid}: +${xpAmount} per '${reason}'. Totale: ${newTotalXP}`);
+        }
+      } catch (error) {
+        console.error("Errore nell'aggiornare gli XP su Firestore:", error);
+      }
+    } else {
+      console.warn("Nessun utente loggato. Impossibile aggiungere XP.");
+    }
   }
 
-  /**
-   * Utilizzato principalmente al caricamento iniziale dei dati dell'utente da Firebase (quando lo implementeremo).
-   * @param totalXP Il valore totale di XP da impostare.
-   */
   setTotalXP(totalXP: number): void {
     this._totalXP.next(totalXP);
-    // Anche qui, dovresti aggiornare Firestore per l'utente loggato.
   }
 
   private calculateXpForLevel(level: number): number {
@@ -139,11 +141,6 @@ export class ExpService {
     return calculatedXP;
   }
 
-  /**
-   * Metodo PUBBLICO per calcolare il livello, XP attuali nel livello, XP per il prossimo livello e percentuale di progresso.
-   * @param totalXP I punti esperienza totali accumulati dall'utente.
-   * @returns Un oggetto UserExpData con i dettagli del livello.
-   */
   public calculateLevelAndProgress(totalXP: number): UserExpData {
     let userLevel = 1;
     let xpForCurrentLevel = 0;
@@ -196,10 +193,6 @@ export class ExpService {
     return { userLevel, totalXP, currentXP, xpForNextLevel, progressPercentage, maxLevelReached };
   }
 
-  /**
-   * Calcola il livello dell'utente a partire dai suoi XP totali.
-   * Usato esternamente (es. nella classifica).
-   */
   getLevelFromXP(totalXP: number): number {
     return this.calculateLevelAndProgress(totalXP).userLevel;
   }

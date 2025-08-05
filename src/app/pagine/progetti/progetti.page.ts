@@ -3,6 +3,8 @@ import { Router } from '@angular/router';
 import { IonList, IonItemSliding } from '@ionic/angular';
 import { ProgettiService, Project } from 'src/app/services/progetti.service';
 import { Observable } from 'rxjs';
+// ⭐ Importa ExpService
+import { ExpService } from 'src/app/services/exp.service';
 
 @Component({
   selector: 'app-progetti',
@@ -14,15 +16,13 @@ export class ProgettiPage implements OnInit {
   @ViewChild(IonList) list!: IonList;
   projects$!: Observable<Project[]>;
   isLoading: boolean = true;
-
-  // Variabile per mostrare/nascondere il modale
   showModal: boolean = false;
-  // Variabile per passare il progetto da modificare
   projectToEdit: Project | undefined = undefined;
 
   constructor(
     private router: Router,
-    private progettiService: ProgettiService
+    private progettiService: ProgettiService,
+    private expService: ExpService // ⭐ Inietta ExpService
   ) { }
 
   ngOnInit() {
@@ -48,17 +48,11 @@ export class ProgettiPage implements OnInit {
     }
   }
 
-  /**
-   * Apre il modale per un nuovo progetto
-   */
   createNewProject() {
     this.projectToEdit = undefined;
     this.showModal = true;
   }
 
-  /**
-   * Apre il modale per modificare un progetto esistente
-   */
   editProject(project: Project, slidingItem: IonItemSliding) {
     slidingItem.close();
     this.projectToEdit = project;
@@ -75,18 +69,18 @@ export class ProgettiPage implements OnInit {
     }
   }
 
-  /**
-   * Gestisce la chiusura del modale e il ricaricamento dei dati.
-   * Il metodo viene chiamato quando il componente figlio (il modale)
-   * emette l'evento 'modalDismissed'.
-   */
-  onModalDismiss(event: any) {
-    // ⭐ Questa linea è fondamentale per nascondere il modale
+  async onModalDismiss(event: any) {
     this.showModal = false;
 
-    // Controlla se il modale è stato chiuso con un'azione di 'salvataggio'
     if (event && event.role === 'confirm') {
-      this.loadProjects(); // Ricarica i progetti per mostrare i cambiamenti
+      // ⭐ Se projectToEdit era undefined, significa che è un NUOVO progetto
+      if (!this.projectToEdit) {
+        const xpAmount = 50; // ⭐ Definisci i punti esperienza da assegnare
+        await this.expService.addExperience(xpAmount, 'Progetto creato');
+        console.log(`XP assegnati per la creazione di un nuovo progetto: +${xpAmount}`);
+      }
+
+      this.loadProjects();
     }
   }
 
