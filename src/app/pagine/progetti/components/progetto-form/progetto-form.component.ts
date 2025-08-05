@@ -3,15 +3,16 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } 
 import { ProgettiService, Project } from 'src/app/services/progetti.service';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-import { UserDataService, UserProfile } from 'src/app/services/user-data.service'; // ⭐ Importa UserDataService e UserProfile
-import { map } from 'rxjs/operators'; // Importa map se lo userai con gli Observable
+// ⭐ Importa UserDashboardCounts
+import { UserDataService, UserProfile, UserDashboardCounts } from 'src/app/services/user-data.service';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-progetto-form',
   templateUrl: './progetto-form.component.html',
   styleUrls: ['./progetto-form.component.scss'],
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, IonicModule], // ⭐ Aggiungi FormsModule qui
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, IonicModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class ProgettoFormComponent implements OnInit {
@@ -22,13 +23,14 @@ export class ProgettoFormComponent implements OnInit {
   title: string = 'Nuovo Progetto';
 
   searchTerm: string = '';
-  searchResults: any[] = []; // Usiamo 'any[]' per gestire i dati restituiti dal tuo searchUsers
-  selectedUsers: any[] = []; // Usiamo 'any[]' per gli utenti selezionati
+  // ⭐ Utilizza il tipo corretto per i risultati e i membri selezionati
+  searchResults: UserDashboardCounts[] = [];
+  selectedUsers: UserDashboardCounts[] = [];
 
   constructor(
     private formBuilder: FormBuilder,
     private progettiService: ProgettiService,
-    private userDataService: UserDataService // ⭐ Inietta il tuo UserDataService
+    private userDataService: UserDataService
   ) { }
 
   async ngOnInit() {
@@ -40,38 +42,36 @@ export class ProgettoFormComponent implements OnInit {
       dueDate: [this.projectToEdit?.dueDate ? this.formatDate(this.projectToEdit.dueDate) : '']
     });
 
-    // Inizializza gli utenti selezionati se stiamo modificando un progetto
     if (this.projectToEdit && this.projectToEdit.members) {
       for (const memberUid of this.projectToEdit.members) {
-        // Il tuo getUserDataByUid restituisce una Promise, quindi lo usiamo direttamente
+        // ⭐ La proprietà 'photo' e 'profilePictureUrl' sono disponibili
         const user = await this.userDataService.getUserDataByUid(memberUid);
         if (user) {
           this.selectedUsers.push({
             uid: memberUid,
             name: user.name,
             nickname: user.nickname,
-            profilePictureUrl: user.profilePictureUrl
-          });
+            profilePictureUrl: user.profilePictureUrl,
+            photo: user.photo,
+            // Aggiungi altre proprietà necessarie se il tuo servizio le restituisce
+          } as UserDashboardCounts);
         }
       }
     }
   }
 
-  // ⭐ NUOVO METODO: Ricerca utenti
   async searchUsers() {
     if (this.searchTerm.length < 1) {
       this.searchResults = [];
       return;
     }
-    // Chiamiamo il metodo searchUsers del tuo servizio
     const results = await this.userDataService.searchUsers(this.searchTerm);
     this.searchResults = results.filter(user =>
       !this.selectedUsers.some(selectedUser => selectedUser.uid === user.uid)
     );
   }
 
-  // ⭐ NUOVO METODO: Seleziona un utente
-  selectUser(user: any) {
+  selectUser(user: UserDashboardCounts) {
     if (!this.selectedUsers.some(selectedUser => selectedUser.uid === user.uid)) {
       this.selectedUsers.push(user);
     }
@@ -79,8 +79,7 @@ export class ProgettoFormComponent implements OnInit {
     this.searchResults = [];
   }
 
-  // ⭐ NUOVO METODO: Rimuovi un utente
-  removeUser(user: any) {
+  removeUser(user: UserDashboardCounts) {
     this.selectedUsers = this.selectedUsers.filter(u => u.uid !== user.uid);
   }
 
@@ -103,7 +102,7 @@ export class ProgettoFormComponent implements OnInit {
     const projectData: Partial<Project> = {
       ...this.projectForm.value,
       dueDate: this.projectForm.value.dueDate ? new Date(this.projectForm.value.dueDate) : undefined,
-      members: this.selectedUsers.map(u => u.uid), // ⭐ Aggiungi i membri selezionati
+      members: this.selectedUsers.map(u => u.uid),
     };
 
     if (this.projectToEdit && this.projectToEdit.id) {
