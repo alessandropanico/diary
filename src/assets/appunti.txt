@@ -1,5 +1,7 @@
 --TO DO--
 
+Modificare chat-gruppo: (inserire immagine profilo, cambiare nome gruppo, ecc)
+
 TEST CONNENTENDO CELLULARE AL PC;
 
 PULSANTE SUPPORTO CREATORE!;
@@ -7,8 +9,6 @@ PULSANTE SUPPORTO CREATORE!;
 IMPORTA BENE GOOGLE ADMOB;
 
 *****CAMBIARE COLORE ALLO STILE*****
-
-Sincronizzazione con Google Calendar: per importare eventi/task (?);
 
 Integrazione con AI (anche semplice):
 
