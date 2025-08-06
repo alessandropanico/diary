@@ -429,4 +429,31 @@ export class NotiziePage implements OnInit, OnDestroy {
     const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
     return userProfile?.nickname || 'Utente sconosciuto';
   }
+
+  // Funzione per condividere il post (nuova)
+  async sharePost(post: Post) {
+    const appLink = 'https://alessandropanico.github.io/Sito-Portfolio/';
+    const postSpecificLink = `${appLink}#/post/${post.id}`;
+    let shareText = `Ho condiviso un post dall'app "NexusPlan"! Vieni a vedere: ${post.text || postSpecificLink}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Post di ${post.username} su NexusPlan`,
+          text: shareText,
+          url: postSpecificLink,
+        });
+        this.expService.addExperience(20, 'postShared');
+      } else {
+        console.warn('Web Share API non disponibile, copia negli appunti come fallback.');
+        await navigator.clipboard.writeText(shareText);
+        this.presentAppAlert('Condivisione non supportata', 'La condivisione nativa non è disponibile su questo dispositivo. Il link del post è stato copiato negli appunti.');
+      }
+    } catch (error) {
+      if ((error as any).name !== 'AbortError') {
+        console.error('Errore durante la condivisione del post:', error);
+        this.presentAppAlert('Errore Condivisione', 'Non è stato possibile condividere il post.');
+      }
+    }
+  }
 }
