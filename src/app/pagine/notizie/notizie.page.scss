@@ -12,11 +12,6 @@
 }
 
 
-.page-container {
-  padding: 0 20px;
-  /* Rimuovi il padding verticale, mantieni solo quello orizzontale */
-}
-
 .panel-glow-border {
   background: var(--bg-blur);
   border: 1px solid var(--border-subtle);
@@ -76,8 +71,10 @@
 }
 
 /* Aggiungi questa nuova regola per il primo elemento */
-.page-container> :first-child {
-  margin-top: 0;
+.page-container {
+  margin-top: 20px;
+  padding: 0 20px;
+
 }
 
 .post-header {
