@@ -443,15 +443,10 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       await loading.dismiss();
     }
   } else {
-    console.log(`CommentSectionComponent: '${identifier}' è probabilmente un UID. Navigazione diretta.`);
   }
 
   if (uidToNavigate) {
-    // ⭐ NON NAVIGARE DIRETTAMENTE DA QUI, MA EMETTI L'EVENTO ⭐
     this.goToUserProfileEvent.emit(uidToNavigate);
-    console.log(`CommentSectionComponent: Emitting goToUserProfileEvent with UID: ${uidToNavigate}`);
-    // Rimuovi la navigazione diretta con this.router.navigate qui!
-    // La navigazione avverrà nel CommentsModalComponent
   } else {
     console.warn(`CommentSectionComponent: Impossibile navigare. UID non disponibile per l'identifier: ${identifier}`);
   }
@@ -634,7 +629,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     const { data } = await modal.onWillDismiss();
     // Puoi gestire qui eventuali dati di ritorno dal modale, se necessario
     if (data && data.dismissed) {
-      console.log('Comment Likes Modal dismissed');
     }
   }
 }

@@ -139,7 +139,6 @@ export class GroupChatService {
     const groupDocRef = doc(this.firestore, 'groups', groupId);
 
     if (imageUrl) {
-      console.log(`URL immagine: ${imageUrl}`);
     }
 
     let senderNickname = 'Sistema'; // Default per messaggi di sistema
@@ -152,7 +151,6 @@ export class GroupChatService {
         senderNickname = 'Utente Sconosciuto';
       }
     } else {
-      console.log('Sender è "system", nickname impostato a "Sistema".');
     }
 
     const newMessage: GroupMessage = {
@@ -608,5 +606,5 @@ export class GroupChatService {
     }
   }
 
-  
+
 }

@@ -77,7 +77,6 @@ export class ProgettiPage implements OnInit {
       if (!this.projectToEdit) {
         const xpAmount = 50; // ⭐ Definisci i punti esperienza da assegnare
         await this.expService.addExperience(xpAmount, 'Progetto creato');
-        console.log(`XP assegnati per la creazione di un nuovo progetto: +${xpAmount}`);
       }
 
       this.loadProjects();

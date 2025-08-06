@@ -70,7 +70,6 @@ export class UserDashboardComponent implements OnInit, OnDestroy, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['userId'] && changes['userId'].currentValue !== changes['userId'].previousValue) {
       if (this.userId) {
-        console.log('UserDashboardComponent: userId cambiato/ricevuto:', this.userId);
         this.loadDashboardData();
         this.loadProjectsData(); // ⭐ Chiamata al nuovo metodo per i progetti ⭐
       } else {

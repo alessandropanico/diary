@@ -111,7 +111,6 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['userId'] && changes['userId'].currentValue !== changes['userId'].previousValue) {
       if (this.userId) {
-        console.log('UserPostsComponent: userId cambiato/ricevuto:', this.userId);
         this.loadInitialPosts();
       } else {
         console.warn('UserPostsComponent: userId non valido, impossibile caricare i post.');

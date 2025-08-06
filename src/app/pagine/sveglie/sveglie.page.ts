@@ -71,7 +71,6 @@ export class SvegliePage implements OnInit, OnDestroy  {
     // Sottoscrivi all'Observable per ricevere l'ID utente in tempo reale
     this.userStatusSubscription = this.userDataService.userStatus$.subscribe(userId => {
       this.currentUserId = userId;
-      console.log(`SvegliePage: L'ID utente è stato aggiornato a: ${this.currentUserId}`);
       this.loadAlarms(); // Ricarica le sveglie per il nuovo utente
     });
   }
@@ -91,7 +90,6 @@ export class SvegliePage implements OnInit, OnDestroy  {
       const storageKey = `alarms_${this.currentUserId}`;
       const savedAlarms = await this.storage.get(storageKey);
       this.alarms = savedAlarms || [];
-      console.log(`Sveglie caricate per utente ${this.currentUserId}:`, this.alarms);
     } else {
       this.alarms = [];
       console.warn("Nessun utente loggato, le sveglie non sono state caricate.");
@@ -464,7 +462,6 @@ async openInfo(index: number | null = null) {
     if (this.currentUserId) {
       const storageKey = `alarms_${this.currentUserId}`;
       await this.storage.set(storageKey, this.alarms);
-      console.log(`Sveglie salvate per utente ${this.currentUserId}.`);
     } else {
       console.warn("Tentativo di salvare le sveglie senza un utente loggato.");
     }

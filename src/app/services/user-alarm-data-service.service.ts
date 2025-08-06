@@ -56,12 +56,10 @@ export class UserAlarmDataService {
     try {
       // 1. Aggiorna i dati su Firebase Firestore
       await setDoc(userRef, dataToUpdate, { merge: true });
-      console.log(`Dati sveglie e attività globale aggiornati per utente ${userId} su Firebase.`);
 
       // 2. Aggiungi gli XP SOLO se la sveglia è stata completata
       if (completedAlarm) {
         this.expService.addExperience(20); // Assumi che addExperience non abbia bisogno di userId qui
-        console.log(`[UserAlarmDataService] XP aggiunti per completamento sveglia.`);
       }
 
       // 3. Notifica UserDataService per aggiornare lo stato locale e la dashboard

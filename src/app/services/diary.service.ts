@@ -73,7 +73,6 @@ export class DiaryService {
           // Quando recuperi, aggiungi anche la data dall'ID del documento
           return { ...snapshot.data() as DailyEntry, date: snapshot.id };
         } else {
-          // console.log(`DiaryService: Nessuna voce trovata per la data ${date}`);
           return undefined;
         }
       }),

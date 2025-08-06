@@ -47,7 +47,6 @@ export class AuthService {
     try {
       await auth.signOut();
       this._user.next(null);
-      console.log('AuthService: Utente disconnesso da Firebase Auth.');
     } catch (error) {
       console.error('AuthService: Errore durante il logout da Firebase Auth:', error);
     }

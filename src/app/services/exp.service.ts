@@ -66,7 +66,6 @@ export class ExpService {
           const totalXP = userData['totalXP'] as number || 0;
           return this.calculateLevelAndProgress(totalXP);
         } else {
-          console.log(`Documento utente non trovato per UID: ${uid}. Restituisco dati di default.`);
           return {
             totalXP: 0, userLevel: 1, currentXP: 0, xpForNextLevel: 100, progressPercentage: 0, maxLevelReached: false
           };
@@ -104,7 +103,6 @@ export class ExpService {
           // Aggiorna il BehaviorSubject locale per mantenere la UI sincronizzata
           this._totalXP.next(newTotalXP);
 
-          console.log(`XP aggiornati per l'utente ${currentUser.uid}: +${xpAmount} per '${reason}'. Totale: ${newTotalXP}`);
         }
       } catch (error) {
         console.error("Errore nell'aggiornare gli XP su Firestore:", error);

@@ -141,9 +141,7 @@ export class NoteService {
 
     return from(setDoc(noteRef, newNote)).pipe(
       tap(() => {
-        console.log('Nota aggiunta a Firestore:', newNote.id);
         this.expService.addExperience(5);
-        console.log('[NoteService] XP aggiunti per nuova nota.');
         this.userDataService.incrementTotalNotesCount();
         this.userDataService.setLastNoteListInteraction(new Date().toISOString());
         // ⭐ NUOVO: Aggiorna il timestamp specifico per l'ultima interazione con le note
@@ -177,7 +175,6 @@ export class NoteService {
 
     return from(updateDoc(noteRef, noteToUpdate)).pipe(
       tap(() => {
-        console.log('Nota aggiornata in Firestore:', updatedNote.id);
         this.userDataService.setLastNoteListInteraction(new Date().toISOString());
         // ⭐ NUOVO: Aggiorna il timestamp specifico per l'ultima interazione con le note
         this.userDataService.setLastNoteInteraction(new Date().toISOString())
@@ -203,7 +200,6 @@ export class NoteService {
 
     return from(deleteDoc(noteRef)).pipe(
       tap(() => {
-        console.log('Nota eliminata da Firestore:', id);
         this.userDataService.incrementTotalNotesCount(-1);
         this.userDataService.setLastNoteListInteraction(new Date().toISOString());
         // ⭐ NUOVO: Aggiorna il timestamp specifico per l'ultima interazione con le note
@@ -234,9 +230,7 @@ export class NoteService {
 
     return from(setDoc(newDocRef, newPlaylist)).pipe(
       tap(() => {
-        console.log('Playlist aggiunta a Firestore:', newPlaylist);
         this.expService.addExperience(10);
-        console.log('[NoteService] XP aggiunti per nuova playlist.');
         this.userDataService.incrementTotalListsCount();
         this.userDataService.setLastNoteListInteraction(new Date().toISOString());
         // ⭐ AGGIORNAMENTO ULTIMA ATTIVITÀ GLOBALE
@@ -273,7 +267,6 @@ export class NoteService {
 
         return from(batch.commit()).pipe(
           tap(() => {
-            console.log(`Playlist "${playlistId}" e ${deletedNotesCount} note associate eliminate da Firestore.`);
             this.userDataService.incrementTotalListsCount(-1);
             if (deletedNotesCount > 0) {
               this.userDataService.incrementTotalNotesCount(-deletedNotesCount);

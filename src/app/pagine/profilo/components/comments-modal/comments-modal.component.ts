@@ -53,7 +53,6 @@ export class CommentsModalComponent implements OnInit, OnDestroy {
    * @param userId L'ID dell'utente al cui profilo navigare.
    */
   async handleGoToUserProfile(userId: string) {
-    console.log(`CommentsModalComponent: ricevuto richiesta di navigazione profilo per UID: ${userId}`);
 
     // 1. Chiudi il modale corrente
     await this.modalController.dismiss();

@@ -138,7 +138,6 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
       }
       this.loadUsers();
     } else {
-      console.log('Refresh non applicabile in modalità ricerca.');
     }
     event?.target?.complete();
   }
@@ -240,7 +239,6 @@ export class ListaUtentiPage implements OnInit, OnDestroy, AfterViewInit {
       this.ngZone.run(() => {
         // this.searchResults = results.filter(user => user.uid !== this.currentUserId);
         this.searchResults = results;
-        console.log('Risultati ricerca:', results);
         this.isSearchingUsers = false;
       });
     });

@@ -123,18 +123,15 @@ export class ChatService {
         const conversationId = existingConversationDoc.id;
         const convData = existingConversationDoc.data() as ConversationDocument;
 
-        console.log('Conversazione esistente trovata:', conversationId);
 
         // Se la conversazione era stata "eliminata" da uno o entrambi, la "ripristiniamo"
         if (convData.deletedBy && convData.deletedBy.length > 0) {
-          console.log(`Ripristino conversazione ${conversationId} (rimozione deletedBy).`);
           await updateDoc(doc(this.afs, 'conversations', conversationId), {
             deletedBy: [] // Rimuove tutti gli ID dal campo deletedBy
           });
         }
         return conversationId;
       } else {
-        console.log('Nessuna conversazione esistente per gli utenti, creando una nuova.');
         const newConversationRef = doc(conversationsRef);
 
         const newConversationData: ConversationDocument = {
@@ -437,7 +434,6 @@ export class ChatService {
       await updateDoc(conversationRef, {
         deletedBy: arrayUnion(userId)
       });
-      console.log(`Conversazione ${conversationId} marcata come eliminata per l'utente ${userId}.`);
     } catch (error) {
       console.error(`Errore nel marcare la conversazione ${conversationId} come eliminata:`, error);
       throw error;
