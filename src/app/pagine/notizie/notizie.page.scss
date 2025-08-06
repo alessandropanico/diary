@@ -49,10 +49,21 @@
 }
 
 @keyframes loading-dots {
-  0% { width: 0; }
-  33% { width: .5em; }
-  66% { width: 1em; }
-  100% { width: 1.5em; }
+  0% {
+    width: 0;
+  }
+
+  33% {
+    width: .5em;
+  }
+
+  66% {
+    width: 1em;
+  }
+
+  100% {
+    width: 1.5em;
+  }
 }
 
 .post-card {
@@ -158,7 +169,8 @@
   gap: 15px;
 }
 
-.like-section, .comment-section {
+.like-section,
+.comment-section {
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -183,8 +195,10 @@
 
 .like-section {
   color: var(--label-color);
+
   &.active {
     color: var(--ion-color-danger);
+
     ion-icon {
       animation: heartbeat 0.5s ease-in-out;
     }
@@ -192,9 +206,17 @@
 }
 
 @keyframes heartbeat {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 ion-infinite-scroll {
@@ -208,8 +230,10 @@ ion-infinite-scroll {
 /* Stile per le immagini del post */
 .post-image {
   width: 100%;
-  height: 200px; /* Altezza fissa per coerenza, puoi cambiarla */
-  object-fit: cover; /* Ritaglia l'immagine per riempire il contenitore */
+  height: 200px;
+  /* Altezza fissa per coerenza, puoi cambiarla */
+  object-fit: cover;
+  /* Ritaglia l'immagine per riempire il contenitore */
   border-radius: 4px;
   margin-top: 10px;
   border: 1px solid var(--border-subtle);
@@ -252,4 +276,61 @@ ion-infinite-scroll {
   &:first-child {
     margin-left: 0;
   }
+}
+
+.post-action-button {
+  background: none;
+  border: none;
+  color: var(--primary-glow);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9em;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s;
+  border-radius: 4px;
+  flex: 1;
+  justify-content: center;
+
+  &:hover {
+    background-color: var(--button-hover-bg);
+    box-shadow: 0 0 4px var(--glow-intensity-medium);
+  }
+
+  &:active {
+    background-color: rgba(0, 255, 238, 0.15);
+    box-shadow: 0 0 6px var(--glow-intensity-high);
+  }
+
+  &.liked {
+    color: #ff3366;
+
+    .icon {
+      filter: drop-shadow(0 0 2px #ff3366);
+    }
+  }
+}
+
+.icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  mask-size: cover;
+  background-color: var(--primary-glow);
+  -webkit-mask-size: cover;
+  filter: drop-shadow(0 0 1px var(--glow-intensity-low));
+  flex-shrink: 0;
+}
+
+.icon-in-primary-button {
+  background-color: var(--panel-solid-bg);
+  filter: none;
+}
+
+.comment-icon {
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>');
 }

@@ -64,8 +64,9 @@
         </div>
 
         <div class="comment-section" (click)="openCommentsModal(post)">
-          <ion-icon name="chatbubble-outline" color="medium" class="comment-icon"></ion-icon>
-          <span class="comments-count">{{ post.commentsCount || 0 }}</span>
+         <button class="post-action-button" (click)="openCommentsModal(post)">
+      <span class="icon comment-icon"></span> {{ post.commentsCount || 0 }} Commenti
+    </button>
         </div>
       </div>
 
