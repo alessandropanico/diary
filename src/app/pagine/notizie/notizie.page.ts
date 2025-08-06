@@ -352,23 +352,27 @@ async openCommentsModal(post: PostWithUserDetails) {
   const modal = await this.modalController.create({
     component: CommentsModalComponent,
     componentProps: {
+      // Passiamo le proprietà una ad una come nel tuo codice funzionante
       postId: post.id,
-      postCreatorAvatar: post.userPhoto, // Corretto da 'post.userAvatarUrl' a 'post.userPhoto'
+      postCreatorAvatar: post.userPhoto,
       postCreatorUsername: post.username,
       postText: post.text
     },
-    cssClass: 'modal-full-screen',
+    // Usiamo le stesse opzioni di stile e comportamento del modale a scorrimento
+    cssClass: 'my-custom-comments-modal',
+    mode: 'ios',
+    breakpoints: [0, 0.25, 0.5, 0.75, 1],
+    initialBreakpoint: 1,
     backdropDismiss: true,
-    animated: true,
-    mode: 'ios'
   });
-  await modal.present();
 
-  const { data } = await modal.onDidDismiss();
-  if (data?.commentsCount !== undefined) {
-    post.commentsCount = data.commentsCount;
+  // Aggiungiamo il listener onWillDismiss per ricaricare tutti i post
+  modal.onWillDismiss().then(() => {
+    this.loadInitialPosts();
     this.cdr.detectChanges();
-  }
+  });
+
+  await modal.present();
 }
 
   async openLikesModal(post: PostWithUserDetails) {
