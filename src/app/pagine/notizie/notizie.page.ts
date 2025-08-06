@@ -348,48 +348,85 @@ export class NotiziePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-async openCommentsModal(post: PostWithUserDetails) {
-  const modal = await this.modalController.create({
-    component: CommentsModalComponent,
-    componentProps: {
-      // Passiamo le proprietà una ad una come nel tuo codice funzionante
-      postId: post.id,
-      postCreatorAvatar: post.userPhoto,
-      postCreatorUsername: post.username,
-      postText: post.text
-    },
-    // Usiamo le stesse opzioni di stile e comportamento del modale a scorrimento
-    cssClass: 'my-custom-comments-modal',
-    mode: 'ios',
-    breakpoints: [0, 0.25, 0.5, 0.75, 1],
-    initialBreakpoint: 1,
-    backdropDismiss: true,
-  });
+  async openCommentsModal(post: PostWithUserDetails) {
+    const modal = await this.modalController.create({
+      component: CommentsModalComponent,
+      componentProps: {
+        postId: post.id,
+        postCreatorAvatar: post.userPhoto,
+        postCreatorUsername: post.username,
+        postText: post.text
+      },
+      cssClass: 'my-custom-comments-modal',
+      mode: 'ios',
+      breakpoints: [0, 0.25, 0.5, 0.75, 1],
+      initialBreakpoint: 1,
+      backdropDismiss: true,
+    });
 
-  // Aggiungiamo il listener onWillDismiss per ricaricare tutti i post
-  modal.onWillDismiss().then(() => {
-    this.loadInitialPosts();
-    this.cdr.detectChanges();
-  });
+    modal.onWillDismiss().then(() => {
+      this.loadInitialPosts();
+      this.cdr.detectChanges();
+    });
 
-  await modal.present();
-}
+    await modal.present();
+  }
 
   async openLikesModal(post: PostWithUserDetails) {
     const modal = await this.modalController.create({
       component: LikeModalComponent,
       componentProps: {
         likes: post.likes,
+        usersMap: post.likesUsersMap,
       },
       cssClass: 'modal-likes',
       backdropDismiss: true,
       animated: true,
       mode: 'ios'
     });
+
+    // Aggiungo il listener per ricaricare i post quando il modale viene chiuso
+    modal.onWillDismiss().then(() => {
+      this.loadInitialPosts();
+      this.cdr.detectChanges();
+    });
+
     await modal.present();
   }
 
   async openImageModal(imageUrl: string) {
     // Questo metodo può essere lasciato vuoto o implementato per mostrare l'immagine in un modal.
+  }
+
+  /**
+   * Restituisce un array limitato di ID utente che hanno messo like.
+   * Utilizzato per mostrare solo un subset di avatar nella preview.
+   * @param likes L'array di ID utente che hanno messo like al post.
+   * @returns Un array contenente al massimo i primi 3 ID utente.
+   */
+  getLimitedLikedUsers(likes: string[]): string[] {
+    return (likes || []).slice(0, 3);
+  }
+
+  /**
+   * Recupera l'URL dell'avatar di un utente dato il suo ID, usando la mappa cache del post.
+   * @param userId L'ID dell'utente.
+   * @param usersMap La mappa specifica degli utenti che hanno messo like per questo post.
+   * @returns L'URL dell'avatar dell'utente, o undefined se non trovato.
+   */
+  getUserAvatarById(userId: string, usersMap?: Map<string, UserDashboardCounts>): string | undefined {
+    const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
+    return userProfile ? this.getUserPhoto(userProfile.profilePictureUrl || userProfile.photo) : undefined;
+  }
+
+  /**
+   * Recupera il nickname di un utente dato il suo ID, usando la mappa cache del post.
+   * @param userId L'ID dell'utente.
+   * @param usersMap La mappa specifica degli utenti che hanno messo like per questo post.
+   * @returns Il nickname dell'utente, o 'Utente sconosciuto' come fallback.
+   */
+  getLikedUserName(userId: string, usersMap?: Map<string, UserDashboardCounts>): string {
+    const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
+    return userProfile?.nickname || 'Utente sconosciuto';
   }
 }

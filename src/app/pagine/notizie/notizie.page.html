@@ -32,12 +32,24 @@
       </div>
 
       <div class="post-likes-info" *ngIf="post.likes && post.likes.length > 0" (click)="openLikesModal(post)">
+        <div class="liked-avatars-preview">
+          <img *ngFor="let userId of getLimitedLikedUsers(post.likes)"
+            [src]="getUserPhoto(getUserAvatarById(userId, post.likesUsersMap))" alt="Liked User Avatar"
+            class="liked-avatar-thumbnail">
+        </div>
         <span class="likes-count-text">
           Piace a
-          <span *ngFor="let user of (post.likesUsersMap | keyvalue) | slice:0:3; let last = last">
-            <b *ngIf="user.value">{{ user.value.nickname }}</b><span *ngIf="!last && post.likes!.length > 1">, </span>
-          </span>
-          <span *ngIf="post.likes!.length > 3"> e altri {{ post.likes!.length - 3 }}</span>
+          <ng-container *ngIf="post.likes.length === 1">
+            <strong>{{ getLikedUserName(post.likes[0], post.likesUsersMap) }}</strong>
+          </ng-container>
+          <ng-container *ngIf="post.likes.length === 2">
+            <strong>{{ getLikedUserName(post.likes[0], post.likesUsersMap) }}</strong> e <strong>{{
+              getLikedUserName(post.likes[1], post.likesUsersMap) }}</strong>
+          </ng-container>
+          <ng-container *ngIf="post.likes.length > 2">
+            <strong>{{ getLikedUserName(post.likes[0], post.likesUsersMap) }}</strong> e altri <strong>{{ post.likes.length
+              - 1 }}</strong>
+          </ng-container>
         </span>
       </div>
 
