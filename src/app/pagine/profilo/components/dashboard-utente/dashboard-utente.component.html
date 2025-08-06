@@ -55,6 +55,23 @@
     </div>
   </div>
 
+  <div class="ff7-section-divider"></div>
+
+   <div class="ff7-dashboard-section level-2-section">
+    <h3 class="ff7-section-heading">
+      <i class="icon-tasks"></i> I Tuoi Progetti
+    </h3>
+    <div class="ff7-data-grid">
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Progetti Totali</div>
+        <div class="ff7-data-value">{{ totalProjectsCount }}</div>
+      </div>
+      <div class="ff7-data-item">
+        <div class="ff7-data-label">Ultimo Aggiornamento</div>
+        <div class="ff7-data-value">{{ getDisplayDate(lastProjectInteraction) }}</div>
+      </div>
+    </div>
+  </div>
 
   <div class="ff7-section-divider"></div>
 
@@ -117,6 +134,7 @@
       </div>
     </div>
   </div>
+
   <div class="ff7-section-divider"></div>
 
   <div class="ff7-dashboard-section level-3-section">

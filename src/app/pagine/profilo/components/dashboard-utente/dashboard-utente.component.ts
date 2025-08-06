@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ExpService } from 'src/app/services/exp.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Subscription } from 'rxjs';
+import { ProgettiService, Project } from 'src/app/services/progetti.service';
 
 @Component({
   selector: 'app-dashboard-utente',
@@ -55,9 +56,15 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
 
   private subscriptions: Subscription = new Subscription();
 
+  // ⭐ NUOVE VARIABILI PER I PROGETTI ⭐
+  totalProjectsCount: number = 0;
+  lastProjectInteraction: string = '';
+
+
   constructor(
     private expService: ExpService,
-    private userDataService: UserDataService
+    private userDataService: UserDataService,
+    private progettiService: ProgettiService
   ) { }
 
   ngOnInit() {
@@ -72,6 +79,8 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
       })
     );
     this.loadDashboardData();
+    // ⭐ Chiama il nuovo metodo per caricare i dati dei progetti ⭐
+    this.loadProjectsData();
   }
 
   ngOnDestroy() {
@@ -122,6 +131,29 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ⭐ METODO CORRETTO: Carica i dati relativi ai progetti ⭐
+  loadProjectsData(): void {
+    this.subscriptions.add(
+      this.progettiService.getProjects().subscribe(projects => {
+        this.totalProjectsCount = projects.length;
+
+        if (projects.length > 0) {
+          // Ordina i progetti in base all'ultimo aggiornamento per trovare il più recente
+          const sortedProjects = projects.sort((a, b) => {
+            const dateA = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
+            const dateB = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
+            return dateB - dateA;
+          });
+
+          // ⭐ CONVERTI IL VALORE in stringa prima di assegnarlo
+          this.lastProjectInteraction = sortedProjects[0].lastUpdated?.toISOString() ?? '';
+        } else {
+          this.lastProjectInteraction = '';
+        }
+      })
+    );
+  }
+
   resetDashboardData(): void {
     this.activeAlarmsCount = 0;
     this.totalAlarmsCount = 0;
@@ -154,6 +186,9 @@ export class DashboardUtenteComponent implements OnInit, OnDestroy {
     this.totalXP = 0;
     this.progressPercentage = 0;
     this.maxLevelReached = false;
+
+    this.totalProjectsCount = 0;
+    this.lastProjectInteraction = '';
   }
 
   getDisplayDate(dateString: string): string {
