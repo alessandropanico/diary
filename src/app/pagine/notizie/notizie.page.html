@@ -1,0 +1,35 @@
+<div *ngIf="isLoading" class="loading-indicator panel-glow-border">
+  <p>Caricamento notizie... <span class="loading-dots"></span></p>
+</div>
+
+<div *ngIf="!isLoading && news.length === 0" class="no-posts-message panel-glow-border">
+  <p>Non ci sono notizie da visualizzare in questo momento.</p>
+</div>
+
+<div *ngFor="let newsItem of news" class="news-card panel-glow-border">
+  <div class="news-header">
+    <div class="news-source">
+      <img [src]="newsItem.sourceLogoUrl" alt="Source Logo" class="source-logo">
+    </div>
+    <div class="news-info">
+      <span class="news-source-name">{{ newsItem.sourceName }}</span>
+      <span class="news-time">{{ formatNewsTime(newsItem.timestamp) }}</span>
+    </div>
+  </div>
+
+  <div class="news-content">
+    <h3 class="news-title" (click)="goToNewsDetails(newsItem.id)">{{ newsItem.title }}</h3>
+    <p class="news-text">{{ newsItem.summary }}</p>
+    <img *ngIf="newsItem.imageUrl" [src]="newsItem.imageUrl" alt="News Image" class="news-image">
+  </div>
+
+  <div class="news-actions">
+    <a [href]="newsItem.sourceUrl" target="_blank" class="app-button read-more-button">
+      <span class="icon external-link-icon"></span> Leggi l'articolo completo
+    </a>
+  </div>
+</div>
+
+<ion-infinite-scroll (ionInfinite)="loadMoreNews($event)" [disabled]="!canLoadMore">
+  <ion-infinite-scroll-content loadingSpinner="circles" loadingText="Caricamento altre notizie..."></ion-infinite-scroll-content>
+</ion-infinite-scroll>
