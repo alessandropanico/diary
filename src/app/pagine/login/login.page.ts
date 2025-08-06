@@ -1,12 +1,14 @@
 // src/app/login/login.page.ts
 
-import { Component, NgZone, OnInit } from '@angular/core';
+import { Component, NgZone, OnInit, OnDestroy } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { environment } from 'src/environments/environment';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
+// ⭐ MODIFICA 1: Importa il nuovo servizio di presenza
+import { PresenceService } from 'src/app/services/presence.service';
 
 const app = initializeApp(environment.firebaseConfig);
 const auth = getAuth(app);
@@ -19,15 +21,19 @@ declare const google: any;
   styleUrls: ['./login.page.scss'],
   standalone: false,
 })
-export class LoginPage implements OnInit {
+export class LoginPage implements OnInit, OnDestroy {
   user: any = null;
+  // ⭐ RIMOSSO: Eliminata la variabile per l'intervallo
+  // private onlineStatusInterval: any;
 
   constructor(
     private ngZone: NgZone,
     private alertCtrl: AlertController,
     private userDataService: UserDataService,
     private router: Router,
-  ) {}
+    // ⭐ MODIFICA 2: Inietta il nuovo servizio nel costruttore
+    private presenceService: PresenceService
+  ) { }
 
   ngOnInit() {
     onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
@@ -40,13 +46,16 @@ export class LoginPage implements OnInit {
             uid: firebaseUser.uid
           };
 
-          // Chiamata per aggiornare lastOnline anche qui, nel caso l'utente sia già loggato
-          // e navigasse direttamente a '/profilo' o ricaricasse la pagina.
-          // Questo serve come un "ping" iniziale che l'utente è online.
-          this.userDataService.setLastOnline().catch(err => {
-            console.error("Errore nell'aggiornamento di lastOnline all'inizializzazione del login:", err);
-          });
+          // ⭐ MODIFICA 3: Chiama il nuovo servizio per impostare la presenza
+          this.presenceService.setPresence();
 
+          // ⭐ RIMOSSO: Eliminata la chiamata di aggiornamento di lastOnline
+          // this.userDataService.setLastOnline().catch(err => {
+          //   console.error("Errore nell'aggiornamento di lastOnline all'inizializzazione del login:", err);
+          // });
+
+          // ⭐ RIMOSSO: Eliminata la chiamata per avviare l'aggiornamento periodico
+          // this.startOnlineStatusUpdater();
 
           if (this.router.url !== '/profilo') {
             this.router.navigateByUrl('/profilo', { replaceUrl: true });
@@ -54,6 +63,8 @@ export class LoginPage implements OnInit {
 
         } else {
           this.user = null;
+          // ⭐ RIMOSSO: Eliminata la chiamata per interrompere l'aggiornamento periodico
+          // this.stopOnlineStatusUpdater();
           if (this.router.url !== '/login') {
             this.router.navigateByUrl('/login', { replaceUrl: true });
           }
@@ -84,18 +95,22 @@ export class LoginPage implements OnInit {
     };
   }
 
+  ngOnDestroy(): void {
+    // ⭐ RIMOSSO: Non è più necessario interrompere l'aggiornamento, il servizio lo gestisce
+    // this.stopOnlineStatusUpdater();
+  }
+
   async handleCredentialResponse(response: any) {
     try {
       const credential = GoogleAuthProvider.credential(response.credential);
       const userCredential = await signInWithCredential(auth, credential);
       const firebaseUser = userCredential.user;
 
-      // ⭐ SOLO QUESTA È LA PARTE RILEVANTE PER lastOnline AL LOGIN ⭐
       const dataToUpdate: Partial<UserDashboardCounts> = {
         uid: firebaseUser.uid,
         email: firebaseUser.email || '',
         lastLogin: new Date().toISOString(),
-        lastOnline: new Date().toISOString(), // ⭐ Questo è il timestamp "online" chiave ⭐
+        lastOnline: new Date().toISOString(),
       };
 
       await this.userDataService.saveUserData(dataToUpdate);
@@ -136,6 +151,8 @@ export class LoginPage implements OnInit {
 
   async logout() {
     await signOut(auth);
+    // ⭐ RIMOSSO: non è più necessario
+    // this.stopOnlineStatusUpdater();
 
     const alert = await this.alertCtrl.create({
       header: 'Logout',
@@ -155,4 +172,23 @@ export class LoginPage implements OnInit {
       );
     }
   }
+
+  // ⭐ RIMOSSO: Eliminati i due metodi obsoleti
+  // private startOnlineStatusUpdater() {
+  //   if (this.onlineStatusInterval) {
+  //     clearInterval(this.onlineStatusInterval);
+  //   }
+  //   this.onlineStatusInterval = setInterval(() => {
+  //     this.userDataService.setLastOnline().catch(err => {
+  //       console.error("Errore nell'aggiornamento periodico di lastOnline:", err);
+  //     });
+  //   }, 30000);
+  // }
+  //
+  // private stopOnlineStatusUpdater() {
+  //   if (this.onlineStatusInterval) {
+  //     clearInterval(this.onlineStatusInterval);
+  //     this.onlineStatusInterval = null;
+  //   }
+  // }
 }

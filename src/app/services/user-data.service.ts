@@ -5,6 +5,7 @@ import { ExpService } from './exp.service';
 import { BehaviorSubject, Observable, from } from 'rxjs';
 import { Timestamp } from '@angular/fire/firestore';
 import { arrayUnion, arrayRemove } from 'firebase/firestore'; // Importa arrayUnion e arrayRemove
+import { serverTimestamp } from '@angular/fire/firestore';
 
 export interface UserProfile {
   uid: string; // Assicurati che l'UID sia sempre presente
@@ -646,18 +647,21 @@ export class UserDataService {
   }
 
   // ⭐⭐ AGGIUNGI QUESTO NUOVO METODO ⭐⭐
-  async setLastOnline(): Promise<void> {
-    const user = getAuth().currentUser; // Ottiene l'utente Firebase attualmente loggato
-    if (user) {
-      const userDocRef = doc(this.firestore, 'users', user.uid);
-      try {
+async setLastOnline(): Promise<void> {
+  const user = getAuth().currentUser;
+  if (user) {
+    const userDocRef = doc(this.firestore, 'users', user.uid);
+    try {
+      // ⭐ SOSTITUISCI QUESTA RIGA ⭐
+      await updateDoc(userDocRef, { lastOnline: serverTimestamp() });
+      // Usa updateDoc per aggiornare solo questo campo.
+      // Usa serverTimestamp() per garantire che il tipo di dato sia coerente con Timestamp di Firestore.
 
-        await setDoc(userDocRef, { lastOnline: new Date().toISOString() }, { merge: true });
-      } catch (error) {
-        console.error("Errore nell'aggiornamento del timestamp lastOnline:", error);
-      }
+    } catch (error) {
+      console.error("Errore nell'aggiornamento del timestamp lastOnline:", error);
     }
   }
+}
 
   // Aggiungi questo nuovo metodo alla classe UserDataService
   async updateLikeGivenCount(change: number): Promise<void> {
