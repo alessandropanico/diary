@@ -127,7 +127,6 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   ionViewWillEnter() {
-    console.log('Ricaricamento chat all\'ingresso della pagina...');
     this.isLoading = true;
     this.loadAllChats();
   }

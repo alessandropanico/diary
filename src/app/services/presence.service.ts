@@ -45,6 +45,5 @@ export class PresenceService {
       console.error("Errore nell'aggiornamento del timestamp lastOnline in Firestore:", error);
     }
 
-    console.log(`Stato di presenza impostato per l'utente ${user.uid}: ONLINE`);
   }
 }
