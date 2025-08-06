@@ -376,17 +376,21 @@ export class NotiziePage implements OnInit, OnDestroy {
     const modal = await this.modalController.create({
       component: LikeModalComponent,
       componentProps: {
-        likes: post.likes,
+        postId: post.id,
+        postLikes: post.likes,
         usersMap: post.likesUsersMap,
       },
-      cssClass: 'modal-likes',
+      cssClass: 'my-custom-likes-modal',
+      mode: 'ios',
+      // Aggiungi queste due righe per abilitare la funzionalità di scorrimento
+      breakpoints: [0, 0.25, 0.5, 0.75, 1],
+      initialBreakpoint: 1,
       backdropDismiss: true,
       animated: true,
-      mode: 'ios'
     });
 
-    // Aggiungo il listener per ricaricare i post quando il modale viene chiuso
     modal.onWillDismiss().then(() => {
+      // Quando il modale viene chiuso, ricarica i post per aggiornare i conteggi/stati dei like
       this.loadInitialPosts();
       this.cdr.detectChanges();
     });

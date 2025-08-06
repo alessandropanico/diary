@@ -120,6 +120,7 @@
 
 .post-content {
   margin-top: 10px;
+  margin-bottom: 30px;
 }
 
 .post-text {
@@ -144,18 +145,14 @@
 .post-likes-info {
   display: flex;
   align-items: center;
-  padding: 10px 0;
+  padding: 10px 16px 15px;
   cursor: pointer;
-  font-size: 0.85rem;
-  color: var(--text-light);
+  border-top: 1px solid var(--border-subtle);
+  margin-top: -15px;
 
   &:hover {
-    color: var(--primary-glow);
-  }
-
-  b {
-    font-weight: bold;
-    color: var(--primary-glow);
+    background: rgba(0, 255, 238, 0.05);
+    border-radius: 0 0 8px 8px;
   }
 }
 
@@ -353,4 +350,79 @@ ion-infinite-scroll {
 
 .delete-icon {
   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>');
+}
+
+
+.likes-count-text {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin: 0;
+
+  strong {
+    font-weight: bold;
+    color: var(--primary-glow);
+  }
+}
+
+@media (max-width: 768px) {
+  :host {
+    padding: 15px;
+  }
+
+  .panel-glow-border {
+    padding: 12px;
+    margin-bottom: 15px;
+  }
+
+  .post-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .post-username {
+    font-size: 1em;
+  }
+
+  .post-time {
+    font-size: 0.75em;
+  }
+
+  .post-text {
+    font-size: 0.9em;
+  }
+
+  .post-action-button {
+    font-size: 0.7em;
+    padding: 6px 8px;
+    gap: 3px;
+  }
+
+  .app-button {
+    padding: 8px 12px;
+    font-size: 0.8em;
+  }
+
+  .delete-button {
+    font-size: 0.7em;
+    padding: 6px 10px;
+  }
+
+  .app-textarea {
+    font-size: 0.85em;
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .liked-avatars-preview .liked-avatar-thumbnail {
+    width: 24px;
+    height: 24px;
+    margin-left: -8px;
+  }
+
+  .likes-count-text {
+    font-size: 0.8em;
+  }
 }
