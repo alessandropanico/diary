@@ -348,25 +348,28 @@ export class NotiziePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  async openCommentsModal(post: PostWithUserDetails) {
-    const modal = await this.modalController.create({
-      component: CommentsModalComponent,
-      componentProps: {
-        postId: post.id,
-      },
-      cssClass: 'modal-full-screen',
-      backdropDismiss: true,
-      animated: true,
-      mode: 'ios'
-    });
-    await modal.present();
+async openCommentsModal(post: PostWithUserDetails) {
+  const modal = await this.modalController.create({
+    component: CommentsModalComponent,
+    componentProps: {
+      postId: post.id,
+      postCreatorAvatar: post.userPhoto, // Corretto da 'post.userAvatarUrl' a 'post.userPhoto'
+      postCreatorUsername: post.username,
+      postText: post.text
+    },
+    cssClass: 'modal-full-screen',
+    backdropDismiss: true,
+    animated: true,
+    mode: 'ios'
+  });
+  await modal.present();
 
-    const { data } = await modal.onDidDismiss();
-    if (data?.commentsCount !== undefined) {
-      post.commentsCount = data.commentsCount;
-      this.cdr.detectChanges();
-    }
+  const { data } = await modal.onDidDismiss();
+  if (data?.commentsCount !== undefined) {
+    post.commentsCount = data.commentsCount;
+    this.cdr.detectChanges();
   }
+}
 
   async openLikesModal(post: PostWithUserDetails) {
     const modal = await this.modalController.create({
