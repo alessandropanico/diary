@@ -13,7 +13,8 @@
 
 
 .page-container {
-  padding: 20px;
+  padding: 0 20px;
+  /* Rimuovi il padding verticale, mantieni solo quello orizzontale */
 }
 
 .panel-glow-border {
@@ -69,8 +70,14 @@
 
 .post-card {
   margin: 20px auto;
+  /* Mantieni il margine verticale di 20px e centra orizzontalmente */
   display: flex;
   flex-direction: column;
+}
+
+/* Aggiungi questa nuova regola per il primo elemento */
+.page-container> :first-child {
+  margin-top: 0;
 }
 
 .post-header {
@@ -353,9 +360,6 @@ ion-infinite-scroll {
     gap: 3px;
   }
 
-  :host {
-    padding: 15px;
-  }
 
   .panel-glow-border {
     padding: 12px;
@@ -398,14 +402,31 @@ ion-infinite-scroll {
     height: 16px;
   }
 
-  .liked-avatars-preview .liked-avatar-thumbnail {
-    width: 24px;
-    height: 24px;
-    margin-left: -8px;
-  }
+  // .liked-avatars-preview .liked-avatar-thumbnail {
+  //   width: 24px;
+  //   height: 24px;
+  //   margin-left: -8px;
+  // }
 
   .likes-count-text {
     font-size: 0.8em;
   }
+
+  .page-container {
+    padding: 0 20px;
+    margin-top: 20px;
+  }
+
+
 }
 
+@media (max-width: 768px) {
+  .liked-avatar-thumbnail {
+    width: 24px;
+    height: 24px;
+  }
+
+  .liked-avatar-thumbnail:not(:first-child) {
+    margin-left: -8px;
+  }
+}
