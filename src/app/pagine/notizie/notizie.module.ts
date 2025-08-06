@@ -7,13 +7,15 @@ import { IonicModule } from '@ionic/angular';
 import { NotiziePageRoutingModule } from './notizie-routing.module';
 
 import { NotiziePage } from './notizie.page';
+import { KeyValuePipe } from '@angular/common';
 
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    NotiziePageRoutingModule
+    NotiziePageRoutingModule,
+    KeyValuePipe
   ],
   declarations: [NotiziePage]
 })

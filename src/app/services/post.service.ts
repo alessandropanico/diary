@@ -185,4 +185,56 @@ export class PostService {
     }
     return getDocs(q);
   }
+
+  // ⭐⭐⭐ INIZIO NUOVO METODO PER IL FEED NOTIZIE ⭐⭐⭐
+  getFollowingUsersPosts(followingIds: string[], limitPosts: number = 10, startAfterTimestamp: string | null = null): Observable<Post[]> {
+    // Se la lista di utenti seguiti è vuota, restituisci un Observable che emette un array vuoto
+    if (!followingIds || followingIds.length === 0) {
+      return of([]);
+    }
+
+    return from(this.getFollowingUsersPostsQuery(followingIds, limitPosts, startAfterTimestamp)).pipe(
+      map(querySnapshot => {
+        const posts: Post[] = [];
+        querySnapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          posts.push({
+            id: docSnap.id,
+            ...data as Omit<Post, 'id'>,
+            commentsCount: Math.max(0, data['commentsCount'] || 0)
+          });
+        });
+        return posts;
+      }),
+      catchError(error => {
+        console.error('Errore nel recupero dei post degli utenti seguiti:', error);
+        return of([]);
+      })
+    );
+  }
+
+  private async getFollowingUsersPostsQuery(followingIds: string[], limitPosts: number, startAfterTimestamp: string | null) {
+    let q;
+    // Firestore ha un limite di 10 per la clausola 'in', quindi è importante che followingIds non superi 10.
+    // Se segui più di 10 utenti, dovrai fare più query o ripensare la struttura dei dati.
+    // Per ora, presupponiamo che la lista sia gestibile.
+
+    if (startAfterTimestamp) {
+      q = query(
+        this.postsCollection,
+        where('userId', 'in', followingIds),
+        orderBy('timestamp', 'desc'),
+        startAfter(startAfterTimestamp),
+        limit(limitPosts)
+      );
+    } else {
+      q = query(
+        this.postsCollection,
+        where('userId', 'in', followingIds),
+        orderBy('timestamp', 'desc'),
+        limit(limitPosts)
+      );
+    }
+    return getDocs(q);
+  }
 }

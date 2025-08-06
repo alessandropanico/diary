@@ -1,35 +1,66 @@
-<div *ngIf="isLoading" class="loading-indicator panel-glow-border">
-  <p>Caricamento notizie... <span class="loading-dots"></span></p>
-</div>
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Notizie</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-<div *ngIf="!isLoading && news.length === 0" class="no-posts-message panel-glow-border">
-  <p>Non ci sono notizie da visualizzare in questo momento.</p>
-</div>
+<ion-content [fullscreen]="true">
+  <div class="page-container">
 
-<div *ngFor="let newsItem of news" class="news-card panel-glow-border">
-  <div class="news-header">
-    <div class="news-source">
-      <img [src]="newsItem.sourceLogoUrl" alt="Source Logo" class="source-logo">
+    <div *ngIf="isLoadingPosts" class="loading-indicator panel-glow-border">
+      <p>Caricamento dei post... <span class="loading-dots"></span></p>
     </div>
-    <div class="news-info">
-      <span class="news-source-name">{{ newsItem.sourceName }}</span>
-      <span class="news-time">{{ formatNewsTime(newsItem.timestamp) }}</span>
+
+    <div *ngIf="!isLoadingPosts && posts.length === 0" class="no-posts-message panel-glow-border">
+      <p>Non ci sono ancora post da visualizzare. Segui qualcuno per vedere il suo primo post!</p>
     </div>
-  </div>
 
-  <div class="news-content">
-    <h3 class="news-title" (click)="goToNewsDetails(newsItem.id)">{{ newsItem.title }}</h3>
-    <p class="news-text">{{ newsItem.summary }}</p>
-    <img *ngIf="newsItem.imageUrl" [src]="newsItem.imageUrl" alt="News Image" class="news-image">
-  </div>
+    <div *ngFor="let post of posts" class="post-card panel-glow-border">
+      <div class="post-header">
+        <div class="post-avatar" (click)="goToUserProfile(post.userId)">
+          <img [src]="getUserPhoto(post.userPhoto)" alt="Avatar utente">
+        </div>
+        <div class="post-info">
+          <span class="post-username" (click)="goToUserProfile(post.userId)">{{ post.username }}</span>
+          <span class="post-time">{{ formatPostTime(post.timestamp) }}</span>
+        </div>
+      </div>
 
-  <div class="news-actions">
-    <a [href]="newsItem.sourceUrl" target="_blank" class="app-button read-more-button">
-      <span class="icon external-link-icon"></span> Leggi l'articolo completo
-    </a>
-  </div>
-</div>
+      <div class="post-content">
+        <p class="post-text">{{ post.text }}</p>
+        <img *ngIf="post.imageUrl" [src]="post.imageUrl" alt="Immagine del post" class="post-image" (click)="openImageModal(post.imageUrl)">
+      </div>
 
-<ion-infinite-scroll (ionInfinite)="loadMoreNews($event)" [disabled]="!canLoadMore">
-  <ion-infinite-scroll-content loadingSpinner="circles" loadingText="Caricamento altre notizie..."></ion-infinite-scroll-content>
-</ion-infinite-scroll>
+      <div class="post-likes-info" *ngIf="post.likes && post.likes.length > 0" (click)="openLikesModal(post)">
+        <span class="likes-count-text">
+          Piace a
+          <span *ngFor="let user of (post.likesUsersMap | keyvalue) | slice:0:3; let last = last">
+            <b *ngIf="user.value">{{ user.value.nickname }}</b><span *ngIf="!last && post.likes!.length > 1">, </span>
+          </span>
+          <span *ngIf="post.likes!.length > 3"> e altri {{ post.likes!.length - 3 }}</span>
+        </span>
+      </div>
+
+      <div class="post-actions">
+        <div class="like-section" (click)="toggleLike(post)">
+          <ion-icon
+            [name]="(post.likes && post.likes.includes(currentUserId!)) ? 'heart' : 'heart-outline'"
+            [color]="(post.likes && post.likes.includes(currentUserId!)) ? 'danger' : 'medium'"
+            class="like-icon"
+          ></ion-icon>
+          <span class="likes-count">{{ post.likes.length || 0 }}</span>
+        </div>
+
+        <div class="comment-section" (click)="openCommentsModal(post)">
+          <ion-icon name="chatbubble-outline" color="medium" class="comment-icon"></ion-icon>
+          <span class="comments-count">{{ post.commentsCount || 0 }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <ion-infinite-scroll (ionInfinite)="loadMorePosts($event)" [disabled]="!canLoadMore">
+      <ion-infinite-scroll-content loadingSpinner="circles" loadingText="Caricamento altri post..."></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+  </div>
+</ion-content>
