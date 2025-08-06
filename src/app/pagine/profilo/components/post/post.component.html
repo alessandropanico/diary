@@ -19,8 +19,9 @@
   </div>
 </div>
 
-<div *ngIf="isLoadingPosts" class="loading-indicator panel-glow-border">
-  <p>Caricamento post... <span class="loading-dots"></span></p>
+<div *ngIf="isLoadingPosts" class="loading-overlay">
+  <ion-spinner name="crescent" color="primary"></ion-spinner>
+  <p>Caricamento dei post....</p>
 </div>
 
 <div *ngIf="!isLoadingPosts && posts.length === 0" class="no-posts-message panel-glow-border">

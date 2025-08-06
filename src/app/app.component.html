@@ -1,6 +1,6 @@
-<!-- <app-splash *ngIf="showSplash"></app-splash> -->
+<app-splash *ngIf="showSplash"></app-splash>
 
-<ion-app >
+<ion-app *ngIf="!showSplash">
   <ion-menu side="start" menuId="first" contentId="main-content" (ionWillOpen)="loadProfilePhoto()">
     <ion-header>
       <div class="contLogo">

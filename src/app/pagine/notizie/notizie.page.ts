@@ -13,6 +13,7 @@ import { ExpService } from 'src/app/services/exp.service';
 import { ModalController } from '@ionic/angular';
 import { CommentsModalComponent } from '../profilo/components/comments-modal/comments-modal.component';
 import { LikeModalComponent } from '../profilo/components/like-modal/like-modal.component';
+import { FollowService } from 'src/app/services/follow.service';
 
 // Interfaccia estesa per i post con dettagli utente
 interface PostWithUserDetails extends Post {
@@ -55,7 +56,8 @@ export class NotiziePage implements OnInit, OnDestroy {
     private alertCtrl: AlertController,
     private loadingCtrl: LoadingController,
     private expService: ExpService,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private followService: FollowService, // Aggiungi questa riga
   ) { }
 
   ngOnInit() {
@@ -90,7 +92,9 @@ export class NotiziePage implements OnInit, OnDestroy {
   }
 
   private async loadCurrentUserProfileAndFollowing() {
+    console.log('1. loadCurrentUserProfileAndFollowing chiamato.');
     if (!this.currentUserId) {
+      console.log('1.1. Nessun utente loggato, terminazione.');
       this.isLoadingPosts = false;
       this.cdr.detectChanges();
       return;
@@ -102,10 +106,18 @@ export class NotiziePage implements OnInit, OnDestroy {
         this.currentUserUsername = userData.nickname || 'Eroe Anonimo';
         this.currentUserAvatar = this.getUserPhoto(userData.photo || userData.profilePictureUrl);
         this.usersCache.set(this.currentUserId, userData);
-        this.followingUserIds = userData.following || [];
-        this.feedUserIds = [...this.followingUserIds, this.currentUserId];
       }
-      this.loadInitialPosts();
+
+      // ➡️ CORREZIONE: Usa il FollowService per ottenere gli ID degli utenti seguiti
+      this.followService.getFollowingIds(this.currentUserId).subscribe(followingIds => {
+        this.followingUserIds = followingIds;
+        this.feedUserIds = [...this.followingUserIds, this.currentUserId!];
+        console.log('2. Dati utente recuperati. Utenti seguiti:', this.followingUserIds);
+        console.log('3. ID utenti per il feed (inclusa te):', this.feedUserIds);
+        this.loadInitialPosts();
+        this.cdr.detectChanges();
+      });
+
     } catch (error) {
       console.error('Errore nel recupero dati utente o utenti seguiti:', error);
       this.presentAppAlert('Errore Utente', 'Impossibile caricare i dati del tuo profilo.');
@@ -331,7 +343,7 @@ export class NotiziePage implements OnInit, OnDestroy {
     if (userId === this.currentUserId) {
       this.router.navigateByUrl('/profilo');
     } else {
-      this.router.navigateByUrl(`/profilo/${userId}`);
+      this.router.navigateByUrl(`/profilo-altri-utenti/${userId}`);
     }
   }
 
