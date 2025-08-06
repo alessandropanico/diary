@@ -3,114 +3,141 @@ import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, query, whe
 import { Observable, from, switchMap, map } from 'rxjs';
 import { UserDataService } from 'src/app/services/user-data.service';
 import { Timestamp } from 'firebase/firestore';
+import { Firestore } from '@angular/fire/firestore';
 
 export interface Project {
-  id?: string;
-  name: string;
-  description: string;
-  status: 'In corso' | 'Completato' | 'In pausa' | 'Archiviato';
-  progress: number;
-  dueDate?: Date;
-  createdAt: Date;
-  lastUpdated: Date;
-  uid: string;
-  members: string[]; // ⭐ Assicurati che questa riga sia presente ⭐
+  id?: string;
+  name: string;
+  description: string;
+  status: 'In corso' | 'Completato' | 'In pausa' | 'Archiviato';
+  progress: number;
+  dueDate?: Date;
+  createdAt: Date;
+  lastUpdated: Date;
+  uid: string;
+  members: string[];
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root'
 })
 export class ProgettiService {
-  private db = getFirestore();
+  private db = getFirestore();
 
-  constructor(
-    private userDataService: UserDataService
-  ) {}
+  constructor(
+    private userDataService: UserDataService,
+    private firestore: Firestore
+  ) {}
 
-  getProjects(): Observable<Project[]> {
-    return this.userDataService.userStatus$.pipe(
-      switchMap(uid => {
-        if (!uid) {
-          return from([[]]);
-        }
-        const projectsCollection = collection(this.db, 'projects');
-        const q = query(projectsCollection, where('uid', '==', uid));
-        return from(getDocs(q)).pipe(
-          map(snapshot => {
-            const projects: Project[] = [];
-            snapshot.forEach(doc => {
-              const data = doc.data() as any;
-              projects.push({
-                id: doc.id,
-                ...data,
-                // ⭐ CONVERSIONE DEL TIMESTAMP
-                dueDate: data.dueDate instanceof Timestamp ? data.dueDate.toDate() : data.dueDate,
-                createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
-                lastUpdated: data.lastUpdated instanceof Timestamp ? data.lastUpdated.toDate() : data.lastUpdated
-              });
-            });
-            return projects;
-          })
-        );
-      })
-    );
-  }
+  getProjects(): Observable<Project[]> {
+    return this.userDataService.userStatus$.pipe(
+      switchMap(uid => {
+        if (!uid) {
+          return from([[]]);
+        }
+        const projectsCollection = collection(this.firestore, 'projects'); // Usa this.firestore
+        const q = query(projectsCollection, where('uid', '==', uid));
+        return from(getDocs(q)).pipe(
+          map(snapshot => {
+            const projects: Project[] = [];
+            snapshot.forEach(doc => {
+              const data = doc.data() as any;
+              projects.push({
+                id: doc.id,
+                ...data,
+                dueDate: data.dueDate instanceof Timestamp ? data.dueDate.toDate() : data.dueDate,
+                createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+                lastUpdated: data.lastUpdated instanceof Timestamp ? data.lastUpdated.toDate() : data.lastUpdated
+              });
+            });
+            return projects;
+          })
+        );
+      })
+    );
+  }
 
-  getProjectById(id: string): Observable<Project | undefined> {
-    return this.userDataService.userStatus$.pipe(
-      switchMap(uid => {
-        if (!uid) {
-          return from([undefined]);
-        }
-        const projectDocRef = doc(this.db, 'projects', id);
-        return from(getDoc(projectDocRef)).pipe(
-          map(docSnapshot => {
-            if (docSnapshot.exists() && docSnapshot.data()?.['uid'] === uid) {
-              const data = docSnapshot.data() as any;
-              return {
-                id: docSnapshot.id,
-                ...data,
-                // ⭐ CONVERSIONE DEL TIMESTAMP
-                dueDate: data.dueDate instanceof Timestamp ? data.dueDate.toDate() : data.dueDate,
-                createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
-                lastUpdated: data.lastUpdated instanceof Timestamp ? data.lastUpdated.toDate() : data.lastUpdated
-              };
-            }
-            return undefined;
-          })
-        );
-      })
-    );
-  }
+  getProjectById(id: string): Observable<Project | undefined> {
+    return this.userDataService.userStatus$.pipe(
+      switchMap(uid => {
+        if (!uid) {
+          return from([undefined]);
+        }
+        const projectDocRef = doc(this.firestore, 'projects', id); // Usa this.firestore
+        return from(getDoc(projectDocRef)).pipe(
+          map(docSnapshot => {
+            if (docSnapshot.exists() && docSnapshot.data()?.['uid'] === uid) {
+              const data = docSnapshot.data() as any;
+              return {
+                id: docSnapshot.id,
+                ...data,
+                dueDate: data.dueDate instanceof Timestamp ? data.dueDate.toDate() : data.dueDate,
+                createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+                lastUpdated: data.lastUpdated instanceof Timestamp ? data.lastUpdated.toDate() : data.lastUpdated
+              };
+            }
+            return undefined;
+          })
+        );
+      })
+    );
+  }
 
-  async addProject(project: Partial<Project>): Promise<string> {
-    const userId = this.userDataService.getCurrentUserId();
-    if (!userId) {
-      throw new Error('User not logged in');
-    }
-    const newProject: Project = {
-      ...project,
-      uid: userId,
-      description: project.description || '',
-      status: project.status || 'In corso',
-      progress: project.progress || 0,
-      createdAt: new Date(),
-      lastUpdated: new Date()
-    } as Project;
-    const docRef = await addDoc(collection(this.db, 'projects'), newProject);
-    return docRef.id;
-  }
+  // ⭐ AGGIORNATO: Ora accetta un userId opzionale per l'aggiunta di progetti a nome di un altro utente ⭐
+  async addProject(project: Partial<Project>, userIdToAdd?: string): Promise<string> {
+    const userId = userIdToAdd || this.userDataService.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User not logged in or no userId provided');
+    }
+    const newProject: Project = {
+      ...project,
+      uid: userId,
+      description: project.description || '',
+      status: project.status || 'In corso',
+      progress: project.progress || 0,
+      createdAt: new Date(),
+      lastUpdated: new Date()
+    } as Project;
+    const docRef = await addDoc(collection(this.firestore, 'projects'), newProject); // Usa this.firestore
+    return docRef.id;
+  }
 
-  async updateProject(id: string, data: Partial<Project>): Promise<void> {
-    const projectDocRef = doc(this.db, 'projects', id);
-    return updateDoc(projectDocRef, {
-      ...data,
-      lastUpdated: new Date()
-    });
-  }
+  async updateProject(id: string, data: Partial<Project>): Promise<void> {
+    const projectDocRef = doc(this.firestore, 'projects', id); // Usa this.firestore
+    return updateDoc(projectDocRef, {
+      ...data,
+      lastUpdated: new Date()
+    });
+  }
 
-  async deleteProject(id: string): Promise<void> {
-    const projectDocRef = doc(this.db, 'projects', id);
-    return deleteDoc(projectDocRef);
-  }
+  async deleteProject(id: string): Promise<void> {
+    const projectDocRef = doc(this.firestore, 'projects', id); // Usa this.firestore
+    return deleteDoc(projectDocRef);
+  }
+
+  // ⭐ CORRETTO E AGGIORNATO: Ottiene i progetti di un utente specifico ⭐
+  getProjectsByUid(userId: string): Observable<Project[]> {
+    if (!userId) {
+      return from([[]]);
+    }
+    const projectsCollection = collection(this.firestore, 'projects'); // ⭐ Corretto: collection 'projects'
+    const q = query(projectsCollection, where('uid', '==', userId)); // ⭐ Corretto: filtro per 'uid'
+    return from(getDocs(q)).pipe(
+      map(snapshot => {
+        const projects: Project[] = [];
+        snapshot.forEach(doc => {
+          const data = doc.data() as any;
+          projects.push({
+            id: doc.id,
+            ...data,
+            // ⭐ Aggiunta la conversione del Timestamp ⭐
+            dueDate: data.dueDate instanceof Timestamp ? data.dueDate.toDate() : data.dueDate,
+            createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+            lastUpdated: data.lastUpdated instanceof Timestamp ? data.lastUpdated.toDate() : data.lastUpdated
+          });
+        });
+        return projects;
+      })
+    );
+  }
 }
