@@ -365,6 +365,13 @@ ion-infinite-scroll {
 }
 
 @media (max-width: 768px) {
+
+  .post-action-button {
+    font-size: 0.7em;
+    padding: 6px 8px;
+    gap: 3px;
+  }
+
   :host {
     padding: 15px;
   }
