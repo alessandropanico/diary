@@ -126,40 +126,33 @@ export class NotiziePage implements OnInit, OnDestroy {
     }
   }
 
-  private loadInitialPosts() {
-    this.isLoadingPosts = true;
-    this.postsSubscription?.unsubscribe();
-    this.lastPostTimestamp = null;
-    this.canLoadMore = true;
-    this.posts = [];
+  // notizie.page.ts
 
-    if (this.infiniteScroll) {
-      this.infiniteScroll.disabled = false;
-      this.infiniteScroll.complete();
-    }
-
-    if (this.feedUserIds.length === 0) {
-      this.isLoadingPosts = false;
-      this.canLoadMore = false;
-      this.cdr.detectChanges();
-      return;
-    }
-
-    this.postsSubscription = this.postService.getFollowingUsersPosts(this.feedUserIds, this.postsLimit, this.lastPostTimestamp).pipe(
-      switchMap(postsData => this.addUserDetailsToPosts(postsData))
-    ).subscribe({
-      next: (postsWithDetails) => {
-        this.posts = postsWithDetails;
-        this.isLoadingPosts = false;
-        this.updateInfiniteScroll(postsWithDetails);
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error('Errore nel caricamento iniziale dei post:', error);
-        this.handleError('Errore di caricamento', 'Impossibile caricare i post. Verifica la tua connessione.');
-      }
-    });
+private loadInitialPosts() {
+  if (this.feedUserIds.length === 0) {
+    console.warn('PostService: Tentativo di caricare post con lista di ID utenti vuota.');
+    return;
   }
+
+  console.log('PostService: Caricamento post per gli ID:', this.feedUserIds); // <-- AGGIUNGI QUESTA LINEA DI DEBUG
+
+  this.postsSubscription = this.postService.getFollowingUsersPosts(this.feedUserIds, this.postsLimit, this.lastPostTimestamp).pipe(
+    switchMap(postsData => this.addUserDetailsToPosts(postsData))
+  ).subscribe({
+    next: (postsWithDetails) => {
+      console.log('PostService: Post recuperati:', postsWithDetails); // <-- AGGIUNGI ANCHE QUESTO
+      this.posts = postsWithDetails;
+      this.isLoadingPosts = false;
+      this.updateInfiniteScroll(postsWithDetails);
+      this.cdr.detectChanges();
+    },
+    error: (err) => {
+      console.error('PostService: Errore nel recupero dei post:', err);
+      this.isLoadingPosts = false;
+      this.cdr.detectChanges();
+    }
+  });
+}
 
   async loadMorePosts(event: Event) {
     const infiniteScrollTarget = event.target as unknown as IonInfiniteScroll;
