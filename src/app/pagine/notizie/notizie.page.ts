@@ -92,9 +92,7 @@ export class NotiziePage implements OnInit, OnDestroy {
   }
 
   private async loadCurrentUserProfileAndFollowing() {
-    console.log('1. loadCurrentUserProfileAndFollowing chiamato.');
     if (!this.currentUserId) {
-      console.log('1.1. Nessun utente loggato, terminazione.');
       this.isLoadingPosts = false;
       this.cdr.detectChanges();
       return;
@@ -112,8 +110,6 @@ export class NotiziePage implements OnInit, OnDestroy {
       this.followService.getFollowingIds(this.currentUserId).subscribe(followingIds => {
         this.followingUserIds = followingIds;
         this.feedUserIds = [...this.followingUserIds, this.currentUserId!];
-        console.log('2. Dati utente recuperati. Utenti seguiti:', this.followingUserIds);
-        console.log('3. ID utenti per il feed (inclusa te):', this.feedUserIds);
         this.loadInitialPosts();
         this.cdr.detectChanges();
       });
@@ -134,13 +130,10 @@ private loadInitialPosts() {
     return;
   }
 
-  console.log('PostService: Caricamento post per gli ID:', this.feedUserIds); // <-- AGGIUNGI QUESTA LINEA DI DEBUG
-
   this.postsSubscription = this.postService.getFollowingUsersPosts(this.feedUserIds, this.postsLimit, this.lastPostTimestamp).pipe(
     switchMap(postsData => this.addUserDetailsToPosts(postsData))
   ).subscribe({
     next: (postsWithDetails) => {
-      console.log('PostService: Post recuperati:', postsWithDetails); // <-- AGGIUNGI ANCHE QUESTO
       this.posts = postsWithDetails;
       this.isLoadingPosts = false;
       this.updateInfiniteScroll(postsWithDetails);
