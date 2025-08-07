@@ -75,8 +75,10 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
   // Flag per evitare invii multipli o ricaricamenti indesiderati durante l'invio
   private isSendingMessage: boolean = false;
-  isModalOpen:boolean = false;
+  isModalOpen: boolean = false;
 
+  editableName: string = '';
+  editableDescription: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -88,7 +90,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     private modalController: ModalController,
     private cdr: ChangeDetectorRef,
     private groupChatNotificationService: GroupChatNotificationService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.currentUserId = this.auth.currentUser?.uid || null;
@@ -253,24 +255,24 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
   private async loadMemberNicknames() {
     // ... (codice invariato)
     if (!this.groupDetails || !this.groupDetails.members) {
-        console.warn('loadMemberNicknames: No group details or members found. Skipping nickname load.');
-        return;
+      console.warn('loadMemberNicknames: No group details or members found. Skipping nickname load.');
+      return;
     }
     const memberIds = this.groupDetails.members.filter(id => id);
 
     const memberPromises = memberIds.map(async (memberId) => {
-        try {
-            const userData = await this.userDataService.getUserDataById(memberId);
-            if (userData && userData['nickname']) {
-                this.memberNicknamesMap[memberId] = userData['nickname'];
-            } else {
-                this.memberNicknamesMap[memberId] = 'Utente Sconosciuto';
-                console.warn(`loadMemberNicknames: No nickname found for ${memberId}, set to 'Utente Sconosciuto'.`);
-            }
-        } catch (e) {
-            console.error(`loadMemberNicknames: Error fetching user data for ${memberId}:`, e);
-            this.memberNicknamesMap[memberId] = 'Utente Sconosciuto (Errore)';
+      try {
+        const userData = await this.userDataService.getUserDataById(memberId);
+        if (userData && userData['nickname']) {
+          this.memberNicknamesMap[memberId] = userData['nickname'];
+        } else {
+          this.memberNicknamesMap[memberId] = 'Utente Sconosciuto';
+          console.warn(`loadMemberNicknames: No nickname found for ${memberId}, set to 'Utente Sconosciuto'.`);
         }
+      } catch (e) {
+        console.error(`loadMemberNicknames: Error fetching user data for ${memberId}:`, e);
+        this.memberNicknamesMap[memberId] = 'Utente Sconosciuto (Errore)';
+      }
     });
     await Promise.all(memberPromises);
     this.cdr.detectChanges();
@@ -306,8 +308,8 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
       // Imposta firstVisibleMessageTimestamp in base ai messaggi caricati,
       // o a ora se non ci sono messaggi.
       this.firstVisibleMessageTimestamp = this.messages.length > 0
-                                         ? this.messages[this.messages.length - 1].timestamp
-                                         : Timestamp.now();
+        ? this.messages[this.messages.length - 1].timestamp
+        : Timestamp.now();
 
       await this.updateLastReadTimestampInService();
 
@@ -371,7 +373,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
             }
 
             if (wasAtBottomBeforeUpdate && this.currentUserId && this.groupId) {
-                  await this.updateLastReadTimestampInService();
+              await this.updateLastReadTimestampInService();
             }
           }
         }
@@ -557,7 +559,11 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
   // Ho sostituito questo metodo per usare la variabile isModalOpen
   async presentGroupInfoModal() {
-    this.isModalOpen = true;
+    if (this.groupDetails) {
+      this.editableName = this.groupDetails.name;
+      this.editableDescription = this.groupDetails.description || '';
+      this.isModalOpen = true;
+    }
   }
 
   async confirmLeaveGroup() {
@@ -604,8 +610,8 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
     try {
       const latestMessageTimestamp = this.messages.length > 0
-                                     ? this.messages[this.messages.length - 1].timestamp
-                                     : Timestamp.now();
+        ? this.messages[this.messages.length - 1].timestamp
+        : Timestamp.now();
 
       if (latestMessageTimestamp) {
         await this.groupChatService.markGroupMessagesAsRead(this.groupId, this.currentUserId, latestMessageTimestamp);
@@ -659,5 +665,25 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  async saveGroupDetails() {
+    if (!this.groupDetails || !this.groupId) {
+      await this.presentFF7Alert('Impossibile salvare: dettagli del gruppo mancanti.');
+      return;
+    }
+
+    const updates: Partial<GroupChat> = {
+      name: this.editableName,
+      description: this.editableDescription
+    };
+
+    try {
+      await this.groupChatService.updateGroupDetails(this.groupId, updates);
+      await this.presentFF7Alert('Dettagli del gruppo aggiornati con successo!');
+      this.groupInfoModal.dismiss();
+    } catch (error) {
+      console.error('Errore nel salvare i dettagli del gruppo:', error);
+      await this.presentFF7Alert('Errore nel salvare i dettagli. Riprova.');
+    }
+  }
 
 }

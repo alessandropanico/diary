@@ -84,17 +84,23 @@
     </ion-header>
     <ion-content class="ion-padding">
       <div *ngIf="groupDetails">
-        <ion-item lines="none">
-          <ion-avatar slot="start" *ngIf="groupDetails.photoUrl">
-            <img [src]="groupDetails.photoUrl" alt="Immagine gruppo">
-          </ion-avatar>
-          <ion-icon slot="start" *ngIf="!groupDetails.photoUrl" name="people-circle-outline"
+        <div class="group-photo-container">
+          <img *ngIf="groupDetails.photoUrl" [src]="groupDetails.photoUrl" alt="Immagine gruppo"
+            class="group-photo-editable">
+          <ion-icon *ngIf="!groupDetails.photoUrl" name="people-circle-outline"
             class="default-group-icon large-icon"></ion-icon>
-          <ion-label>
-            <h2>{{ groupDetails.name }}</h2>
-            <p>{{ groupDetails.description || 'Nessuna descrizione.' }}</p>
-          </ion-label>
-        </ion-item>
+        </div>
+
+        <ion-list lines="full">
+          <ion-item>
+            <ion-label position="floating">Nome Gruppo</ion-label>
+            <ion-input [(ngModel)]="editableName" type="text"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="floating">Descrizione</ion-label>
+            <ion-textarea [(ngModel)]="editableDescription" auto-grow></ion-textarea>
+          </ion-item>
+        </ion-list>
 
         <ion-list lines="inset">
           <ion-list-header>
@@ -114,6 +120,13 @@
           <ion-icon slot="start" name="log-out-outline"></ion-icon>
           Abbandona Gruppo
         </ion-button>
+
+        <ion-button expand="block" color="tertiary" class="ion-margin-top ff7-button" (click)="saveGroupDetails()">
+          <ion-icon name="save-outline" slot="start"></ion-icon>
+          Salva modifiche
+        </ion-button>
+
+
       </div>
     </ion-content>
   </ng-template>
