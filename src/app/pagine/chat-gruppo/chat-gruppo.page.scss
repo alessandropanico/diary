@@ -8,14 +8,16 @@
   --danger-color: #ff4e4e;
   --success-color: #2dd36f;
   --tertiary-color: #5260ff;
+  --first-color: #00ffee;
+  --primary-color: #00ffee;
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
 }
 
-ion-content {
 
+ion-content {
   // --background: url('/assets/immaginiGenerali/sfondo-chat-ff7.jpeg') no-repeat center center / cover;
   // Aggiungi un overlay scuro per migliorare la leggibilità del testo
   &::before {

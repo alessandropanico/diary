@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router'; // Corretto: nessun ".angular" di troppo
+import { ActivatedRoute, Router } from '@angular/router';
 import { IonContent, InfiniteScrollCustomEvent, NavController, AlertController, ModalController } from '@ionic/angular';
 import { getAuth } from 'firebase/auth';
 import { Subscription } from 'rxjs';
@@ -51,15 +51,9 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
   groupDetails: GroupChat | null = null;
   messages: GroupMessage[] = [];
   newMessageText: string = '';
-  // ⭐ Modifica chiave: isLoading viene gestito in modo più preciso.
-  // Inizia a true solo per il caricamento iniziale complessivo.
   isLoading: boolean = true;
   isLoadingMoreMessages: boolean = false;
   private lastVisibleMessageDoc: QueryDocumentSnapshot | null = null;
-  // ⭐ firstVisibleMessageTimestamp dovrebbe essere il timestamp del messaggio più vecchio nella view
-  // per il listener che recupera i messaggi più recenti.
-  // Potrebbe non essere necessario come stato della classe se lo usi solo nel listener.
-  // Lo lasciamo per chiarezza, ma la sua inizializzazione è cruciale.
   private firstVisibleMessageTimestamp: Timestamp | null = null;
   private messagesLimit: number = 20;
   public hasMoreMessages: boolean = true;
@@ -73,14 +67,16 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
   private routeParamSubscription: Subscription | undefined;
   private memberNicknamesMap: { [uid: string]: string } = {};
 
-  // Flag per evitare invii multipli o ricaricamenti indesiderati durante l'invio
   private isSendingMessage: boolean = false;
   isModalOpen: boolean = false;
 
   editableName: string = '';
   editableDescription: string = '';
-  newPhotoFile: File | null = null;
-  editablePhotoUrl: string = '';
+  // ⭐ Modifiche qui:
+  // Non salviamo direttamente l'URL di preview per evitare confusione
+  newPhotoFile: File | null = null; // Il file selezionato dall'utente
+  // Usiamo un URL temporaneo per l'anteprima
+  private previewPhotoUrl: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -113,15 +109,14 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
       if (this.groupId !== newGroupId) {
         this.groupId = newGroupId;
         if (this.groupId) {
-          // ⭐ IMPORTANTISSIMO: Quando l'ID del gruppo cambia, resettiamo tutto e iniziamo un nuovo ciclo di caricamento
-          this.resetChatState(); // Questo imposta isLoading = true
+          this.resetChatState();
           this.initializeGroupChat();
         } else {
           console.warn('ngOnInit: Group ID is null/undefined after route param update. Redirecting.');
           this.presentFF7Alert('ID del gruppo mancante. Reindirizzamento.').then(() => {
             this.router.navigateByUrl('/chat-list');
           });
-          this.isLoading = false; // Se non c'è un gruppo, non siamo in caricamento
+          this.isLoading = false;
           this.cdr.detectChanges();
         }
       }
@@ -129,13 +124,10 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async initializeGroupChat() {
-    // isLoading è già true da resetChatState, o viene impostato qui se ngOnInit chiama direttamente initializeGroupChat.
-    // L'importante è che non venga mai impostato a true se non è un caricamento iniziale.
     if (!this.isLoading) {
       this.isLoading = true;
       this.cdr.detectChanges();
     }
-
 
     if (!this.currentUserId || !this.groupId) {
       console.warn('initializeGroupChat: Cannot initialize chat. User ID or Group ID missing.');
@@ -169,8 +161,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
         }
 
         await this.loadMemberNicknames();
-        // ⭐ Chiamiamo loadInitialMessages qui. Questo metodo si occuperà di settare isLoading a false
-        // una volta che i messaggi sono stati caricati e il listener è stato impostato.
         await this.loadInitialMessages();
       },
       async (error) => {
@@ -187,16 +177,10 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     if (!this.groupId) {
       // nothing to do
     } else {
-      // ⭐ Se si rientra nella view e la sottoscrizione è già attiva (quindi la chat era già caricata),
-      // non dobbiamo rimettere isLoading a true.
-      // Dobbiamo solo aggiornare il timestamp di lettura.
       if (!this.groupDetailsSubscription || this.groupDetailsSubscription.closed) {
-        // Se la sottoscrizione non è attiva, significa che stiamo entrando nella chat per la prima volta
-        // o dopo che è stata distrutta, quindi la reinizializziamo completamente.
         this.resetChatState();
         this.initializeGroupChat();
       } else {
-        // La chat è già caricata e attiva, impostiamo isLoading a false e aggiorniamo il timestamp.
         this.isLoading = false;
         this.cdr.detectChanges();
         if (this.currentUserId && this.groupId) {
@@ -245,17 +229,21 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.lastVisibleMessageDoc = null;
     this.firstVisibleMessageTimestamp = null;
     this.hasMoreMessages = true;
-    this.isLoading = true; // ⭐ Lasciare qui per i reset completi ⭐
+    this.isLoading = true;
     this.isLoadingMoreMessages = false;
     this.initialScrollDone = false;
     this.showScrollToBottom = false;
     this.lastScrollTop = 0;
     this.newMessageText = '';
     this.memberNicknamesMap = {};
+    // ⭐ Reset delle variabili della modale
+    this.editableName = '';
+    this.editableDescription = '';
+    this.newPhotoFile = null;
+    this.previewPhotoUrl = null;
   }
 
   private async loadMemberNicknames() {
-    // ... (codice invariato)
     if (!this.groupDetails || !this.groupDetails.members) {
       console.warn('loadMemberNicknames: No group details or members found. Skipping nickname load.');
       return;
@@ -287,8 +275,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     return this.memberNicknamesMap[memberId] || memberId;
   }
 
-  // ⭐ Rinomino il metodo in loadInitialMessages (rimuovo AndSetupListener)
-  // perché setupNewMessagesListener sarà chiamato separatamente ma dipende da firstVisibleMessageTimestamp
   private async loadInitialMessages() {
     if (!this.groupId) {
       console.warn('loadInitialMessages: Group ID not available, cannot load messages.');
@@ -297,29 +283,21 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    // ⭐ Rimuovi isLoading = true; da qui. È già gestito in initializeGroupChat o resetChatState.
-    // this.isLoading = true;
-    // this.cdr.detectChanges();
-
     try {
       const pagedData = await this.groupChatService.getInitialGroupMessages(this.groupId, this.messagesLimit);
       this.messages = pagedData.messages;
       this.lastVisibleMessageDoc = pagedData.lastVisibleDoc;
       this.hasMoreMessages = pagedData.hasMore;
 
-      // Imposta firstVisibleMessageTimestamp in base ai messaggi caricati,
-      // o a ora se non ci sono messaggi.
       this.firstVisibleMessageTimestamp = this.messages.length > 0
         ? this.messages[this.messages.length - 1].timestamp
         : Timestamp.now();
 
       await this.updateLastReadTimestampInService();
 
-      // ⭐ Imposta isLoading a false SOLO qui, dopo che tutti i dati iniziali sono stati caricati.
       this.isLoading = false;
       this.cdr.detectChanges();
 
-      // ⭐ Il listener viene impostato QUI, dopo che firstVisibleMessageTimestamp è stato inizializzato.
       this.setupNewMessagesListener();
 
       setTimeout(async () => {
@@ -337,15 +315,13 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private setupNewMessagesListener() {
-    this.newMessagesListener?.unsubscribe(); // Assicurati che il vecchio listener sia disiscritto
+    this.newMessagesListener?.unsubscribe();
 
     if (!this.groupId || !this.firstVisibleMessageTimestamp) {
       console.warn('setupNewMessagesListener: Cannot set up listener, Group ID or firstVisibleMessageTimestamp missing.');
       return;
     }
 
-    // Il listener dovrebbe solo aggiungere i nuovi messaggi, non ricreare la chat.
-    // Usiamo il timestamp dell'ultimo messaggio già caricato per ascoltare solo i successivi.
     this.newMessagesListener = this.groupChatService.getNewGroupMessages(this.groupId, this.firstVisibleMessageTimestamp).subscribe(
       async (newIncomingMessages: GroupMessage[]) => {
         if (newIncomingMessages.length > 0) {
@@ -362,11 +338,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
             });
             this.cdr.detectChanges();
 
-            // ⭐ Importante: aggiorna firstVisibleMessageTimestamp per i futuri listeners (se il componente si ricarica)
-            // o per la logica interna, ma non è strettamente necessario per il listener stesso una volta avviato.
-            // L'importante è che il listener originale sia partito con il timestamp corretto.
             this.firstVisibleMessageTimestamp = this.messages[this.messages.length - 1].timestamp;
-
 
             if (wasAtBottomBeforeUpdate) {
               setTimeout(() => this.scrollToBottom(300), 50);
@@ -468,33 +440,27 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async sendMessage() {
-    if (!this.newMessageText.trim() || !this.groupId || !this.currentUserId || this.isSendingMessage) { // Aggiunto isSendingMessage check
+    if (!this.newMessageText.trim() || !this.groupId || !this.currentUserId || this.isSendingMessage) {
       console.warn('sendMessage: Cannot send message: empty text, group ID, current user ID missing, or message already being sent.');
       return;
     }
 
-    this.isSendingMessage = true; // Imposta il flag all'inizio dell'invio
+    this.isSendingMessage = true;
     const messageToSend = this.newMessageText.trim();
-    this.newMessageText = ''; // Pulisci subito il campo input
-    this.cdr.detectChanges(); // Forza il refresh della UI per svuotare l'input
+    this.newMessageText = '';
+    this.cdr.detectChanges();
 
     try {
       await this.groupChatService.sendMessage(this.groupId, this.currentUserId, messageToSend);
-
-      // I messaggi verranno aggiunti all'array 'messages' tramite il listener in tempo reale,
-      // non c'è bisogno di aggiungerli qui direttamente.
-      // setTimeout(() => this.scrollToBottom(), 50); // Lo scroll avverrà automaticamente dal listener
-
       if (this.currentUserId && this.groupId) {
         await this.updateLastReadTimestampInService();
       }
-
     } catch (error) {
       console.error('Errore durante l\'invio del messaggio di gruppo:', error);
       await this.presentFF7Alert('Impossibile inviare il messaggio di gruppo.');
-      this.newMessageText = messageToSend; // Ripristina il testo se l'invio fallisce
+      this.newMessageText = messageToSend;
     } finally {
-      this.isSendingMessage = false; // Reimposta il flag al termine dell'invio (successo o fallimento)
+      this.isSendingMessage = false;
       this.cdr.detectChanges();
     }
   }
@@ -559,18 +525,21 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     await alert.present();
   }
 
-  // Ho sostituito questo metodo per usare la variabile isModalOpen
   async presentGroupInfoModal() {
     if (this.groupDetails) {
       this.editableName = this.groupDetails.name;
       this.editableDescription = this.groupDetails.description || '';
-      this.editablePhotoUrl = this.groupDetails.photoUrl || '';
+      // ⭐ Impostiamo l'URL di anteprima con l'URL corrente del gruppo
+      this.previewPhotoUrl = this.groupDetails.photoUrl || '';
+      // ⭐ Resettiamo il file selezionato
+      this.newPhotoFile = null;
       this.isModalOpen = true;
+      this.cdr.detectChanges();
     }
   }
 
-  // Aggiungi questo nuovo metodo per gestire la selezione dell'immagine
-async changeGroupPhoto() {
+  // ⭐ Metodo modificato per gestire la selezione del file
+  async changeGroupPhoto() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -578,30 +547,26 @@ async changeGroupPhoto() {
 
     input.onchange = async (event) => {
       const file = (event.target as HTMLInputElement).files?.[0];
-      if (file && this.groupId) {
-        const loadingAlert = await this.alertController.create({
-          cssClass: 'ff7-alert',
-          header: 'Caricamento immagine...',
-          message: 'Attendere prego.',
-          backdropDismiss: false,
-        });
-        await loadingAlert.present();
+      if (file) {
+        this.newPhotoFile = file;
 
-        try {
-          // ⭐ Chiamata al nuovo metodo del GroupChatService che gestisce tutto
-          await this.groupChatService.updateGroupPhoto(this.groupId, file);
-
-          await loadingAlert.dismiss();
-          await this.presentFF7Alert('Immagine del gruppo aggiornata con successo!');
-
-        } catch (error) {
-          await loadingAlert.dismiss();
-          console.error('Errore nel caricamento dell\'immagine:', error);
-          await this.presentFF7Alert('Errore nel caricamento dell\'immagine. Riprova.');
-        }
+        // Crea un'anteprima locale del file Base64
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.previewPhotoUrl = reader.result as string;
+          this.cdr.detectChanges();
+        };
+        reader.readAsDataURL(file);
       }
     };
   }
+
+  // ⭐ Aggiungiamo un getter per l'immagine da visualizzare
+  get photoToDisplay(): string {
+    // Se c'è un'anteprima, usala, altrimenti usa quella del gruppo
+    return this.previewPhotoUrl || this.groupDetails?.photoUrl || 'assets/img/default-group-photo.png';
+  }
+
   async confirmLeaveGroup() {
     if (this.groupInfoModal) {
       await this.groupInfoModal.dismiss();
@@ -661,9 +626,7 @@ async changeGroupPhoto() {
     this.isModalOpen = false;
   }
 
-  // NUOVO METODO
   async openAddMembersModal() {
-    // Chiudi la modale corrente dei dettagli del gruppo
     if (this.groupInfoModal) {
       this.groupInfoModal.dismiss();
     }
@@ -701,26 +664,42 @@ async changeGroupPhoto() {
     }
   }
 
+  // ⭐ Metodo saveGroupDetails modificato per salvare tutto insieme
   async saveGroupDetails() {
     if (!this.groupDetails || !this.groupId) {
       await this.presentFF7Alert('Impossibile salvare: dettagli del gruppo mancanti.');
       return;
     }
 
-    const updates: Partial<GroupChat> = {
-      name: this.editableName,
-      description: this.editableDescription
-      // Nota: l'URL della foto è gestito separatamente dal metodo `changeGroupPhoto()`
-    };
+    const loadingAlert = await this.alertController.create({
+        cssClass: 'ff7-alert',
+        header: 'Salvataggio in corso...',
+        message: 'Attendere prego.',
+        backdropDismiss: false,
+    });
+    await loadingAlert.present();
 
     try {
+      // 1. Aggiorna l'immagine se ne è stata selezionata una nuova
+      if (this.newPhotoFile) {
+        await this.groupChatService.updateGroupPhoto(this.groupId, this.newPhotoFile);
+      }
+
+      // 2. Aggiorna il nome e la descrizione
+      const updates: Partial<GroupChat> = {
+        name: this.editableName,
+        description: this.editableDescription,
+      };
       await this.groupChatService.updateGroupDetails(this.groupId, updates);
+
+      await loadingAlert.dismiss();
       await this.presentFF7Alert('Dettagli del gruppo aggiornati con successo!');
       this.groupInfoModal.dismiss();
+
     } catch (error) {
+      await loadingAlert.dismiss();
       console.error('Errore nel salvare i dettagli del gruppo:', error);
       await this.presentFF7Alert('Errore nel salvare i dettagli. Riprova.');
     }
   }
-
 }
