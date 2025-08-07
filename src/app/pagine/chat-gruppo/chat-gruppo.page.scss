@@ -6,11 +6,11 @@
   --text-light: #ffffff;
   --label-color: #a0cfd8;
   --danger-color: #ff4e4e;
-
-  // Assicurati che l'host della pagina riempia lo spazio disponibile
+  --success-color: #2dd36f;
+  --tertiary-color: #5260ff;
   display: flex;
   flex-direction: column;
-  height: 100%; // Non 100vh, ma 100% rispetto al suo genitore (il router-outlet)
+  height: 100%; 
   width: 100%;
 }
 
