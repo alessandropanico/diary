@@ -32,8 +32,7 @@
 
     <div class="post-content">
       <p class="post-text">{{ post.text }}</p>
-      <img *ngIf="post.imageUrl" [src]="post.imageUrl" alt="Immagine del post" class="post-image"
-        (click)="openImageModal(post.imageUrl)">
+      <img *ngIf="post.imageUrl" [src]="post.imageUrl" alt="Immagine del post" class="post-image">
     </div>
 
     <div class="post-likes-info" *ngIf="post.likes && post.likes.length > 0" (click)="openLikesModal(post)">
