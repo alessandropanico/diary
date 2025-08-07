@@ -1,10 +1,6 @@
 --TO DO--
 
-AGGIUSTA LA SEZIONE NOTIZIE PER I BANNER PUBBLICITARI
-
 Finestra "Notifiche"
-
-PULSANTE SUPPORTO CREATORE!;
 
 IMPORTA BENE GOOGLE ADMOB;
 
@@ -16,4 +12,3 @@ Nella dashboard:
 TEST CONNENTENDO CELLULARE AL PC;
 
 **CERCA DI CONCLUDERE PER FINE AGOSTO!**
-P.S. Se lavori da puok sei giustificato e va bene terminare anche dopo.
