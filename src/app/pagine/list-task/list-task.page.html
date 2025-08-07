@@ -1,15 +1,34 @@
-<ion-header>
-  <ion-toolbar class="ff7-toolbar">
-    <ion-title>Le tue Task</ion-title>
+<div class="desktop">
+  <ion-header>
+    <ion-toolbar class="ff7-toolbar">
+      <ion-title>Le tue Task</ion-title>
+      <ion-buttons slot="end">
+        <ion-datetime-button datetime="taskDatePicker" class="ff7-today-btn"></ion-datetime-button>
+        <ion-button fill="clear" class="ff7-add-btn" (click)="openTaskModal()">
+          ➕ Aggiungi
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+</div>
 
-    <ion-buttons slot="end">
-      <ion-datetime-button datetime="taskDatePicker" class="ff7-today-btn"></ion-datetime-button>
-      <ion-button fill="clear" class="ff7-add-btn" (click)="openTaskModal()">
-        ➕ Aggiungi
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
+<!--------------------------------------->
+
+<div class="mobile">
+  <ion-header>
+    <ion-toolbar class="ff7-toolbar">
+      <ion-title>Le tue Task</ion-title>
+    </ion-toolbar>
+    <ion-toolbar class="ff7-toolbar">
+      <ion-buttons slot="start">
+        <ion-datetime-button datetime="taskDatePicker" class="ff7-today-btn"></ion-datetime-button>
+        <ion-button fill="clear" class="ff7-add-btn" (click)="openTaskModal()">
+          ➕ Aggiungi
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+</div>
 
 <ion-modal [keepContentsMounted]="true">
   <ng-template>
