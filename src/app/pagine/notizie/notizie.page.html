@@ -5,8 +5,6 @@
 </ion-header>
 
 <div class="page-container">
-
-
   <div *ngIf="isLoadingPosts" class="loading-overlay">
     <ion-spinner name="crescent" color="primary"></ion-spinner>
     <p>Caricamento dei post....</p>
@@ -46,32 +44,35 @@
         <ng-container *ngIf="post.likes.length === 2">
           <strong>{{ getLikedUserName(post.likes[0], post.likesUsersMap) }}</strong> e <strong>{{
             getLikedUserName(post.likes[1], post.likesUsersMap) }}</strong>
-        </ng-container>
-        <ng-container *ngIf="post.likes.length > 2">
-          <strong>{{ getLikedUserName(post.likes[0], post.likesUsersMap) }}</strong> e altri <strong>{{
-            post.likes.length
-            - 1 }}</strong>
-        </ng-container>
-      </span>
+          </ng-container>
+          <ng-container *ngIf="post.likes.length > 2">
+            <strong>{{ getLikedUserName(post.likes[0], post.likesUsersMap) }}</strong> e altri <strong>{{
+              post.likes.length - 1 }}</strong>
+            </ng-container>
+          </span>
+        </div>
+
+        <div class="post-actions">
+          <button class="post-action-button" [ngClass]="{'liked': currentUserId && post.likes.includes(currentUserId!)}"
+            (click)="toggleLike(post)">
+            <span class="icon heart-icon"></span> Like
+          </button>
+          <button class="post-action-button" (click)="openCommentsModal(post)">
+            <span class="icon comment-icon"></span> {{ post.commentsCount || 0 }} Commenti
+          </button>
+          <button class="post-action-button" (click)="sharePost(post)">
+            <span class="icon share-icon"></span> Condividi
+          </button>
+        </div>
+
+      </div>
+
+      <ion-infinite-scroll (ionInfinite)="loadMorePosts($event)" [disabled]="!canLoadMore">
+        <ion-infinite-scroll-content loadingSpinner="circles"
+          loadingText="Caricamento altri post..."></ion-infinite-scroll-content>
+      </ion-infinite-scroll>
     </div>
 
-    <div class="post-actions">
-          <button class="post-action-button" [ngClass]="{'liked': currentUserId && post.likes.includes(currentUserId!)}"
-              (click)="toggleLike(post)">
-              <span class="icon heart-icon"></span> Like
-            </button>
-          <button class="post-action-button" (click)="openCommentsModal(post)">
-              <span class="icon comment-icon"></span> {{ post.commentsCount || 0 }} Commenti
-            </button>
-          <button class="post-action-button" (click)="sharePost(post)">
-              <span class="icon share-icon"></span> Condividi
-            </button>
+    <div class="fixed-banner">
+      <p>Questo è il tuo banner fisso</p>
     </div>
-
-  </div>
-
-  <ion-infinite-scroll (ionInfinite)="loadMorePosts($event)" [disabled]="!canLoadMore">
-    <ion-infinite-scroll-content loadingSpinner="circles"
-      loadingText="Caricamento altri post..."></ion-infinite-scroll-content>
-  </ion-infinite-scroll>
-</div>
