@@ -50,3 +50,46 @@
 ion-list{
   background-color: transparent;
 }
+
+/* NUOVO STILE PER IL PULSANTE DI SUPPORTO */
+.support-button {
+  --background: #00ffee;
+  --color: #10192C;
+  font-weight: bold;
+  font-size: 1rem;
+  margin-top: 15px;
+  --border-radius: 4px;
+  box-shadow: 0 0 10px #00ffee88;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 0 15px #00ffeeaa;
+    transform: translateY(-2px);
+  }
+}
+
+/* ... altro codice ... */
+
+/* NUOVO STILE PER IL PULSANTE DI SUPPORTO */
+.support-button {
+  --background: #00ffee;
+  --color: #10192C;
+  font-weight: bold;
+  font-size: 1rem;
+  margin-top: 15px;
+  --border-radius: 4px;
+  box-shadow: 0 0 10px #00ffee88;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 0 15px #00ffeeaa;
+    transform: translateY(-2px);
+  }
+
+  &[disabled] {
+    opacity: 0.6;
+    pointer-events: none;
+    box-shadow: none;
+    transform: none;
+  }
+}

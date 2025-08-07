@@ -22,7 +22,7 @@
       <ion-list>
         <ion-item class="ff7-item" button detail="false" (click)="openLink('https://alessandropanico.github.io/Sito-Portfolio/')">
           <ion-icon name="globe-outline" slot="start"></ion-icon>
-          Web Site
+          Sito Web
         </ion-item>
         <ion-item class="ff7-item" button detail="false" (click)="openLink('https://github.com/alessandropanico')">
           <ion-icon name="logo-github" slot="start"></ion-icon>
@@ -37,6 +37,24 @@
           YouTube
         </ion-item>
       </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+<ion-card class="ff7-card">
+    <ion-card-header>
+      <ion-card-title>Sostienimi</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p>Se ti piace questa app e vuoi supportare il mio lavoro, puoi guardare un breve video pubblicitario. Ogni visualizzazione è un grande aiuto!</p>
+      <ion-button expand="block"
+                  class="support-button"
+                  [disabled]="isCooldownActive || isAdLoading"
+                  (click)="showRewardedAd()">
+        <ion-icon slot="start" name="videocam-outline"></ion-icon>
+        <span *ngIf="!isCooldownActive && !isAdLoading">Guarda un video per sostenermi</span>
+        <span *ngIf="isAdLoading">Caricamento in corso...</span>
+        <span *ngIf="isCooldownActive">Riprova tra {{ cooldownTimeLeft }}s</span>
+      </ion-button>
     </ion-card-content>
   </ion-card>
 </ion-content>
