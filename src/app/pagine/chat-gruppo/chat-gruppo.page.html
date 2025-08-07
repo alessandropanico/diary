@@ -85,10 +85,11 @@
     <ion-content class="ion-padding">
       <div *ngIf="groupDetails">
         <div class="group-photo-container">
-          <img *ngIf="groupDetails.photoUrl" [src]="groupDetails.photoUrl" alt="Immagine gruppo"
-            class="group-photo-editable">
-          <ion-icon *ngIf="!groupDetails.photoUrl" name="people-circle-outline"
-            class="default-group-icon large-icon"></ion-icon>
+          <img [src]="groupDetails.photoUrl || 'assets/immaginiGenerali/group-default-avatar.jpg'" alt="Immagine gruppo"
+            class="group-photo-editable" (click)="changeGroupPhoto()">
+          <!-- <ion-button fill="clear" size="small" class="change-photo-button" (click)="changeGroupPhoto()">
+            <i class="fa-solid fa-camera"></i>
+          </ion-button> -->
         </div>
 
         <ion-list lines="full">
@@ -102,14 +103,10 @@
           </ion-item>
         </ion-list>
 
-        <ion-list lines="inset">
-          <ion-list-header>
-            <ion-label>Membri ({{ groupDetails.members.length }})</ion-label>
-          </ion-list-header>
-          <ion-item *ngFor="let memberId of groupDetails.members">
-            <ion-label>{{ getMemberDisplay(memberId) }}</ion-label>
-          </ion-item>
-        </ion-list>
+        <ion-button expand="block" color="tertiary" class="ion-margin-top ff7-button" (click)="saveGroupDetails()">
+          <ion-icon name="save-outline" slot="start"></ion-icon>
+          Salva modifiche
+        </ion-button>
 
         <ion-button expand="block" color="tertiary" class="ion-margin-top ff7-button" (click)="openAddMembersModal()">
           <ion-icon name="person-add-outline" slot="start"></ion-icon>
@@ -121,11 +118,14 @@
           Abbandona Gruppo
         </ion-button>
 
-        <ion-button expand="block" color="tertiary" class="ion-margin-top ff7-button" (click)="saveGroupDetails()">
-          <ion-icon name="save-outline" slot="start"></ion-icon>
-          Salva modifiche
-        </ion-button>
-
+        <ion-list lines="inset">
+          <ion-list-header>
+            <ion-label>Membri ({{ groupDetails.members.length }})</ion-label>
+          </ion-list-header>
+          <ion-item *ngFor="let memberId of groupDetails.members">
+            <ion-label>{{ getMemberDisplay(memberId) }}</ion-label>
+          </ion-item>
+        </ion-list>
 
       </div>
     </ion-content>

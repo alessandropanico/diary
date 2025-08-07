@@ -606,5 +606,38 @@ export class GroupChatService {
     }
   }
 
+  /**
+   * Converte un file immagine in una stringa Base64.
+   * @param file Il file dell'immagine.
+   * @returns Una Promise che risolve nella stringa Base64 dell'immagine.
+   */
+  private convertFileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /**
+   * Converte un'immagine in Base64 e aggiorna l'URL nel documento del gruppo.
+   * @param groupId L'ID del gruppo.
+   * @param file Il file dell'immagine da caricare.
+   */
+  async updateGroupPhoto(groupId: string, file: File): Promise<void> {
+    try {
+      // 1. Converte il file in una stringa Base64
+      const base64String = await this.convertFileToBase64(file);
+
+      // 2. Aggiorna il documento del gruppo con la nuova stringa
+      const updates: Partial<GroupChat> = { photoUrl: base64String };
+      await this.updateGroupDetails(groupId, updates);
+
+    } catch (error) {
+      console.error('Errore nel caricamento della foto del gruppo:', error);
+      throw error;
+    }
+  }
 
 }

@@ -79,6 +79,8 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
   editableName: string = '';
   editableDescription: string = '';
+  newPhotoFile: File | null = null;
+  editablePhotoUrl: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -562,10 +564,44 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     if (this.groupDetails) {
       this.editableName = this.groupDetails.name;
       this.editableDescription = this.groupDetails.description || '';
+      this.editablePhotoUrl = this.groupDetails.photoUrl || '';
       this.isModalOpen = true;
     }
   }
 
+  // Aggiungi questo nuovo metodo per gestire la selezione dell'immagine
+async changeGroupPhoto() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.click();
+
+    input.onchange = async (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (file && this.groupId) {
+        const loadingAlert = await this.alertController.create({
+          cssClass: 'ff7-alert',
+          header: 'Caricamento immagine...',
+          message: 'Attendere prego.',
+          backdropDismiss: false,
+        });
+        await loadingAlert.present();
+
+        try {
+          // ⭐ Chiamata al nuovo metodo del GroupChatService che gestisce tutto
+          await this.groupChatService.updateGroupPhoto(this.groupId, file);
+
+          await loadingAlert.dismiss();
+          await this.presentFF7Alert('Immagine del gruppo aggiornata con successo!');
+
+        } catch (error) {
+          await loadingAlert.dismiss();
+          console.error('Errore nel caricamento dell\'immagine:', error);
+          await this.presentFF7Alert('Errore nel caricamento dell\'immagine. Riprova.');
+        }
+      }
+    };
+  }
   async confirmLeaveGroup() {
     if (this.groupInfoModal) {
       await this.groupInfoModal.dismiss();
@@ -674,6 +710,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     const updates: Partial<GroupChat> = {
       name: this.editableName,
       description: this.editableDescription
+      // Nota: l'URL della foto è gestito separatamente dal metodo `changeGroupPhoto()`
     };
 
     try {
