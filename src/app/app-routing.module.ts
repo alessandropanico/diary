@@ -106,6 +106,10 @@ const routes: Routes = [
   },  {
     path: 'notizie',
     loadChildren: () => import('./pagine/notizie/notizie.module').then( m => m.NotiziePageModule)
+  },
+  {
+    path: 'notizia-singola',
+    loadChildren: () => import('./pagine/notizia-singola/notizia-singola.module').then( m => m.NotiziaSingolaPageModule)
   }
 
 
