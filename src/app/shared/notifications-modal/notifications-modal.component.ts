@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ModalController } from '@ionic/angular';
-import { NotificheService, Notifica  } from 'src/app/services/notifiche.service';
+import { NotificheService, Notifica } from 'src/app/services/notifiche.service';
 import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-notifications-modal',
@@ -15,7 +16,8 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
 
   constructor(
     private modalController: ModalController,
-    private notificheService: NotificheService
+    private notificheService: NotificheService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -36,14 +38,29 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     this.notificheService.segnaTutteComeLette();
   }
 
-  // Metodo per segnare una singola notifica come letta
-  segnaNotificaComeLetta(notifica: Notifica) {
+  /**
+   * Segna una notifica come letta e naviga alla pagina corrispondente.
+   * @param notifica L'oggetto notifica da gestire.
+   */
+  async handleNotificationClick(notifica: Notifica) {
+    // Segna la notifica come letta se non lo è già
     if (!notifica.letta) {
       this.notificheService.segnaComeLetta(notifica.id);
     }
-    // Puoi anche aggiungere qui la logica per navigare al link della notifica
-    if (notifica.link) {
-      // Esempio: this.router.navigateByUrl(notifica.link);
+
+    // Chiudi il modale
+    await this.modalController.dismiss();
+
+    // Naviga alla rotta della notizia singola se il link corrisponde
+    if (notifica.link && notifica.link.startsWith('/notizia-singola')) {
+      this.router.navigateByUrl(notifica.link);
+    } else {
+      // Puoi gestire qui altri tipi di link o navigare a una home di default
+      // Ad esempio, se il tuo oggetto `notifica` ha un `postId`, puoi usare quello.
+      // Se vuoi navigare solo per le notifiche di tipo 'post':
+      if (notifica.tipo === 'nuovo_post') {
+        this.router.navigateByUrl(`/notizia-singola/${notifica.postId}`);
+      }
     }
   }
 }

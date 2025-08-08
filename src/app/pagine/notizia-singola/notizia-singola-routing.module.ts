@@ -5,8 +5,13 @@ import { NotiziaSingolaPage } from './notizia-singola.page';
 
 const routes: Routes = [
   {
-    path: '',
+    path: ':id',
     component: NotiziaSingolaPage
+  },
+  {
+    path: '',
+    redirectTo: '/home',
+    pathMatch: 'full'
   }
 ];
 

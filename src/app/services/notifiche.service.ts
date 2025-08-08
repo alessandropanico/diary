@@ -12,6 +12,8 @@ export interface Notifica {
   letta: boolean;
   dataCreazione: Date;
   link?: string; // Link opzionale per navigare
+  postId?: string;
+  tipo: 'nuovo_post' | 'mi_piace' | 'commento';
 }
 
 @Injectable({
