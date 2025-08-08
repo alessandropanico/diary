@@ -11,15 +11,15 @@
 
 <ion-content class="ion-padding ff7-content">
   <ion-list lines="full">
-    <ion-item *ngFor="let notification of mockNotifications">
+    <ion-item *ngFor="let notifica of notifiche" [class.notifica-letta]="notifica.letta" (click)="segnaNotificaComeLetta(notifica)">
       <ion-icon slot="start" name="notifications-outline"></ion-icon>
       <ion-label>
-        <h2>{{ notification.title }}</h2>
-        <p>{{ notification.message }}</p>
+        <h2>{{ notifica.titolo }}</h2>
+        <p>{{ notifica.messaggio }}</p>
       </ion-label>
     </ion-item>
   </ion-list>
-  <div *ngIf="mockNotifications.length === 0" class="no-notifications">
+  <div *ngIf="notifiche.length === 0" class="no-notifications">
     <p>Nessuna notifica</p>
   </div>
 </ion-content>

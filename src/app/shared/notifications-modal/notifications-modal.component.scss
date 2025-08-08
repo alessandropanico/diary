@@ -18,6 +18,7 @@ ion-list {
     --border-color: #00ffee33;
     color: #00ffee;
     font-size: 0.95rem;
+    cursor: pointer;
 
     ion-icon {
       color: #00ffee;
@@ -34,13 +35,16 @@ ion-list {
   }
 }
 
+.notifica-letta {
+  opacity: 0.5; /* Rendi le notifiche lette semitrasparenti */
+}
+
 .no-notifications {
   text-align: center;
   padding-top: 50px;
   color: #00ffee88;
 }
 
-// Stile per la modale fullscreen
 .ff7-modal-fullscreen {
   --ion-background-color: transparent;
   ion-modal {

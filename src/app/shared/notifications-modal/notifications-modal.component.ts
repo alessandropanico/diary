@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ModalController } from '@ionic/angular';
+import { NotificheService, Notifica  } from 'src/app/services/notifiche.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-notifications-modal',
@@ -7,32 +9,41 @@ import { ModalController } from '@ionic/angular';
   styleUrls: ['./notifications-modal.component.scss'],
   standalone: false,
 })
-export class NotificationsModalComponent implements OnInit {
-  // Dati fittizi per testare lo scroll e la visualizzazione
-  mockNotifications = [
-    { title: 'Nuovo messaggio', message: 'Hai un nuovo messaggio da Cloud.', type: 'chat' },
-    { title: 'Sei stato taggato', message: 'Tifa ti ha menzionato in un post.', type: 'mention' },
-    { title: 'Nuova notizia', message: 'Nuovo post nella sezione notizie.', type: 'news' },
-    { title: 'Nuovo messaggio', message: 'Hai un nuovo messaggio da Aerith.', type: 'chat' },
-    { title: 'Nuova notizia', message: 'La Shinra Corporation ha un nuovo annuncio.', type: 'news' },
-    { title: 'Sei stato taggato', message: 'Barret ti ha menzionato in un commento.', type: 'mention' },
-    { title: 'Nuovo messaggio', message: 'Hai un nuovo messaggio da Sephiroth.', type: 'chat' },
-    { title: 'Nuova notizia', message: 'Nuove scoperte sul Lifestream.', type: 'news' },
-    { title: 'Nuovo messaggio', message: 'Hai un nuovo messaggio da Yuffie.', type: 'chat' },
-    { title: 'Sei stato taggato', message: 'Red XIII ti ha menzionato in una discussione.', type: 'mention' },
-    { title: 'Nuovo messaggio', message: 'Hai un nuovo messaggio da Vincent.', type: 'chat' },
-    { title: 'Nuova notizia', message: 'Aggiornamenti dal reattore Mako.', type: 'news' },
-    { title: 'Nuovo messaggio', message: 'Hai un nuovo messaggio da Cid.', type: 'chat' },
-    { title: 'Sei stato taggato', message: 'Zack ti ha menzionato in un ricordo.', type: 'mention' },
-    { title: 'Nuovo messaggio', message: 'Hai un nuovo messaggio da Biggs.', type: 'chat' },
-  ];
+export class NotificationsModalComponent implements OnInit, OnDestroy {
+  notifiche: Notifica[] = [];
+  private notificheSubscription!: Subscription;
 
-  constructor(private modalController: ModalController) { }
+  constructor(
+    private modalController: ModalController,
+    private notificheService: NotificheService
+  ) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.notificheSubscription = this.notificheService.notifiche$.subscribe(notifiche => {
+      this.notifiche = notifiche;
+    });
+  }
 
-  // Metodo per chiudere la modale
+  ngOnDestroy() {
+    if (this.notificheSubscription) {
+      this.notificheSubscription.unsubscribe();
+    }
+  }
+
+  // Metodo per chiudere la modale e segnare le notifiche come lette
   dismiss() {
     this.modalController.dismiss();
+    this.notificheService.segnaTutteComeLette();
+  }
+
+  // Metodo per segnare una singola notifica come letta
+  segnaNotificaComeLetta(notifica: Notifica) {
+    if (!notifica.letta) {
+      this.notificheService.segnaComeLetta(notifica.id);
+    }
+    // Puoi anche aggiungere qui la logica per navigare al link della notifica
+    if (notifica.link) {
+      // Esempio: this.router.navigateByUrl(notifica.link);
+    }
   }
 }
