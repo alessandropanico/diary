@@ -38,12 +38,11 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     this.notificheService.segnaTutteComeLette();
   }
 
-  /**
-   * Segna una notifica come letta e naviga alla pagina corrispondente.
-   * @param notifica L'oggetto notifica da gestire.
+   /**
+   * Gestisce il click su una notifica, segnandola come letta e navigando.
+   * @param notifica L'oggetto notifica su cui si è cliccato.
    */
   async handleNotificationClick(notifica: Notifica) {
-    // Segna la notifica come letta se non lo è già
     if (!notifica.letta) {
       this.notificheService.segnaComeLetta(notifica.id);
     }
@@ -51,16 +50,12 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     // Chiudi il modale
     await this.modalController.dismiss();
 
-    // Naviga alla rotta della notizia singola se il link corrisponde
-    if (notifica.link && notifica.link.startsWith('/notizia-singola')) {
-      this.router.navigateByUrl(notifica.link);
+    // Naviga in base al tipo di notifica
+    if (notifica.tipo === 'nuovo_post' && notifica.postId) {
+      this.router.navigateByUrl(`/notizia-singola/${notifica.postId}`);
     } else {
-      // Puoi gestire qui altri tipi di link o navigare a una home di default
-      // Ad esempio, se il tuo oggetto `notifica` ha un `postId`, puoi usare quello.
-      // Se vuoi navigare solo per le notifiche di tipo 'post':
-      if (notifica.tipo === 'nuovo_post') {
-        this.router.navigateByUrl(`/notizia-singola/${notifica.postId}`);
-      }
+      // Puoi aggiungere logica per altri tipi di notifiche qui
+      // Esempio: notifiche di mi piace o commenti
     }
   }
 }
