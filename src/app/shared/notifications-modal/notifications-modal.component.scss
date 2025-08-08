@@ -1,0 +1,49 @@
+.ff7-header {
+  --background: #0b0b1f;
+  --color: #00ffee;
+  font-family: 'Orbitron', sans-serif;
+  box-shadow: 0 0 10px #00ffee40;
+}
+
+.ff7-content {
+  background: linear-gradient(180deg, #000012 0%, #02051b 100%);
+  color: #00ffee;
+  font-family: 'Orbitron', sans-serif;
+}
+
+ion-list {
+  background: transparent;
+  ion-item {
+    --background: #10192C;
+    --border-color: #00ffee33;
+    color: #00ffee;
+    font-size: 0.95rem;
+
+    ion-icon {
+      color: #00ffee;
+    }
+
+    h2 {
+      font-weight: bold;
+      color: #00ffee;
+    }
+
+    p {
+      color: #7affff;
+    }
+  }
+}
+
+.no-notifications {
+  text-align: center;
+  padding-top: 50px;
+  color: #00ffee88;
+}
+
+// Stile per la modale fullscreen
+.ff7-modal-fullscreen {
+  --ion-background-color: transparent;
+  ion-modal {
+    --border-radius: 0;
+  }
+}

@@ -1,3 +1,25 @@
-<p>
-  notifications-modal works!
-</p>
+<ion-header class="ff7-header">
+  <ion-toolbar>
+    <ion-title>Notifiche</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding ff7-content">
+  <ion-list lines="full">
+    <ion-item *ngFor="let notification of mockNotifications">
+      <ion-icon slot="start" name="notifications-outline"></ion-icon>
+      <ion-label>
+        <h2>{{ notification.title }}</h2>
+        <p>{{ notification.message }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+  <div *ngIf="mockNotifications.length === 0" class="no-notifications">
+    <p>Nessuna notifica</p>
+  </div>
+</ion-content>
