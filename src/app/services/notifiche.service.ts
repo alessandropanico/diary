@@ -1,17 +1,20 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+// src/app/services/notifiche.service.ts
+
+import { Injectable, OnDestroy } from '@angular/core';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http'; // Importa se prevedi di usare un'API
-// import { AngularFirestore } from '@angular/fire/firestore'; // Per la connessione a Firebase
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, query, where, orderBy, limit, addDoc, doc, updateDoc, getDocs, QuerySnapshot, DocumentData, DocumentReference, Firestore, serverTimestamp, onSnapshot, writeBatch } from '@angular/fire/firestore';
 
 // Interfaccia per definire la struttura di una notifica
 export interface Notifica {
-  id: string;
+  id?: string; // L'ID è opzionale perché verrà generato da Firestore
+  userId: string; // ID dell'utente a cui è destinata la notifica
   titolo: string;
   messaggio: string;
   letta: boolean;
-  dataCreazione: Date;
-  link?: string; // Link opzionale per navigare
+  dataCreazione: any; // Utilizzeremo un tipo Firestore Timestamp
+  link?: string;
   postId?: string;
   tipo: 'nuovo_post' | 'mi_piace' | 'commento';
 }
@@ -19,67 +22,127 @@ export interface Notifica {
 @Injectable({
   providedIn: 'root'
 })
-export class NotificheService {
+export class NotificheService implements OnDestroy {
+  private firestore: Firestore;
+  private auth = getAuth();
+  private currentUserId: string | null = null;
+  private notificheSubscription: Subscription | undefined;
+
   private _notifiche = new BehaviorSubject<Notifica[]>([]);
   public notifiche$: Observable<Notifica[]> = this._notifiche.asObservable();
-  private notificationSound = new Audio('assets/sound/notification.mp3'); // ⭐ NUOVA ISTANZA AUDIO ⭐
+  private notificationSound = new Audio('assets/sound/notification.mp3');
 
-  // Nel costruttore inietterai i servizi necessari, come AngularFirestore per Firebase
-  constructor(
-    // private firestore: AngularFirestore
-  ) {
-    this.caricaNotifiche();
+  constructor() {
+    this.firestore = getFirestore();
+    onAuthStateChanged(this.auth, user => {
+      if (user) {
+        this.currentUserId = user.uid;
+        this.caricaNotifiche();
+      } else {
+        this.currentUserId = null;
+        this._notifiche.next([]);
+        this.notificheSubscription?.unsubscribe();
+      }
+    });
   }
 
-  // Metodo per aggiungere una nuova notifica
-  aggiungiNotifica(notifica: Notifica) {
-    const notificheAttuali = this._notifiche.getValue();
-    const nuoveNotifiche = [notifica, ...notificheAttuali];
-    this._notifiche.next(nuoveNotifiche);
-    this.salvaNotifiche(nuoveNotifiche);
-    this.playNotificationSound(); // ⭐ Riproduce il suono quando aggiungi una notifica ⭐
+  ngOnDestroy() {
+    this.notificheSubscription?.unsubscribe();
   }
 
-  // ⭐ NUOVO METODO: Riproduce il suono delle notifiche ⭐
+  // Metodo per aggiungere una nuova notifica a Firestore
+  async aggiungiNotifica(notifica: Omit<Notifica, 'id' | 'dataCreazione'>) {
+    if (!notifica.userId) {
+      console.error("ID utente non specificato per la notifica.");
+      return;
+    }
+    try {
+      const docRef = await addDoc(collection(this.firestore, 'notifiche'), {
+        ...notifica,
+        letta: false,
+        dataCreazione: serverTimestamp()
+      });
+      console.log('Notifica aggiunta con ID: ', docRef.id);
+      this.playNotificationSound();
+    } catch (e) {
+      console.error('Errore nell\'aggiunta della notifica:', e);
+    }
+  }
+
+  // Metodo per caricare le notifiche dell'utente loggato da Firestore
+  private caricaNotifiche() {
+    if (!this.currentUserId) {
+      return;
+    }
+    const notificheRef = collection(this.firestore, 'notifiche');
+    const q = query(
+      notificheRef,
+      where('userId', '==', this.currentUserId),
+      orderBy('dataCreazione', 'desc'),
+      limit(50)
+    );
+
+    this.notificheSubscription = new Observable<QuerySnapshot<DocumentData>>(observer => {
+      const unsubscribe = onSnapshot(q, observer);
+      return { unsubscribe };
+    }).pipe(
+      map(snapshot => {
+        const notifiche: Notifica[] = [];
+        snapshot.forEach(doc => {
+          notifiche.push({ id: doc.id, ...doc.data() as Notifica });
+        });
+        return notifiche;
+      })
+    ).subscribe({
+      next: (notifiche) => {
+        this._notifiche.next(notifiche);
+      },
+      error: (err) => {
+        console.error('Errore nella sottoscrizione alle notifiche:', err);
+      }
+    });
+  }
+
   private playNotificationSound() {
     this.notificationSound.play().catch(e => console.error("Errore nella riproduzione del suono:", e));
   }
 
-  // Metodo per ottenere il conteggio delle notifiche non lette
   getNumeroNotificheNonLette(): Observable<number> {
     return this.notifiche$.pipe(
       map(notifiche => notifiche.filter(n => !n.letta).length)
     );
   }
 
-  segnaComeLetta(notificaId: string) {
-    const notificheAttuali = this._notifiche.getValue();
-    const notificheAggiornate = notificheAttuali.map(notifica => {
-      if (notifica.id === notificaId) {
-        return { ...notifica, letta: true };
-      }
-      return notifica;
-    });
-    this._notifiche.next(notificheAggiornate);
-    this.salvaNotifiche(notificheAggiornate);
+  // Segna una notifica come letta in Firestore
+  async segnaComeLetta(notificaId: string) {
+    try {
+      const notificaRef = doc(this.firestore, 'notifiche', notificaId);
+      await updateDoc(notificaRef, { letta: true });
+    } catch (e) {
+      console.error('Errore nell\'aggiornamento della notifica:', e);
+    }
   }
 
-  segnaTutteComeLette() {
-    const notificheAttuali = this._notifiche.getValue();
-    const notificheAggiornate = notificheAttuali.map(notifica => ({ ...notifica, letta: true }));
-    this._notifiche.next(notificheAggiornate);
-    this.salvaNotifiche(notificheAggiornate);
-  }
-
-  private salvaNotifiche(notifiche: Notifica[]) {
-    localStorage.setItem('notifiche', JSON.stringify(notifiche));
-  }
-
-  private caricaNotifiche() {
-    const notificheSalvato = localStorage.getItem('notifiche');
-    if (notificheSalvato) {
-      const notifiche = JSON.parse(notificheSalvato);
-      this._notifiche.next(notifiche);
+  // Segna tutte le notifiche come lette per l'utente corrente in Firestore
+  async segnaTutteComeLette() {
+    if (!this.currentUserId) {
+      return;
+    }
+    const notificheRef = collection(this.firestore, 'notifiche');
+    const q = query(
+      notificheRef,
+      where('userId', '==', this.currentUserId),
+      where('letta', '==', false)
+    );
+    try {
+      const snapshot = await getDocs(q);
+      const batch = writeBatch(this.firestore);
+      snapshot.forEach(doc => {
+        batch.update(doc.ref, { letta: true });
+      });
+      await batch.commit();
+    } catch (e) {
+      console.error('Errore nell\'aggiornamento di tutte le notifiche:', e);
     }
   }
 }
