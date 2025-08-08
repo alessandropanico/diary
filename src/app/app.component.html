@@ -39,7 +39,7 @@
           <ion-icon slot="start" name="chatbubbles-outline"></ion-icon>
           <ion-label>
             Chat
-            <ion-icon name="mail-unread-outline" color="danger" *ngIf="totalUnreadCount > 0"
+            <ion-icon name="mail-unread-outline" color="danger" *ngIf="totalUnreadMessages > 0"
               class="notification-icon"></ion-icon>
           </ion-label>
         </ion-item>
@@ -93,7 +93,7 @@
         <ion-buttons slot="end">
           <ion-button class="notification-button" (click)="openNotificationsModal()">
             <ion-icon name="notifications-outline" class="notification-icon"></ion-icon>
-            <ion-badge *ngIf="totalUnreadCount > 0" color="danger" class="notification-badge">{{ totalUnreadCount }}</ion-badge>
+            <ion-badge *ngIf="totalUnreadNotifications > 0" color="danger" class="notification-badge">{{ totalUnreadNotifications }}</ion-badge>
           </ion-button>
         </ion-buttons>
       </ion-toolbar>

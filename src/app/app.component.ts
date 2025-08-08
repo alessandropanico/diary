@@ -1,7 +1,7 @@
 // src/app/app.component.ts
 
 import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
-import { MenuController, AlertController, ModalController } from '@ionic/angular'; // ⭐ AGGIUNTO ModalController
+import { MenuController, AlertController, ModalController } from '@ionic/angular';
 import { Subject, Subscription, interval } from 'rxjs';
 import { takeWhile } from 'rxjs/operators';
 import { Router } from '@angular/router';
@@ -14,6 +14,7 @@ import { ChatNotificationService } from './services/chat-notification.service';
 import { GroupChatNotificationService } from './services/group-chat-notification.service';
 import { FirebaseAuthStateService } from './services/firebase-auth-state.service';
 import { NotificationsModalComponent } from './shared/notifications-modal/notifications-modal.component';
+import { NotificheService } from './services/notifiche.service';
 
 import { environment } from 'src/environments/environment';
 const app = initializeApp(environment.firebaseConfig);
@@ -25,10 +26,10 @@ const app = initializeApp(environment.firebaseConfig);
   standalone: false,
 })
 export class AppComponent implements OnInit, OnDestroy {
-
   profile: any = null;
   unreadCountSub: Subscription | undefined;
   unreadGroupCountSub: Subscription | undefined;
+  unreadPostCountSub: Subscription | undefined;
   profilePhotoUrl: string | null = null;
 
   deferredPrompt: any;
@@ -41,9 +42,16 @@ export class AppComponent implements OnInit, OnDestroy {
   searchPerformed: boolean = false;
   private searchTerms = new Subject<string>();
   private searchSubscription: Subscription | undefined;
-  unreadCount = 0;
-  unreadGroupCount = 0;
-  totalUnreadCount = 0;
+
+  // ⭐ Contatore per i messaggi non letti (chat singole + gruppi)
+  totalUnreadMessages = 0;
+  // ⭐ Contatore per le notifiche dei post non lette
+  totalUnreadNotifications = 0;
+
+  private unreadChatCount = 0;
+  private unreadGroupChatCount = 0;
+  private unreadPostNotificationsCount = 0;
+
 
   firebaseIsLoggedIn: boolean | null = null;
   private onlineStatusUpdateSubscription: Subscription | undefined;
@@ -53,9 +61,10 @@ export class AppComponent implements OnInit, OnDestroy {
     private alertCtrl: AlertController,
     private router: Router,
     private userDataService: UserDataService,
-    private modalCtrl: ModalController, // ⭐ INIETTATO ModalController
+    private modalCtrl: ModalController,
     private chatNotificationService: ChatNotificationService,
     private groupChatNotificationService: GroupChatNotificationService,
+    private notificheService: NotificheService,
     private firebaseAuthStateService: FirebaseAuthStateService,
     private ngZone: NgZone,
     private cdRef: ChangeDetectorRef
@@ -80,13 +89,18 @@ export class AppComponent implements OnInit, OnDestroy {
     });
 
     this.unreadCountSub = this.chatNotificationService.getUnreadCount$().subscribe(count => {
-      this.unreadCount = count;
-      this.updateTotalUnreadCount();
+      this.unreadChatCount = count;
+      this.updateCounters();
     });
 
     this.unreadGroupCountSub = this.groupChatNotificationService.getUnreadGroupCount$().subscribe(count => {
-      this.unreadGroupCount = count;
-      this.updateTotalUnreadCount();
+      this.unreadGroupChatCount = count;
+      this.updateCounters();
+    });
+
+    this.unreadPostCountSub = this.notificheService.notifiche$.subscribe(notifiche => {
+      this.unreadPostNotificationsCount = notifiche.filter(n => !n.letta).length;
+      this.updateCounters();
     });
 
     setTimeout(() => {
@@ -99,11 +113,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.unreadGroupCountSub?.unsubscribe();
     this.searchSubscription?.unsubscribe();
     this.stopOnlineStatusUpdater();
+    this.unreadPostCountSub?.unsubscribe();
   }
 
-  private updateTotalUnreadCount() {
+  // ⭐ Nuovo metodo per aggiornare entrambi i contatori
+  private updateCounters() {
     this.ngZone.run(() => {
-      this.totalUnreadCount = this.unreadCount + this.unreadGroupCount;
+      this.totalUnreadMessages = this.unreadChatCount + this.unreadGroupChatCount;
+      this.totalUnreadNotifications = this.unreadPostNotificationsCount;
       this.cdRef.detectChanges();
     });
   }
@@ -230,7 +247,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ⭐ NUOVO METODO PER APRIRE LA MODALE DELLE NOTIFICHE ⭐
   async openNotificationsModal() {
     if (!this.isLoggedIn()) {
       const alert = await this.alertCtrl.create({
