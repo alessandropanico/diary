@@ -121,3 +121,21 @@ ion-list {
 .logo{
   width: 50px;
 }
+
+.notification-icon {
+  font-size: 24px;
+  color: #00ffee;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  --background: #ff0077;
+  --color: #ffffff;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  padding: 4px 6px;
+  font-weight: bold;
+  box-shadow: 0 0 5px rgba(255, 0, 119, 0.7);
+}

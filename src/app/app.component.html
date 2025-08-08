@@ -48,10 +48,6 @@
           <ion-icon slot="start" name="alarm-outline"></ion-icon> <ion-label>Sveglie</ion-label>
         </ion-item>
 
-        <!-- <ion-item routerLink="/galleria" (click)="closeMenu()">
-          <ion-icon slot="start" name="images-outline"></ion-icon> <ion-label>Galleria</ion-label>
-        </ion-item> -->
-
         <ion-item routerLink="/progetti" (click)="closeMenu()">
           <ion-icon slot="start" name="folder-open-outline"></ion-icon> <ion-label>Progetti</ion-label>
         </ion-item>
@@ -93,6 +89,13 @@
         <ion-title class="ff7-title">
           NextPlan
         </ion-title>
+
+        <ion-buttons slot="end">
+          <ion-button class="notification-button" (click)="openNotificationsModal()">
+            <ion-icon name="notifications-outline" class="notification-icon"></ion-icon>
+            <ion-badge *ngIf="totalUnreadCount > 0" color="danger" class="notification-badge">{{ totalUnreadCount }}</ion-badge>
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
     <router-outlet></router-outlet>
