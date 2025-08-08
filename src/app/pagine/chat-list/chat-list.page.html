@@ -71,9 +71,9 @@
               [class.offline-text]="!item.otherParticipantIsOnline">
               {{ item.otherParticipantIsOnline ? 'Online' : item.otherParticipantLastOnline }}
             </span>
-            <span *ngIf="item.type === 'group' && item.groupDescription" class="group-description-text">
+            <!-- <span *ngIf="item.type === 'group' && item.groupDescription" class="group-description-text">
               {{ item.groupDescription }}
-            </span>
+            </span> -->
           </div>
           <p>
             {{ getDisplayLastMessage(item) | slice:0:40 }}{{ item.lastMessage && item.lastMessage.length > 40 ? '...' : '' }}
