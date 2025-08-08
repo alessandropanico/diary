@@ -32,30 +32,25 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Metodo per chiudere la modale e segnare le notifiche come lette
   dismiss() {
     this.modalController.dismiss();
     this.notificheService.segnaTutteComeLette();
   }
 
-   /**
-   * Gestisce il click su una notifica, segnandola come letta e navigando.
-   * @param notifica L'oggetto notifica su cui si è cliccato.
-   */
   async handleNotificationClick(notifica: Notifica) {
-    if (!notifica.letta) {
+    // ⭐⭐ Modifica qui: aggiungi un controllo per assicurarti che l'ID esista ⭐⭐
+    if (notifica.id) {
       this.notificheService.segnaComeLetta(notifica.id);
+    } else {
+      console.warn("L'ID della notifica non è definito. Impossibile segnare come letta.");
     }
 
-    // Chiudi il modale
     await this.modalController.dismiss();
 
-    // Naviga in base al tipo di notifica
     if (notifica.tipo === 'nuovo_post' && notifica.postId) {
       this.router.navigateByUrl(`/notizia-singola/${notifica.postId}`);
     } else {
-      // Puoi aggiungere logica per altri tipi di notifiche qui
-      // Esempio: notifiche di mi piace o commenti
+      // Logica per altri tipi di notifiche
     }
   }
 }
