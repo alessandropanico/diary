@@ -1,11 +1,13 @@
 // src/app/services/post.service.ts
 import { Injectable } from '@angular/core';
 import { Firestore, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, doc, updateDoc, getDoc, startAfter, where } from '@angular/fire/firestore';
-import { Observable, from, of } from 'rxjs';
-import { map, switchMap, catchError } from 'rxjs/operators';
+import { Observable, from, lastValueFrom, of } from 'rxjs';
+import { map, switchMap, catchError, take } from 'rxjs/operators';
 import { Post } from '../interfaces/post';
 import { UserDataService } from './user-data.service';
 import { getAuth } from 'firebase/auth';
+import { NotificheService } from './notifiche.service';
+import { FollowService } from './follow.service';
 
 @Injectable({
   providedIn: 'root'
@@ -15,22 +17,62 @@ export class PostService {
 
   constructor(
     private firestore: Firestore,
-    private userDataService: UserDataService
+    private userDataService: UserDataService,
+        private notificheService: NotificheService,
+        private followService: FollowService
+
   ) { }
 
-  async createPost(post: Omit<Post, 'id' | 'likes' | 'commentsCount'>): Promise<string> {
-    try {
-      const docRef = await addDoc(this.postsCollection, {
-        ...post,
-        likes: [],
-        commentsCount: 0
-      });
-      return docRef.id;
-    } catch (error) {
-      console.error('Errore durante la creazione del post:', error);
-      throw error;
-    }
-  }
+ async createPost(post: Omit<Post, 'id' | 'likes' | 'commentsCount'>): Promise<string> {
+    try {
+      const docRef = await addDoc(this.postsCollection, {
+        ...post,
+        likes: [],
+        commentsCount: 0
+      });
+
+      const postId = docRef.id;
+
+      const currentUserId = getAuth().currentUser?.uid;
+      if (currentUserId) {
+        try {
+          // ⭐⭐ CORREZIONE QUI: Aggiunto '.pipe(take(1))' e gestito il caso di errore
+          const followers = await lastValueFrom(this.followService.getFollowersIds(currentUserId).pipe(
+            take(1),
+            catchError(error => {
+              console.error('Errore nel recupero dei follower:', error);
+              return of([]); // Restituisce un Observable di un array vuoto in caso di errore
+            })
+          ));
+         
+          // ⭐⭐ CORREZIONE QUI: Aggiunto un controllo più robusto sul tipo
+          if (Array.isArray(followers) && followers.length > 0) {
+            for (const followerId of followers) {
+              if (followerId !== currentUserId) {
+                await this.notificheService.aggiungiNotifica({
+                  userId: followerId,
+                  titolo: 'Nuovo post!',
+                  messaggio: `${post.username} ha pubblicato un nuovo post.`,
+                  tipo: 'nuovo_post',
+                  postId: postId,
+                  letta: false, // ⭐⭐ CORREZIONE: Aggiunto il campo 'letta'
+                });
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Impossibile recuperare i follower o inviare le notifiche:', err);
+        }
+      }
+      return postId;
+    } catch (error) {
+      console.error('Errore durante la creazione del post:', error);
+      throw error;
+    }
+  }
+
+
+
 
   // ⭐⭐⭐ NUOVO METODO AGGIUNTO QUI ⭐⭐⭐
   getPostById(postId: string): Observable<Post | null> {
