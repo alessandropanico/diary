@@ -104,7 +104,7 @@ export class NotificheService implements OnDestroy {
   }
 
   private playNotificationSound() {
-    this.notificationSound.play().catch(e => console.error("Errore nella riproduzione del suono:", e));
+    // this.notificationSound.play().catch(e => console.error("Errore nella riproduzione del suono:", e));
   }
 
   getNumeroNotificheNonLette(): Observable<number> {
