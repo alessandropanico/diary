@@ -56,11 +56,10 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     const tipoNotifica = notifica.tipo;
     const postId = notifica.postId;
 
-    console.log(`NotificationsModalComponent: Tipo di notifica: ${tipoNotifica}, Post ID: ${postId}`);
+    console.log(`NotificationsModalComponent: Tipo di notifica: ${tipoNotifica}, Post ID: ${postId}, Comment ID: ${notifica.commentId}`);
 
     if (postId) {
-      if ((tipoNotifica === 'commento' || tipoNotifica === 'menzione_commento') && notifica.commentId) {
-        // ⭐ NOVITÀ: Navigazione con l'ID del commento per evidenziarlo ⭐
+      if ((tipoNotifica === 'commento' || tipoNotifica === 'menzione_commento' || tipoNotifica === 'mi_piace_commento') && notifica.commentId) {
         console.log(`Navigazione con commento evidenziato: /notizia-singola/${postId};commentId=${notifica.commentId}`);
         this.router.navigateByUrl(`/notizia-singola/${postId};commentId=${notifica.commentId}`);
       } else if (tipoNotifica === 'nuovo_post' || tipoNotifica === 'mi_piace') {

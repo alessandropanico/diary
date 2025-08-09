@@ -3,7 +3,7 @@
 import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, SimpleChanges, OnChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, LoadingController, AlertController, IonInfiniteScroll, ModalController } from '@ionic/angular'; // Importa ModalController
+import { IonicModule, LoadingController, AlertController, IonInfiniteScroll, ModalController } from '@ionic/angular';
 import { CommentService } from 'src/app/services/comment.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Comment, CommentFetchResult } from 'src/app/interfaces/comment';
@@ -15,7 +15,7 @@ import { Router } from '@angular/router';
 import { DocumentSnapshot } from '@angular/fire/firestore';
 
 import { CommentItemComponent } from '../comment-item/comment-item.component';
-import { CommentLikesModalComponent } from '../comment-likes-modal/comment-likes-modal.component'; // ⭐ NUOVO: Importa il modale dei likes ⭐
+import { CommentLikesModalComponent } from '../comment-likes-modal/comment-likes-modal.component';
 import { Output, EventEmitter } from '@angular/core';
 import { Notifica, NotificheService } from 'src/app/services/notifiche.service';
 
@@ -32,7 +32,7 @@ export interface TagUser {
   templateUrl: './comment-section.component.html',
   styleUrls: ['./comment-section.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule, CommentItemComponent], // Non aggiungiamo CommentLikesModalComponent qui, lo caricheremo dinamicamente
+  imports: [CommonModule, FormsModule, IonicModule, CommentItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
@@ -42,10 +42,10 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   @Input() postId!: string;
   @Input() initialCommentsCount: number = 0;
 
-  @Output() goToUserProfileEvent = new EventEmitter<string>(); // ⭐ AGGIUNGI QUESTO ⭐
+  @Output() goToUserProfileEvent = new EventEmitter<string>();
 
-  @Input() postCreatorId!: string; // ⭐ NOVITÀ: Proprietà per l'ID del creatore del post
-  @Input() commentIdToHighlight: string | undefined; // ⭐ NOVITÀ: Riceve l'ID dalla pagina del post
+  @Input() postCreatorId!: string;
+  @Input() commentIdToHighlight: string | undefined;
 
   comments: Comment[] = [];
   newCommentText: string = '';
@@ -150,6 +150,10 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         this.cdr.detectChanges();
       }
     }
+    // ⭐⭐ NOVITÀ: Gestione del commento da evidenziare ⭐⭐
+    if (changes['commentIdToHighlight'] && changes['commentIdToHighlight'].currentValue) {
+      this.scrollToHighlightedComment();
+    }
   }
 
   private unsubscribeAll(): void {
@@ -219,6 +223,10 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       this.cdr.detectChanges();
       if (this.infiniteScroll) {
         this.infiniteScroll.complete();
+      }
+      // ⭐⭐ NOVITÀ: Chiama il metodo di scorrimento dopo che i commenti sono stati caricati ⭐⭐
+      if (this.commentIdToHighlight) {
+        this.scrollToHighlightedComment();
       }
     }
   }
@@ -351,56 +359,55 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     this.cdr.detectChanges();
   }
 
-async addCommentOrReply() {
-  if (!this.newCommentText.trim() || !this.currentUserId) {
-    this.presentAppAlert('Attenzione', 'Il commento non può essere vuoto e devi essere autenticato.');
-    return;
-  }
-
-  const loading = await this.loadingCtrl.create({
-    message: this.replyingToComment ? 'Aggiunta risposta...' : 'Aggiunta commento...',
-    spinner: 'crescent'
-  });
-  await loading.present();
-
-  const commentToAdd: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'replies' | 'isRootComment'> = {
-    postId: this.postId,
-    userId: this.currentUserId,
-    username: this.currentUserUsername,
-    userAvatarUrl: this.currentUserAvatar as string,
-    text: this.newCommentText.trim(),
-    parentId: this.replyingToComment ? this.replyingToComment.id : null
-  };
-
-  try {
-    const addedCommentId = await this.commentService.addComment(commentToAdd);
-    this.newCommentText = '';
-    this.replyingToComment = null;
-    this.expService.addExperience(10, 'commentCreated');
-
-    // ⭐⭐ NOVITÀ: controllo su postCreatorId aggiunto per maggiore sicurezza ⭐⭐
-    if (this.currentUserId !== this.postCreatorId && this.postCreatorId) {
-      const notificaPerAutore: Omit<Notifica, 'id' | 'dataCreazione'> = {
-        userId: this.postCreatorId,
-        titolo: 'Nuovo commento',
-        messaggio: `${this.currentUserUsername} ha commentato il tuo post.`,
-        postId: this.postId,
-        commentId: addedCommentId,
-        letta: false,
-        tipo: 'commento'
-      };
-      await this.notificheService.aggiungiNotifica(notificaPerAutore);
+  async addCommentOrReply() {
+    if (!this.newCommentText.trim() || !this.currentUserId) {
+      this.presentAppAlert('Attenzione', 'Il commento non può essere vuoto e devi essere autenticato.');
+      return;
     }
 
-    this.resetAndLoadComments();
-    this.cdr.detectChanges();
-  } catch (error) {
-    console.error('Errore nell\'aggiunta del commento:', error);
-    this.presentAppAlert('Errore', 'Impossibile aggiungere il commento.');
-  } finally {
-    await loading.dismiss();
+    const loading = await this.loadingCtrl.create({
+      message: this.replyingToComment ? 'Aggiunta risposta...' : 'Aggiunta commento...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    const commentToAdd: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'replies' | 'isRootComment'> = {
+      postId: this.postId,
+      userId: this.currentUserId,
+      username: this.currentUserUsername,
+      userAvatarUrl: this.currentUserAvatar as string,
+      text: this.newCommentText.trim(),
+      parentId: this.replyingToComment ? this.replyingToComment.id : null
+    };
+
+    try {
+      const addedCommentId = await this.commentService.addComment(commentToAdd);
+      this.newCommentText = '';
+      this.replyingToComment = null;
+      this.expService.addExperience(10, 'commentCreated');
+
+      if (this.currentUserId !== this.postCreatorId && this.postCreatorId) {
+        const notificaPerAutore: Omit<Notifica, 'id' | 'dataCreazione'> = {
+          userId: this.postCreatorId,
+          titolo: 'Nuovo commento',
+          messaggio: `${this.currentUserUsername} ha commentato il tuo post.`,
+          postId: this.postId,
+          commentId: addedCommentId,
+          letta: false,
+          tipo: 'commento'
+        };
+        await this.notificheService.aggiungiNotifica(notificaPerAutore);
+      }
+
+      this.resetAndLoadComments();
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Errore nell\'aggiunta del commento:', error);
+      this.presentAppAlert('Errore', 'Impossibile aggiungere il commento.');
+    } finally {
+      await loading.dismiss();
+    }
   }
-}
 
   async toggleLikeComment(commentToToggle: Comment) {
     if (!this.currentUserId) {
@@ -409,8 +416,25 @@ async addCommentOrReply() {
     }
 
     const hasLiked = commentToToggle.likes.includes(this.currentUserId);
+    const newLikeState = !hasLiked;
+
     try {
-      await this.commentService.toggleLikeComment(this.postId, commentToToggle.id, this.currentUserId, !hasLiked);
+      await this.commentService.toggleLikeComment(this.postId, commentToToggle.id, this.currentUserId, newLikeState);
+
+      if (newLikeState && this.currentUserId !== commentToToggle.userId) {
+        const likerUserData = await this.userDataService.getUserDataByUid(this.currentUserId);
+        const likerUsername = likerUserData?.nickname || 'Un utente';
+
+        await this.notificheService.aggiungiNotifica({
+          userId: commentToToggle.userId,
+          titolo: 'Nuovo "Mi piace"!',
+          messaggio: `${likerUsername} ha messo mi piace al tuo commento.`,
+          tipo: 'mi_piace_commento',
+          postId: this.postId,
+          commentId: commentToToggle.id,
+          letta: false,
+        });
+      }
 
       const updateLikesRecursively = (commentsArray: Comment[], targetCommentId: string, userId: string, liked: boolean): Comment[] => {
         return commentsArray.map(c => {
@@ -430,8 +454,7 @@ async addCommentOrReply() {
         });
       };
 
-      this.comments = updateLikesRecursively(this.comments, commentToToggle.id, this.currentUserId, !hasLiked);
-
+      this.comments = updateLikesRecursively(this.comments, commentToToggle.id, this.currentUserId, newLikeState);
       this.cdr.detectChanges();
     } catch (error) {
       console.error('Errore nel toggle like del commento:', error);
@@ -440,36 +463,35 @@ async addCommentOrReply() {
   }
 
   async handleGoToProfile(identifier: string) {
-  let uidToNavigate: string | null = identifier;
-  const isLikelyNickname = identifier.length < 20 || identifier.includes('-') || identifier.includes('.');
+    let uidToNavigate: string | null = identifier;
+    const isLikelyNickname = identifier.length < 20 || identifier.includes('-') || identifier.includes('.');
 
-  if (isLikelyNickname) {
-    const loading = await this.loadingCtrl.create({
-      message: 'Ricerca utente...',
-      spinner: 'dots',
-      duration: 3000 // Timeout per evitare blocchi
-    });
-    await loading.present();
+    if (isLikelyNickname) {
+      const loading = await this.loadingCtrl.create({
+        message: 'Ricerca utente...',
+        spinner: 'dots',
+        duration: 3000
+      });
+      await loading.present();
 
-    try {
-      uidToNavigate = await this.userDataService.getUidByNickname(identifier);
-    } catch (error) {
-      console.error(`Errore nel risolvere nickname '${identifier}':`, error);
-      this.presentAppAlert('Errore', `Impossibile trovare l'utente con nickname @${identifier}.`);
-      uidToNavigate = null; // Forza a null per impedire la navigazione se fallisce
-    } finally {
-      await loading.dismiss();
+      try {
+        uidToNavigate = await this.userDataService.getUidByNickname(identifier);
+      } catch (error) {
+        console.error(`Errore nel risolvere nickname '${identifier}':`, error);
+        this.presentAppAlert('Errore', `Impossibile trovare l'utente con nickname @${identifier}.`);
+        uidToNavigate = null;
+      } finally {
+        await loading.dismiss();
+      }
+    } else {
     }
-  } else {
-  }
 
-  if (uidToNavigate) {
-    this.goToUserProfileEvent.emit(uidToNavigate);
-  } else {
-    console.warn(`CommentSectionComponent: Impossibile navigare. UID non disponibile per l'identifier: ${identifier}`);
+    if (uidToNavigate) {
+      this.goToUserProfileEvent.emit(uidToNavigate);
+    } else {
+      console.warn(`CommentSectionComponent: Impossibile navigare. UID non disponibile per l'identifier: ${identifier}`);
+    }
   }
-}
-
 
   formatCommentTime(timestamp: string): string {
     if (!timestamp) return '';
@@ -588,7 +610,6 @@ async addCommentOrReply() {
 
     try {
       const users = await this.userDataService.searchUsers(searchTerm);
-      // this.taggingUsers = users.filter(user => user.uid !== this.currentUserId);
       this.taggingUsers = users;
       this.cdr.detectChanges();
     } catch (error) {
@@ -622,22 +643,20 @@ async addCommentOrReply() {
     }
   }
 
-  // ⭐ NUOVO METODO: Apre il modale dei likes del commento ⭐
   async openCommentLikesModal(comment: Comment) {
     if (comment.likes.length === 0) {
-      // Non aprire il modale se non ci sono likes
       return;
     }
 
     const modal = await this.modalController.create({
-      component: CommentLikesModalComponent, // Il componente del modale che abbiamo creato
+      component: CommentLikesModalComponent,
       componentProps: {
         postId: comment.postId,
         commentId: comment.id
       },
-      cssClass: 'likes-modal', // Puoi definire una classe CSS per stilizzare il modale
+      cssClass: 'likes-modal',
       mode: 'ios',
-      breakpoints: [0, 0.5, 0.8], // Opzionale: per un modal a scorrimento parziale (come Instagram)
+      breakpoints: [0, 0.5, 0.8],
       initialBreakpoint: 0.8,
       backdropDismiss: true
     });
@@ -645,8 +664,26 @@ async addCommentOrReply() {
     await modal.present();
 
     const { data } = await modal.onWillDismiss();
-    // Puoi gestire qui eventuali dati di ritorno dal modale, se necessario
     if (data && data.dismissed) {
     }
+  }
+
+  // ⭐⭐ NUOVO METODO: per scorrere fino al commento evidenziato ⭐⭐
+  private scrollToHighlightedComment() {
+    if (!this.commentIdToHighlight) {
+      return;
+    }
+    // Ritardo per assicurarsi che il DOM sia aggiornato
+    setTimeout(() => {
+      const element = document.getElementById(`comment-${this.commentIdToHighlight}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Puoi aggiungere una classe CSS per evidenziare temporaneamente
+        element.classList.add('highlighted-comment');
+        setTimeout(() => {
+          element.classList.remove('highlighted-comment');
+        }, 5000); // Rimuovi l'evidenziazione dopo 5 secondi
+      }
+    }, 100);
   }
 }

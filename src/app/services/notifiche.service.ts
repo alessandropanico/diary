@@ -8,16 +8,16 @@ import { getFirestore, collection, query, where, orderBy, limit, addDoc, doc, up
 
 // Interfaccia per definire la struttura di una notifica
 export interface Notifica {
-  id?: string;
-  userId: string;
-  titolo: string;
-  messaggio: string;
-  letta: boolean;
-  dataCreazione: any;
-  link?: string;
-  postId?: string;
-  commentId?: string; // ⭐ Aggiungi questa linea ⭐
-  tipo: 'nuovo_post' | 'mi_piace' | 'commento' | 'menzione_commento';
+  id?: string;
+  userId: string;
+  titolo: string;
+  messaggio: string;
+  letta: boolean;
+  dataCreazione: any;
+  link?: string;
+  postId?: string;
+  commentId?: string;
+  tipo: 'nuovo_post' | 'mi_piace' | 'commento' | 'menzione_commento' | 'mi_piace_commento';
 }
 
 @Injectable({
