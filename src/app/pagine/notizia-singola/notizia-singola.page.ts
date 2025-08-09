@@ -85,40 +85,57 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
 
     if (postSnap.exists()) {
       const postData = { id: postSnap.id, ...postSnap.data() } as Post;
+
+      // Aggiungi l'ID dell'utente corrente e i primi 3 liker
       const likedUserIds = (postData.likes || []).slice(0, 3);
-      const userPromises = likedUserIds.map(userId => {
-        if (this.usersCache.has(userId)) {
-          return of(this.usersCache.get(userId)!);
-        } else {
-          return from(this.userDataService.getUserDataByUid(userId)).pipe(
-            map(userData => {
-              if (userData) {
-                this.usersCache.set(userId, userData);
-              }
-              return userData;
-            }),
-            catchError(err => {
-              console.error(`Errore nel caricamento dati utente ${userId}:`, err);
-              return of(null);
-            }),
-            take(1)
-          );
-        }
-      });
+      const allUserIdsToFetch = new Set<string>();
+      if (this.currentUserId) {
+        allUserIdsToFetch.add(this.currentUserId);
+      }
+      likedUserIds.forEach(id => allUserIdsToFetch.add(id));
+
+      // Mappa per i dati utente
+      const userPromises = Array.from(allUserIdsToFetch).map(userId =>
+        from(this.userDataService.getUserDataByUid(userId)).pipe(
+          map(userData => {
+            if (userData) {
+              this.usersCache.set(userId, userData);
+            }
+            return userData;
+          }),
+          catchError(err => {
+            console.error(`Errore nel caricamento dati utente ${userId}:`, err);
+            return of(null);
+          }),
+          take(1)
+        )
+      );
 
       this.postSubscription = combineLatest(userPromises.length > 0 ? userPromises : [of(null)]).pipe(
-        map(likedUsersProfiles => {
+        map(userProfiles => {
           const likedUsersMap = new Map<string, UserDashboardCounts>();
-          likedUsersProfiles.forEach(profile => {
-            if (profile) {
+          userProfiles.forEach(profile => {
+            if (profile && likedUserIds.includes(profile.uid)) {
               likedUsersMap.set(profile.uid, profile);
             }
           });
+
+          // Caching dell'autore del post
+          const postAuthorData = this.usersCache.get(postData.userId);
+          if (!postAuthorData) {
+            from(this.userDataService.getUserDataByUid(postData.userId)).subscribe(
+              authorData => {
+                if (authorData) {
+                  this.usersCache.set(postData.userId, authorData);
+                }
+              }
+            );
+          }
+
           this.notizia = { ...postData, likesUsersMap: likedUsersMap } as PostWithUserDetails;
           this.isLoadingPost = false;
           this.cdr.detectChanges();
 
-          // ⭐ NUOVA LOGICA: Apri il modale se è presente l'ID del commento ⭐
           if (this.commentIdToHighlight && this.notizia) {
             this.openCommentsModal(this.notizia);
           }
