@@ -21,36 +21,51 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
+    console.log('NotificationsModalComponent: Inizializzazione componente. Sottoscrizione al flusso di notifiche.');
     this.notificheSubscription = this.notificheService.notifiche$.subscribe(notifiche => {
       this.notifiche = notifiche;
+      console.log('NotificationsModalComponent: Notifiche aggiornate.', notifiche);
     });
   }
 
   ngOnDestroy() {
+    console.log('NotificationsModalComponent: Distruzione componente. Annullamento della sottoscrizione.');
     if (this.notificheSubscription) {
       this.notificheSubscription.unsubscribe();
     }
   }
 
   dismiss() {
+    console.log('NotificationsModalComponent: Chiusura del modale. Segno tutte le notifiche come lette.');
     this.modalController.dismiss();
     this.notificheService.segnaTutteComeLette();
   }
 
   async handleNotificationClick(notifica: Notifica) {
-    // ⭐⭐ Modifica qui: aggiungi un controllo per assicurarti che l'ID esista ⭐⭐
+    console.log('NotificationsModalComponent: Click su notifica.', notifica);
     if (notifica.id) {
+      console.log(`NotificationsModalComponent: Segno la notifica con ID ${notifica.id} come letta.`);
       this.notificheService.segnaComeLetta(notifica.id);
     } else {
-      console.warn("L'ID della notifica non è definito. Impossibile segnare come letta.");
+      console.warn("NotificationsModalComponent: L'ID della notifica non è definito. Impossibile segnare come letta.");
     }
 
     await this.modalController.dismiss();
+    console.log('NotificationsModalComponent: Modale chiuso.');
 
-    if (notifica.tipo === 'nuovo_post' && notifica.postId) {
-      this.router.navigateByUrl(`/notizia-singola/${notifica.postId}`);
+    const tipoNotifica = notifica.tipo;
+    const postId = notifica.postId;
+
+    console.log(`NotificationsModalComponent: Tipo di notifica: ${tipoNotifica}, Post ID: ${postId}`);
+
+    if ((tipoNotifica === 'nuovo_post' || tipoNotifica === 'commento' || tipoNotifica === 'menzione_commento') && postId) {
+      console.log(`NotificationsModalComponent: Navigazione a /notizia-singola/${postId}`);
+      this.router.navigateByUrl(`/notizia-singola/${postId}`);
+    } else if (tipoNotifica === 'mi_piace' && postId) {
+      console.log(`NotificationsModalComponent: Navigazione a /notizia-singola/${postId}`);
+      this.router.navigateByUrl(`/notizia-singola/${postId}`);
     } else {
-      // Logica per altri tipi di notifiche
+      console.log('NotificationsModalComponent: Nessuna azione di navigazione definita per questo tipo di notifica.');
     }
   }
 }

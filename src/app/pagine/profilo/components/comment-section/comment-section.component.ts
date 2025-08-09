@@ -17,6 +17,7 @@ import { DocumentSnapshot } from '@angular/fire/firestore';
 import { CommentItemComponent } from '../comment-item/comment-item.component';
 import { CommentLikesModalComponent } from '../comment-likes-modal/comment-likes-modal.component'; // ⭐ NUOVO: Importa il modale dei likes ⭐
 import { Output, EventEmitter } from '@angular/core';
+import { Notifica, NotificheService } from 'src/app/services/notifiche.service';
 
 export interface TagUser {
   uid: string;
@@ -43,6 +44,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
   @Output() goToUserProfileEvent = new EventEmitter<string>(); // ⭐ AGGIUNGI QUESTO ⭐
 
+  @Input() postCreatorId!: string; // ⭐ NOVITÀ: Proprietà per l'ID del creatore del post
 
   comments: Comment[] = [];
   newCommentText: string = '';
@@ -74,7 +76,8 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     private alertCtrl: AlertController,
     private expService: ExpService,
     private router: Router,
-    private modalController: ModalController // <-- INIETTA ModalController
+    private modalController: ModalController,
+    private notificheService: NotificheService
   ) { }
 
   ngOnInit() {
@@ -347,42 +350,56 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     this.cdr.detectChanges();
   }
 
-  async addCommentOrReply() {
-    if (!this.newCommentText.trim() || !this.currentUserId) {
-      this.presentAppAlert('Attenzione', 'Il commento non può essere vuoto e devi essere autenticato.');
-      return;
-    }
-
-    const loading = await this.loadingCtrl.create({
-      message: this.replyingToComment ? 'Aggiunta risposta...' : 'Aggiunta commento...',
-      spinner: 'crescent'
-    });
-    await loading.present();
-
-    const commentToAdd: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'replies' | 'isRootComment'> = {
-      postId: this.postId,
-      userId: this.currentUserId,
-      username: this.currentUserUsername,
-      userAvatarUrl: this.currentUserAvatar as string,
-      text: this.newCommentText.trim(),
-      parentId: this.replyingToComment ? this.replyingToComment.id : null
-    };
-
-    try {
-      const addedCommentId = await this.commentService.addComment(commentToAdd);
-      this.newCommentText = '';
-      this.replyingToComment = null;
-      this.expService.addExperience(10, 'commentCreated');
-
-      this.resetAndLoadComments();
-      this.cdr.detectChanges();
-    } catch (error) {
-      console.error('Errore nell\'aggiunta del commento:', error);
-      this.presentAppAlert('Errore', 'Impossibile aggiungere il commento.');
-    } finally {
-      await loading.dismiss();
-    }
+async addCommentOrReply() {
+  if (!this.newCommentText.trim() || !this.currentUserId) {
+    this.presentAppAlert('Attenzione', 'Il commento non può essere vuoto e devi essere autenticato.');
+    return;
   }
+
+  const loading = await this.loadingCtrl.create({
+    message: this.replyingToComment ? 'Aggiunta risposta...' : 'Aggiunta commento...',
+    spinner: 'crescent'
+  });
+  await loading.present();
+
+  const commentToAdd: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'replies' | 'isRootComment'> = {
+    postId: this.postId,
+    userId: this.currentUserId,
+    username: this.currentUserUsername,
+    userAvatarUrl: this.currentUserAvatar as string,
+    text: this.newCommentText.trim(),
+    parentId: this.replyingToComment ? this.replyingToComment.id : null
+  };
+
+  try {
+    const addedCommentId = await this.commentService.addComment(commentToAdd);
+    this.newCommentText = '';
+    this.replyingToComment = null;
+    this.expService.addExperience(10, 'commentCreated');
+
+    // ⭐⭐ NOVITÀ: controllo su postCreatorId aggiunto per maggiore sicurezza ⭐⭐
+    if (this.currentUserId !== this.postCreatorId && this.postCreatorId) {
+      const notificaPerAutore: Omit<Notifica, 'id' | 'dataCreazione'> = {
+        userId: this.postCreatorId,
+        titolo: 'Nuovo commento',
+        messaggio: `${this.currentUserUsername} ha commentato il tuo post.`,
+        postId: this.postId,
+        commentId: addedCommentId,
+        letta: false,
+        tipo: 'commento'
+      };
+      await this.notificheService.aggiungiNotifica(notificaPerAutore);
+    }
+
+    this.resetAndLoadComments();
+    this.cdr.detectChanges();
+  } catch (error) {
+    console.error('Errore nell\'aggiunta del commento:', error);
+    this.presentAppAlert('Errore', 'Impossibile aggiungere il commento.');
+  } finally {
+    await loading.dismiss();
+  }
+}
 
   async toggleLikeComment(commentToToggle: Comment) {
     if (!this.currentUserId) {

@@ -149,26 +149,27 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
     }
   }
 
-  async openCommentsModal(post: Post) {
-    const modal = await this.modalController.create({
-      component: CommentsModalComponent,
-      componentProps: {
-        postId: post.id,
-        postCreatorAvatar: post.userAvatarUrl,
-        postCreatorUsername: post.username,
-        postText: post.text
-      },
-      cssClass: 'my-custom-comments-modal',
-      mode: 'ios',
-      breakpoints: [0, 0.25, 0.5, 0.75, 1],
-      initialBreakpoint: 1,
-      backdropDismiss: true,
-    });
-    modal.onWillDismiss().then(() => {
-      this.loadSinglePost();
-    });
-    await modal.present();
-  }
+async openCommentsModal(post: Post) {
+  const modal = await this.modalController.create({
+    component: CommentsModalComponent,
+    componentProps: {
+      postId: post.id,
+      postCreatorAvatar: post.userAvatarUrl,
+      postCreatorUsername: post.username,
+      postCreatorId: post.userId, // ⭐ NOVITÀ: Passa l'ID dell'autore del post
+      postText: post.text
+    },
+    cssClass: 'my-custom-comments-modal',
+    mode: 'ios',
+    breakpoints: [0, 0.25, 0.5, 0.75, 1],
+    initialBreakpoint: 1,
+    backdropDismiss: true,
+  });
+  modal.onWillDismiss().then(() => {
+    this.loadSinglePost();
+  });
+  await modal.present();
+}
 
   async openLikesModal(postId: string) {
     const modal = await this.modalController.create({
