@@ -15,321 +15,298 @@ import { map, switchMap, catchError, take } from 'rxjs/operators';
 
 
 interface PostWithUserDetails extends Post {
-  likesUsersMap?: Map<string, UserDashboardCounts>;
+  likesUsersMap?: Map<string, UserDashboardCounts>;
 }
 
 @Component({
-  selector: 'app-notizia-singola',
-  templateUrl: './notizia-singola.page.html',
-  styleUrls: ['./notizia-singola.page.scss'],
-  standalone: false,
+  selector: 'app-notizia-singola',
+  templateUrl: './notizia-singola.page.html',
+  styleUrls: ['./notizia-singola.page.scss'],
+  standalone: false,
 })
 export class NotiziaSingolaPage implements OnInit, OnDestroy {
 
-  notiziaId: string | null = null;
-  notizia: PostWithUserDetails | null = null;
-  isLoadingPost: boolean = true;
-  currentUserId: string | null = null;
+  notiziaId: string | null = null;
+  notizia: PostWithUserDetails | null = null;
+  isLoadingPost: boolean = true;
+  currentUserId: string | null = null;
 
-  private postSubscription: Subscription | undefined;
-  private usersCache: Map<string, UserDashboardCounts> = new Map();
+  private postSubscription: Subscription | undefined;
+  private usersCache: Map<string, UserDashboardCounts> = new Map();
 
-  constructor(
-    private activatedRoute: ActivatedRoute,
-    private router: Router,
-    private firestore: Firestore,
-    private postService: PostService,
-    private userDataService: UserDataService,
-    private commentService: CommentService,
-    private expService: ExpService,
-    private alertCtrl: AlertController,
-    private modalController: ModalController,
-    private cdr: ChangeDetectorRef,
-  ) { }
+  constructor(
+    private activatedRoute: ActivatedRoute,
+    private router: Router,
+    private firestore: Firestore,
+    private postService: PostService,
+    private userDataService: UserDataService,
+    private commentService: CommentService,
+    private expService: ExpService,
+    private alertCtrl: AlertController,
+    private modalController: ModalController,
+    private cdr: ChangeDetectorRef,
+  ) { }
 
-  ngOnInit() {
-    console.log('notizia-singola.page.ts: ngOnInit - Inizializzazione del componente');
-    getAuth().onAuthStateChanged(user => {
-      console.log('notizia-singola.page.ts: onAuthStateChanged - Stato di autenticazione cambiato');
-      if (user) {
-        console.log('notizia-singola.page.ts: Utente autenticato. UID:', user.uid);
-        this.currentUserId = user.uid;
-        this.notiziaId = this.activatedRoute.snapshot.paramMap.get('id');
-        console.log('notizia-singola.page.ts: ID della notizia dalla rotta:', this.notiziaId);
-        this.loadSinglePost();
-      } else {
-        console.log('notizia-singola.page.ts: Utente non autenticato.');
-        this.currentUserId = null;
-        this.notizia = null;
-        this.isLoadingPost = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
+  ngOnInit() {
+    getAuth().onAuthStateChanged(user => {
+      if (user) {
+        this.currentUserId = user.uid;
+        this.notiziaId = this.activatedRoute.snapshot.paramMap.get('id');
+        this.loadSinglePost();
+      } else {
+        this.currentUserId = null;
+        this.notizia = null;
+        this.isLoadingPost = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
-  ngOnDestroy(): void {
-    if (this.postSubscription) {
-      this.postSubscription.unsubscribe();
-    }
-    console.log('notizia-singola.page.ts: ngOnDestroy - Componente distrutto.');
-  }
+  ngOnDestroy(): void {
+    if (this.postSubscription) {
+      this.postSubscription.unsubscribe();
+    }
+  }
 
-  async loadSinglePost() {
-    console.log('notizia-singola.page.ts: loadSinglePost - Inizio caricamento post singolo. ID:', this.notiziaId);
-    if (!this.notiziaId) {
-      console.log('notizia-singola.page.ts: loadSinglePost - ID della notizia non trovato. Uscita dalla funzione.');
-      this.isLoadingPost = false;
-      this.cdr.detectChanges();
-      return;
-    }
+  async loadSinglePost() {
+    if (!this.notiziaId) {
+      this.isLoadingPost = false;
+      this.cdr.detectChanges();
+      return;
+    }
 
-    this.isLoadingPost = true;
-    const postRef = doc(this.firestore, `posts/${this.notiziaId}`);
-    const postSnap = await getDoc(postRef);
+    this.isLoadingPost = true;
+    const postRef = doc(this.firestore, `posts/${this.notiziaId}`);
+    const postSnap = await getDoc(postRef);
 
-    console.log('notizia-singola.page.ts: Caricamento dati da Firestore. Post esiste?', postSnap.exists());
-    if (postSnap.exists()) {
-      console.log('notizia-singola.page.ts: Dati del post trovati. Elaborazione...');
-      const postData = { id: postSnap.id, ...postSnap.data() } as Post;
-      const likedUserIds = (postData.likes || []).slice(0, 3);
-      const userPromises = likedUserIds.map(userId => {
-        if (this.usersCache.has(userId)) {
-          return of(this.usersCache.get(userId)!);
-        } else {
-          return from(this.userDataService.getUserDataByUid(userId)).pipe(
-            map(userData => {
-              if (userData) {
-                this.usersCache.set(userId, userData);
-              }
-              return userData;
-            }),
-            catchError(err => {
-              console.error(`Errore nel caricamento dati utente ${userId}:`, err);
-              return of(null);
-            }),
-            take(1)
-          );
-        }
-      });
-     
-      this.postSubscription = combineLatest(userPromises.length > 0 ? userPromises : [of(null)]).pipe(
-        map(likedUsersProfiles => {
-          const likedUsersMap = new Map<string, UserDashboardCounts>();
-          likedUsersProfiles.forEach(profile => {
-            if (profile) {
-              likedUsersMap.set(profile.uid, profile);
-            }
-          });
-          this.notizia = { ...postData, likesUsersMap: likedUsersMap } as PostWithUserDetails;
-          this.isLoadingPost = false;
-          console.log('notizia-singola.page.ts: Post caricato con successo:', this.notizia);
-          this.cdr.detectChanges();
-        })
-      ).subscribe();
-    } else {
-      console.log('notizia-singola.page.ts: Notizia non trovata nel database.');
-      this.notizia = null;
-      this.isLoadingPost = false;
-      this.cdr.detectChanges();
-    }
-  }
+    if (postSnap.exists()) {
+      const postData = { id: postSnap.id, ...postSnap.data() } as Post;
+      const likedUserIds = (postData.likes || []).slice(0, 3);
+      const userPromises = likedUserIds.map(userId => {
+        if (this.usersCache.has(userId)) {
+          return of(this.usersCache.get(userId)!);
+        } else {
+          return from(this.userDataService.getUserDataByUid(userId)).pipe(
+            map(userData => {
+              if (userData) {
+                this.usersCache.set(userId, userData);
+              }
+              return userData;
+            }),
+            catchError(err => {
+              console.error(`Errore nel caricamento dati utente ${userId}:`, err);
+              return of(null);
+            }),
+            take(1)
+          );
+        }
+      });
 
-  async toggleLike(post: PostWithUserDetails) {
-    console.log('notizia-singola.page.ts: toggleLike chiamato.');
-    if (!this.currentUserId) {
-      this.presentAppAlert('Accedi Necessario', 'Devi essere loggato per mostrare il tuo apprezzamento!');
-      return;
-    }
-    const hasLiked = (post.likes ?? []).includes(this.currentUserId);
-    try {
-      await this.postService.toggleLike(post.id, this.currentUserId, !hasLiked);
-      console.log('notizia-singola.page.ts: Like aggiornato con successo.');
-      if (!hasLiked) {
-        post.likes = [...(post.likes ?? []), this.currentUserId];
-        if (this.currentUserId && this.usersCache.has(this.currentUserId)) {
-          if (!post.likesUsersMap) {
-            post.likesUsersMap = new Map();
-          }
-          post.likesUsersMap.set(this.currentUserId, this.usersCache.get(this.currentUserId)!);
-        }
-      } else {
-        post.likes = (post.likes ?? []).filter(id => id !== this.currentUserId);
-        post.likesUsersMap?.delete(this.currentUserId!);
-      }
-      this.cdr.detectChanges();
-    } catch (error) {
-      console.error('Errore nel toggle like:', error);
-      this.presentAppAlert('Errore', 'Impossibile aggiornare il "Mi piace". Riprova.');
-    }
-  }
+      this.postSubscription = combineLatest(userPromises.length > 0 ? userPromises : [of(null)]).pipe(
+        map(likedUsersProfiles => {
+          const likedUsersMap = new Map<string, UserDashboardCounts>();
+          likedUsersProfiles.forEach(profile => {
+            if (profile) {
+              likedUsersMap.set(profile.uid, profile);
+            }
+          });
+          this.notizia = { ...postData, likesUsersMap: likedUsersMap } as PostWithUserDetails;
+          this.isLoadingPost = false;
+          this.cdr.detectChanges();
+        })
+      ).subscribe();
+    } else {
+      this.notizia = null;
+      this.isLoadingPost = false;
+      this.cdr.detectChanges();
+    }
+  }
 
-  async openCommentsModal(post: Post) {
-    console.log('notizia-singola.page.ts: openCommentsModal chiamato.');
-    const modal = await this.modalController.create({
-      component: CommentsModalComponent,
-      componentProps: {
-        postId: post.id,
-        postCreatorAvatar: post.userAvatarUrl,
-        postCreatorUsername: post.username,
-        postText: post.text
-      },
-      cssClass: 'my-custom-comments-modal',
-      mode: 'ios',
-      breakpoints: [0, 0.25, 0.5, 0.75, 1],
-      initialBreakpoint: 1,
-      backdropDismiss: true,
-    });
-    modal.onWillDismiss().then(() => {
-        console.log('notizia-singola.page.ts: Commenti modale chiuso. Ricarico il post.');
-        this.loadSinglePost();
-    });
-    await modal.present();
-  }
+  async toggleLike(post: PostWithUserDetails) {
+    if (!this.currentUserId) {
+      this.presentAppAlert('Accedi Necessario', 'Devi essere loggato per mostrare il tuo apprezzamento!');
+      return;
+    }
+    const hasLiked = (post.likes ?? []).includes(this.currentUserId);
+    try {
+      await this.postService.toggleLike(post.id, this.currentUserId, !hasLiked);
+      if (!hasLiked) {
+        post.likes = [...(post.likes ?? []), this.currentUserId];
+        if (this.currentUserId && this.usersCache.has(this.currentUserId)) {
+          if (!post.likesUsersMap) {
+            post.likesUsersMap = new Map();
+          }
+          post.likesUsersMap.set(this.currentUserId, this.usersCache.get(this.currentUserId)!);
+        }
+      } else {
+        post.likes = (post.likes ?? []).filter(id => id !== this.currentUserId);
+        post.likesUsersMap?.delete(this.currentUserId!);
+      }
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Errore nel toggle like:', error);
+      this.presentAppAlert('Errore', 'Impossibile aggiornare il "Mi piace". Riprova.');
+    }
+  }
 
-  async openLikesModal(postId: string) {
-    console.log('notizia-singola.page.ts: openLikesModal chiamato.');
-    const modal = await this.modalController.create({
-      component: LikeModalComponent,
-      componentProps: {
-        postId: postId,
-      },
-      cssClass: 'my-custom-likes-modal',
-      mode: 'ios',
-      breakpoints: [0, 0.25, 0.5, 0.75, 1],
-      initialBreakpoint: 1,
-      backdropDismiss: true,
-    });
+  async openCommentsModal(post: Post) {
+    const modal = await this.modalController.create({
+      component: CommentsModalComponent,
+      componentProps: {
+        postId: post.id,
+        postCreatorAvatar: post.userAvatarUrl,
+        postCreatorUsername: post.username,
+        postText: post.text
+      },
+      cssClass: 'my-custom-comments-modal',
+      mode: 'ios',
+      breakpoints: [0, 0.25, 0.5, 0.75, 1],
+      initialBreakpoint: 1,
+      backdropDismiss: true,
+    });
+    modal.onWillDismiss().then(() => {
+      this.loadSinglePost();
+    });
+    await modal.present();
+  }
 
-    modal.onWillDismiss().then(() => {
-      console.log('notizia-singola.page.ts: Likes modale chiuso. Ricarico il post.');
-      this.loadSinglePost();
-      this.cdr.detectChanges();
-    });
+  async openLikesModal(postId: string) {
+    const modal = await this.modalController.create({
+      component: LikeModalComponent,
+      componentProps: {
+        postId: postId,
+      },
+      cssClass: 'my-custom-likes-modal',
+      mode: 'ios',
+      breakpoints: [0, 0.25, 0.5, 0.75, 1],
+      initialBreakpoint: 1,
+      backdropDismiss: true,
+    });
 
-    await modal.present();
-  }
+    modal.onWillDismiss().then(() => {
+      this.loadSinglePost();
+      this.cdr.detectChanges();
+    });
 
-  async sharePost(post: Post) {
-    console.log('notizia-singola.page.ts: sharePost chiamato.');
-    const appLink = 'https://alessandropanico.github.io/Sito-Portfolio/';
-    const postSpecificLink = `${appLink}#/notizia/${post.id}`;
-    let shareText = `Ho condiviso un post dall'app "NexusPlan"! Vieni a vedere ${postSpecificLink}`;
+    await modal.present();
+  }
 
-    try {
-      if (navigator.share) {
-        console.log('notizia-singola.page.ts: Condivisione nativa supportata.');
-        await navigator.share({
-          title: `Post di ${post.username} su NexusPlan`,
-          text: shareText,
-          url: postSpecificLink,
-        });
-        this.expService.addExperience(20, 'postShared');
-      } else {
-        console.log('notizia-singola.page.ts: Condivisione nativa non supportata. Copia negli appunti.');
-        await navigator.clipboard.writeText(shareText);
-        this.presentAppAlert('Condivisione non supportata', 'La condivisione nativa non è disponibile su questo dispositivo. Il testo del post (con link) è stato copiato negli appunti.');
-      }
-    } catch (error) {
-      if ((error as any).name !== 'AbortError') {
-        console.error('Errore durante la condivisione del post:', error);
-        this.presentAppAlert('Errore Condivisione', 'Non è stato possibile condividere il post.');
-      }
-    }
-  }
+  async sharePost(post: Post) {
+    const appLink = 'https://alessandropanico.github.io/Sito-Portfolio/';
+    const postSpecificLink = `${appLink}#/notizia/${post.id}`;
+    let shareText = `Ho condiviso un post dall'app "NexusPlan"! Vieni a vedere ${postSpecificLink}`;
 
-  formatTextWithLinks(text: string): string {
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="post-link">${url}</a>`);
-  }
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Post di ${post.username} su NexusPlan`,
+          text: shareText,
+          url: postSpecificLink,
+        });
+        this.expService.addExperience(20, 'postShared');
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        this.presentAppAlert('Condivisione non supportata', 'La condivisione nativa non è disponibile su questo dispositivo. Il testo del post (con link) è stato copiato negli appunti.');
+      }
+    } catch (error) {
+      if ((error as any).name !== 'AbortError') {
+        console.error('Errore durante la condivisione del post:', error);
+        this.presentAppAlert('Errore Condivisione', 'Non è stato possibile condividere il post.');
+      }
+    }
+  }
 
-  formatPostTime(timestamp: string): string {
-    if (!timestamp) return '';
-    try {
-      const postDate = new Date(timestamp);
-      const now = new Date();
-      const diffMs = now.getTime() - postDate.getTime();
-      const seconds = Math.floor(diffMs / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const hours = Math.floor(minutes / 60);
-      const days = Math.floor(hours / 24);
-      const weeks = Math.floor(days / 7);
-      const months = Math.floor(days / 30.44);
-      const years = Math.floor(days / 365.25);
-      if (seconds < 60) {
-        return seconds <= 10 ? 'Adesso' : `${seconds} secondi fa`;
-      } else if (minutes < 60) {
-        return `${minutes} minuti fa`;
-      } else if (hours < 24) {
-        return `${hours} ore fa`;
-      } else if (days < 7) {
-        return `${days} giorni fa`;
-      } else if (weeks < 4) {
-        return `${weeks} settimane fa`;
-      } else if (months < 12) {
-        return `${months} mesi fa`;
-      } else {
-        return `${years} anni fa`;
-      }
-    } catch (e) {
-      console.error("Errore nel formato data (senza date-fns):", timestamp, e);
-      return new Date(timestamp).toLocaleDateString('it-IT', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-  }
+  formatTextWithLinks(text: string): string {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="post-link">${url}</a>`);
+  }
 
-  goToUserProfile(userId: string) {
-    console.log('notizia-singola.page.ts: goToUserProfile chiamato per l\'utente:', userId);
-    if (userId === this.currentUserId) {
-      this.router.navigateByUrl('/profilo');
-    } else {
-      this.router.navigateByUrl(`/profilo/${userId}`);
-    }
-  }
+  formatPostTime(timestamp: string): string {
+    if (!timestamp) return '';
+    try {
+      const postDate = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now.getTime() - postDate.getTime();
+      const seconds = Math.floor(diffMs / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      const weeks = Math.floor(days / 7);
+      const months = Math.floor(days / 30.44);
+      const years = Math.floor(days / 365.25);
+      if (seconds < 60) {
+        return seconds <= 10 ? 'Adesso' : `${seconds} secondi fa`;
+      } else if (minutes < 60) {
+        return `${minutes} minuti fa`;
+      } else if (hours < 24) {
+        return `${hours} ore fa`;
+      } else if (days < 7) {
+        return `${days} giorni fa`;
+      } else if (weeks < 4) {
+        return `${weeks} settimane fa`;
+      } else if (months < 12) {
+        return `${months} mesi fa`;
+      } else {
+        return `${years} anni fa`;
+      }
+    } catch (e) {
+      console.error("Errore nel formato data (senza date-fns):", timestamp, e);
+      return new Date(timestamp).toLocaleDateString('it-IT', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+  }
 
-  async presentAppAlert(header: string, message: string) {
-    console.log(`notizia-singola.page.ts: Mostro avviso - Header: "${header}", Messaggio: "${message}"`);
-    const alert = await this.alertCtrl.create({
-      cssClass: 'app-alert',
-      header: header,
-      message: message,
-      buttons: [
-        {
-          text: 'OK',
-          cssClass: 'app-alert-button',
-          role: 'cancel'
-        }
-      ],
-      backdropDismiss: true,
-      animated: true,
-      mode: 'ios'
-    });
-    await alert.present();
-  }
+  goToUserProfile(userId: string) {
+    if (userId === this.currentUserId) {
+      this.router.navigateByUrl('/profilo');
+    } else {
+      this.router.navigateByUrl(`/profilo/${userId}`);
+    }
+  }
 
-  getLimitedLikedUsers(likes: string[]): string[] {
-    return (likes || []).slice(0, 3);
-  }
+  async presentAppAlert(header: string, message: string) {
+    const alert = await this.alertCtrl.create({
+      cssClass: 'app-alert',
+      header: header,
+      message: message,
+      buttons: [
+        {
+          text: 'OK',
+          cssClass: 'app-alert-button',
+          role: 'cancel'
+        }
+      ],
+      backdropDismiss: true,
+      animated: true,
+      mode: 'ios'
+    });
+    await alert.present();
+  }
 
-  getUserAvatarById(userId: string, usersMap?: Map<string, UserDashboardCounts>): string | undefined {
-    const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
-    return userProfile ? this.getUserPhoto(userProfile.profilePictureUrl || userProfile.photo) : undefined;
-  }
+  getLimitedLikedUsers(likes: string[]): string[] {
+    return (likes || []).slice(0, 3);
+  }
 
-  getLikedUserName(userId: string, usersMap?: Map<string, UserDashboardCounts>): string {
-    const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
-    return userProfile?.nickname || 'Utente sconosciuto';
-  }
+  getUserAvatarById(userId: string, usersMap?: Map<string, UserDashboardCounts>): string | undefined {
+    const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
+    return userProfile ? this.getUserPhoto(userProfile.profilePictureUrl || userProfile.photo) : undefined;
+  }
 
-  getUserPhoto(photoUrl: string | null | undefined): string {
-    const defaultGoogleProfilePicture = 'https://lh3.googleusercontent.com/a/ACg8ocK-pW1q9zsWi1DHCcamHuNOTLOvotU44G2v2qtMUtWu3LI0FOE=s96-c';
-    if (!photoUrl || photoUrl === '' || photoUrl === defaultGoogleProfilePicture) {
-      return 'assets/immaginiGenerali/default-avatar.jpg';
-    }
-    return photoUrl;
-  }
+  getLikedUserName(userId: string, usersMap?: Map<string, UserDashboardCounts>): string {
+    const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
+    return userProfile?.nickname || 'Utente sconosciuto';
+  }
+
+  getUserPhoto(photoUrl: string | null | undefined): string {
+    const defaultGoogleProfilePicture = 'https://lh3.googleusercontent.com/a/ACg8ocK-pW1q9zsWi1DHCcamHuNOTLOvotU44G2v2qtMUtWu3LI0FOE=s96-c';
+    if (!photoUrl || photoUrl === '' || photoUrl === defaultGoogleProfilePicture) {
+      return 'assets/immaginiGenerali/default-avatar.jpg';
+    }
+    return photoUrl;
+  }
 }
