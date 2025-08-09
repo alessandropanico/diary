@@ -122,30 +122,28 @@ export class NotiziePage implements OnInit, OnDestroy {
     }
   }
 
-  // notizie.page.ts
-
-private loadInitialPosts() {
-  if (this.feedUserIds.length === 0) {
-    console.warn('PostService: Tentativo di caricare post con lista di ID utenti vuota.');
-    return;
-  }
-
-  this.postsSubscription = this.postService.getFollowingUsersPosts(this.feedUserIds, this.postsLimit, this.lastPostTimestamp).pipe(
-    switchMap(postsData => this.addUserDetailsToPosts(postsData))
-  ).subscribe({
-    next: (postsWithDetails) => {
-      this.posts = postsWithDetails;
-      this.isLoadingPosts = false;
-      this.updateInfiniteScroll(postsWithDetails);
-      this.cdr.detectChanges();
-    },
-    error: (err) => {
-      console.error('PostService: Errore nel recupero dei post:', err);
-      this.isLoadingPosts = false;
-      this.cdr.detectChanges();
+  private loadInitialPosts() {
+    if (this.feedUserIds.length === 0) {
+      console.warn('PostService: Tentativo di caricare post con lista di ID utenti vuota.');
+      return;
     }
-  });
-}
+
+    this.postsSubscription = this.postService.getFollowingUsersPosts(this.feedUserIds, this.postsLimit, this.lastPostTimestamp).pipe(
+      switchMap(postsData => this.addUserDetailsToPosts(postsData))
+    ).subscribe({
+      next: (postsWithDetails) => {
+        this.posts = postsWithDetails;
+        this.isLoadingPosts = false;
+        this.updateInfiniteScroll(postsWithDetails);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('PostService: Errore nel recupero dei post:', err);
+        this.isLoadingPosts = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   async loadMorePosts(event: Event) {
     const infiniteScrollTarget = event.target as unknown as IonInfiniteScroll;
@@ -363,11 +361,31 @@ private loadInitialPosts() {
     });
 
     modal.onWillDismiss().then(() => {
-      this.loadInitialPosts();
-      this.cdr.detectChanges();
+      // ⭐ MODIFICA: Aggiorna solo il post specifico invece di ricaricare tutti i post
+      this.updateSinglePost(post.id);
     });
 
     await modal.present();
+  }
+
+  // ⭐ AGGIUNGI questo nuovo metodo al tuo componente
+  private updateSinglePost(postId: string) {
+    if (!postId) return;
+
+    const postIndex = this.posts.findIndex(p => p.id === postId);
+    if (postIndex !== -1) {
+      this.postService.getPostById(postId).subscribe(updatedPostData => {
+        if (updatedPostData) {
+          // Applica l'aggiunta dei dettagli utente al singolo post
+          this.addUserDetailsToPosts([updatedPostData]).subscribe(postsWithDetails => {
+            if (postsWithDetails.length > 0) {
+              this.posts[postIndex] = postsWithDetails[0];
+              this.cdr.detectChanges();
+            }
+          });
+        }
+      });
+    }
   }
 
   async openLikesModal(post: PostWithUserDetails) {
@@ -380,7 +398,6 @@ private loadInitialPosts() {
       },
       cssClass: 'my-custom-likes-modal',
       mode: 'ios',
-      // Aggiungi queste due righe per abilitare la funzionalità di scorrimento
       breakpoints: [0, 0.25, 0.5, 0.75, 1],
       initialBreakpoint: 1,
       backdropDismiss: true,
@@ -388,9 +405,8 @@ private loadInitialPosts() {
     });
 
     modal.onWillDismiss().then(() => {
-      // Quando il modale viene chiuso, ricarica i post per aggiornare i conteggi/stati dei like
-      this.loadInitialPosts();
-      this.cdr.detectChanges();
+      // ⭐ MODIFICA: Aggiorna solo il post specifico e non ricaricare tutto il feed
+      this.updateSinglePost(post.id);
     });
 
     await modal.present();
