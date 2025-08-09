@@ -8,17 +8,63 @@
 </ion-header>
 
 <ion-content class="ff7-content">
-  <div *ngIf="isLoadingPost">
-    <p>Caricamento in corso...</p>
+  <div *ngIf="isLoadingPost" class="loading-overlay">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Caricamento del post...</p>
   </div>
 
-  <div *ngIf="notizia">
-    <h1>Titolo del Post: {{ notizia.username }}</h1>
-    <p>Testo del Post: {{ notizia.text }}</p>
-    <p>ID del Post: {{ notizia.id }}</p>
+  <div *ngIf="!isLoadingPost && notizia" class="post-card panel-glow-border">
+    <div class="post-header">
+      <div class="post-avatar" (click)="goToUserProfile(notizia.userId)">
+        <img [src]="getUserPhoto(notizia.userAvatarUrl)" alt="User Avatar">
+      </div>
+      <div class="post-info">
+        <span class="post-username" (click)="goToUserProfile(notizia.userId)">{{ notizia.username }}</span>
+        <span class="post-time">{{ formatPostTime(notizia.timestamp) }}</span>
+      </div>
+    </div>
+
+    <div class="post-content">
+      <p class="post-text" [innerHTML]="formatTextWithLinks(notizia.text)"></p>
+    </div>
+
+    <div class="post-likes-info" *ngIf="notizia.likes && notizia.likes.length > 0" (click)="openLikesModal(notizia.id)">
+      <div class="liked-avatars-preview">
+        <img *ngFor="let userId of getLimitedLikedUsers(notizia.likes)"
+          [src]="getUserPhoto(getUserAvatarById(userId, notizia.likesUsersMap))" alt="Liked User Avatar"
+          class="liked-avatar-thumbnail">
+      </div>
+      <span class="likes-count-text">
+        Piace a
+        <ng-container *ngIf="notizia.likes.length === 1">
+          <strong>{{ getLikedUserName(notizia.likes[0], notizia.likesUsersMap) }}</strong>
+        </ng-container>
+        <ng-container *ngIf="notizia.likes.length === 2">
+          <strong>{{ getLikedUserName(notizia.likes[0], notizia.likesUsersMap) }}</strong> e <strong>{{
+            getLikedUserName(notizia.likes[1], notizia.likesUsersMap) }}</strong>
+        </ng-container>
+        <ng-container *ngIf="notizia.likes.length > 2">
+          <strong>{{ getLikedUserName(notizia.likes[0], notizia.likesUsersMap) }}</strong> e altri <strong>{{ notizia.likes.length
+            - 1 }}</strong>
+        </ng-container>
+      </span>
+    </div>
+
+    <div class="post-actions">
+      <button class="post-action-button" [ngClass]="{'liked': currentUserId && notizia.likes.includes(currentUserId!)}" (click)="toggleLike(notizia)">
+        <span class="icon heart-icon"></span> Like
+      </button>
+      <button class="post-action-button" (click)="openCommentsModal(notizia)">
+        <span class="icon comment-icon"></span> {{ notizia.commentsCount || 0 }} Commenti
+      </button>
+      <button class="post-action-button" (click)="sharePost(notizia)">
+        <span class="icon share-icon"></span> Condividi
+      </button>
+    </div>
   </div>
 
-  <div *ngIf="!isLoadingPost && !notizia">
+  <div *ngIf="!isLoadingPost && !notizia" class="no-posts-message panel-glow-border">
     <p>Nessun post trovato.</p>
   </div>
+
 </ion-content>
