@@ -103,7 +103,8 @@ const routes: Routes = [
     // ⭐ Rotta per il dettaglio del progetto, ora con il percorso corretto ⭐
     path: 'progetti/:id',
     loadChildren: () => import('./pagine/progetto-dettaglio/progetto-dettaglio.module').then(m => m.ProgettoDettaglioPageModule)
-  },  {
+  },
+  {
     path: 'notizie',
     loadChildren: () => import('./pagine/notizie/notizie.module').then( m => m.NotiziePageModule)
   },

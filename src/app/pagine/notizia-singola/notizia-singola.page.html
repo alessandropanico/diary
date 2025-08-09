@@ -8,26 +8,17 @@
 </ion-header>
 
 <ion-content class="ff7-content">
-  <div *ngIf="notizia" class="post-card panel-glow-border">
-    <div class="post-header">
-      <div class="post-avatar" (click)="goToUserProfile(notizia.userId)">
-        <img [src]="getUserPhoto(notizia.userAvatarUrl)" alt="User Avatar">
-      </div>
-      <div class="post-info">
-        <span class="post-username" (click)="goToUserProfile(notizia.userId)">{{ notizia.username }}</span>
-        <span class="post-time">{{ formatPostTime(notizia.timestamp) }}</span>
-      </div>
-    </div>
+  <div *ngIf="isLoadingPost">
+    <p>Caricamento in corso...</p>
+  </div>
 
-    <div class="post-content">
-      <p class="post-text">{{ notizia.titolo }}</p>
-      <img *ngIf="notizia.immagineUrl" [src]="notizia.immagineUrl" alt="Immagine della notizia" class="post-image">
-      <p class="post-text">{{ notizia.text }}</p>
-    </div>
+  <div *ngIf="notizia">
+    <h1>Titolo del Post: {{ notizia.username }}</h1>
+    <p>Testo del Post: {{ notizia.text }}</p>
+    <p>ID del Post: {{ notizia.id }}</p>
+  </div>
 
-    </div>
-
-  <div *ngIf="!notizia" class="no-posts-message panel-glow-border">
-    <p>Notizia non trovata.</p>
+  <div *ngIf="!isLoadingPost && !notizia">
+    <p>Nessun post trovato.</p>
   </div>
 </ion-content>
