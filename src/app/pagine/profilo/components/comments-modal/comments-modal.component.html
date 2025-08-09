@@ -24,6 +24,7 @@
   </div>
   <app-comment-section
     [postId]="postId"
-    [postCreatorId]="postCreatorId" (goToUserProfileEvent)="handleGoToUserProfile($event)">
+    [postCreatorId]="postCreatorId"
+    [commentIdToHighlight]="commentIdToHighlight" (goToUserProfileEvent)="handleGoToUserProfile($event)">
   </app-comment-section>
 </ion-content>

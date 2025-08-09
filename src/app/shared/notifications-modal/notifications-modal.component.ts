@@ -58,14 +58,19 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
 
     console.log(`NotificationsModalComponent: Tipo di notifica: ${tipoNotifica}, Post ID: ${postId}`);
 
-    if ((tipoNotifica === 'nuovo_post' || tipoNotifica === 'commento' || tipoNotifica === 'menzione_commento') && postId) {
-      console.log(`NotificationsModalComponent: Navigazione a /notizia-singola/${postId}`);
-      this.router.navigateByUrl(`/notizia-singola/${postId}`);
-    } else if (tipoNotifica === 'mi_piace' && postId) {
-      console.log(`NotificationsModalComponent: Navigazione a /notizia-singola/${postId}`);
-      this.router.navigateByUrl(`/notizia-singola/${postId}`);
+    if (postId) {
+      if ((tipoNotifica === 'commento' || tipoNotifica === 'menzione_commento') && notifica.commentId) {
+        // ⭐ NOVITÀ: Navigazione con l'ID del commento per evidenziarlo ⭐
+        console.log(`Navigazione con commento evidenziato: /notizia-singola/${postId};commentId=${notifica.commentId}`);
+        this.router.navigateByUrl(`/notizia-singola/${postId};commentId=${notifica.commentId}`);
+      } else if (tipoNotifica === 'nuovo_post' || tipoNotifica === 'mi_piace') {
+        console.log(`Navigazione a: /notizia-singola/${postId}`);
+        this.router.navigateByUrl(`/notizia-singola/${postId}`);
+      } else {
+        console.log('NotificationsModalComponent: Nessuna azione di navigazione definita per questo tipo di notifica.');
+      }
     } else {
-      console.log('NotificationsModalComponent: Nessuna azione di navigazione definita per questo tipo di notifica.');
+      console.log('NotificationsModalComponent: L\'ID del post non è definito. Nessuna navigazione.');
     }
   }
 }

@@ -21,12 +21,13 @@ export class CommentItemComponent implements OnInit, OnChanges {
   @Input() currentUserId: string | null = null;
   @Input() nestingLevel: number = 0;
   @Input() formatCommentTime!: (timestamp: string) => string;
+  @Input() commentIdToHighlight: string | undefined; // ⭐ NOVITÀ: Aggiunto l'input per l'ID da evidenziare
 
   @Output() toggleLike = new EventEmitter<Comment>();
   @Output() setReply = new EventEmitter<Comment>();
   @Output() deleteComment = new EventEmitter<string>();
   @Output() goToProfile = new EventEmitter<string>();
-  @Output() viewLikes = new EventEmitter<Comment>(); // ⭐ NUOVO: Evento per visualizzare i likes ⭐
+  @Output() viewLikes = new EventEmitter<Comment>();
 
   formattedCommentText: SafeHtml | undefined;
 
@@ -44,11 +45,9 @@ export class CommentItemComponent implements OnInit, OnChanges {
 
   private formatTextWithUserTags(text: string): SafeHtml {
     const tagRegex = /@([a-zA-Z0-9_.-]+)/g;
-
     const replacedText = text.replace(tagRegex, (match, nickname) => {
       return `<a class="user-tag" data-identifier="${nickname}">${match}</a>`;
     });
-
     return this.sanitizer.bypassSecurityTrustHtml(replacedText);
   }
 
@@ -57,7 +56,6 @@ export class CommentItemComponent implements OnInit, OnChanges {
     if (target.classList.contains('user-tag')) {
       event.preventDefault();
       event.stopPropagation();
-
       const identifier = target.dataset['identifier'];
       if (identifier) {
         this.goToProfile.emit(identifier);
@@ -93,12 +91,10 @@ export class CommentItemComponent implements OnInit, OnChanges {
     this.goToProfile.emit(identifier);
   }
 
-  // ⭐ NUOVO METODO: Emette l'evento viewLikes ⭐
   onViewLikes() {
     this.viewLikes.emit(this.comment);
   }
 
-  // ⭐ NUOVO METODO: Propaga l'evento viewLikes dalle risposte ⭐
   propagateViewLikes(comment: Comment) {
     this.viewLikes.emit(comment);
   }

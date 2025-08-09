@@ -1,4 +1,6 @@
-<div class="comment-card" [class.is-reply]="nestingLevel > 0">
+<div class="comment-card"
+     [class.is-reply]="nestingLevel > 0"
+     [ngClass]="{'highlighted-comment': comment.id === commentIdToHighlight}">
   <div [class]="nestingLevel === 0 ? 'comment-header' : 'reply-header'">
     <ion-avatar (click)="onGoToProfile()" [class]="nestingLevel === 0 ? 'post-avatar' : 'reply-avatar'">
       <img [src]="comment.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
@@ -42,6 +44,7 @@
       [currentUserId]="currentUserId"
       [nestingLevel]="nestingLevel + 1"
       [formatCommentTime]="formatCommentTime"
+      [commentIdToHighlight]="commentIdToHighlight"
       (toggleLike)="propagateToggleLike($event)"
       (setReply)="onSetReply()"
       (deleteComment)="propagateDeleteComment($event)"

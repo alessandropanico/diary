@@ -30,6 +30,7 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
   notizia: PostWithUserDetails | null = null;
   isLoadingPost: boolean = true;
   currentUserId: string | null = null;
+  commentIdToHighlight: string | null = null;
 
   private postSubscription: Subscription | undefined;
   private usersCache: Map<string, UserDashboardCounts> = new Map();
@@ -51,8 +52,11 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
     getAuth().onAuthStateChanged(user => {
       if (user) {
         this.currentUserId = user.uid;
-        this.notiziaId = this.activatedRoute.snapshot.paramMap.get('id');
-        this.loadSinglePost();
+        this.activatedRoute.paramMap.subscribe(params => {
+          this.notiziaId = params.get('id');
+          this.commentIdToHighlight = params.get('commentId');
+          this.loadSinglePost();
+        });
       } else {
         this.currentUserId = null;
         this.notizia = null;
@@ -113,6 +117,11 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
           this.notizia = { ...postData, likesUsersMap: likedUsersMap } as PostWithUserDetails;
           this.isLoadingPost = false;
           this.cdr.detectChanges();
+
+          // ⭐ NUOVA LOGICA: Apri il modale se è presente l'ID del commento ⭐
+          if (this.commentIdToHighlight && this.notizia) {
+            this.openCommentsModal(this.notizia);
+          }
         })
       ).subscribe();
     } else {
@@ -149,27 +158,29 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
     }
   }
 
-async openCommentsModal(post: Post) {
-  const modal = await this.modalController.create({
-    component: CommentsModalComponent,
-    componentProps: {
-      postId: post.id,
-      postCreatorAvatar: post.userAvatarUrl,
-      postCreatorUsername: post.username,
-      postCreatorId: post.userId, // ⭐ NOVITÀ: Passa l'ID dell'autore del post
-      postText: post.text
-    },
-    cssClass: 'my-custom-comments-modal',
-    mode: 'ios',
-    breakpoints: [0, 0.25, 0.5, 0.75, 1],
-    initialBreakpoint: 1,
-    backdropDismiss: true,
-  });
-  modal.onWillDismiss().then(() => {
-    this.loadSinglePost();
-  });
-  await modal.present();
-}
+  async openCommentsModal(post: Post) {
+    const modal = await this.modalController.create({
+      component: CommentsModalComponent,
+      componentProps: {
+        postId: post.id,
+        postCreatorAvatar: post.userAvatarUrl,
+        postCreatorUsername: post.username,
+        postCreatorId: post.userId,
+        postText: post.text,
+        commentIdToHighlight: this.commentIdToHighlight
+      },
+      cssClass: 'my-custom-comments-modal',
+      mode: 'ios',
+      breakpoints: [0, 0.25, 0.5, 0.75, 1],
+      initialBreakpoint: 1,
+      backdropDismiss: true,
+    });
+    modal.onWillDismiss().then(() => {
+      this.commentIdToHighlight = null;
+      this.loadSinglePost();
+    });
+    await modal.present();
+  }
 
   async openLikesModal(postId: string) {
     const modal = await this.modalController.create({

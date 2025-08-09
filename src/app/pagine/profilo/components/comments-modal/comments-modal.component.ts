@@ -20,7 +20,8 @@ export class CommentsModalComponent implements OnInit, OnDestroy {
   @Input() postCreatorAvatar: string | undefined;
   @Input() postCreatorUsername: string | undefined;
   @Input() postText: string | undefined;
-  @Input() postCreatorId!: string; // ⭐ AGGIUNGI QUESTA PROPRIETÀ ⭐
+  @Input() postCreatorId!: string;
+  @Input() commentIdToHighlight: string | undefined; // ⭐ AGGIUNTO: Riceve l'ID del commento da evidenziare
   @Output() closeModalEvent = new EventEmitter<void>();
 
   private currentUserId: string | null = null;

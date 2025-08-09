@@ -45,6 +45,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   @Output() goToUserProfileEvent = new EventEmitter<string>(); // ⭐ AGGIUNGI QUESTO ⭐
 
   @Input() postCreatorId!: string; // ⭐ NOVITÀ: Proprietà per l'ID del creatore del post
+  @Input() commentIdToHighlight: string | undefined; // ⭐ NOVITÀ: Riceve l'ID dalla pagina del post
 
   comments: Comment[] = [];
   newCommentText: string = '';
