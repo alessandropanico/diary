@@ -18,58 +18,58 @@ export class PostService {
   constructor(
     private firestore: Firestore,
     private userDataService: UserDataService,
-        private notificheService: NotificheService,
-        private followService: FollowService
+    private notificheService: NotificheService,
+    private followService: FollowService
 
   ) { }
 
- async createPost(post: Omit<Post, 'id' | 'likes' | 'commentsCount'>): Promise<string> {
-    try {
-      const docRef = await addDoc(this.postsCollection, {
-        ...post,
-        likes: [],
-        commentsCount: 0
-      });
+  async createPost(post: Omit<Post, 'id' | 'likes' | 'commentsCount'>): Promise<string> {
+    try {
+      const docRef = await addDoc(this.postsCollection, {
+        ...post,
+        likes: [],
+        commentsCount: 0
+      });
 
-      const postId = docRef.id;
+      const postId = docRef.id;
 
-      const currentUserId = getAuth().currentUser?.uid;
-      if (currentUserId) {
-        try {
-          // ⭐⭐ CORREZIONE QUI: Aggiunto '.pipe(take(1))' e gestito il caso di errore
-          const followers = await lastValueFrom(this.followService.getFollowersIds(currentUserId).pipe(
-            take(1),
-            catchError(error => {
-              console.error('Errore nel recupero dei follower:', error);
-              return of([]); // Restituisce un Observable di un array vuoto in caso di errore
-            })
-          ));
-         
-          // ⭐⭐ CORREZIONE QUI: Aggiunto un controllo più robusto sul tipo
-          if (Array.isArray(followers) && followers.length > 0) {
-            for (const followerId of followers) {
-              if (followerId !== currentUserId) {
-                await this.notificheService.aggiungiNotifica({
-                  userId: followerId,
-                  titolo: 'Nuovo post!',
-                  messaggio: `${post.username} ha pubblicato un nuovo post.`,
-                  tipo: 'nuovo_post',
-                  postId: postId,
-                  letta: false, // ⭐⭐ CORREZIONE: Aggiunto il campo 'letta'
-                });
-              }
-            }
-          }
-        } catch (err) {
-          console.error('Impossibile recuperare i follower o inviare le notifiche:', err);
-        }
-      }
-      return postId;
-    } catch (error) {
-      console.error('Errore durante la creazione del post:', error);
-      throw error;
-    }
-  }
+      const currentUserId = getAuth().currentUser?.uid;
+      if (currentUserId) {
+        try {
+          // ⭐⭐ CORREZIONE QUI: Aggiunto '.pipe(take(1))' e gestito il caso di errore
+          const followers = await lastValueFrom(this.followService.getFollowersIds(currentUserId).pipe(
+            take(1),
+            catchError(error => {
+              console.error('Errore nel recupero dei follower:', error);
+              return of([]); // Restituisce un Observable di un array vuoto in caso di errore
+            })
+          ));
+
+          // ⭐⭐ CORREZIONE QUI: Aggiunto un controllo più robusto sul tipo
+          if (Array.isArray(followers) && followers.length > 0) {
+            for (const followerId of followers) {
+              if (followerId !== currentUserId) {
+                await this.notificheService.aggiungiNotifica({
+                  userId: followerId,
+                  titolo: 'Nuovo post!',
+                  messaggio: `${post.username} ha pubblicato un nuovo post.`,
+                  tipo: 'nuovo_post',
+                  postId: postId,
+                  letta: false, // ⭐⭐ CORREZIONE: Aggiunto il campo 'letta'
+                });
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Impossibile recuperare i follower o inviare le notifiche:', err);
+        }
+      }
+      return postId;
+    } catch (error) {
+      console.error('Errore durante la creazione del post:', error);
+      throw error;
+    }
+  }
 
 
 
@@ -149,6 +149,8 @@ export class PostService {
     }
   }
 
+
+
   async toggleLike(postId: string, userId: string, like: boolean): Promise<void> {
     const postRef = doc(this.firestore, 'posts', postId);
     const postDoc = await getDoc(postRef);
@@ -157,7 +159,9 @@ export class PostService {
       throw new Error('Post non trovato.');
     }
 
-    const currentLikes: string[] = postDoc.data()?.['likes'] || [];
+    const postData = postDoc.data() as Post;
+    const currentLikes: string[] = postData?.likes || [];
+
     let updatedLikes: string[];
     let userLikedOrUnliked = false;
 
@@ -180,6 +184,21 @@ export class PostService {
           await this.userDataService.updateLikeGivenCount(like ? 1 : -1);
         }
       }
+
+      if (like && postData.userId !== userId) {
+        const likerUserData = await this.userDataService.getUserDataByUid(userId);
+        const likerUsername = likerUserData?.nickname || 'Un utente';
+
+        await this.notificheService.aggiungiNotifica({
+          userId: postData.userId,
+          titolo: 'Nuovo "Mi piace"!',
+          messaggio: `${likerUsername} ha messo mi piace al tuo post.`,
+          tipo: 'mi_piace',
+          postId: postId,
+          letta: false,
+        });
+      }
+
     } catch (error) {
       console.error('Errore nel toggle like:', error);
       throw error;
