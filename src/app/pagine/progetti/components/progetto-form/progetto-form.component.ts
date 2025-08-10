@@ -1,11 +1,14 @@
+// src/app/components/progetto-form/progetto-form.component.ts
+
 import { Component, OnInit, Input, Output, EventEmitter, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ProgettiService, Project } from 'src/app/services/progetti.service';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-// ⭐ Importa UserDashboardCounts
 import { UserDataService, UserProfile, UserDashboardCounts } from 'src/app/services/user-data.service';
+import { getAuth } from 'firebase/auth';
 import { map } from 'rxjs/operators';
+import { NotificheService } from 'src/app/services/notifiche.service';
 
 @Component({
   selector: 'app-progetto-form',
@@ -23,14 +26,15 @@ export class ProgettoFormComponent implements OnInit {
   title: string = 'Nuovo Progetto';
 
   searchTerm: string = '';
-  // ⭐ Utilizza il tipo corretto per i risultati e i membri selezionati
   searchResults: UserDashboardCounts[] = [];
   selectedUsers: UserDashboardCounts[] = [];
+  private currentUserNickname: string = '';
 
   constructor(
     private formBuilder: FormBuilder,
     private progettiService: ProgettiService,
-    private userDataService: UserDataService
+    private userDataService: UserDataService,
+    private notificheService: NotificheService
   ) { }
 
   async ngOnInit() {
@@ -44,7 +48,6 @@ export class ProgettoFormComponent implements OnInit {
 
     if (this.projectToEdit && this.projectToEdit.members) {
       for (const memberUid of this.projectToEdit.members) {
-        // ⭐ La proprietà 'photo' e 'profilePictureUrl' sono disponibili
         const user = await this.userDataService.getUserDataByUid(memberUid);
         if (user) {
           this.selectedUsers.push({
@@ -53,9 +56,19 @@ export class ProgettoFormComponent implements OnInit {
             nickname: user.nickname,
             profilePictureUrl: user.profilePictureUrl,
             photo: user.photo,
-            // Aggiungi altre proprietà necessarie se il tuo servizio le restituisce
           } as UserDashboardCounts);
         }
+      }
+    }
+    await this.loadCurrentUserName();
+  }
+
+  private async loadCurrentUserName() {
+    const auth = getAuth();
+    if (auth.currentUser) {
+      const userProfile = await this.userDataService.getUserDataByUid(auth.currentUser.uid);
+      if (userProfile) {
+        this.currentUserNickname = userProfile.nickname || userProfile.name || 'Utente Sconosciuto';
       }
     }
   }
@@ -105,10 +118,45 @@ export class ProgettoFormComponent implements OnInit {
       members: this.selectedUsers.map(u => u.uid),
     };
 
+    let projectId: string | undefined;
+
     if (this.projectToEdit && this.projectToEdit.id) {
+      const oldMembers = this.projectToEdit.members || [];
+      const newMembers = this.selectedUsers.map(u => u.uid);
+      const newlyAddedMembers = newMembers.filter(uid => !oldMembers.includes(uid));
+
       await this.progettiService.updateProject(this.projectToEdit.id, projectData);
+      projectId = this.projectToEdit.id;
+
+      if (projectId && newlyAddedMembers.length > 0) {
+        const projectName = projectData.name || 'Progetto';
+        for (const memberId of newlyAddedMembers) {
+          await this.notificheService.aggiungiNotificaProgetto(
+            memberId,
+            this.currentUserNickname,
+            projectId,
+            projectName
+          );
+        }
+      }
     } else {
-      await this.progettiService.addProject(projectData);
+      // ⭐ FIX: Assegna direttamente l'ID del progetto
+      const newProjectId = await this.progettiService.addProject(projectData);
+      projectId = newProjectId;
+
+      const newProjectName = projectData.name || 'Progetto';
+      const newlyAddedMembers = projectData.members || [];
+
+      if (projectId && newlyAddedMembers.length > 0) {
+        for (const memberId of newlyAddedMembers) {
+          await this.notificheService.aggiungiNotificaProgetto(
+            memberId,
+            this.currentUserNickname,
+            projectId,
+            newProjectName
+          );
+        }
+      }
     }
 
     this.modalDismissed.emit({ data: projectData, role: 'confirm' });

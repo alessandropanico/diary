@@ -5,14 +5,13 @@ import { CommonModule } from '@angular/common';
 import { IonicModule, AlertController, ToastController } from '@ionic/angular';
 import { Observable } from 'rxjs';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
-// ⭐ Importa il servizio Auth
 import { Auth } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-progetto-dettaglio',
   templateUrl: './progetto-dettaglio.page.html',
   styleUrls: ['./progetto-dettaglio.page.scss'],
-  standalone: false,
+  standalone: false
 })
 export class ProgettoDettaglioPage implements OnInit {
 
@@ -31,7 +30,7 @@ export class ProgettoDettaglioPage implements OnInit {
     private alertController: AlertController,
     private toastController: ToastController,
     private userDataService: UserDataService,
-    private auth: Auth // ⭐ Inietta Auth per l'utente corrente
+    private auth: Auth
   ) { }
 
   ngOnInit() {
@@ -50,9 +49,19 @@ export class ProgettoDettaglioPage implements OnInit {
         this.project = projectData;
         this.isLoading = false;
 
-        if (this.project?.members && this.project.members.length > 0) {
-          await this.loadProjectMembers(this.project.members);
+        if (this.project) {
+          // ⭐⭐ FIX: Unisci l'ID del proprietario con gli ID dei membri ⭐⭐
+          const allMembersUids = [this.project.uid, ...this.project.members];
+          // Rimuovi eventuali duplicati (se il proprietario è anche in 'members')
+          const uniqueMembersUids = [...new Set(allMembersUids)];
+
+          if (uniqueMembersUids.length > 0) {
+            await this.loadProjectMembers(uniqueMembersUids);
+          } else {
+            this.projectMembers = [];
+          }
         } else {
+           // Caso in cui il progetto non viene trovato
           this.projectMembers = [];
         }
       },
@@ -63,30 +72,26 @@ export class ProgettoDettaglioPage implements OnInit {
     });
   }
 
-  // ⭐ Metodo corretto per caricare i dettagli dei membri
   async loadProjectMembers(memberUids: string[]) {
     this.projectMembers = [];
     for (const uid of memberUids) {
       const user = await this.userDataService.getUserDataByUid(uid);
       if (user) {
-        // ⭐ Crea un nuovo oggetto unendo i dati dell'utente con il suo UID ⭐
         const memberWithUid = {
-          ...user, // Copia tutte le proprietà dell'oggetto utente
-          uid: uid  // Aggiungi esplicitamente la proprietà uid
+          ...user,
+          uid: uid
         };
         this.projectMembers.push(memberWithUid as UserDashboardCounts);
       }
     }
   }
 
-  // ⭐ Aggiungi un controllo per sicurezza anche in goToProfile ⭐
   goToProfile(memberUid: string) {
     const currentUserUid = this.auth.currentUser?.uid;
 
-    // ⭐ Controlla che memberUid esista prima di navigare ⭐
     if (!memberUid) {
       console.error('ID utente mancante per la navigazione al profilo.');
-      return; // Interrompe la navigazione
+      return;
     }
 
     if (currentUserUid && currentUserUid === memberUid) {

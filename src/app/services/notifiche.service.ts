@@ -17,8 +17,9 @@ export interface Notifica {
   link?: string;
   postId?: string;
   commentId?: string;
+  projectId?: string; // ⭐⭐ NOVITÀ: Campo per l'ID del progetto
   // Aggiornamento: Aggiunta del tipo di notifica 'menzione_post' e 'menzione_commento'
-  tipo: 'nuovo_post' | 'mi_piace' | 'commento' | 'menzione_commento' | 'mi_piace_commento' | 'menzione_post';
+  tipo: 'nuovo_post' | 'mi_piace' | 'commento' | 'menzione_commento' | 'mi_piace_commento' | 'menzione_post' | 'invito_progetto'; // ⭐⭐ NOVITÀ: Aggiunto 'invito_progetto'
 }
 
 @Injectable({
@@ -85,7 +86,6 @@ export class NotificheService implements OnDestroy {
     await this.aggiungiNotifica(notifica);
   }
 
-  // ⭐⭐ NUOVO METODO AGGIUNTO QUI ⭐⭐
   // Metodo per gestire le notifiche di menzione in un commento
   async aggiungiNotificaMenzioneCommento(taggedUserId: string, taggingUsername: string, postId: string, commentId: string) {
     const notifica: Omit<Notifica, 'id' | 'dataCreazione'> = {
@@ -97,6 +97,27 @@ export class NotificheService implements OnDestroy {
       commentId: commentId,
       link: `/post/${postId}?commentId=${commentId}`, // Link al post e al commento specifico
       tipo: 'menzione_commento',
+    };
+    await this.aggiungiNotifica(notifica);
+  }
+
+  // ⭐⭐ NUOVO METODO PER LA NOTIFICA DI INVITO A UN PROGETTO ⭐⭐
+  /**
+   * @description Aggiunge una notifica quando un utente viene aggiunto a un progetto.
+   * @param invitedUserId L'ID dell'utente che riceve l'invito.
+   * @param invitingUsername Il nickname dell'utente che ha inviato l'invito.
+   * @param projectId L'ID del progetto.
+   * @param projectName Il nome del progetto a cui l'utente è stato invitato.
+   */
+  async aggiungiNotificaProgetto(invitedUserId: string, invitingUsername: string, projectId: string, projectName: string) {
+    const notifica: Omit<Notifica, 'id' | 'dataCreazione'> = {
+      userId: invitedUserId,
+      titolo: 'Sei stato aggiunto a un progetto!',
+      messaggio: `${invitingUsername} ti ha aggiunto al progetto: ${projectName}.`,
+      letta: false,
+      projectId: projectId,
+      link: `/progetti/${projectId}`, // Link alla pagina del progetto
+      tipo: 'invito_progetto',
     };
     await this.aggiungiNotifica(notifica);
   }

@@ -1,9 +1,10 @@
+// src/app/pages/progetti/progetti.page.ts
+
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonList, IonItemSliding } from '@ionic/angular';
 import { ProgettiService, Project } from 'src/app/services/progetti.service';
 import { Observable } from 'rxjs';
-// ⭐ Importa ExpService
 import { ExpService } from 'src/app/services/exp.service';
 
 @Component({
@@ -22,7 +23,7 @@ export class ProgettiPage implements OnInit {
   constructor(
     private router: Router,
     private progettiService: ProgettiService,
-    private expService: ExpService // ⭐ Inietta ExpService
+    private expService: ExpService
   ) { }
 
   ngOnInit() {
@@ -31,7 +32,7 @@ export class ProgettiPage implements OnInit {
 
   loadProjects() {
     this.isLoading = true;
-    this.projects$ = this.progettiService.getProjects();
+    this.projects$ = this.progettiService.getProjectsForUser();
 
     this.projects$.subscribe({
       next: () => this.isLoading = false,
@@ -73,9 +74,8 @@ export class ProgettiPage implements OnInit {
     this.showModal = false;
 
     if (event && event.role === 'confirm') {
-      // ⭐ Se projectToEdit era undefined, significa che è un NUOVO progetto
       if (!this.projectToEdit) {
-        const xpAmount = 50; // ⭐ Definisci i punti esperienza da assegnare
+        const xpAmount = 50;
         await this.expService.addExperience(xpAmount, 'Progetto creato');
       }
 
