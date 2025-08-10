@@ -14,10 +14,12 @@ import { ExpService } from 'src/app/services/exp.service';
 import { CommentsModalComponent } from '../comments-modal/comments-modal.component';
 import { LikeModalComponent } from '../like-modal/like-modal.component';
 import { ModalController } from '@ionic/angular';
-import { NotificheService } from 'src/app/services/notifiche.service'; // Import del NotificheService
+import { NotificheService } from 'src/app/services/notifiche.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser'; // ⭐ NOVITÀ: Importa DomSanitizer
 
 interface PostWithUserDetails extends Post {
   likesUsersMap?: Map<string, UserDashboardCounts>;
+  formattedText?: SafeHtml; // ⭐ MODIFICA: Il testo formattato è ora SafeHtml
 }
 
 export interface TagUser {
@@ -66,7 +68,6 @@ export class PostComponent implements OnInit, OnDestroy {
   private routeSubscription: Subscription | undefined;
   private usersCache: Map<string, UserDashboardCounts> = new Map();
 
-  // ⭐⭐ NOVITÀ: Variabili per il tagging ⭐⭐
   showTaggingSuggestions: boolean = false;
   taggingUsers: TagUser[] = [];
   private searchUserTerm = new Subject<string>();
@@ -85,8 +86,8 @@ export class PostComponent implements OnInit, OnDestroy {
     private expService: ExpService,
     private commentService: CommentService,
     private modalController: ModalController,
-    private notificheService: NotificheService
-
+    private notificheService: NotificheService,
+    private sanitizer: DomSanitizer // ⭐ NOVITÀ: Iniettato DomSanitizer
   ) { }
 
   ngOnInit() {
@@ -104,7 +105,6 @@ export class PostComponent implements OnInit, OnDestroy {
 
             this.routeSubscription = this.activatedRoute.paramMap.subscribe(params => {
               const profileUserId = params.get('userId');
-
               if (profileUserId && profileUserId !== this.currentUserId) {
                 this.userIdToDisplayPosts = profileUserId;
               } else {
@@ -229,7 +229,16 @@ export class PostComponent implements OnInit, OnDestroy {
             })
           );
         });
+
         return combineLatest(postObservables);
+      }),
+      map(postsWithDetails => { // ⭐ MODIFICA: Utilizza map invece di switchMap
+        return postsWithDetails.map(post => {
+          return {
+            ...post,
+            formattedText: this.formatPostContent(post.text) // ⭐ MODIFICA: Chiama il metodo di formattazione sincrono
+          };
+        });
       })
     ).subscribe({
       next: (postsWithDetails) => {
@@ -314,6 +323,14 @@ export class PostComponent implements OnInit, OnDestroy {
             );
           });
           return combineLatest(newPostObservables);
+        }),
+        map(newPostsWithDetails => { // ⭐ MODIFICA: Utilizza map invece di switchMap
+          return newPostsWithDetails.map(post => {
+            return {
+              ...post,
+              formattedText: this.formatPostContent(post.text) // ⭐ MODIFICA: Chiama il metodo di formattazione sincrono
+            };
+          });
         })
       ).subscribe({
         next: (newPostsWithDetails) => {
@@ -374,7 +391,6 @@ export class PostComponent implements OnInit, OnDestroy {
     };
 
     try {
-      // ⭐⭐ NOVITÀ: Creazione del post e ottenimento dell'ID ⭐⭐
       const postId = await this.postService.createPost(newPost);
       this.newPostText = '';
       const textarea = document.querySelector('.app-textarea') as HTMLTextAreaElement;
@@ -384,7 +400,6 @@ export class PostComponent implements OnInit, OnDestroy {
       this.presentAppAlert('Successo', 'Il tuo messaggio è stato pubblicato con successo nell\'etere!');
       this.expService.addExperience(50, 'postCreated');
 
-      // ⭐⭐ NOVITÀ: Chiamata al metodo per processare i tag e inviare le notifiche
       await this.processTagsAndNotify(newPost.text, postId);
 
       this.loadInitialPosts();
@@ -402,7 +417,6 @@ export class PostComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Regex per trovare tutti i tag "@nomeutente"
     const tagRegex = /@(\w+)/g;
     let match;
     const mentionedUsernames = new Set<string>();
@@ -413,11 +427,9 @@ export class PostComponent implements OnInit, OnDestroy {
 
     for (const username of Array.from(mentionedUsernames)) {
       try {
-        // Cerca l'utente per nickname
         const users = await this.userDataService.searchUsers(username);
         const taggedUser = users.find(u => u.nickname.toLowerCase() === username.toLowerCase());
 
-        // Se l'utente esiste e non è l'utente che ha creato il post
         if (taggedUser && taggedUser.uid !== this.currentUserId) {
           await this.notificheService.aggiungiNotificaMenzionePost(
             taggedUser.uid,
@@ -602,7 +614,7 @@ export class PostComponent implements OnInit, OnDestroy {
     if (userId === this.currentUserId) {
       this.router.navigateByUrl('/profilo');
     } else {
-      this.router.navigateByUrl(`/profilo/${userId}`);
+      this.router.navigateByUrl(`/profilo-altri-utenti/${userId}`);
     }
   }
 
@@ -625,10 +637,8 @@ export class PostComponent implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // ⭐⭐ NOVITÀ: Metodo modificato per gestire il tagging ⭐⭐
   adjustTextareaHeight(event: Event) {
     const textarea = event.target as HTMLTextAreaElement;
-
     textarea.style.height = 'auto';
 
     const maxHeightCss = window.getComputedStyle(textarea).maxHeight;
@@ -666,12 +676,6 @@ export class PostComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  /**
-   * Restituisce l'URL della foto profilo, usando un avatar di default
-   * se l'URL fornito è nullo, vuoto, o un URL generico di Google.
-   * @param photoUrl L'URL della foto profilo dell'utente.
-   * @returns L'URL effettivo dell'immagine da visualizzare.
-   */
   getUserPhoto(photoUrl: string | null | undefined): string {
     const defaultGoogleProfilePicture = 'https://lh3.googleusercontent.com/a/ACg8ocK-pW1q9zsWi1DHCcamHuNOTLOvotU44G2v2qtMUtWu3LI0FOE=s96-c';
 
@@ -681,14 +685,13 @@ export class PostComponent implements OnInit, OnDestroy {
     return photoUrl;
   }
 
-  // Modifica questa funzione per aprire il modale dei likes con ModalController
   async openLikesModal(postId: string) {
     const modal = await this.modalController.create({
-      component: LikeModalComponent, // Specifica il componente LikeModalComponent
+      component: LikeModalComponent,
       componentProps: {
         postId: postId,
       },
-      cssClass: 'my-custom-likes-modal', // Puoi definire una classe CSS personalizzata per il modale dei likes
+      cssClass: 'my-custom-likes-modal',
       mode: 'ios',
       breakpoints: [0, 0.25, 0.5, 0.75, 1],
       initialBreakpoint: 1,
@@ -696,7 +699,6 @@ export class PostComponent implements OnInit, OnDestroy {
     });
 
     modal.onWillDismiss().then(() => {
-      // Quando il modale viene chiuso, ricarica i post per aggiornare i conteggi/stati dei like
       this.loadInitialPosts();
       this.cdr.detectChanges();
     });
@@ -710,34 +712,15 @@ export class PostComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  /**
-   * Restituisce un array limitato di ID utente che hanno messo like.
-   * Utilizzato per mostrare solo un subset di avatar nella preview.
-   * @param likes L'array di ID utente che hanno messo like al post.
-   * @returns Un array contenente al massimo i primi 3 ID utente.
-   */
   getLimitedLikedUsers(likes: string[]): string[] {
     return (likes || []).slice(0, 3);
   }
 
-  /**
-   * Recupera l'URL dell'avatar di un utente dato il suo ID, usando la mappa cache del post.
-   * @param userId L'ID dell'utente.
-   * @param usersMap La mappa specifica degli utenti che hanno messo like per questo post.
-   * @returns L'URL dell'avatar dell'utente, o undefined se non trovato.
-   */
   getUserAvatarById(userId: string, usersMap?: Map<string, UserDashboardCounts>): string | undefined {
-    // Prima cerca nella mappa specifica del post, poi nella cache globale
     const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
     return userProfile ? this.getUserPhoto(userProfile.profilePictureUrl || userProfile.photo) : undefined;
   }
 
-  /**
-   * Recupera il nickname di un utente dato il suo ID, usando la mappa cache del post.
-   * @param userId L'ID dell'utente.
-   * @param usersMap La mappa specifica degli utenti che hanno messo like per questo post.
-   * @returns Il nickname dell'utente, o 'Utente sconosciuto' come fallback.
-   */
   getLikedUserName(userId: string, usersMap?: Map<string, UserDashboardCounts>): string {
     const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
     return userProfile?.nickname || 'Utente sconosciuto';
@@ -759,7 +742,7 @@ export class PostComponent implements OnInit, OnDestroy {
       backdropDismiss: true,
     });
 
-    modal.onWillDismiss().then((data) => {
+    modal.onWillDismiss().then(() => {
       this.loadInitialPosts();
       this.cdr.detectChanges();
     });
@@ -767,7 +750,6 @@ export class PostComponent implements OnInit, OnDestroy {
     await modal.present();
   }
 
-  // ⭐⭐ NOVITÀ: Metodi per la gestione del tagging ⭐⭐
   async searchUsersForTagging(searchTerm: string) {
     if (!searchTerm || searchTerm.length < 2) {
       this.taggingUsers = [];
@@ -808,5 +790,48 @@ export class PostComponent implements OnInit, OnDestroy {
       textarea.focus();
       textarea.setSelectionRange(this.newPostText.length, this.newPostText.length);
     }
+  }
+
+  // ⭐ CORREZIONE: Metodo per gestire il click sui tag
+  async onPostTextClick(event: Event) {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('user-tag')) {
+      event.preventDefault();
+      event.stopPropagation();
+      const nickname = target.dataset['identifier'];
+      if (nickname) {
+        // Cerca l'utente per nickname per ottenere il suo UID
+        try {
+          const users = await this.userDataService.searchUsers(nickname);
+          const taggedUser = users.find(u => u.nickname.toLowerCase() === nickname.toLowerCase());
+
+          if (taggedUser) {
+            // Usa il UID per la navigazione
+            this.goToUserProfile(taggedUser.uid);
+          } else {
+            this.presentAppAlert('Errore di navigazione', `Utente "${nickname}" non trovato.`);
+          }
+        } catch (error) {
+          console.error('Errore durante la ricerca dell\'utente taggato:', error);
+          this.presentAppAlert('Errore', 'Impossibile navigare al profilo utente. Riprova.');
+        }
+      }
+    }
+  }
+
+  // ⭐ NOVITÀ: Metodo per formattare il testo con tag utente e link
+  private formatPostContent(text: string): SafeHtml {
+    const tagRegex = /@([a-zA-Z0-9_.-]+)/g;
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    // Prima, formatta i tag
+    const textWithTags = text.replace(tagRegex, (match, nickname) => {
+      return `<a class="user-tag" data-identifier="${nickname}">${match}</a>`;
+    });
+
+    // Poi, formatta i link URL
+    const formattedText = textWithTags.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="post-link">${url}</a>`);
+
+    return this.sanitizer.bypassSecurityTrustHtml(formattedText);
   }
 }

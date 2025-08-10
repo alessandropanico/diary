@@ -65,9 +65,9 @@
     </button>
   </div>
 
-  <div class="post-content">
-    <p class="post-text" [innerHTML]="formatTextWithLinks(post.text)"></p>
-  </div>
+  <div class="post-content" (click)="onPostTextClick($event)">
+  <p class="post-text" [innerHTML]="post.formattedText"></p>
+</div>
 
   <div class="post-likes-info" *ngIf="post.likes && post.likes.length > 0" (click)="openLikesModal(post.id)">
     <div class="liked-avatars-preview">
