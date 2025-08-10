@@ -388,3 +388,34 @@ ion-fab-button {
     opacity: 1;
   }
 }
+
+// Stili per il modale dei dettagli del gruppo
+.group-photo-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 20px auto;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.group-photo-editable {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.member-avatar {
+  width: 40px;
+  height: 40px;
+  --border-radius: 50%;
+  border: 1px solid var(--primary-glow);
+}
+
+.you-label {
+  font-weight: normal;
+  font-size: 0.8em;
+  color: #00ffee88;
+}

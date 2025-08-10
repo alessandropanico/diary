@@ -4,7 +4,7 @@ import { IonContent, InfiniteScrollCustomEvent, NavController, AlertController, 
 import { getAuth } from 'firebase/auth';
 import { Subscription } from 'rxjs';
 import { GroupChatService, GroupChat, GroupMessage } from '../../services/group-chat.service';
-import { UserDataService } from '../../services/user-data.service';
+import { UserDataService } from '../../services/user-data.service'; // Rimosso UserData
 import * as dayjs from 'dayjs';
 import { QueryDocumentSnapshot, Timestamp } from '@angular/fire/firestore';
 
@@ -34,6 +34,13 @@ dayjs.updateLocale('it', {
     "Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"
   ]
 });
+
+// ⭐⭐ NOVITÀ: Nuova interfaccia per i dettagli del membro nel componente ⭐⭐
+interface GroupMemberDisplay {
+  uid: string;
+  nickname: string;
+  photoUrl: string;
+}
 
 @Component({
   selector: 'app-chat-gruppo',
@@ -72,11 +79,11 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
   editableName: string = '';
   editableDescription: string = '';
-  // ⭐ Modifiche qui:
-  // Non salviamo direttamente l'URL di preview per evitare confusione
-  newPhotoFile: File | null = null; // Il file selezionato dall'utente
-  // Usiamo un URL temporaneo per l'anteprima
+  newPhotoFile: File | null = null;
   private previewPhotoUrl: string | null = null;
+
+  // ⭐⭐ AGGIORNAMENTO: Utilizza la nuova interfaccia ⭐⭐
+  groupMembers: GroupMemberDisplay[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -236,11 +243,11 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.lastScrollTop = 0;
     this.newMessageText = '';
     this.memberNicknamesMap = {};
-    // ⭐ Reset delle variabili della modale
     this.editableName = '';
     this.editableDescription = '';
     this.newPhotoFile = null;
     this.previewPhotoUrl = null;
+    this.groupMembers = [];
   }
 
   private async loadMemberNicknames() {
@@ -268,11 +275,49 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.cdr.detectChanges();
   }
 
+  // ⭐⭐ AGGIORNAMENTO: Metodo per caricare i dettagli completi dei membri ⭐⭐
+  async loadGroupMembersDetails() {
+    this.groupMembers = [];
+    if (!this.groupDetails || !this.groupDetails.members) {
+      return;
+    }
+
+    const memberPromises = this.groupDetails.members.map(async (memberId) => {
+      if (memberId) {
+        try {
+          const userData = await this.userDataService.getUserDataById(memberId);
+          if (userData) {
+            // Mappa i dati del servizio nella nuova interfaccia
+            const photoUrl = userData['profilePictureUrl'] || userData['photo'] || 'assets/immaginiGenerali/default-avatar.jpg';
+            this.groupMembers.push({
+              uid: memberId,
+              nickname: userData['nickname'] || 'Utente Sconosciuto',
+              photoUrl: photoUrl
+            });
+          }
+        } catch (e) {
+          console.error(`Errore nel caricamento dati utente per ${memberId}:`, e);
+        }
+      }
+    });
+    await Promise.all(memberPromises);
+    this.cdr.detectChanges();
+  }
+
   getMemberDisplay(memberId: string): string {
     if (memberId === this.currentUserId) {
       return `${this.memberNicknamesMap[memberId] || memberId} (Tu)`;
     }
     return this.memberNicknamesMap[memberId] || memberId;
+  }
+
+  async goToProfile(memberUid: string) {
+    if (memberUid === this.currentUserId) {
+      this.router.navigate(['/profilo']);
+    } else {
+      this.router.navigate(['/profilo-altri-utenti', memberUid]);
+    }
+    await this.groupInfoModal.dismiss();
   }
 
   private async loadInitialMessages() {
@@ -529,16 +574,15 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     if (this.groupDetails) {
       this.editableName = this.groupDetails.name;
       this.editableDescription = this.groupDetails.description || '';
-      // ⭐ Impostiamo l'URL di anteprima con l'URL corrente del gruppo
       this.previewPhotoUrl = this.groupDetails.photoUrl || '';
-      // ⭐ Resettiamo il file selezionato
       this.newPhotoFile = null;
+      // ⭐⭐ AGGIORNAMENTO: Carica i dettagli dei membri prima di aprire il modale ⭐⭐
+      await this.loadGroupMembersDetails();
       this.isModalOpen = true;
       this.cdr.detectChanges();
     }
   }
 
-  // ⭐ Metodo modificato per gestire la selezione del file
   async changeGroupPhoto() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -549,8 +593,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
       const file = (event.target as HTMLInputElement).files?.[0];
       if (file) {
         this.newPhotoFile = file;
-
-        // Crea un'anteprima locale del file Base64
         const reader = new FileReader();
         reader.onload = () => {
           this.previewPhotoUrl = reader.result as string;
@@ -561,10 +603,8 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     };
   }
 
-  // ⭐ Aggiungiamo un getter per l'immagine da visualizzare
   get photoToDisplay(): string {
-    // Se c'è un'anteprima, usala, altrimenti usa quella del gruppo
-    return this.previewPhotoUrl || this.groupDetails?.photoUrl || 'assets/img/default-group-photo.png';
+    return this.previewPhotoUrl || this.groupDetails?.photoUrl || 'assets/immaginiGenerali/group-default-avatar.jpg';
   }
 
   async confirmLeaveGroup() {
@@ -624,6 +664,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
   onModalDismiss() {
     this.isModalOpen = false;
+    this.groupMembers = [];
   }
 
   async openAddMembersModal() {
@@ -664,7 +705,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  // ⭐ Metodo saveGroupDetails modificato per salvare tutto insieme
   async saveGroupDetails() {
     if (!this.groupDetails || !this.groupId) {
       await this.presentFF7Alert('Impossibile salvare: dettagli del gruppo mancanti.');
@@ -680,12 +720,10 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     await loadingAlert.present();
 
     try {
-      // 1. Aggiorna l'immagine se ne è stata selezionata una nuova
       if (this.newPhotoFile) {
         await this.groupChatService.updateGroupPhoto(this.groupId, this.newPhotoFile);
       }
 
-      // 2. Aggiorna il nome e la descrizione
       const updates: Partial<GroupChat> = {
         name: this.editableName,
         description: this.editableDescription,

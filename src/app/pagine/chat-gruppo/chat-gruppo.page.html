@@ -99,13 +99,20 @@
           </ion-item>
         </ion-list>
 
-
         <ion-list lines="inset">
           <ion-list-header>
-            <ion-label>Membri ({{ groupDetails.members.length }})</ion-label>
+            <ion-label>Membri ({{ groupMembers.length }})</ion-label>
           </ion-list-header>
-          <ion-item *ngFor="let memberId of groupDetails.members">
-            <ion-label>{{ getMemberDisplay(memberId) }}</ion-label>
+          <ion-item *ngFor="let member of groupMembers" (click)="goToProfile(member.uid)">
+            <ion-avatar slot="start">
+              <img [src]="member.photoUrl" [alt]="member.nickname">
+            </ion-avatar>
+            <ion-label>
+              {{ member.nickname }}
+              <ion-text *ngIf="member.uid === currentUserId" color="medium">
+                <p>(Tu)</p>
+              </ion-text>
+            </ion-label>
           </ion-item>
         </ion-list>
 
@@ -123,8 +130,6 @@
           <ion-icon name="save-outline" slot="start"></ion-icon>
           Salva modifiche
         </ion-button>
-
-
       </div>
     </ion-content>
   </ng-template>
