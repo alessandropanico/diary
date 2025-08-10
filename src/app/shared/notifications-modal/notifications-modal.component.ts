@@ -26,6 +26,7 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
       this.notifiche = notifiche;
       console.log('NotificationsModalComponent: Notifiche aggiornate.', notifiche);
     });
+    this.notificheService.segnaTutteComeLette();
   }
 
   ngOnDestroy() {
