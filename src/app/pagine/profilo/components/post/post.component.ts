@@ -14,7 +14,7 @@ import { ExpService } from 'src/app/services/exp.service';
 import { CommentsModalComponent } from '../comments-modal/comments-modal.component';
 import { LikeModalComponent } from '../like-modal/like-modal.component';
 import { ModalController } from '@ionic/angular';
-
+import { NotificheService } from 'src/app/services/notifiche.service'; // Import del NotificheService
 
 interface PostWithUserDetails extends Post {
   likesUsersMap?: Map<string, UserDashboardCounts>;
@@ -56,7 +56,6 @@ export class PostComponent implements OnInit, OnDestroy {
   showCommentsModal: boolean = false;
   selectedPostIdForComments: string | null = null;
   selectedPostForComments: Post | null = null;
-
   showLikesModal: boolean = false;
   selectedPostIdForLikes: string | null = null;
 
@@ -74,7 +73,6 @@ export class PostComponent implements OnInit, OnDestroy {
   private searchUserSubscription: Subscription | undefined;
   public currentSearchText: string = '';
 
-
   constructor(
     private postService: PostService,
     private userDataService: UserDataService,
@@ -86,7 +84,8 @@ export class PostComponent implements OnInit, OnDestroy {
     private platform: Platform,
     private expService: ExpService,
     private commentService: CommentService,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private notificheService: NotificheService
 
   ) { }
 
@@ -142,6 +141,7 @@ export class PostComponent implements OnInit, OnDestroy {
       }
     });
   }
+
 
   ngOnDestroy(): void {
     this.unsubscribeAll();
@@ -259,7 +259,6 @@ export class PostComponent implements OnInit, OnDestroy {
     });
   }
 
-
   async loadMorePosts(event: Event) {
     const infiniteScrollTarget = event.target as unknown as IonInfiniteScroll;
     if (!this.canLoadMore) {
@@ -353,6 +352,7 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
+
   async createPost() {
     if (!this.newPostText.trim() || !this.currentUserId) {
       this.presentAppAlert('Attenzione', 'Il testo del post non può essere vuoto e devi essere autenticato.');
@@ -374,7 +374,8 @@ export class PostComponent implements OnInit, OnDestroy {
     };
 
     try {
-      await this.postService.createPost(newPost);
+      // ⭐⭐ NOVITÀ: Creazione del post e ottenimento dell'ID ⭐⭐
+      const postId = await this.postService.createPost(newPost);
       this.newPostText = '';
       const textarea = document.querySelector('.app-textarea') as HTMLTextAreaElement;
       if (textarea) {
@@ -382,12 +383,52 @@ export class PostComponent implements OnInit, OnDestroy {
       }
       this.presentAppAlert('Successo', 'Il tuo messaggio è stato pubblicato con successo nell\'etere!');
       this.expService.addExperience(50, 'postCreated');
+
+      // ⭐⭐ NOVITÀ: Chiamata al metodo per processare i tag e inviare le notifiche
+      await this.processTagsAndNotify(newPost.text, postId);
+
       this.loadInitialPosts();
     } catch (error) {
       console.error('Errore nella creazione del post:', error);
       this.presentAppAlert('Errore di pubblicazione', 'Impossibile pubblicare il post. Riprova più tardi.');
     } finally {
       await loading.dismiss();
+    }
+  }
+
+  private async processTagsAndNotify(postText: string, postId: string) {
+    if (!this.currentUserId || !this.currentUserUsername) {
+      console.error('Impossibile inviare notifiche di menzione: utente non autenticato.');
+      return;
+    }
+
+    // Regex per trovare tutti i tag "@nomeutente"
+    const tagRegex = /@(\w+)/g;
+    let match;
+    const mentionedUsernames = new Set<string>();
+
+    while ((match = tagRegex.exec(postText)) !== null) {
+      mentionedUsernames.add(match[1]);
+    }
+
+    for (const username of Array.from(mentionedUsernames)) {
+      try {
+        // Cerca l'utente per nickname
+        const users = await this.userDataService.searchUsers(username);
+        const taggedUser = users.find(u => u.nickname.toLowerCase() === username.toLowerCase());
+
+        // Se l'utente esiste e non è l'utente che ha creato il post
+        if (taggedUser && taggedUser.uid !== this.currentUserId) {
+          await this.notificheService.aggiungiNotificaMenzionePost(
+            taggedUser.uid,
+            this.currentUserUsername,
+            postId
+          );
+          console.log(`Notifica di menzione inviata a ${taggedUser.nickname} per il post ${postId}`);
+        }
+      } catch (error) {
+        console.error(`Errore durante la notifica di menzione per l'utente ${username}:`, error);
+      }
     }
   }
 
