@@ -65,7 +65,6 @@ export class NotificheService implements OnDestroy {
         letta: false,
         dataCreazione: serverTimestamp()
       });
-      console.log('Notifica aggiunta con ID: ', docRef.id);
       this.playNotificationSound();
     } catch (e) {
       console.error('Errore nell\'aggiunta della notifica:', e);

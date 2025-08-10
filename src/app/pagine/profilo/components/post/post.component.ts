@@ -424,7 +424,6 @@ export class PostComponent implements OnInit, OnDestroy {
             this.currentUserUsername,
             postId
           );
-          console.log(`Notifica di menzione inviata a ${taggedUser.nickname} per il post ${postId}`);
         }
       } catch (error) {
         console.error(`Errore durante la notifica di menzione per l'utente ${username}:`, error);
