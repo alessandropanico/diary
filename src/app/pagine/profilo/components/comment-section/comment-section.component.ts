@@ -382,10 +382,9 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
     try {
       const addedCommentId = await this.commentService.addComment(commentToAdd);
-      this.newCommentText = '';
-      this.replyingToComment = null;
       this.expService.addExperience(10, 'commentCreated');
 
+      // ⭐⭐ NOVITÀ: Gestione delle notifiche per l'autore del post e per le menzioni ⭐⭐
       if (this.currentUserId !== this.postCreatorId && this.postCreatorId) {
         const notificaPerAutore: Omit<Notifica, 'id' | 'dataCreazione'> = {
           userId: this.postCreatorId,
@@ -399,6 +398,11 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         await this.notificheService.aggiungiNotifica(notificaPerAutore);
       }
 
+      // Chiamata al nuovo metodo per gestire le menzioni
+      await this.checkForMentionsAndNotify(addedCommentId);
+
+      this.newCommentText = '';
+      this.replyingToComment = null;
       this.resetAndLoadComments();
       this.cdr.detectChanges();
     } catch (error) {
@@ -408,6 +412,30 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       await loading.dismiss();
     }
   }
+
+  // ⭐⭐ NUOVO METODO: Gestione delle menzioni nel commento ⭐⭐
+  private async checkForMentionsAndNotify(commentId: string) {
+    // Regex per trovare @ più il nickname (almeno 1 carattere) fino al prossimo spazio
+    const mentionRegex = /@(\w+)/g;
+    const mentions = this.newCommentText.match(mentionRegex);
+
+    if (mentions && this.currentUserId) {
+      const uniqueMentions = [...new Set(mentions.map(m => m.substring(1)))];
+
+      for (const nickname of uniqueMentions) {
+        try {
+          const taggedUserId = await this.userDataService.getUidByNickname(nickname);
+          // Controlla che l'ID dell'utente taggato sia diverso dall'utente che ha commentato
+          if (taggedUserId && taggedUserId !== this.currentUserId) {
+            await this.notificheService.aggiungiNotificaMenzioneCommento(taggedUserId, this.currentUserUsername, this.postId, commentId);
+          }
+        } catch (error) {
+          console.warn(`Impossibile trovare l'utente con nickname @${nickname}. Nessuna notifica inviata.`, error);
+        }
+      }
+    }
+  }
+  // ⭐⭐ FINE NUOVO METODO ⭐⭐
 
   async toggleLikeComment(commentToToggle: Comment) {
     if (!this.currentUserId) {
