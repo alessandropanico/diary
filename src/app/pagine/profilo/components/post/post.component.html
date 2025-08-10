@@ -7,8 +7,30 @@
       <span class="post-username" (click)="goToUserProfile(currentUserId!)">{{ currentUserUsername }}</span>
     </div>
   </div>
+
   <textarea class="app-textarea" placeholder="Cosa stai pensando?" [(ngModel)]="newPostText"
     (input)="adjustTextareaHeight($event)" rows="1"></textarea>
+
+  <div *ngIf="showTaggingSuggestions" class="tagging-suggestions-container panel-glow-border">
+    <ion-list lines="none" *ngIf="taggingUsers.length > 0; else noTaggingResults">
+      <ion-item *ngFor="let user of taggingUsers" (click)="selectUserForTagging(user)">
+        <ion-avatar slot="start">
+          <img [src]="user.photo || user.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
+        </ion-avatar>
+        <ion-label>
+          <h2>{{ user.nickname }}</h2>
+          <p *ngIf="user.fullName">{{ user.fullName }}</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+    <ng-template #noTaggingResults>
+      <div class="no-results-message">
+        <p *ngIf="currentSearchText.length > 0">Nessun utente trovato per "{{ currentSearchText }}"</p>
+        <p *ngIf="currentSearchText.length === 0">Digita per cercare utenti...</p>
+      </div>
+    </ng-template>
+  </div>
+
   <div class="create-post-actions">
     <button class="app-button" (click)="selectImage()">
       <span class="icon image-icon"></span> Aggiungi Immagine

@@ -565,3 +565,119 @@ ion-infinite-scroll {
     font-size: 0.8em;
   }
 }
+
+/* Aggiungi 'position: relative' a create-post-container per creare un contesto di posizionamento */
+.create-post-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px auto;
+}
+
+/* --- Sezione Suggerimenti Tagging --- */
+.tagging-suggestions-container {
+  /* Estendi lo stile base "cyberpunk" */
+  background: #111121;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: 0 0 6px var(--glow-intensity-low);
+
+  /* Posizionamento e layout */
+  position: absolute;
+  top: 140px; /* Calcola la posizione sotto il textarea */
+  left: 15px; /* Allinea a sinistra con il padding del contenitore */
+  right: 15px; /* Allinea a destra con il padding del contenitore */
+  z-index: 99;
+  max-height: 200px;
+  overflow-y: auto;
+
+  &.panel-glow-border {
+    &:hover {
+      box-shadow: 0 0 10px var(--glow-intensity-medium);
+    }
+  }
+}
+
+.tagging-suggestions-container ion-list {
+  background: transparent;
+  padding: 0;
+}
+
+.tagging-suggestions-container ion-item {
+  --background: transparent;
+  --inner-padding-end: 10px;
+  --padding-start: 10px;
+  --border-color: var(--border-subtle);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--button-hover-bg);
+  }
+}
+
+.tagging-suggestions-container ion-item ion-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--primary-glow);
+  box-shadow: 0 0 3px var(--glow-intensity-low);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.tagging-suggestions-container ion-item ion-label {
+  h2 {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: var(--primary-glow);
+    text-shadow: 0 0 1px var(--glow-intensity-low);
+  }
+
+  p {
+    font-size: 0.75em;
+    color: var(--label-color);
+  }
+}
+
+.no-results-message, .no-tagging-results {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  text-align: center;
+  padding: 15px;
+  font-size: 0.9em;
+  color: var(--primary-glow);
+
+  p {
+    margin: 0;
+    line-height: 1.4;
+  }
+}
+
+/* Media Queries per la Responsività */
+@media (max-width: 768px) {
+  .tagging-suggestions-container {
+    max-height: 150px;
+    left: 12px;
+    right: 12px;
+  }
+
+  .tagging-suggestions-container ion-item ion-avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  .tagging-suggestions-container ion-item ion-label {
+    h2 {
+      font-size: 0.8em;
+    }
+    p {
+      font-size: 0.7em;
+    }
+  }
+}

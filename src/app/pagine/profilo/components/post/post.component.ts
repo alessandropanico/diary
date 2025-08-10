@@ -5,8 +5,8 @@ import { PostService } from 'src/app/services/post.service';
 import { CommentService } from 'src/app/services/comment.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Post } from 'src/app/interfaces/post';
-import { Subscription, from, Observable, combineLatest, of } from 'rxjs';
-import { map, switchMap, catchError, take } from 'rxjs/operators';
+import { Subscription, from, Observable, combineLatest, of, Subject } from 'rxjs';
+import { map, switchMap, catchError, take, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, LoadingController, Platform, IonInfiniteScroll, IonicModule } from '@ionic/angular';
@@ -18,6 +18,14 @@ import { ModalController } from '@ionic/angular';
 
 interface PostWithUserDetails extends Post {
   likesUsersMap?: Map<string, UserDashboardCounts>;
+}
+
+export interface TagUser {
+  uid: string;
+  nickname: string;
+  fullName?: string;
+  photo?: string;
+  profilePictureUrl?: string;
 }
 
 @Component({
@@ -58,6 +66,13 @@ export class PostComponent implements OnInit, OnDestroy {
   private userDataSubscription: Subscription | undefined;
   private routeSubscription: Subscription | undefined;
   private usersCache: Map<string, UserDashboardCounts> = new Map();
+
+  // ⭐⭐ NOVITÀ: Variabili per il tagging ⭐⭐
+  showTaggingSuggestions: boolean = false;
+  taggingUsers: TagUser[] = [];
+  private searchUserTerm = new Subject<string>();
+  private searchUserSubscription: Subscription | undefined;
+  public currentSearchText: string = '';
 
 
   constructor(
@@ -114,12 +129,27 @@ export class PostComponent implements OnInit, OnDestroy {
         this.unsubscribeAll();
       }
     });
+
+    this.searchUserSubscription = this.searchUserTerm.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(searchTerm => {
+      if (searchTerm) {
+        this.searchUsersForTagging(searchTerm);
+      } else {
+        this.taggingUsers = [];
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   ngOnDestroy(): void {
     this.unsubscribeAll();
     if (this.routeSubscription) {
       this.routeSubscription.unsubscribe();
+    }
+    if (this.searchUserSubscription) {
+      this.searchUserSubscription.unsubscribe();
     }
   }
 
@@ -555,6 +585,7 @@ export class PostComponent implements OnInit, OnDestroy {
     await alert.present();
   }
 
+  // ⭐⭐ NOVITÀ: Metodo modificato per gestire il tagging ⭐⭐
   adjustTextareaHeight(event: Event) {
     const textarea = event.target as HTMLTextAreaElement;
 
@@ -570,6 +601,29 @@ export class PostComponent implements OnInit, OnDestroy {
       textarea.style.height = textarea.scrollHeight + 'px';
       textarea.style.overflowY = 'hidden';
     }
+
+    const text = this.newPostText;
+    const atIndex = text.lastIndexOf('@');
+
+    if (atIndex !== -1) {
+      const textAfterAt = text.substring(atIndex + 1);
+      const spaceIndex = textAfterAt.indexOf(' ');
+
+      if (spaceIndex !== -1) {
+        this.showTaggingSuggestions = false;
+        this.taggingUsers = [];
+        this.currentSearchText = '';
+      } else {
+        this.showTaggingSuggestions = true;
+        this.currentSearchText = textAfterAt;
+        this.searchUserTerm.next(this.currentSearchText);
+      }
+    } else {
+      this.showTaggingSuggestions = false;
+      this.taggingUsers = [];
+      this.currentSearchText = '';
+    }
+    this.cdr.detectChanges();
   }
 
   /**
@@ -671,5 +725,48 @@ export class PostComponent implements OnInit, OnDestroy {
     });
 
     await modal.present();
+  }
+
+  // ⭐⭐ NOVITÀ: Metodi per la gestione del tagging ⭐⭐
+  async searchUsersForTagging(searchTerm: string) {
+    if (!searchTerm || searchTerm.length < 2) {
+      this.taggingUsers = [];
+      this.cdr.detectChanges();
+      return;
+    }
+
+    try {
+      const users = await this.userDataService.searchUsers(searchTerm);
+      this.taggingUsers = users;
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Errore durante la ricerca utenti per tagging:', error);
+      this.taggingUsers = [];
+      this.presentAppAlert('Errore di ricerca', 'Impossibile cercare utenti.');
+      this.cdr.detectChanges();
+    }
+  }
+
+  selectUserForTagging(user: TagUser) {
+    const text = this.newPostText;
+    const atIndex = text.lastIndexOf('@');
+
+    if (atIndex !== -1) {
+      const prefix = text.substring(0, atIndex);
+      this.newPostText = `${prefix}@${user.nickname} `;
+    } else {
+      this.newPostText = `@${user.nickname} `;
+    }
+
+    this.showTaggingSuggestions = false;
+    this.taggingUsers = [];
+    this.currentSearchText = '';
+
+    this.cdr.detectChanges();
+    const textarea = document.querySelector('.app-textarea') as HTMLTextAreaElement;
+    if (textarea) {
+      textarea.focus();
+      textarea.setSelectionRange(this.newPostText.length, this.newPostText.length);
+    }
   }
 }
