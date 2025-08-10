@@ -1,25 +1,25 @@
 <ion-header class="ff7-header">
     <ion-toolbar>
-      <ion-title>Notifiche</ion-title>
-      <ion-buttons slot="end">
-        <ion-button (click)="dismiss()">
-          <ion-icon name="close-outline"></ion-icon>
-        </ion-button>
-      </ion-buttons>
+        <ion-title>Notifiche</ion-title>
+        <ion-buttons slot="end">
+            <ion-button (click)="dismiss()">
+                <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+        </ion-buttons>
     </ion-toolbar>
-  </ion-header>
+</ion-header>
 
-  <ion-content class="ion-padding ff7-content">
+<ion-content class="ion-padding ff7-content">
     <ion-list lines="full">
-      <ion-item *ngFor="let notifica of notifiche" [class.notifica-letta]="notifica.letta" (click)="handleNotificationClick(notifica)">
-        <ion-icon slot="start" name="notifications-outline"></ion-icon>
-        <ion-label>
-          <h2>{{ notifica.titolo }}</h2>
-          <p>{{ notifica.messaggio }}</p>
-        </ion-label>
-      </ion-item>
+        <ion-item *ngFor="let notifica of notifiche" [class.notifica-letta]="notifica.letta" [class.notifica-non-letta]="!notifica.letta" (click)="handleNotificationClick(notifica)">
+            <ion-icon slot="start" name="notifications-outline"></ion-icon>
+            <ion-label>
+                <h2>{{ notifica.titolo }}</h2>
+                <p>{{ notifica.messaggio }}</p>
+            </ion-label>
+        </ion-item>
     </ion-list>
     <div *ngIf="notifiche.length === 0" class="no-notifications">
-      <p>Nessuna notifica</p>
+        <p>Nessuna notifica</p>
     </div>
-  </ion-content>
+</ion-content>

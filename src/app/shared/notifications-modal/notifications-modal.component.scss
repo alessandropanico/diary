@@ -1,3 +1,5 @@
+// src/app/components/notifications-modal/notifications-modal.component.scss
+
 .ff7-header {
   --background: #0b0b1f;
   --color: #00ffee;
@@ -6,7 +8,7 @@
 }
 
 .ff7-content {
-  background: linear-gradient(180deg, #000012 0%, #02051b 100%);
+  --background: linear-gradient(180deg, #000012 0%, #02051b 100%);
   color: #00ffee;
   font-family: 'Orbitron', sans-serif;
 }
@@ -32,11 +34,21 @@ ion-list {
     p {
       color: #7affff;
     }
-  }
-}
 
-.notifica-letta {
-  opacity: 0.5; /* Rendi le notifiche lette semitrasparenti */
+    &.notifica-non-letta {
+      --background: #192742; /* Sfondo leggermente più scuro per evidenziare */
+      h2 {
+        color: #fff; /* Titolo più luminoso */
+      }
+      p {
+        color: #b3ffff; /* Messaggio più luminoso */
+      }
+    }
+
+    &.notifica-letta {
+      opacity: 0.5;
+    }
+  }
 }
 
 .no-notifications {

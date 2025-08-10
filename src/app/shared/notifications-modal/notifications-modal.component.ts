@@ -28,9 +28,6 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
       this.notifiche = notifiche;
       console.log('NotificationsModalComponent: Notifiche aggiornate.', notifiche);
     });
-
-    // Azzeriamo il contatore delle notifiche non lette appena il modale si apre.
-    this.notificheService.segnaTutteComeLette();
   }
 
   ngOnDestroy() {
@@ -41,7 +38,8 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
   }
 
   dismiss() {
-    console.log('NotificationsModalComponent: Chiusura del modale.');
+    console.log('NotificationsModalComponent: Chiusura del modale. Segno tutte le notifiche come lette.');
+    this.notificheService.segnaTutteComeLette();
     this.modalController.dismiss();
   }
 
@@ -59,11 +57,10 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
 
     const tipoNotifica = notifica.tipo;
     const postId = notifica.postId;
-    const projectId = notifica.projectId; // ⭐⭐ NOVITÀ: Ottengo l'ID del progetto
+    const projectId = notifica.projectId;
 
     console.log(`NotificationsModalComponent: Tipo di notifica: ${tipoNotifica}, Post ID: ${postId}, Comment ID: ${notifica.commentId}, Project ID: ${projectId}`);
 
-    // ⭐⭐ LOGICA DI NAVIGAZIONE AGGIORNATA ⭐⭐
     if (postId) {
       if ((tipoNotifica === 'commento' || tipoNotifica === 'menzione_commento' || tipoNotifica === 'mi_piace_commento') && notifica.commentId) {
         console.log(`Navigazione con commento evidenziato: /notizia-singola/${postId};commentId=${notifica.commentId}`);
@@ -80,6 +77,5 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     } else {
       console.log('NotificationsModalComponent: L\'ID del post o del progetto non è definito. Nessuna navigazione.');
     }
-    // ⭐⭐ FINE LOGICA AGGIORNATA ⭐⭐
   }
 }
