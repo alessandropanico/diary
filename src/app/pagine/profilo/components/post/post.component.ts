@@ -15,11 +15,12 @@ import { CommentsModalComponent } from '../comments-modal/comments-modal.compone
 import { LikeModalComponent } from '../like-modal/like-modal.component';
 import { ModalController } from '@ionic/angular';
 import { NotificheService } from 'src/app/services/notifiche.service';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser'; // ⭐ NOVITÀ: Importa DomSanitizer
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 interface PostWithUserDetails extends Post {
   likesUsersMap?: Map<string, UserDashboardCounts>;
-  formattedText?: SafeHtml; // ⭐ MODIFICA: Il testo formattato è ora SafeHtml
+  formattedText?: SafeHtml;
+  creatorData?: UserDashboardCounts; // ⭐ NOVITÀ: Aggiunto per memorizzare i dati aggiornati del creatore del post
 }
 
 export interface TagUser {
@@ -87,7 +88,7 @@ export class PostComponent implements OnInit, OnDestroy {
     private commentService: CommentService,
     private modalController: ModalController,
     private notificheService: NotificheService,
-    private sanitizer: DomSanitizer // ⭐ NOVITÀ: Iniettato DomSanitizer
+    private sanitizer: DomSanitizer
   ) { }
 
   ngOnInit() {
@@ -216,27 +217,42 @@ export class PostComponent implements OnInit, OnDestroy {
               );
             }
           });
+          const postCreatorPromise = this.usersCache.has(post.userId) ? of(this.usersCache.get(post.userId)!) : from(this.userDataService.getUserDataByUid(post.userId)).pipe(
+            map(userData => {
+              if (userData) {
+                this.usersCache.set(post.userId, userData);
+              }
+              return userData;
+            }),
+            catchError(err => {
+              console.error(`Errore nel caricamento dati del creatore del post ${post.userId}:`, err);
+              return of(null);
+            }),
+            take(1)
+          );
 
-          return combineLatest(userPromises.length > 0 ? userPromises : [of(null)]).pipe(
-            map(likedUsersProfiles => {
+          return combineLatest(userPromises.length > 0 ? [...userPromises, postCreatorPromise] : [postCreatorPromise]).pipe(
+            map(results => {
+              const creatorData = results.pop();
+              const likedUsersProfiles = results as UserDashboardCounts[];
               const likedUsersMap = new Map<string, UserDashboardCounts>();
               likedUsersProfiles.forEach(profile => {
                 if (profile) {
                   likedUsersMap.set(profile.uid, profile);
                 }
               });
-              return { ...post, likesUsersMap: likedUsersMap } as PostWithUserDetails;
+              return { ...post, likesUsersMap: likedUsersMap, creatorData: creatorData } as PostWithUserDetails;
             })
           );
         });
 
         return combineLatest(postObservables);
       }),
-      map(postsWithDetails => { // ⭐ MODIFICA: Utilizza map invece di switchMap
+      map(postsWithDetails => {
         return postsWithDetails.map(post => {
           return {
             ...post,
-            formattedText: this.formatPostContent(post.text) // ⭐ MODIFICA: Chiama il metodo di formattazione sincrono
+            formattedText: this.formatPostContent(post.text)
           };
         });
       })
@@ -310,25 +326,41 @@ export class PostComponent implements OnInit, OnDestroy {
                 );
               }
             });
-            return combineLatest(userPromises.length > 0 ? userPromises : [of(null)]).pipe(
-              map(likedUsersProfiles => {
+            const postCreatorPromise = this.usersCache.has(post.userId) ? of(this.usersCache.get(post.userId)!) : from(this.userDataService.getUserDataByUid(post.userId)).pipe(
+              map(userData => {
+                if (userData) {
+                  this.usersCache.set(post.userId, userData);
+                }
+                return userData;
+              }),
+              catchError(err => {
+                console.error(`Errore nel caricamento dati del creatore del post ${post.userId}:`, err);
+                return of(null);
+              }),
+              take(1)
+            );
+
+            return combineLatest(userPromises.length > 0 ? [...userPromises, postCreatorPromise] : [postCreatorPromise]).pipe(
+              map(results => {
+                const creatorData = results.pop();
+                const likedUsersProfiles = results as UserDashboardCounts[];
                 const likedUsersMap = new Map<string, UserDashboardCounts>();
                 likedUsersProfiles.forEach(profile => {
                   if (profile) {
                     likedUsersMap.set(profile.uid, profile);
                   }
                 });
-                return { ...post, likesUsersMap: likedUsersMap } as PostWithUserDetails;
+                return { ...post, likesUsersMap: likedUsersMap, creatorData: creatorData } as PostWithUserDetails;
               })
             );
           });
           return combineLatest(newPostObservables);
         }),
-        map(newPostsWithDetails => { // ⭐ MODIFICA: Utilizza map invece di switchMap
+        map(newPostsWithDetails => {
           return newPostsWithDetails.map(post => {
             return {
               ...post,
-              formattedText: this.formatPostContent(post.text) // ⭐ MODIFICA: Chiama il metodo di formattazione sincrono
+              formattedText: this.formatPostContent(post.text)
             };
           });
         })
@@ -726,12 +758,21 @@ export class PostComponent implements OnInit, OnDestroy {
     return userProfile?.nickname || 'Utente sconosciuto';
   }
 
+  // ⭐ NOVITÀ: Metodo per ottenere l'avatar del creatore del post, usando i dati più recenti
+  getPostUserPhoto(post: PostWithUserDetails): string {
+    if (post.creatorData) {
+      return this.getUserPhoto(post.creatorData.photo || post.creatorData.profilePictureUrl);
+    }
+    // Fallback se i dati del creatore non sono disponibili
+    return this.getUserPhoto(post.userAvatarUrl);
+  }
+
   async openCommentsModal(post: Post) {
     const modal = await this.modalController.create({
       component: CommentsModalComponent,
       componentProps: {
         postId: post.id,
-        postCreatorAvatar: post.userAvatarUrl,
+        postCreatorAvatar: this.getPostUserPhoto(post), // ⭐ MODIFICA: Utilizza il nuovo metodo
         postCreatorUsername: post.username,
         postText: post.text
       },
@@ -792,7 +833,6 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ⭐ CORREZIONE: Metodo per gestire il click sui tag
   async onPostTextClick(event: Event) {
     const target = event.target as HTMLElement;
     if (target.classList.contains('user-tag')) {
@@ -800,13 +840,11 @@ export class PostComponent implements OnInit, OnDestroy {
       event.stopPropagation();
       const nickname = target.dataset['identifier'];
       if (nickname) {
-        // Cerca l'utente per nickname per ottenere il suo UID
         try {
           const users = await this.userDataService.searchUsers(nickname);
           const taggedUser = users.find(u => u.nickname.toLowerCase() === nickname.toLowerCase());
 
           if (taggedUser) {
-            // Usa il UID per la navigazione
             this.goToUserProfile(taggedUser.uid);
           } else {
             this.presentAppAlert('Errore di navigazione', `Utente "${nickname}" non trovato.`);
@@ -819,17 +857,14 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ⭐ NOVITÀ: Metodo per formattare il testo con tag utente e link
   private formatPostContent(text: string): SafeHtml {
     const tagRegex = /@([a-zA-Z0-9_.-]+)/g;
     const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-    // Prima, formatta i tag
     const textWithTags = text.replace(tagRegex, (match, nickname) => {
       return `<a class="user-tag" data-identifier="${nickname}">${match}</a>`;
     });
 
-    // Poi, formatta i link URL
     const formattedText = textWithTags.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="post-link">${url}</a>`);
 
     return this.sanitizer.bypassSecurityTrustHtml(formattedText);
