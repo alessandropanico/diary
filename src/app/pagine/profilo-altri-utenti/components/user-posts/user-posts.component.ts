@@ -2,7 +2,7 @@
 
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // Mantenuto per compatibilità ma non usato per textarea
+import { FormsModule } from '@angular/forms';
 import { PostService } from 'src/app/services/post.service';
 import { CommentService } from 'src/app/services/comment.service';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
@@ -10,23 +10,24 @@ import { Post } from 'src/app/interfaces/post';
 import { Subscription, from, Observable, combineLatest, of } from 'rxjs';
 import { map, switchMap, catchError, take } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
-import { Router, ActivatedRoute } from '@angular/router'; // ActivatedRoute non strettamente necessario se usi solo @Input
+import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, LoadingController, Platform, IonInfiniteScroll, IonicModule, ModalController } from '@ionic/angular';
 import { ExpService } from 'src/app/services/exp.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser'; // ⭐ NUOVO: Importa DomSanitizer e SafeHtml
 
 import { CommentsModalComponent } from 'src/app/pagine/profilo/components/comments-modal/comments-modal.component';
 import { LikeModalComponent } from 'src/app/pagine/profilo/components/like-modal/like-modal.component';
 
 
-
 interface PostWithUserDetails extends Post {
   likesUsersMap?: Map<string, UserDashboardCounts>;
+  formattedText?: SafeHtml; // ⭐ NUOVO: Aggiungi formattedText all'interfaccia
 }
 
 @Component({
-  selector: 'app-user-posts', // Nome del selettore
+  selector: 'app-user-posts',
   templateUrl: './user-posts.component.html',
-  styleUrls: ['./user-posts.component.scss'], // Userà lo stesso SCSS di post.component
+  styleUrls: ['./user-posts.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
@@ -38,31 +39,18 @@ interface PostWithUserDetails extends Post {
 export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
   @ViewChild(IonInfiniteScroll) infiniteScroll!: IonInfiniteScroll;
 
-  // ⭐ INPUT PROPERTY per l'ID dell'utente da cui caricare i post ⭐
   @Input() userId!: string;
 
   posts: PostWithUserDetails[] = [];
-  // newPostText: string = ''; // Rimosso: non si creano post qui
-  currentUserId: string | null = null; // ID dell'utente attualmente loggato (tu)
-  // currentUserUsername: string = 'Eroe Anonimo'; // Non serve per visualizzare i post di altri
-  // currentUserAvatar: string = 'assets/immaginiGenerali/default-avatar.jpg'; // Non serve per visualizzare i post di altri
+  currentUserId: string | null = null;
   isLoadingPosts: boolean = true;
   private postsLimit: number = 10;
   private lastPostTimestamp: string | null = null;
   canLoadMore: boolean = true;
 
-  // Modali non necessarie come proprietà del componente, gestite direttamente dal ModalController
-  // showCommentsModal: boolean = false;
-  // selectedPostIdForComments: string | null = null;
-  // selectedPostForComments: Post | null = null;
-  // showLikesModal: boolean = false;
-  // selectedPostIdForLikes: string | null = null;
-
-  // private userIdToDisplayPosts: string | null = null; // Rimosso: usa this.userId dall'Input
   private authStateUnsubscribe: (() => void) | undefined;
   private postsSubscription: Subscription | undefined;
-  private userDataSubscription: Subscription | undefined; // Mantenuta per recuperare i dati del currentUser
-  // private routeSubscription: Subscription | undefined; // Rimosso: userId viene da Input
+  private userDataSubscription: Subscription | undefined;
   private usersCache: Map<string, UserDashboardCounts> = new Map();
 
 
@@ -71,28 +59,25 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
     private userDataService: UserDataService,
     private cdr: ChangeDetectorRef,
     private router: Router,
-    // private activatedRoute: ActivatedRoute, // Non più necessario se l'ID viene da @Input
     private alertCtrl: AlertController,
     private loadingCtrl: LoadingController,
-    private platform: Platform, // Mantenuto per compatibilità se hai logica specifica della piattaforma
-    private expService: ExpService, // Mantenuto per compatibilità, ma non userà addExperience direttamente qui
+    private platform: Platform,
+    private expService: ExpService,
     private commentService: CommentService,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private sanitizer: DomSanitizer // ⭐ NUOVO: Aggiungi DomSanitizer al costruttore
   ) { }
 
   ngOnInit() {
     this.authStateUnsubscribe = getAuth().onAuthStateChanged(user => {
       if (user) {
         this.currentUserId = user.uid;
-        // Carica i dati dell'utente loggato per il getUserPhoto, ecc.
         this.userDataSubscription = from(this.userDataService.getUserDataByUid(this.currentUserId!)).subscribe({
           next: (userData: UserDashboardCounts | null) => {
             if (userData) {
-              // this.currentUserUsername = userData.nickname || 'Eroe Anonimo'; // Non più necessario
-              // this.currentUserAvatar = this.getUserPhoto(userData.photo || userData.profilePictureUrl); // Non più necessario
               this.usersCache.set(this.currentUserId!, userData);
             }
-            this.cdr.detectChanges(); // Per assicurare che la UI si aggiorni se dipendente da current user
+            this.cdr.detectChanges();
           },
           error: (err) => {
             console.error('Errore nel recupero dati utente corrente:', err);
@@ -103,11 +88,9 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
         this.currentUserId = null;
         this.cdr.detectChanges();
       }
-      // Il caricamento iniziale dei post viene gestito in ngOnChanges, quando l'Input userId è disponibile
     });
   }
 
-  // ⭐ Implementazione di OnChanges per reagire ai cambiamenti dell'Input userId ⭐
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['userId'] && changes['userId'].currentValue !== changes['userId'].previousValue) {
       if (this.userId) {
@@ -127,7 +110,6 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
 
   ngOnDestroy(): void {
     this.unsubscribeAll();
-    // this.routeSubscription non esiste più
   }
 
   private unsubscribeAll(): void {
@@ -148,24 +130,15 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
     this.lastPostTimestamp = null;
     this.canLoadMore = true;
 
-    // reset di modali non più gestite come proprietà locali
-    // this.showCommentsModal = false;
-    // this.selectedPostIdForComments = null;
-    // this.selectedPostForComments = null;
-    // this.showLikesModal = false;
-    // this.selectedPostIdForLikes = null;
-
     if (this.infiniteScroll) {
       this.infiniteScroll.disabled = false;
       this.infiniteScroll.complete();
     }
 
-    // ⭐ Usa this.userId direttamente dall'Input ⭐
     let postsObservable: Observable<Post[]>;
-    if (this.userId) { // Deve esserci un userId valido per caricare i post di un utente specifico
+    if (this.userId) {
       postsObservable = this.postService.getUserPosts(this.userId, this.postsLimit, this.lastPostTimestamp);
     } else {
-      // Questo caso non dovrebbe accadere se userId è sempre passato
       console.warn('loadInitialPosts: userId non disponibile, impossibile caricare post specifici.');
       this.isLoadingPosts = false;
       this.canLoadMore = false;
@@ -210,7 +183,13 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
                   likedUsersMap.set(profile.uid, profile);
                 }
               });
-              return { ...post, likesUsersMap: likedUsersMap } as PostWithUserDetails;
+
+              // ⭐ MODIFICA: Aggiungi formattedText al post prima di aggiungerlo all'array
+              return {
+                ...post,
+                likesUsersMap: likedUsersMap,
+                formattedText: this.formatPostContent(post.text)
+              } as PostWithUserDetails;
             })
           );
         });
@@ -247,15 +226,13 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
 
   async loadMorePosts(event: Event) {
     const infiniteScrollTarget = event.target as unknown as IonInfiniteScroll;
-    if (!this.canLoadMore || !this.userId) { // Aggiunto controllo userId
+    if (!this.canLoadMore || !this.userId) {
       infiniteScrollTarget.complete();
       return;
     }
 
     try {
-      // ⭐ Usa this.userId direttamente dall'Input ⭐
       let postsObservable: Observable<Post[]> = this.postService.getUserPosts(this.userId, this.postsLimit, this.lastPostTimestamp);
-
 
       this.postsSubscription = postsObservable.pipe(
         switchMap(newPostsData => {
@@ -292,7 +269,13 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
                     likedUsersMap.set(profile.uid, profile);
                   }
                 });
-                return { ...post, likesUsersMap: likedUsersMap } as PostWithUserDetails;
+
+                // ⭐ MODIFICA: Aggiungi formattedText al post prima di aggiungerlo all'array
+                return {
+                  ...post,
+                  likesUsersMap: likedUsersMap,
+                  formattedText: this.formatPostContent(post.text)
+                } as PostWithUserDetails;
               })
             );
           });
@@ -335,14 +318,6 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  // ⭐ createPost Rimosso: non si creano post qui ⭐
-  // async createPost() { /* ... */ }
-
-  // ⭐ presentDeleteAlert Rimosso: non si eliminano post di altri utenti qui ⭐
-  // async presentDeleteAlert(postId: string) { /* ... */ }
-
-  // ⭐ deletePost Rimosso: non si eliminano post di altri utenti qui ⭐
-  // async deletePost(postId: string) { /* ... */ }
 
   async toggleLike(post: PostWithUserDetails) {
     if (!this.currentUserId) {
@@ -372,28 +347,53 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  // toggleCommentsVisibility(post: Post) { // Rimosso: usa direttamente openCommentsModal
-  //   this.selectedPostIdForComments = post.id;
-  //   this.selectedPostForComments = post;
-  //   this.showCommentsModal = true;
-  //   this.cdr.detectChanges();
-  // }
+  // ⭐ NUOVO: Metodo per formattare il testo con tag utente e link URL
+  formatPostContent(text: string): SafeHtml {
+    if (!text) {
+      return this.sanitizer.bypassSecurityTrustHtml('');
+    }
 
-  // closeCommentsModal(): void { // Rimosso: callback del ModalController
-  //   this.showCommentsModal = false;
-  //   this.selectedPostIdForComments = null;
-  //   this.selectedPostForComments = null;
-  //   this.cdr.detectChanges();
-  //   this.loadInitialPosts();
-  // }
-
-  formatTextWithLinks(text: string): string {
+    const tagRegex = /@([a-zA-Z0-9_.-]+)/g;
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="post-link">${url}</a>`);
+
+    const textWithLinks = text.replace(urlRegex, (url) =>
+      `<a href="${url}" target="_blank" rel="noopener noreferrer" class="post-link">${url}</a>`
+    );
+
+    const formattedText = textWithLinks.replace(tagRegex, (match, nickname) => {
+      return `<a class="user-tag" data-identifier="${nickname}">${match}</a>`;
+    });
+
+    return this.sanitizer.bypassSecurityTrustHtml(formattedText);
+  }
+
+  // ⭐ NUOVO: Metodo per gestire il click sui tag utente
+  async onPostTextClick(event: Event) {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('user-tag')) {
+      event.preventDefault();
+      event.stopPropagation();
+      const nickname = target.dataset['identifier'];
+      if (nickname) {
+        try {
+          const users = await this.userDataService.searchUsers(nickname);
+          const taggedUser = users.find(u => u.nickname.toLowerCase() === nickname.toLowerCase());
+
+          if (taggedUser) {
+            this.goToUserProfile(taggedUser.uid);
+          } else {
+            this.presentAppAlert('Errore di navigazione', `Utente "${nickname}" non trovato.`);
+          }
+        } catch (error) {
+          console.error('Errore durante la ricerca dell\'utente taggato:', error);
+          this.presentAppAlert('Errore', 'Impossibile navigare al profilo utente. Riprova.');
+        }
+      }
+    }
   }
 
   async sharePost(post: Post) {
-    const appLink = 'https://alessandropanico.github.io/Sito-Portfolio/'; // Il tuo link
+    const appLink = 'https://alessandropanico.github.io/Sito-Portfolio/';
     const postSpecificLink = `${appLink}#/post/${post.id}`;
     let shareText = `Ho condiviso un post dall'app "NexusPlan"! Vieni a vedere ${postSpecificLink}`;
 
@@ -404,8 +404,6 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
           text: shareText,
           url: postSpecificLink,
         });
-        // Non aggiungere XP qui, perché è per un utente terzo
-        // this.expService.addExperience(20, 'postShared');
       } else {
         console.warn('Web Share API non disponibile, copia negli appunti come fallback.');
         await navigator.clipboard.writeText(shareText);
@@ -415,7 +413,6 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
       if ((error as any).name !== 'AbortError') {
         console.error('Errore durante la condivisione del post:', error);
         this.presentAppAlert('Errore Condivisione', 'Non è stato possibile condividere il post.');
-      } else {
       }
     }
   }
@@ -463,17 +460,11 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  // selectImage() { // Rimosso: non si creano post qui
-  //   this.presentAppAlert('Funzionalità Futura', 'L\'aggiunta di immagini sarà disponibile in un prossimo aggiornamento! Preparati a condividere i tuoi scatti migliori.');
-  // }
-
   goToUserProfile(userId: string) {
     if (userId === this.currentUserId) {
       this.router.navigateByUrl('/profilo');
     } else {
-      // Già siamo sulla pagina di un altro utente, possiamo fare un re-route se l'ID è diverso
-      // o semplicemente ignorare se è lo stesso ID per evitare refresh inutili
-      if (userId !== this.userId) { // Se clicca su un utente diverso da quello del profilo visualizzato
+      if (userId !== this.userId) {
         this.router.navigateByUrl(`/profilo-altri-utenti/${userId}`);
       }
     }
@@ -498,14 +489,6 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
     await alert.present();
   }
 
-  // adjustTextareaHeight(event: Event) { /* ... */ } // Rimosso: non si crea post qui
-
-  /**
-   * Restituisce l'URL della foto profilo, usando un avatar di default
-   * se l'URL fornito è nullo, vuoto, o un URL generico di Google.
-   * @param photoUrl L'URL della foto profilo dell'utente.
-   * @returns L'URL effettivo dell'immagine da visualizzare.
-   */
   getUserPhoto(photoUrl: string | null | undefined): string {
     const defaultGoogleProfilePicture = 'https://lh3.googleusercontent.com/a/ACg8ocK-pW1q9zsWi1DHCcamHuNOTLOvotU44G2v2qtMUtWu3LI0FOE=s96-c';
 
@@ -517,19 +500,19 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
 
   async openLikesModal(postId: string) {
     const modal = await this.modalController.create({
-      component: LikeModalComponent, // Specifica il componente LikeModalComponent
+      component: LikeModalComponent,
       componentProps: {
         postId: postId,
       },
-      cssClass: 'my-custom-likes-modal', // Puoi definire una classe CSS personalizzata per il modale dei likes
+      cssClass: 'my-custom-likes-modal',
       mode: 'ios',
       breakpoints: [0, 0.25, 0.5, 0.75, 1],
       initialBreakpoint: 1,
       backdropDismiss: true,
+      animated: true,
     });
 
     modal.onWillDismiss().then(() => {
-      // Quando il modale viene chiuso, ricarica i post per aggiornare i conteggi/stati dei like
       this.loadInitialPosts();
       this.cdr.detectChanges();
     });
@@ -537,40 +520,15 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
     await modal.present();
   }
 
-  // closeLikesModal(): void { // Rimosso: callback del ModalController
-  //   this.showLikesModal = false;
-  //   this.selectedPostIdForLikes = null;
-  //   this.cdr.detectChanges();
-  // }
-
-  /**
-   * Restituisce un array limitato di ID utente che hanno messo like.
-   * Utilizzato per mostrare solo un subset di avatar nella preview.
-   * @param likes L'array di ID utente che hanno messo like al post.
-   * @returns Un array contenente al massimo i primi 3 ID utente.
-   */
   getLimitedLikedUsers(likes: string[]): string[] {
     return (likes || []).slice(0, 3);
   }
 
-  /**
-   * Recupera l'URL dell'avatar di un utente dato il suo ID, usando la mappa cache del post.
-   * @param userId L'ID dell'utente.
-   * @param usersMap La mappa specifica degli utenti che hanno messo like per questo post.
-   * @returns L'URL dell'avatar dell'utente, o undefined se non trovato.
-   */
   getUserAvatarById(userId: string, usersMap?: Map<string, UserDashboardCounts>): string | undefined {
-    // Prima cerca nella mappa specifica del post, poi nella cache globale
     const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
     return userProfile ? this.getUserPhoto(userProfile.profilePictureUrl || userProfile.photo) : undefined;
   }
 
-  /**
-   * Recupera il nickname di un utente dato il suo ID, usando la mappa cache del post.
-   * @param userId L'ID dell'utente.
-   * @param usersMap La mappa specifica degli utenti che hanno messo like per questo post.
-   * @returns Il nickname dell'utente, o 'Utente sconosciuto' come fallback.
-   */
   getLikedUserName(userId: string, usersMap?: Map<string, UserDashboardCounts>): string {
     const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
     return userProfile?.nickname || 'Utente sconosciuto';
