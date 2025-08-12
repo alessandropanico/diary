@@ -249,8 +249,15 @@ export class ProfiloPage implements OnInit, OnDestroy {
   async saveProfile() {
     this.isLoading = true;
 
+    // Aggiungiamo la validazione per il nickname
+    const nicknameRegex = /^[a-zA-Z0-9]*$/;
+    if (!nicknameRegex.test(this.profileEdit.nickname) || this.profileEdit.nickname.includes(' ')) {
+      await this.presentFF7AlertNegative('Il nickname non può contenere spazi o caratteri speciali. Usa solo lettere e numeri.');
+      this.isLoading = false;
+      return;
+    }
+
     try {
-      // Salva tutti i dati del profilo tranne lo status, che è gestito separatamente
       const dataToSave = {
         photo: this.profileEdit.photo,
         banner: this.profileEdit.banner,
@@ -263,11 +270,8 @@ export class ProfiloPage implements OnInit, OnDestroy {
       };
 
       await this.userDataService.saveUserData(dataToSave);
-
-      // ⭐ NOVITÀ: Salva lo stato emoji separatamente, usando il nuovo metodo
       await this.userDataService.updateUserEmojiStatus(this.profileEdit.status);
 
-      // Aggiorna la vista locale solo dopo un salvataggio riuscito
       this.profile = {
         ...this.profile,
         ...dataToSave,
@@ -311,6 +315,25 @@ export class ProfiloPage implements OnInit, OnDestroy {
     const alert = await this.alertCtrl.create({
       cssClass: 'ff7-alert',
       header: '✔️ Salvataggio',
+      message,
+      buttons: [
+        {
+          text: 'OK',
+          cssClass: 'ff7-alert-button',
+          role: 'cancel'
+        }
+      ],
+      backdropDismiss: true,
+      animated: true,
+      mode: 'ios'
+    });
+    await alert.present();
+  }
+
+  async presentFF7AlertNegative(message: string) {
+    const alert = await this.alertCtrl.create({
+      cssClass: 'ff7-alert',
+      header: '❌ Errore',
       message,
       buttons: [
         {
