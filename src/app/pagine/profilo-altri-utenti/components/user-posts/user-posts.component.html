@@ -9,7 +9,7 @@
 <div *ngFor="let post of posts" class="post-card panel-glow-border">
   <div class="post-header">
     <div class="post-avatar" (click)="goToUserProfile(post.userId)">
-      <img [src]="getUserPhoto(post.userAvatarUrl)" alt="User Avatar">
+      <img [src]="getPostUserPhoto(post)" alt="User Avatar">
     </div>
     <div class="post-info">
       <span class="post-username" (click)="goToUserProfile(post.userId)">{{ post.username }}</span>
