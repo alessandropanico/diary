@@ -1,16 +1,24 @@
 // src/app/services/follow.service.ts
-import { Injectable, NgZone } from '@angular/core'; // AGGIUNGI NgZone
+import { Injectable, NgZone } from '@angular/core';
 import { Firestore, collection, setDoc, deleteDoc, query, onSnapshot } from '@angular/fire/firestore';
 import { map } from 'rxjs/operators';
-import { Observable, from, of } from 'rxjs'; // <-- AGGIUNGI 'of' QUI
-import { getFirestore, doc, runTransaction, getDoc, FieldValue, increment } from 'firebase/firestore'; // AGGIUNGI 'increment' QUI
+import { Observable, from, of } from 'rxjs';
+import { getFirestore, doc, runTransaction, getDoc, FieldValue, increment } from 'firebase/firestore';
+import { NotificheService } from './notifiche.service'; // ⭐⭐⭐ NOVITÀ: Importa il servizio notifiche
+import { UserDataService } from './user-data.service'; // ⭐⭐⭐ NOVITÀ: Importa il servizio dati utente
 
 @Injectable({
   providedIn: 'root'
 })
 export class FollowService {
 
-  constructor(private firestore: Firestore, private ngZone: NgZone) { } // INIETTA NgZone
+  // ⭐⭐ AGGIORNATO: Iniettiamo i nuovi servizi nel costruttore
+  constructor(
+    private firestore: Firestore,
+    private ngZone: NgZone,
+    private notificheService: NotificheService,
+    private userDataService: UserDataService
+  ) { }
 
   /**
    * Un utente segue un altro utente.
@@ -39,6 +47,12 @@ export class FollowService {
       const followingDocRef = doc(this.firestore, `users/${currentUserId}/following/${followedUserId}`);
       await setDoc(followingDocRef, { timestamp: new Date().toISOString() });
 
+      // ⭐⭐ NOVITÀ: Invia la notifica al followedUserId ⭐⭐
+      const followerData = await this.userDataService.getUserDataById(currentUserId);
+      if (followerData && followerData.nickname) {
+        await this.notificheService.aggiungiNotificaNuovoFollower(followedUserId, followerData.nickname);
+      }
+
     } catch (error) {
       console.error(`FollowService: Errore durante followUser tra ${currentUserId} e ${followedUserId}:`, error);
       throw error; // Rilancia l'errore per essere gestito dal componente chiamante
@@ -51,7 +65,6 @@ export class FollowService {
    * @param currentUserId L'ID dell'utente che smette di seguire.
    * @param followedUserId L'ID dell'utente che non viene più seguito.
    */
-  // All'interno di follow.service.ts
   async unfollowUser(followerId: string, followedId: string): Promise<void> {
     if (!followerId || !followedId) {
       console.warn('FollowService: unfollowUser chiamato con ID mancanti.');
@@ -60,21 +73,14 @@ export class FollowService {
 
     const db = getFirestore();
 
-    // Riferimento al documento "following" nella sottocollezione dell'utente che smette di seguire
     const followerRef = doc(db, 'users', followerId, 'following', followedId);
+    const followedRef = doc(db, 'users', followedId, 'followers', followerId);
 
-    // Riferimento al documento "followers" nella sottocollezione dell'utente che viene smesso di seguire
-    // --- QUESTA ERA LA RIGA CON L'ERRORE ---
-    const followedRef = doc(db, 'users', followedId, 'followers', followerId); // CORREZIONE QUI!
-
-    // Riferimenti ai contatori
     const followerUserRef = doc(db, 'users', followerId);
     const followedUserRef = doc(db, 'users', followedId);
 
     try {
       await runTransaction(db, async (transaction) => {
-        // ... (il resto del codice della transazione è corretto se i riferimenti sopra lo sono)
-        // 1. Controlla se esistono i documenti prima di tentare di eliminarli
         const followerDoc = await transaction.get(followerRef);
         const followedDoc = await transaction.get(followedRef);
 
@@ -90,14 +96,13 @@ export class FollowService {
           console.warn(`FollowService: Documento users/${followedId}/followers/${followerId} non esiste per l'eliminazione.`);
         }
 
-        // 2. Decrementa i contatori solo se il documento esisteva e viene eliminato
-        if (followerDoc.exists()) { // Contatore "following" per chi smette di seguire
+        if (followerDoc.exists()) {
           transaction.update(followerUserRef, {
             followingCount: increment(-1)
           });
         }
 
-        if (followedDoc.exists()) { // Contatore "followers" per chi viene smesso di seguire
+        if (followedDoc.exists()) {
           transaction.update(followedUserRef, {
             followersCount: increment(-1)
           });
@@ -105,13 +110,12 @@ export class FollowService {
       });
     } catch (error) {
       console.error(`FollowService: Errore nella transazione unfollowUser per ${followerId} -> ${followedId}:`, error);
-      throw error; // Rilancia l'errore affinché il componente lo possa catturare
+      throw error;
     }
   }
 
   /**
    * Controlla se l'utente corrente sta seguendo un altro utente.
-   * Questo è particolarmente utile per il profilo di altri utenti.
    * @param currentUserId L'ID dell'utente corrente.
    * @param targetUserId L'ID dell'utente di cui verificare il follow.
    * @returns Un Observable che emette true se segue, false altrimenti.
@@ -119,23 +123,21 @@ export class FollowService {
   isFollowing(currentUserId: string, targetUserId: string): Observable<boolean> {
     if (!currentUserId || !targetUserId) {
       console.warn('FollowService: isFollowing - ID utente mancante, ritorno Observable di false.');
-      return of(false); // Usa of() direttamente per gli Observable completati immediatamente
+      return of(false);
     }
     const docRef = doc(this.firestore, `users/${currentUserId}/following/${targetUserId}`);
     return new Observable<boolean>(observer => {
       const unsubscribe = onSnapshot(docRef, docSnap => {
-        // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
           observer.next(docSnap.exists());
         });
       }, error => {
-        // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
           console.error(`FollowService: Errore in isFollowing onSnapshot per ${currentUserId}/${targetUserId}:`, error);
           observer.error(error);
         });
       });
-      return () => { // Funzione di cleanup
+      return () => {
         unsubscribe();
       };
     });
@@ -184,12 +186,10 @@ export class FollowService {
     const q = query(followingCollectionRef);
     return new Observable<number>(observer => {
       const unsubscribe = onSnapshot(q, snapshot => {
-        // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
           observer.next(snapshot.size);
         });
       }, error => {
-        // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
           console.error(`FollowService: Errore in getFollowingCount onSnapshot per ${userId}:`, error);
           observer.error(error);
@@ -215,13 +215,11 @@ export class FollowService {
     const q = query(followersCollectionRef);
     return new Observable<string[]>(observer => {
       const unsubscribe = onSnapshot(q, snapshot => {
-        // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
           const ids = snapshot.docs.map(doc => doc.id);
           observer.next(ids);
         });
       }, error => {
-        // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
           console.error(`FollowService: Errore in getFollowersIds onSnapshot per ${userId}:`, error);
           observer.error(error);
@@ -247,13 +245,11 @@ export class FollowService {
     const q = query(followingCollectionRef);
     return new Observable<string[]>(observer => {
       const unsubscribe = onSnapshot(q, snapshot => {
-        // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
           const ids = snapshot.docs.map(doc => doc.id);
           observer.next(ids);
         });
       }, error => {
-        // ESSENZIALE: Esegui all'interno della zona di Angular
         this.ngZone.run(() => {
           console.error(`FollowService: Errore in getFollowingIds onSnapshot per ${userId}:`, error);
           observer.error(error);

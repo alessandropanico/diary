@@ -17,9 +17,8 @@ export interface Notifica {
   link?: string;
   postId?: string;
   commentId?: string;
-  projectId?: string; // ⭐⭐ NOVITÀ: Campo per l'ID del progetto
-  // Aggiornamento: Aggiunta del tipo di notifica 'menzione_post' e 'menzione_commento'
-  tipo: 'nuovo_post' | 'mi_piace' | 'commento' | 'menzione_commento' | 'mi_piace_commento' | 'menzione_post' | 'invito_progetto'; // ⭐⭐ NOVITÀ: Aggiunto 'invito_progetto'
+  projectId?: string;
+  tipo: 'nuovo_post' | 'mi_piace' | 'commento' | 'menzione_commento' | 'mi_piace_commento' | 'menzione_post' | 'invito_progetto' | 'nuovo_follower';
 }
 
 @Injectable({
@@ -198,4 +197,19 @@ export class NotificheService implements OnDestroy {
       console.error('Errore nell\'aggiornamento di tutte le notifiche:', e);
     }
   }
+
+  // Nuovo metodo per gestire le notifiche quando un utente riceve un nuovo follower
+  async aggiungiNotificaNuovoFollower(followedUserId: string, followerUsername: string) {
+    const notifica: Omit<Notifica, 'id' | 'dataCreazione'> = {
+      userId: followedUserId,
+      titolo: 'Hai un nuovo follower!',
+      messaggio: `${followerUsername} ha iniziato a seguirti.`,
+      letta: false,
+      link: `/profilo/${followerUsername}`, // Link al profilo del nuovo follower
+      tipo: 'nuovo_follower',
+    };
+    await this.aggiungiNotifica(notifica);
+  }
+
+
 }

@@ -40,29 +40,30 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
   }
 
   async handleNotificationClick(notifica: Notifica) {
-    if (notifica.id) {
-      this.notificheService.segnaComeLetta(notifica.id);
-    } else {
-      console.warn("NotificationsModalComponent: L'ID della notifica non è definito. Impossibile segnare come letta.");
-    }
-
-    await this.modalController.dismiss();
-
-    const tipoNotifica = notifica.tipo;
-    const postId = notifica.postId;
-    const projectId = notifica.projectId;
-
-
-    if (postId) {
-      if ((tipoNotifica === 'commento' || tipoNotifica === 'menzione_commento' || tipoNotifica === 'mi_piace_commento') && notifica.commentId) {
-        this.router.navigateByUrl(`/notizia-singola/${postId};commentId=${notifica.commentId}`);
-      } else if (tipoNotifica === 'nuovo_post' || tipoNotifica === 'mi_piace' || tipoNotifica === 'menzione_post') {
-        this.router.navigateByUrl(`/notizia-singola/${postId}`);
-      } else {
-      }
-    } else if (projectId && tipoNotifica === 'invito_progetto') {
-      this.router.navigateByUrl(`/progetti/${projectId}`);
-    } else {
-    }
+  if (notifica.id) {
+    this.notificheService.segnaComeLetta(notifica.id);
+  } else {
+    console.warn("NotificationsModalComponent: L'ID della notifica non è definito. Impossibile segnare come letta.");
   }
+
+  await this.modalController.dismiss();
+
+  const tipoNotifica = notifica.tipo;
+  const postId = notifica.postId;
+  const projectId = notifica.projectId;
+
+  if (tipoNotifica === 'nuovo_follower' && notifica.link) {
+    this.router.navigateByUrl(notifica.link);
+  } else if (postId) {
+    if ((tipoNotifica === 'commento' || tipoNotifica === 'menzione_commento' || tipoNotifica === 'mi_piace_commento') && notifica.commentId) {
+      this.router.navigateByUrl(`/notizia-singola/${postId};commentId=${notifica.commentId}`);
+    } else if (tipoNotifica === 'nuovo_post' || tipoNotifica === 'mi_piace' || tipoNotifica === 'menzione_post') {
+      this.router.navigateByUrl(`/notizia-singola/${postId}`);
+    } else {
+    }
+  } else if (projectId && tipoNotifica === 'invito_progetto') {
+    this.router.navigateByUrl(`/progetti/${projectId}`);
+  } else {
+  }
+}
 }
