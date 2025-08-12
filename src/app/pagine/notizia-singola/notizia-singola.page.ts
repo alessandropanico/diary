@@ -342,7 +342,7 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
     if (userId === this.currentUserId) {
       this.router.navigateByUrl('/profilo');
     } else {
-      this.router.navigateByUrl(`/profilo/${userId}`);
+      this.router.navigateByUrl(`/profilo-altri-utenti/${userId}`);
     }
   }
 

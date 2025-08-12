@@ -474,7 +474,7 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
       // Già siamo sulla pagina di un altro utente, possiamo fare un re-route se l'ID è diverso
       // o semplicemente ignorare se è lo stesso ID per evitare refresh inutili
       if (userId !== this.userId) { // Se clicca su un utente diverso da quello del profilo visualizzato
-        this.router.navigateByUrl(`/profilo/${userId}`);
+        this.router.navigateByUrl(`/profilo-altri-utenti/${userId}`);
       }
     }
   }
