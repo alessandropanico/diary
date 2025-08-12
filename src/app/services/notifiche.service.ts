@@ -205,7 +205,7 @@ export class NotificheService implements OnDestroy {
       titolo: 'Hai un nuovo follower!',
       messaggio: `${followerUsername} ha iniziato a seguirti.`,
       letta: false,
-      link: `/profilo/${followerUsername}`, // Link al profilo del nuovo follower
+      link: `/profilo-altri-utenti/${followerUsername}`, // Link al profilo del nuovo follower
       tipo: 'nuovo_follower',
     };
     await this.aggiungiNotifica(notifica);
