@@ -14,12 +14,23 @@ import { ModalController } from '@ionic/angular';
 import { CommentsModalComponent } from '../profilo/components/comments-modal/comments-modal.component';
 import { LikeModalComponent } from '../profilo/components/like-modal/like-modal.component';
 import { FollowService } from 'src/app/services/follow.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser'; // ⭐ NUOVO: Importa DomSanitizer e SafeHtml
+
+// ⭐ NUOVO: Interfaccia per la gestione dei tag
+export interface TagUser {
+  uid: string;
+  nickname: string;
+  fullName?: string;
+  photo?: string;
+  profilePictureUrl?: string;
+}
 
 // Interfaccia estesa per i post con dettagli utente
 interface PostWithUserDetails extends Post {
   likesUsersMap?: Map<string, UserDashboardCounts>;
   username: string;
   userPhoto: string;
+  formattedText?: SafeHtml; // ⭐ MODIFICA: Il testo formattato è ora SafeHtml
 }
 
 @Component({
@@ -57,7 +68,8 @@ export class NotiziePage implements OnInit, OnDestroy {
     private loadingCtrl: LoadingController,
     private expService: ExpService,
     private modalController: ModalController,
-    private followService: FollowService, // Aggiungi questa riga
+    private followService: FollowService,
+    private sanitizer: DomSanitizer, // ⭐ NUOVO: Aggiungi DomSanitizer al costruttore
   ) { }
 
   ngOnInit() {
@@ -106,7 +118,6 @@ export class NotiziePage implements OnInit, OnDestroy {
         this.usersCache.set(this.currentUserId, userData);
       }
 
-      // ➡️ CORREZIONE: Usa il FollowService per ottenere gli ID degli utenti seguiti
       this.followService.getFollowingIds(this.currentUserId).subscribe(followingIds => {
         this.followingUserIds = followingIds;
         this.feedUserIds = [...this.followingUserIds, this.currentUserId!];
@@ -125,6 +136,8 @@ export class NotiziePage implements OnInit, OnDestroy {
   private loadInitialPosts() {
     if (this.feedUserIds.length === 0) {
       console.warn('PostService: Tentativo di caricare post con lista di ID utenti vuota.');
+      this.isLoadingPosts = false;
+      this.cdr.detectChanges();
       return;
     }
 
@@ -196,7 +209,8 @@ export class NotiziePage implements OnInit, OnDestroy {
             ...post,
             username: postUserProfile?.nickname || 'Utente Sconosciuto',
             userPhoto: this.getUserPhoto(postUserProfile?.profilePictureUrl || postUserProfile?.photo),
-            likesUsersMap: likedUsersMap
+            likesUsersMap: likedUsersMap,
+            formattedText: this.formatPostContent(post.text as string), // ⭐ MODIFICA: Chiama il metodo per formattare il testo
           } as PostWithUserDetails;
         })
       );
@@ -218,6 +232,53 @@ export class NotiziePage implements OnInit, OnDestroy {
         catchError(() => of(null)),
         take(1)
       );
+    }
+  }
+
+  // ⭐ NUOVO: Metodo per formattare il testo con tag utente e link URL
+  private formatPostContent(text: string): SafeHtml {
+    if (!text) {
+      return this.sanitizer.bypassSecurityTrustHtml('');
+    }
+
+    const tagRegex = /@([a-zA-Z0-9_.-]+)/g;
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    // Sostituisci prima i link URL
+    const textWithLinks = text.replace(urlRegex, (url) =>
+      `<a href="${url}" target="_blank" rel="noopener noreferrer" class="post-link">${url}</a>`
+    );
+
+    // Poi, sostituisci i tag utente. Assicurati di non toccare i link già formattati.
+    const formattedText = textWithLinks.replace(tagRegex, (match, nickname) => {
+      return `<a class="user-tag" data-identifier="${nickname}">${match}</a>`;
+    });
+
+    return this.sanitizer.bypassSecurityTrustHtml(formattedText);
+  }
+
+  // ⭐ NUOVO: Metodo per gestire il click sui tag utente
+  async onPostTextClick(event: Event) {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('user-tag')) {
+      event.preventDefault();
+      event.stopPropagation();
+      const nickname = target.dataset['identifier'];
+      if (nickname) {
+        try {
+          const users = await this.userDataService.searchUsers(nickname);
+          const taggedUser = users.find(u => u.nickname.toLowerCase() === nickname.toLowerCase());
+
+          if (taggedUser) {
+            this.goToUserProfile(taggedUser.uid);
+          } else {
+            this.presentAppAlert('Errore di navigazione', `Utente "${nickname}" non trovato.`);
+          }
+        } catch (error) {
+          console.error('Errore durante la ricerca dell\'utente taggato:', error);
+          this.presentAppAlert('Errore', 'Impossibile navigare al profilo utente. Riprova.');
+        }
+      }
     }
   }
 
@@ -361,14 +422,12 @@ export class NotiziePage implements OnInit, OnDestroy {
     });
 
     modal.onWillDismiss().then(() => {
-      // ⭐ MODIFICA: Aggiorna solo il post specifico invece di ricaricare tutti i post
       this.updateSinglePost(post.id);
     });
 
     await modal.present();
   }
 
-  // ⭐ AGGIUNGI questo nuovo metodo al tuo componente
   private updateSinglePost(postId: string) {
     if (!postId) return;
 
@@ -376,7 +435,6 @@ export class NotiziePage implements OnInit, OnDestroy {
     if (postIndex !== -1) {
       this.postService.getPostById(postId).subscribe(updatedPostData => {
         if (updatedPostData) {
-          // Applica l'aggiunta dei dettagli utente al singolo post
           this.addUserDetailsToPosts([updatedPostData]).subscribe(postsWithDetails => {
             if (postsWithDetails.length > 0) {
               this.posts[postIndex] = postsWithDetails[0];
@@ -405,7 +463,6 @@ export class NotiziePage implements OnInit, OnDestroy {
     });
 
     modal.onWillDismiss().then(() => {
-      // ⭐ MODIFICA: Aggiorna solo il post specifico e non ricaricare tutto il feed
       this.updateSinglePost(post.id);
     });
 
@@ -416,39 +473,20 @@ export class NotiziePage implements OnInit, OnDestroy {
     // Questo metodo può essere lasciato vuoto o implementato per mostrare l'immagine in un modal.
   }
 
-  /**
-   * Restituisce un array limitato di ID utente che hanno messo like.
-   * Utilizzato per mostrare solo un subset di avatar nella preview.
-   * @param likes L'array di ID utente che hanno messo like al post.
-   * @returns Un array contenente al massimo i primi 3 ID utente.
-   */
   getLimitedLikedUsers(likes: string[]): string[] {
     return (likes || []).slice(0, 3);
   }
 
-  /**
-   * Recupera l'URL dell'avatar di un utente dato il suo ID, usando la mappa cache del post.
-   * @param userId L'ID dell'utente.
-   * @param usersMap La mappa specifica degli utenti che hanno messo like per questo post.
-   * @returns L'URL dell'avatar dell'utente, o undefined se non trovato.
-   */
   getUserAvatarById(userId: string, usersMap?: Map<string, UserDashboardCounts>): string | undefined {
     const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
     return userProfile ? this.getUserPhoto(userProfile.profilePictureUrl || userProfile.photo) : undefined;
   }
 
-  /**
-   * Recupera il nickname di un utente dato il suo ID, usando la mappa cache del post.
-   * @param userId L'ID dell'utente.
-   * @param usersMap La mappa specifica degli utenti che hanno messo like per questo post.
-   * @returns Il nickname dell'utente, o 'Utente sconosciuto' come fallback.
-   */
   getLikedUserName(userId: string, usersMap?: Map<string, UserDashboardCounts>): string {
     const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
     return userProfile?.nickname || 'Utente sconosciuto';
   }
 
-  // Funzione per condividere il post (nuova)
   async sharePost(post: Post) {
     const appLink = 'https://alessandropanico.github.io/Sito-Portfolio/';
     const postSpecificLink = `${appLink}#/post/${post.id}`;
