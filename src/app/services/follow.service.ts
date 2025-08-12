@@ -4,15 +4,14 @@ import { Firestore, collection, setDoc, deleteDoc, query, onSnapshot } from '@an
 import { map } from 'rxjs/operators';
 import { Observable, from, of } from 'rxjs';
 import { getFirestore, doc, runTransaction, getDoc, FieldValue, increment } from 'firebase/firestore';
-import { NotificheService } from './notifiche.service'; // ⭐⭐⭐ NOVITÀ: Importa il servizio notifiche
-import { UserDataService } from './user-data.service'; // ⭐⭐⭐ NOVITÀ: Importa il servizio dati utente
+import { NotificheService } from './notifiche.service';
+import { UserDataService } from './user-data.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FollowService {
 
-  // ⭐⭐ AGGIORNATO: Iniettiamo i nuovi servizi nel costruttore
   constructor(
     private firestore: Firestore,
     private ngZone: NgZone,
@@ -47,15 +46,15 @@ export class FollowService {
       const followingDocRef = doc(this.firestore, `users/${currentUserId}/following/${followedUserId}`);
       await setDoc(followingDocRef, { timestamp: new Date().toISOString() });
 
-      // ⭐⭐ NOVITÀ: Invia la notifica al followedUserId ⭐⭐
+      // ⭐⭐ CORREZIONE: Invia la notifica al followedUserId includendo anche l'ID del follower ⭐⭐
       const followerData = await this.userDataService.getUserDataById(currentUserId);
       if (followerData && followerData.nickname) {
-        await this.notificheService.aggiungiNotificaNuovoFollower(followedUserId, followerData.nickname);
+        await this.notificheService.aggiungiNotificaNuovoFollower(followedUserId, followerData.nickname, currentUserId);
       }
 
     } catch (error) {
       console.error(`FollowService: Errore durante followUser tra ${currentUserId} e ${followedUserId}:`, error);
-      throw error; // Rilancia l'errore per essere gestito dal componente chiamante
+      throw error;
     }
   }
 

@@ -18,6 +18,8 @@ export interface Notifica {
   postId?: string;
   commentId?: string;
   projectId?: string;
+  // ⭐⭐ NOVITÀ: Aggiungi followerId per risolvere l'errore
+  followerId?: string;
   tipo: 'nuovo_post' | 'mi_piace' | 'commento' | 'menzione_commento' | 'mi_piace_commento' | 'menzione_post' | 'invito_progetto' | 'nuovo_follower';
 }
 
@@ -52,7 +54,6 @@ export class NotificheService implements OnDestroy {
     this.notificheSubscription?.unsubscribe();
   }
 
-  // Metodo per aggiungere una nuova notifica a Firestore
   async aggiungiNotifica(notifica: Omit<Notifica, 'id' | 'dataCreazione'>) {
     if (!notifica.userId) {
       console.error("ID utente non specificato per la notifica.");
@@ -70,7 +71,6 @@ export class NotificheService implements OnDestroy {
     }
   }
 
-  // Nuovo metodo per gestire le notifiche di menzione in un post
   async aggiungiNotificaMenzionePost(taggedUserId: string, taggingUsername: string, postId: string) {
     const notifica: Omit<Notifica, 'id' | 'dataCreazione'> = {
       userId: taggedUserId,
@@ -78,13 +78,12 @@ export class NotificheService implements OnDestroy {
       messaggio: `${taggingUsername} ti ha menzionato in un post.`,
       letta: false,
       postId: postId,
-      link: `/post/${postId}`, // Assumendo che esista una pagina per il singolo post
+      link: `/post/${postId}`,
       tipo: 'menzione_post',
     };
     await this.aggiungiNotifica(notifica);
   }
 
-  // Metodo per gestire le notifiche di menzione in un commento
   async aggiungiNotificaMenzioneCommento(taggedUserId: string, taggingUsername: string, postId: string, commentId: string) {
     const notifica: Omit<Notifica, 'id' | 'dataCreazione'> = {
       userId: taggedUserId,
@@ -93,20 +92,12 @@ export class NotificheService implements OnDestroy {
       letta: false,
       postId: postId,
       commentId: commentId,
-      link: `/post/${postId}?commentId=${commentId}`, // Link al post e al commento specifico
+      link: `/post/${postId}?commentId=${commentId}`,
       tipo: 'menzione_commento',
     };
     await this.aggiungiNotifica(notifica);
   }
 
-  // ⭐⭐ NUOVO METODO PER LA NOTIFICA DI INVITO A UN PROGETTO ⭐⭐
-  /**
-   * @description Aggiunge una notifica quando un utente viene aggiunto a un progetto.
-   * @param invitedUserId L'ID dell'utente che riceve l'invito.
-   * @param invitingUsername Il nickname dell'utente che ha inviato l'invito.
-   * @param projectId L'ID del progetto.
-   * @param projectName Il nome del progetto a cui l'utente è stato invitato.
-   */
   async aggiungiNotificaProgetto(invitedUserId: string, invitingUsername: string, projectId: string, projectName: string) {
     const notifica: Omit<Notifica, 'id' | 'dataCreazione'> = {
       userId: invitedUserId,
@@ -114,14 +105,12 @@ export class NotificheService implements OnDestroy {
       messaggio: `${invitingUsername} ti ha aggiunto al progetto: ${projectName}.`,
       letta: false,
       projectId: projectId,
-      link: `/progetti/${projectId}`, // Link alla pagina del progetto
+      link: `/progetti/${projectId}`,
       tipo: 'invito_progetto',
     };
     await this.aggiungiNotifica(notifica);
   }
-  // ⭐⭐ FINE NUOVO METODO ⭐⭐
 
-  // Metodo per caricare le notifiche dell'utente loggato da Firestore
   private caricaNotifiche() {
     if (!this.currentUserId) {
       return;
@@ -165,7 +154,6 @@ export class NotificheService implements OnDestroy {
     );
   }
 
-  // Segna una notifica come letta in Firestore
   async segnaComeLetta(notificaId: string) {
     try {
       const notificaRef = doc(this.firestore, 'notifiche', notificaId);
@@ -175,7 +163,6 @@ export class NotificheService implements OnDestroy {
     }
   }
 
-  // Segna tutte le notifiche come lette per l'utente corrente in Firestore
   async segnaTutteComeLette() {
     if (!this.currentUserId) {
       return;
@@ -198,18 +185,15 @@ export class NotificheService implements OnDestroy {
     }
   }
 
-  // Nuovo metodo per gestire le notifiche quando un utente riceve un nuovo follower
-  async aggiungiNotificaNuovoFollower(followedUserId: string, followerUsername: string) {
+  async aggiungiNotificaNuovoFollower(followedUserId: string, followerUsername: string, followerId: string) {
     const notifica: Omit<Notifica, 'id' | 'dataCreazione'> = {
       userId: followedUserId,
       titolo: 'Hai un nuovo follower!',
       messaggio: `${followerUsername} ha iniziato a seguirti.`,
       letta: false,
-      link: `/profilo-altri-utenti/${followerUsername}`, // Link al profilo del nuovo follower
+      followerId: followerId,
       tipo: 'nuovo_follower',
     };
     await this.aggiungiNotifica(notifica);
   }
-
-
 }
