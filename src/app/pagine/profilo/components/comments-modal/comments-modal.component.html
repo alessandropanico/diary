@@ -19,7 +19,7 @@
       </div>
     </div>
     <div class="post-content">
-      <p class="post-text">{{ postText }}</p>
+      <p class="post-text" [innerHTML]="formattedPostText" (click)="onPostTextClick($event)"></p>
     </div>
   </div>
   <app-comment-section
