@@ -12,10 +12,13 @@ import { CommentsModalComponent } from '../profilo/components/comments-modal/com
 import { LikeModalComponent } from '../profilo/components/like-modal/like-modal.component';
 import { from, combineLatest, of, Subscription } from 'rxjs';
 import { map, switchMap, catchError, take } from 'rxjs/operators';
-
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser'; // ⭐ NUOVO: Importa DomSanitizer e SafeHtml
 
 interface PostWithUserDetails extends Post {
   likesUsersMap?: Map<string, UserDashboardCounts>;
+  formattedText?: SafeHtml; // ⭐ NUOVO: Aggiungi formattedText all'interfaccia
+  userAvatarUrl: string; // Aggiungi userAvatarUrl per coerenza con il template
+  username: string; // Aggiungi username per coerenza
 }
 
 @Component({
@@ -46,6 +49,7 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
     private alertCtrl: AlertController,
     private modalController: ModalController,
     private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer, // ⭐ NUOVO: Aggiungi DomSanitizer al costruttore
   ) { }
 
   ngOnInit() {
@@ -86,7 +90,11 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
     if (postSnap.exists()) {
       const postData = { id: postSnap.id, ...postSnap.data() } as Post;
 
-      // Aggiungi l'ID dell'utente corrente e i primi 3 liker
+      const postAuthorData = await this.userDataService.getUserDataByUid(postData.userId);
+      if (postAuthorData) {
+        this.usersCache.set(postData.userId, postAuthorData);
+      }
+
       const likedUserIds = (postData.likes || []).slice(0, 3);
       const allUserIdsToFetch = new Set<string>();
       if (this.currentUserId) {
@@ -94,7 +102,6 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
       }
       likedUserIds.forEach(id => allUserIdsToFetch.add(id));
 
-      // Mappa per i dati utente
       const userPromises = Array.from(allUserIdsToFetch).map(userId =>
         from(this.userDataService.getUserDataByUid(userId)).pipe(
           map(userData => {
@@ -120,19 +127,18 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
             }
           });
 
-          // Caching dell'autore del post
-          const postAuthorData = this.usersCache.get(postData.userId);
-          if (!postAuthorData) {
-            from(this.userDataService.getUserDataByUid(postData.userId)).subscribe(
-              authorData => {
-                if (authorData) {
-                  this.usersCache.set(postData.userId, authorData);
-                }
-              }
-            );
-          }
+          // Recupera i dati dell'autore del post dalla cache o dal servizio
+          const authorData = this.usersCache.get(postData.userId);
 
-          this.notizia = { ...postData, likesUsersMap: likedUsersMap } as PostWithUserDetails;
+          // ⭐ MODIFICA: Aggiungi il testo formattato e i dettagli dell'autore al post
+          this.notizia = {
+            ...postData,
+            likesUsersMap: likedUsersMap,
+            username: authorData?.nickname || 'Utente Sconosciuto',
+            userAvatarUrl: this.getUserPhoto(authorData?.profilePictureUrl || authorData?.photo),
+            formattedText: this.formatPostContent(postData.text)
+          } as PostWithUserDetails;
+
           this.isLoadingPost = false;
           this.cdr.detectChanges();
 
@@ -147,6 +153,52 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     }
   }
+
+  // ⭐ NUOVO: Metodo per formattare il testo con tag utente e link URL
+  formatPostContent(text: string): SafeHtml {
+    if (!text) {
+      return this.sanitizer.bypassSecurityTrustHtml('');
+    }
+
+    const tagRegex = /@([a-zA-Z0-9_.-]+)/g;
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    const textWithLinks = text.replace(urlRegex, (url) =>
+      `<a href="${url}" target="_blank" rel="noopener noreferrer" class="post-link">${url}</a>`
+    );
+
+    const formattedText = textWithLinks.replace(tagRegex, (match, nickname) => {
+      return `<a class="user-tag" data-identifier="${nickname}">${match}</a>`;
+    });
+
+    return this.sanitizer.bypassSecurityTrustHtml(formattedText);
+  }
+
+  // ⭐ NUOVO: Metodo per gestire il click sui tag utente
+  async onPostTextClick(event: Event) {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('user-tag')) {
+      event.preventDefault();
+      event.stopPropagation();
+      const nickname = target.dataset['identifier'];
+      if (nickname) {
+        try {
+          const users = await this.userDataService.searchUsers(nickname);
+          const taggedUser = users.find(u => u.nickname.toLowerCase() === nickname.toLowerCase());
+
+          if (taggedUser) {
+            this.goToUserProfile(taggedUser.uid);
+          } else {
+            this.presentAppAlert('Errore di navigazione', `Utente "${nickname}" non trovato.`);
+          }
+        } catch (error) {
+          console.error('Errore durante la ricerca dell\'utente taggato:', error);
+          this.presentAppAlert('Errore', 'Impossibile navigare al profilo utente. Riprova.');
+        }
+      }
+    }
+  }
+
 
   async toggleLike(post: PostWithUserDetails) {
     if (!this.currentUserId) {
@@ -175,7 +227,7 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
     }
   }
 
-  async openCommentsModal(post: Post) {
+  async openCommentsModal(post: PostWithUserDetails) { // Usa l'interfaccia aggiornata
     const modal = await this.modalController.create({
       component: CommentsModalComponent,
       componentProps: {
@@ -210,6 +262,7 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
       breakpoints: [0, 0.25, 0.5, 0.75, 1],
       initialBreakpoint: 1,
       backdropDismiss: true,
+      animated: true,
     });
 
     modal.onWillDismiss().then(() => {
@@ -243,11 +296,6 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
         this.presentAppAlert('Errore Condivisione', 'Non è stato possibile condividere il post.');
       }
     }
-  }
-
-  formatTextWithLinks(text: string): string {
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="post-link">${url}</a>`);
   }
 
   formatPostTime(timestamp: string): string {

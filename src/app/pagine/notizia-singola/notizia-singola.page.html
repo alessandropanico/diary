@@ -25,7 +25,7 @@
     </div>
 
     <div class="post-content">
-      <p class="post-text" [innerHTML]="formatTextWithLinks(notizia.text)"></p>
+      <p class="post-text" (click)="onPostTextClick($event)" [innerHTML]="notizia.formattedText"></p>
     </div>
 
     <div class="post-likes-info" *ngIf="notizia.likes && notizia.likes.length > 0" (click)="openLikesModal(notizia.id)">
@@ -44,14 +44,16 @@
             getLikedUserName(notizia.likes[1], notizia.likesUsersMap) }}</strong>
         </ng-container>
         <ng-container *ngIf="notizia.likes.length > 2">
-          <strong>{{ getLikedUserName(notizia.likes[0], notizia.likesUsersMap) }}</strong> e altri <strong>{{ notizia.likes.length
+          <strong>{{ getLikedUserName(notizia.likes[0], notizia.likesUsersMap) }}</strong> e altri <strong>{{
+            notizia.likes.length
             - 1 }}</strong>
         </ng-container>
       </span>
     </div>
 
     <div class="post-actions">
-      <button class="post-action-button" [ngClass]="{'liked': currentUserId && notizia.likes.includes(currentUserId!)}" (click)="toggleLike(notizia)">
+      <button class="post-action-button" [ngClass]="{'liked': currentUserId && notizia.likes.includes(currentUserId!)}"
+        (click)="toggleLike(notizia)">
         <span class="icon heart-icon"></span> Like
       </button>
       <button class="post-action-button" (click)="openCommentsModal(notizia)">
