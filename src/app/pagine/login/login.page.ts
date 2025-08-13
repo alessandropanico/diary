@@ -7,7 +7,6 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { environment } from 'src/environments/environment';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
-// ⭐ MODIFICA 1: Importa il nuovo servizio di presenza
 import { PresenceService } from 'src/app/services/presence.service';
 
 const app = initializeApp(environment.firebaseConfig);
@@ -23,15 +22,12 @@ declare const google: any;
 })
 export class LoginPage implements OnInit, OnDestroy {
   user: any = null;
-  // ⭐ RIMOSSO: Eliminata la variabile per l'intervallo
-  // private onlineStatusInterval: any;
 
   constructor(
     private ngZone: NgZone,
     private alertCtrl: AlertController,
     private userDataService: UserDataService,
     private router: Router,
-    // ⭐ MODIFICA 2: Inietta il nuovo servizio nel costruttore
     private presenceService: PresenceService
   ) { }
 
@@ -45,26 +41,12 @@ export class LoginPage implements OnInit, OnDestroy {
             photoURL: firebaseUser.photoURL,
             uid: firebaseUser.uid
           };
-
-          // ⭐ MODIFICA 3: Chiama il nuovo servizio per impostare la presenza
           this.presenceService.setPresence();
-
-          // ⭐ RIMOSSO: Eliminata la chiamata di aggiornamento di lastOnline
-          // this.userDataService.setLastOnline().catch(err => {
-          //   console.error("Errore nell'aggiornamento di lastOnline all'inizializzazione del login:", err);
-          // });
-
-          // ⭐ RIMOSSO: Eliminata la chiamata per avviare l'aggiornamento periodico
-          // this.startOnlineStatusUpdater();
-
           if (this.router.url !== '/profilo') {
             this.router.navigateByUrl('/profilo', { replaceUrl: true });
           }
-
         } else {
           this.user = null;
-          // ⭐ RIMOSSO: Eliminata la chiamata per interrompere l'aggiornamento periodico
-          // this.stopOnlineStatusUpdater();
           if (this.router.url !== '/login') {
             this.router.navigateByUrl('/login', { replaceUrl: true });
           }
@@ -96,8 +78,7 @@ export class LoginPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // ⭐ RIMOSSO: Non è più necessario interrompere l'aggiornamento, il servizio lo gestisce
-    // this.stopOnlineStatusUpdater();
+    // Il servizio di presenza si occupa di gestire lo stato offline.
   }
 
   async handleCredentialResponse(response: any) {
@@ -106,11 +87,22 @@ export class LoginPage implements OnInit, OnDestroy {
       const userCredential = await signInWithCredential(auth, credential);
       const firebaseUser = userCredential.user;
 
-      const dataToUpdate: Partial<UserDashboardCounts> = {
+      // ⭐ MODIFICA QUI ⭐
+      // Prepara un oggetto di dati completo da salvare su Firestore.
+      // Per gli utenti esistenti, grazie a `merge: true`,
+      // i campi come totalXP non verranno sovrascritti.
+      const dataToUpdate = {
         uid: firebaseUser.uid,
         email: firebaseUser.email || '',
         lastLogin: new Date().toISOString(),
         lastOnline: new Date().toISOString(),
+        name: firebaseUser.displayName || '',
+        profilePictureUrl: firebaseUser.photoURL || '',
+        totalXP: 0,
+        nickname: '',
+        surname: '',
+        bio: '',
+        // Aggiungi altri campi qui se necessario
       };
 
       await this.userDataService.saveUserData(dataToUpdate);
@@ -151,9 +143,6 @@ export class LoginPage implements OnInit, OnDestroy {
 
   async logout() {
     await signOut(auth);
-    // ⭐ RIMOSSO: non è più necessario
-    // this.stopOnlineStatusUpdater();
-
     const alert = await this.alertCtrl.create({
       header: 'Logout',
       message: 'Logout effettuato con successo.',
@@ -172,23 +161,4 @@ export class LoginPage implements OnInit, OnDestroy {
       );
     }
   }
-
-  // ⭐ RIMOSSO: Eliminati i due metodi obsoleti
-  // private startOnlineStatusUpdater() {
-  //   if (this.onlineStatusInterval) {
-  //     clearInterval(this.onlineStatusInterval);
-  //   }
-  //   this.onlineStatusInterval = setInterval(() => {
-  //     this.userDataService.setLastOnline().catch(err => {
-  //       console.error("Errore nell'aggiornamento periodico di lastOnline:", err);
-  //     });
-  //   }, 30000);
-  // }
-  //
-  // private stopOnlineStatusUpdater() {
-  //   if (this.onlineStatusInterval) {
-  //     clearInterval(this.onlineStatusInterval);
-  //     this.onlineStatusInterval = null;
-  //   }
-  // }
 }
