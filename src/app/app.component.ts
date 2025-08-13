@@ -207,22 +207,19 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   async loadProfilePhoto() {
-    const currentUser = getAuth().currentUser;
-    if (currentUser) {
-      const userData = await this.userDataService.getUserData();
-      if (userData && (userData.profilePictureUrl || userData.photo)) {
-        this.profilePhotoUrl = userData.profilePictureUrl || userData.photo;
-      }
-      else if (currentUser.photoURL) {
-        this.profilePhotoUrl = currentUser.photoURL;
-      }
-      else {
-        this.profilePhotoUrl = 'assets/immaginiGenerali/default-avatar.jpg';
-      }
-    } else {
+  const currentUser = getAuth().currentUser;
+  if (currentUser) {
+    const userData = await this.userDataService.getUserData();
+    if (userData && (userData.photo || currentUser.photoURL)) {
+      this.profilePhotoUrl = userData.photo || currentUser.photoURL;
+    }
+    else {
       this.profilePhotoUrl = 'assets/immaginiGenerali/default-avatar.jpg';
     }
+  } else {
+    this.profilePhotoUrl = 'assets/immaginiGenerali/default-avatar.jpg';
   }
+}
 
   async openSearchMenu() {
     await this.menu.open('search-menu');
