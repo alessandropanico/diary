@@ -2,7 +2,7 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription, of, from } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, query, where, orderBy, limit, addDoc, doc, updateDoc, getDocs, QuerySnapshot, DocumentData, Firestore, serverTimestamp, startAfter, onSnapshot, writeBatch } from '@angular/fire/firestore';
+import { getFirestore, collection, query, where, orderBy, limit, addDoc, doc, updateDoc, getDocs, QuerySnapshot, DocumentData, Firestore, serverTimestamp, startAfter, onSnapshot, writeBatch, Timestamp } from '@angular/fire/firestore';
 
 // Interfaccia per definire la struttura di una notifica
 export interface Notifica {
@@ -30,10 +30,12 @@ export class NotificheService implements OnDestroy {
   private currentUserId: string | null = null;
   private unreadCountSubscription: Subscription | undefined;
 
-  // ⭐ NOVITÀ: BehaviorSubject per il conteggio delle notifiche non lette
   private _unreadCount = new BehaviorSubject<number>(0);
   public unreadCount$: Observable<number> = this._unreadCount.asObservable();
   private notificationSound = new Audio('assets/sound/notification.mp3');
+
+  // ⭐ Definisci la durata di vita delle notifiche (6 settimane in millisecondi)
+  private readonly NOTIFICATION_LIFESPAN_MS = 6 * 7 * 24 * 60 * 60 * 1000;
 
   constructor() {
     this.firestore = getFirestore();
@@ -53,18 +55,19 @@ export class NotificheService implements OnDestroy {
     this.unreadCountSubscription?.unsubscribe();
   }
 
-  // ⭐ NOVITÀ: Listener in tempo reale per le notifiche non lette
   private startUnreadCountListener() {
     if (!this.currentUserId) {
       this._unreadCount.next(0);
       return;
     }
 
+    const sixWeeksAgo = new Date(Date.now() - this.NOTIFICATION_LIFESPAN_MS);
     const notificheRef = collection(this.firestore, 'notifiche');
     const q = query(
       notificheRef,
       where('userId', '==', this.currentUserId),
-      where('letta', '==', false)
+      where('letta', '==', false),
+      where('timestamp', '>', sixWeeksAgo)
     );
 
     this.unreadCountSubscription = new Observable<QuerySnapshot<DocumentData>>(observer => {
@@ -82,7 +85,6 @@ export class NotificheService implements OnDestroy {
     });
   }
 
-  // ⭐ AGGIORNATO: Restituisce l'Observable del conteggio
   getNumeroNotificheNonLette(): Observable<number> {
     return this.unreadCount$;
   }
@@ -92,9 +94,12 @@ export class NotificheService implements OnDestroy {
       return of([]);
     }
 
+    const sixWeeksAgo = new Date(Date.now() - this.NOTIFICATION_LIFESPAN_MS);
+
     let notificheQuery = query(
       collection(this.firestore, 'notifiche'),
       where('userId', '==', userId),
+      where('timestamp', '>', sixWeeksAgo),
       orderBy('timestamp', 'desc'),
       limit(limitCount)
     );
@@ -197,11 +202,13 @@ export class NotificheService implements OnDestroy {
     if (!this.currentUserId) {
       return;
     }
+    const sixWeeksAgo = new Date(Date.now() - this.NOTIFICATION_LIFESPAN_MS);
     const notificheRef = collection(this.firestore, 'notifiche');
     const q = query(
       notificheRef,
       where('userId', '==', this.currentUserId),
-      where('letta', '==', false)
+      where('letta', '==', false),
+      where('timestamp', '>', sixWeeksAgo)
     );
     try {
       const snapshot = await getDocs(q);
@@ -225,5 +232,35 @@ export class NotificheService implements OnDestroy {
       tipo: 'nuovo_follower',
     };
     await this.aggiungiNotifica(notifica);
+  }
+
+  // ⭐⭐ Metodo per pulire le notifiche scadute (più vecchie di 6 settimane) ⭐⭐
+  async cleanExpiredNotifications() {
+    try {
+      const sixWeeksAgo = new Date(Date.now() - this.NOTIFICATION_LIFESPAN_MS);
+      const notificheRef = collection(this.firestore, 'notifiche');
+
+      const q = query(
+        notificheRef,
+        where('timestamp', '<', Timestamp.fromDate(sixWeeksAgo))
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        console.log('Nessuna notifica da pulire.');
+        return;
+      }
+
+      const batch = writeBatch(this.firestore);
+      snapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      console.log(`Pulizia completata: eliminate ${snapshot.size} notifiche.`);
+    } catch (e) {
+      console.error("Errore durante la pulizia delle notifiche:", e);
+    }
   }
 }

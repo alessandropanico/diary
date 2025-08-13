@@ -41,18 +41,17 @@ export class AppComponent implements OnInit, OnDestroy {
   private searchTerms = new Subject<string>();
   private searchSubscription: Subscription | undefined;
 
-  // ⭐ Contatore per i messaggi non letti (chat singole + gruppi)
   totalUnreadMessages = 0;
-  // ⭐ Contatore per le notifiche dei post non lette
   totalUnreadNotifications = 0;
 
   private unreadChatCount = 0;
   private unreadGroupChatCount = 0;
   private unreadPostNotificationsCount = 0;
 
-
   firebaseIsLoggedIn: boolean | null = null;
   private onlineStatusUpdateSubscription: Subscription | undefined;
+  private cleanNotificationsSubscription: Subscription | undefined;
+
 
   constructor(
     private menu: MenuController,
@@ -81,8 +80,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
       if (isLoggedIn) {
         this.startOnlineStatusUpdater();
+        // ⭐ Correzione: Chiamo direttamente il metodo senza la condizione 'if' ⭐
+        this.startNotificationsCleaner();
       } else {
         this.stopOnlineStatusUpdater();
+        // ⭐ Correzione: Chiamo direttamente il metodo senza la condizione 'if' ⭐
+        this.stopNotificationsCleaner();
       }
     });
 
@@ -96,7 +99,6 @@ export class AppComponent implements OnInit, OnDestroy {
       this.updateCounters();
     });
 
-    // ⭐ AGGIORNATO: Sottoscrizione al nuovo Observable che conta le notifiche non lette
     this.unreadPostCountSub = this.notificheService.getNumeroNotificheNonLette().subscribe(count => {
       this.unreadPostNotificationsCount = count;
       this.updateCounters();
@@ -113,9 +115,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.searchSubscription?.unsubscribe();
     this.stopOnlineStatusUpdater();
     this.unreadPostCountSub?.unsubscribe();
+    this.stopNotificationsCleaner();
   }
 
-  // ⭐ Nuovo metodo per aggiornare entrambi i contatori
   private updateCounters() {
     this.ngZone.run(() => {
       this.totalUnreadMessages = this.unreadChatCount + this.unreadGroupChatCount;
@@ -141,6 +143,21 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.onlineStatusUpdateSubscription) {
       this.onlineStatusUpdateSubscription.unsubscribe();
       this.onlineStatusUpdateSubscription = undefined;
+    }
+  }
+
+  private startNotificationsCleaner() {
+    this.stopNotificationsCleaner();
+    this.notificheService.cleanExpiredNotifications();
+    this.cleanNotificationsSubscription = interval(1000 * 60 * 60 * 24).subscribe(() => {
+      this.notificheService.cleanExpiredNotifications();
+    });
+  }
+
+  private stopNotificationsCleaner() {
+    if (this.cleanNotificationsSubscription) {
+      this.cleanNotificationsSubscription.unsubscribe();
+      this.cleanNotificationsSubscription = undefined;
     }
   }
 
