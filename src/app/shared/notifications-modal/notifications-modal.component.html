@@ -10,16 +10,27 @@
 </ion-header>
 
 <ion-content class="ion-padding ff7-content">
-    <ion-list lines="full">
-        <ion-item *ngFor="let notifica of notifiche" [class.notifica-letta]="notifica.letta" [class.notifica-non-letta]="!notifica.letta" (click)="handleNotificationClick(notifica)">
-            <ion-icon slot="start" name="notifications-outline"></ion-icon>
-            <ion-label>
-                <h2>{{ notifica.titolo }}</h2>
-                <p>{{ notifica.messaggio }}</p>
-            </ion-label>
-        </ion-item>
-    </ion-list>
-    <div *ngIf="notifiche.length === 0" class="no-notifications">
+    <div *ngIf="isLoading" class="loading-spinner">
+        <ion-spinner name="crescent"></ion-spinner>
+    </div>
+
+    <ng-container *ngIf="!isLoading">
+        <ion-list lines="full">
+            <ion-item *ngFor="let notifica of notifiche" [class.notifica-letta]="notifica.letta" [class.notifica-non-letta]="!notifica.letta" (click)="handleNotificationClick(notifica)">
+                <ion-icon slot="start" name="notifications-outline"></ion-icon>
+                <ion-label>
+                    <h2>{{ notifica.titolo }}</h2>
+                    <p>{{ notifica.messaggio }}</p>
+                </ion-label>
+            </ion-item>
+        </ion-list>
+    </ng-container>
+
+    <div *ngIf="notifiche.length === 0 && !isLoading" class="no-notifications">
         <p>Nessuna notifica</p>
     </div>
+
+    <ion-infinite-scroll (ionInfinite)="loadMoreNotifications($event)">
+        <ion-infinite-scroll-content loadingSpinner="crescent" loadingText="Caricamento notifiche..."></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
 </ion-content>

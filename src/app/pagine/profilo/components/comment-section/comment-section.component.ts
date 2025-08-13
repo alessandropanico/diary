@@ -386,16 +386,16 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
       // ⭐⭐ NOVITÀ: Gestione delle notifiche per l'autore del post e per le menzioni ⭐⭐
       if (this.currentUserId !== this.postCreatorId && this.postCreatorId) {
-        const notificaPerAutore: Omit<Notifica, 'id' | 'dataCreazione'> = {
-          userId: this.postCreatorId,
-          titolo: 'Nuovo commento',
-          messaggio: `${this.currentUserUsername} ha commentato il tuo post.`,
-          postId: this.postId,
-          commentId: addedCommentId,
-          letta: false,
-          tipo: 'commento'
-        };
-        await this.notificheService.aggiungiNotifica(notificaPerAutore);
+      const notificaPerAutore: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
+    userId: this.postCreatorId,
+    titolo: 'Nuovo commento',
+    messaggio: `${this.currentUserUsername} ha commentato il tuo post.`,
+    postId: this.postId,
+    commentId: addedCommentId,
+    letta: false,
+    tipo: 'commento'
+};
+await this.notificheService.aggiungiNotifica(notificaPerAutore);
       }
 
       // Chiamata al nuovo metodo per gestire le menzioni

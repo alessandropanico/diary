@@ -1,10 +1,8 @@
-// src/app/services/notifiche.service.ts
-
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subscription } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subscription, of, from } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, query, where, orderBy, limit, addDoc, doc, updateDoc, getDocs, QuerySnapshot, DocumentData, DocumentReference, Firestore, serverTimestamp, onSnapshot, writeBatch } from '@angular/fire/firestore';
+import { getFirestore, collection, query, where, orderBy, limit, addDoc, doc, updateDoc, getDocs, QuerySnapshot, DocumentData, Firestore, serverTimestamp, startAfter, onSnapshot, writeBatch } from '@angular/fire/firestore';
 
 // Interfaccia per definire la struttura di una notifica
 export interface Notifica {
@@ -14,11 +12,11 @@ export interface Notifica {
   messaggio: string;
   letta: boolean;
   dataCreazione: any;
+  timestamp: any;
   link?: string;
   postId?: string;
   commentId?: string;
   projectId?: string;
-  // ⭐⭐ NOVITÀ: Aggiungi followerId per risolvere l'errore
   followerId?: string;
   tipo: 'nuovo_post' | 'mi_piace' | 'commento' | 'menzione_commento' | 'mi_piace_commento' | 'menzione_post' | 'invito_progetto' | 'nuovo_follower';
 }
@@ -30,10 +28,11 @@ export class NotificheService implements OnDestroy {
   private firestore: Firestore;
   private auth = getAuth();
   private currentUserId: string | null = null;
-  private notificheSubscription: Subscription | undefined;
+  private unreadCountSubscription: Subscription | undefined;
 
-  private _notifiche = new BehaviorSubject<Notifica[]>([]);
-  public notifiche$: Observable<Notifica[]> = this._notifiche.asObservable();
+  // ⭐ NOVITÀ: BehaviorSubject per il conteggio delle notifiche non lette
+  private _unreadCount = new BehaviorSubject<number>(0);
+  public unreadCount$: Observable<number> = this._unreadCount.asObservable();
   private notificationSound = new Audio('assets/sound/notification.mp3');
 
   constructor() {
@@ -41,29 +40,95 @@ export class NotificheService implements OnDestroy {
     onAuthStateChanged(this.auth, user => {
       if (user) {
         this.currentUserId = user.uid;
-        this.caricaNotifiche();
+        this.startUnreadCountListener();
       } else {
         this.currentUserId = null;
-        this._notifiche.next([]);
-        this.notificheSubscription?.unsubscribe();
+        this._unreadCount.next(0);
+        this.unreadCountSubscription?.unsubscribe();
       }
     });
   }
 
   ngOnDestroy() {
-    this.notificheSubscription?.unsubscribe();
+    this.unreadCountSubscription?.unsubscribe();
   }
 
-  async aggiungiNotifica(notifica: Omit<Notifica, 'id' | 'dataCreazione'>) {
+  // ⭐ NOVITÀ: Listener in tempo reale per le notifiche non lette
+  private startUnreadCountListener() {
+    if (!this.currentUserId) {
+      this._unreadCount.next(0);
+      return;
+    }
+
+    const notificheRef = collection(this.firestore, 'notifiche');
+    const q = query(
+      notificheRef,
+      where('userId', '==', this.currentUserId),
+      where('letta', '==', false)
+    );
+
+    this.unreadCountSubscription = new Observable<QuerySnapshot<DocumentData>>(observer => {
+      const unsubscribe = onSnapshot(q, observer);
+      return { unsubscribe };
+    }).pipe(
+      map(snapshot => snapshot.size)
+    ).subscribe({
+      next: (count) => {
+        this._unreadCount.next(count);
+      },
+      error: (err) => {
+        console.error('Errore nella sottoscrizione al conteggio delle notifiche non lette:', err);
+      }
+    });
+  }
+
+  // ⭐ AGGIORNATO: Restituisce l'Observable del conteggio
+  getNumeroNotificheNonLette(): Observable<number> {
+    return this.unreadCount$;
+  }
+
+  getNotifichePaginated(userId: string, limitCount: number, lastTimestamp: any | null = null): Observable<Notifica[]> {
+    if (!userId) {
+      return of([]);
+    }
+
+    let notificheQuery = query(
+      collection(this.firestore, 'notifiche'),
+      where('userId', '==', userId),
+      orderBy('timestamp', 'desc'),
+      limit(limitCount)
+    );
+
+    if (lastTimestamp) {
+      notificheQuery = query(notificheQuery, startAfter(lastTimestamp));
+    }
+
+    return from(getDocs(notificheQuery)).pipe(
+      map((querySnapshot: QuerySnapshot<DocumentData>) => {
+        const notifiche: Notifica[] = [];
+        querySnapshot.forEach(doc => {
+          notifiche.push({ id: doc.id, ...doc.data() as Notifica });
+        });
+        return notifiche;
+      }),
+      catchError(error => {
+        console.error('Errore nel caricamento delle notifiche paginato:', error);
+        return of([]);
+      })
+    );
+  }
+
+  async aggiungiNotifica(notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'>) {
     if (!notifica.userId) {
       console.error("ID utente non specificato per la notifica.");
       return;
     }
     try {
-      const docRef = await addDoc(collection(this.firestore, 'notifiche'), {
+      await addDoc(collection(this.firestore, 'notifiche'), {
         ...notifica,
         letta: false,
-        dataCreazione: serverTimestamp()
+        dataCreazione: serverTimestamp(),
+        timestamp: serverTimestamp()
       });
       this.playNotificationSound();
     } catch (e) {
@@ -72,7 +137,7 @@ export class NotificheService implements OnDestroy {
   }
 
   async aggiungiNotificaMenzionePost(taggedUserId: string, taggingUsername: string, postId: string) {
-    const notifica: Omit<Notifica, 'id' | 'dataCreazione'> = {
+    const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
       userId: taggedUserId,
       titolo: 'Sei stato menzionato in un post!',
       messaggio: `${taggingUsername} ti ha menzionato in un post.`,
@@ -85,7 +150,7 @@ export class NotificheService implements OnDestroy {
   }
 
   async aggiungiNotificaMenzioneCommento(taggedUserId: string, taggingUsername: string, postId: string, commentId: string) {
-    const notifica: Omit<Notifica, 'id' | 'dataCreazione'> = {
+    const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
       userId: taggedUserId,
       titolo: 'Sei stato menzionato in un commento!',
       messaggio: `${taggingUsername} ti ha menzionato in un commento.`,
@@ -99,7 +164,7 @@ export class NotificheService implements OnDestroy {
   }
 
   async aggiungiNotificaProgetto(invitedUserId: string, invitingUsername: string, projectId: string, projectName: string) {
-    const notifica: Omit<Notifica, 'id' | 'dataCreazione'> = {
+    const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
       userId: invitedUserId,
       titolo: 'Sei stato aggiunto a un progetto!',
       messaggio: `${invitingUsername} ti ha aggiunto al progetto: ${projectName}.`,
@@ -111,50 +176,15 @@ export class NotificheService implements OnDestroy {
     await this.aggiungiNotifica(notifica);
   }
 
-  private caricaNotifiche() {
-    if (!this.currentUserId) {
-      return;
-    }
-    const notificheRef = collection(this.firestore, 'notifiche');
-    const q = query(
-      notificheRef,
-      where('userId', '==', this.currentUserId),
-      orderBy('dataCreazione', 'desc'),
-      limit(50)
-    );
-
-    this.notificheSubscription = new Observable<QuerySnapshot<DocumentData>>(observer => {
-      const unsubscribe = onSnapshot(q, observer);
-      return { unsubscribe };
-    }).pipe(
-      map(snapshot => {
-        const notifiche: Notifica[] = [];
-        snapshot.forEach(doc => {
-          notifiche.push({ id: doc.id, ...doc.data() as Notifica });
-        });
-        return notifiche;
-      })
-    ).subscribe({
-      next: (notifiche) => {
-        this._notifiche.next(notifiche);
-      },
-      error: (err) => {
-        console.error('Errore nella sottoscrizione alle notifiche:', err);
-      }
-    });
-  }
-
   private playNotificationSound() {
     // this.notificationSound.play().catch(e => console.error("Errore nella riproduzione del suono:", e));
   }
 
-  getNumeroNotificheNonLette(): Observable<number> {
-    return this.notifiche$.pipe(
-      map(notifiche => notifiche.filter(n => !n.letta).length)
-    );
-  }
-
-  async segnaComeLetta(notificaId: string) {
+  async segnaComeLetta(notificaId: string, userId: string) {
+    if (!userId) {
+      console.error("ID utente non specificato per segnare la notifica come letta.");
+      return;
+    }
     try {
       const notificaRef = doc(this.firestore, 'notifiche', notificaId);
       await updateDoc(notificaRef, { letta: true });
@@ -186,7 +216,7 @@ export class NotificheService implements OnDestroy {
   }
 
   async aggiungiNotificaNuovoFollower(followedUserId: string, followerUsername: string, followerId: string) {
-    const notifica: Omit<Notifica, 'id' | 'dataCreazione'> = {
+    const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
       userId: followedUserId,
       titolo: 'Hai un nuovo follower!',
       messaggio: `${followerUsername} ha iniziato a seguirti.`,

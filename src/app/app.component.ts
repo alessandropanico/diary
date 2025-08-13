@@ -1,5 +1,3 @@
-// src/app/app.component.ts
-
 import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
 import { MenuController, AlertController, ModalController } from '@ionic/angular';
 import { Subject, Subscription, interval } from 'rxjs';
@@ -98,8 +96,9 @@ export class AppComponent implements OnInit, OnDestroy {
       this.updateCounters();
     });
 
-    this.unreadPostCountSub = this.notificheService.notifiche$.subscribe(notifiche => {
-      this.unreadPostNotificationsCount = notifiche.filter(n => !n.letta).length;
+    // ⭐ AGGIORNATO: Sottoscrizione al nuovo Observable che conta le notifiche non lette
+    this.unreadPostCountSub = this.notificheService.getNumeroNotificheNonLette().subscribe(count => {
+      this.unreadPostNotificationsCount = count;
       this.updateCounters();
     });
 
