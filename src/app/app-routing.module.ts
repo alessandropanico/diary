@@ -14,11 +14,13 @@ const routes: Routes = [
   },
   {
     path: 'sveglie',
-    loadChildren: () => import('./pagine/sveglie/sveglie.module').then(m => m.SvegliePageModule)
+    loadChildren: () => import('./pagine/sveglie/sveglie.module').then(m => m.SvegliePageModule),
+    canActivate: [AuthGuard]
   },
   {
     path: 'list-task',
-    loadChildren: () => import('./pagine/list-task/list-task.module').then(m => m.ListTaskPageModule)
+    loadChildren: () => import('./pagine/list-task/list-task.module').then(m => m.ListTaskPageModule),
+    canActivate: [AuthGuard]
   },
   {
     path: 'galleria',
@@ -26,7 +28,8 @@ const routes: Routes = [
   },
   {
     path: 'note',
-    loadChildren: () => import('./pagine/note/note.module').then(m => m.NotePageModule)
+    loadChildren: () => import('./pagine/note/note.module').then(m => m.NotePageModule),
+    canActivate: [AuthGuard]
   },
   {
     path: 'riconoscimenti',
@@ -85,11 +88,13 @@ const routes: Routes = [
   },
   {
     path: 'diario',
-    loadChildren: () => import('./pagine/diario/diario.module').then( m => m.DiarioPageModule)
+    loadChildren: () => import('./pagine/diario/diario.module').then( m => m.DiarioPageModule),
+    canActivate: [AuthGuard]
   },
   {
     path: 'classifica',
-    loadChildren: () => import('./pagine/classifica/classifica.module').then( m => m.ClassificaPageModule)
+    loadChildren: () => import('./pagine/classifica/classifica.module').then( m => m.ClassificaPageModule),
+    canActivate: [AuthGuard]
   },
   {
     path: 'chat-gruppo',
@@ -97,7 +102,8 @@ const routes: Routes = [
   },
   {
     path: 'progetti',
-    loadChildren: () => import('./pagine/progetti/progetti.module').then( m => m.ProgettiPageModule)
+    loadChildren: () => import('./pagine/progetti/progetti.module').then( m => m.ProgettiPageModule),
+    canActivate: [AuthGuard]
   },
    {
     // ⭐ Rotta per il dettaglio del progetto, ora con il percorso corretto ⭐
@@ -106,7 +112,8 @@ const routes: Routes = [
   },
   {
     path: 'notizie',
-    loadChildren: () => import('./pagine/notizie/notizie.module').then( m => m.NotiziePageModule)
+    loadChildren: () => import('./pagine/notizie/notizie.module').then( m => m.NotiziePageModule),
+    canActivate: [AuthGuard]
   },
   {
     path: 'notizia-singola',
