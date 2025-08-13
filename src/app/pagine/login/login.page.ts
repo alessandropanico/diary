@@ -6,11 +6,13 @@ import { Router } from '@angular/router';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { environment } from 'src/environments/environment';
-import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
+import { UserDataService } from 'src/app/services/user-data.service';
 import { PresenceService } from 'src/app/services/presence.service';
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
 
 const app = initializeApp(environment.firebaseConfig);
 const auth = getAuth(app);
+const firestore = getFirestore(app);
 
 declare const google: any;
 
@@ -86,28 +88,46 @@ export class LoginPage implements OnInit, OnDestroy {
       const credential = GoogleAuthProvider.credential(response.credential);
       const userCredential = await signInWithCredential(auth, credential);
       const firebaseUser = userCredential.user;
+      const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
 
       // ⭐ MODIFICA CHIAVE QUI ⭐
-      // Prepara un oggetto di dati che include SOLO le informazioni di login
-      // e quelle fornite da Google. Non includere campi come nickname, bio o XP,
-      // per evitare di sovrascriverli.
-      const dataToUpdate = {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email || '',
-        lastLogin: new Date().toISOString(),
-        lastOnline: new Date().toISOString(),
-        name: firebaseUser.displayName || '',
-        profilePictureUrl: firebaseUser.photoURL || '',
-      };
+      // Controlla se il documento utente esiste già.
+      if (!userDocSnap.exists()) {
+        // È un NUOVO UTENTE, creiamo il documento con tutti i valori predefiniti
+        const initialData = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          lastLogin: new Date().toISOString(),
+          lastOnline: new Date().toISOString(),
+          name: firebaseUser.displayName || '',
+          profilePictureUrl: firebaseUser.photoURL || '',
+          totalXP: 0,
+          nickname: '',
+          surname: '',
+          bio: '',
+          nicknameLowercase: (firebaseUser.displayName || '').toLowerCase().trim(),
+          nameLowercase: (firebaseUser.displayName || '').toLowerCase().trim(),
+          followersCount: 0,
+          followingCount: 0,
+          status: '',
+          // Aggiungi qui tutti gli altri campi che vuoi inizializzare per un nuovo utente
+        };
+        await this.userDataService.saveUserData(initialData);
 
-      // Aggiorna solo questi campi. Grazie al `merge: true` del tuo servizio,
-      // gli altri campi come `nickname` e `bio` non verranno toccati.
-      await this.userDataService.saveUserData(dataToUpdate);
+      } else {
+        // È un UTENTE ESISTENTE, aggiorniamo solo i campi di sessione
+        const dataToUpdate = {
+          lastLogin: new Date().toISOString(),
+          lastOnline: new Date().toISOString(),
+          profilePictureUrl: firebaseUser.photoURL || '', // Aggiorniamo la foto del profilo solo se Google ne fornisce una
+        };
+        await this.userDataService.saveUserData(dataToUpdate);
+      }
 
       // ⭐ NOVITÀ ⭐
-      // Dopo il login, ricarica esplicitamente tutti i dati dell'utente
-      // dal database. Questo assicura che il nickname, la bio e l'XP
-      // vengano caricati e siano disponibili per la pagina del profilo.
+      // Dopo il login, carichiamo esplicitamente tutti i dati dal database
+      // per aggiornare lo stato locale dell'app. Questo è il passo più importante.
       await this.userDataService.getUserData();
 
       const alert = await this.alertCtrl.create({
