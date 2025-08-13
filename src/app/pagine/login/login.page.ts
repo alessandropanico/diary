@@ -87,10 +87,10 @@ export class LoginPage implements OnInit, OnDestroy {
       const userCredential = await signInWithCredential(auth, credential);
       const firebaseUser = userCredential.user;
 
-      // ⭐ MODIFICA QUI ⭐
-      // Prepara un oggetto di dati completo da salvare su Firestore.
-      // Per gli utenti esistenti, grazie a `merge: true`,
-      // i campi come totalXP non verranno sovrascritti.
+      // ⭐ MODIFICA CHIAVE QUI ⭐
+      // Prepara un oggetto di dati che include SOLO le informazioni di login
+      // e quelle fornite da Google. Non includere campi come nickname, bio o XP,
+      // per evitare di sovrascriverli.
       const dataToUpdate = {
         uid: firebaseUser.uid,
         email: firebaseUser.email || '',
@@ -98,14 +98,17 @@ export class LoginPage implements OnInit, OnDestroy {
         lastOnline: new Date().toISOString(),
         name: firebaseUser.displayName || '',
         profilePictureUrl: firebaseUser.photoURL || '',
-        totalXP: 0,
-        nickname: '',
-        surname: '',
-        bio: '',
-        // Aggiungi altri campi qui se necessario
       };
 
+      // Aggiorna solo questi campi. Grazie al `merge: true` del tuo servizio,
+      // gli altri campi come `nickname` e `bio` non verranno toccati.
       await this.userDataService.saveUserData(dataToUpdate);
+
+      // ⭐ NOVITÀ ⭐
+      // Dopo il login, ricarica esplicitamente tutti i dati dell'utente
+      // dal database. Questo assicura che il nickname, la bio e l'XP
+      // vengano caricati e siano disponibili per la pagina del profilo.
+      await this.userDataService.getUserData();
 
       const alert = await this.alertCtrl.create({
         header: 'Accesso riuscito',
