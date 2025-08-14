@@ -548,7 +548,7 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
 
   getUserAvatarById(userId: string, usersMap?: Map<string, UserDashboardCounts>): string | undefined {
     const userProfile = usersMap?.get(userId) || this.usersCache.get(userId);
-    return userProfile ? this.getUserPhoto(userProfile.profilePictureUrl || userProfile.photo) : undefined;
+    return userProfile ? this.getUserPhoto(userProfile.photo) : undefined;
   }
 
   getLikedUserName(userId: string, usersMap?: Map<string, UserDashboardCounts>): string {
