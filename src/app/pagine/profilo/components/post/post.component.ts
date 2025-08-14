@@ -1,3 +1,5 @@
+// src/app/components/post/post.component.ts
+
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,7 +22,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 interface PostWithUserDetails extends Post {
   likesUsersMap?: Map<string, UserDashboardCounts>;
   formattedText?: SafeHtml;
-  creatorData?: UserDashboardCounts; // ⭐ NOVITÀ: Aggiunto per memorizzare i dati aggiornati del creatore del post
+  creatorData?: UserDashboardCounts;
 }
 
 export interface TagUser {
@@ -142,7 +144,6 @@ export class PostComponent implements OnInit, OnDestroy {
       }
     });
   }
-
 
   ngOnDestroy(): void {
     this.unsubscribeAll();
@@ -416,8 +417,8 @@ export class PostComponent implements OnInit, OnDestroy {
 
     const newPost: Omit<Post, 'id' | 'likes' | 'commentsCount'> = {
       userId: this.currentUserId,
-      username: this.currentUserUsername,
-      userAvatarUrl: this.currentUserAvatar,
+      username: this.currentUserUsername, // Aggiunto per soddisfare l'interfaccia
+      userAvatarUrl: this.currentUserAvatar, // Aggiunto per soddisfare l'interfaccia
       text: this.newPostText.trim(),
       timestamp: new Date().toISOString(),
     };
@@ -576,7 +577,7 @@ export class PostComponent implements OnInit, OnDestroy {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: `Post di ${post.username} su NexusPlan`,
+          title: `Post di ${this.getUserNickname(post.userId)} su NexusPlan`,
           text: shareText,
           url: postSpecificLink,
         });
@@ -758,13 +759,16 @@ export class PostComponent implements OnInit, OnDestroy {
     return userProfile?.nickname || 'Utente sconosciuto';
   }
 
-  // ⭐ NOVITÀ: Metodo per ottenere l'avatar del creatore del post, usando i dati più recenti
   getPostUserPhoto(post: PostWithUserDetails): string {
     if (post.creatorData) {
       return this.getUserPhoto(post.creatorData.photo || post.creatorData.profilePictureUrl);
     }
-    // Fallback se i dati del creatore non sono disponibili
     return this.getUserPhoto(post.userAvatarUrl);
+  }
+
+  getUserNickname(userId: string): string {
+    const userProfile = this.usersCache.get(userId);
+    return userProfile?.nickname || 'Utente sconosciuto';
   }
 
   async openCommentsModal(post: Post) {
@@ -772,8 +776,7 @@ export class PostComponent implements OnInit, OnDestroy {
       component: CommentsModalComponent,
       componentProps: {
         postId: post.id,
-        postCreatorAvatar: this.getPostUserPhoto(post), // ⭐ MODIFICA: Utilizza il nuovo metodo
-        postCreatorUsername: post.username,
+        postCreatorId: post.userId,
         postText: post.text
       },
       cssClass: 'my-custom-comments-modal',

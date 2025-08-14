@@ -56,7 +56,7 @@
       <img [src]="getPostUserPhoto(post)" alt="User Avatar">
     </div>
     <div class="post-info">
-      <span class="post-username" (click)="goToUserProfile(post.userId)">{{ post.username }}</span>
+      <span class="post-username" (click)="goToUserProfile(post.userId)">{{ getUserNickname(post.userId) }}</span>
       <span class="post-time">{{ formatPostTime(post.timestamp) }}</span>
     </div>
     <button *ngIf="post.userId === currentUserId" class="app-button delete-button"
@@ -66,8 +66,8 @@
   </div>
 
   <div class="post-content" (click)="onPostTextClick($event)">
-  <p class="post-text" [innerHTML]="post.formattedText"></p>
-</div>
+    <p class="post-text" [innerHTML]="post.formattedText"></p>
+  </div>
 
   <div class="post-likes-info" *ngIf="post.likes && post.likes.length > 0" (click)="openLikesModal(post.id)">
     <div class="liked-avatars-preview">
