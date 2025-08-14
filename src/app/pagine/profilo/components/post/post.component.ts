@@ -167,146 +167,23 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
- loadInitialPosts() {
-  this.isLoadingPosts = true;
-  this.postsSubscription?.unsubscribe();
-  this.lastPostTimestamp = null;
-  this.canLoadMore = true;
+  loadInitialPosts() {
+    this.isLoadingPosts = true;
+    this.postsSubscription?.unsubscribe();
+    this.lastPostTimestamp = null;
+    this.canLoadMore = true;
 
-  this.showCommentsModal = false;
-  this.selectedPostIdForComments = null;
-  this.selectedPostForComments = null;
-  this.showLikesModal = false;
-  this.selectedPostIdForLikes = null;
+    this.showCommentsModal = false;
+    this.selectedPostIdForComments = null;
+    this.selectedPostForComments = null;
+    this.showLikesModal = false;
+    this.selectedPostIdForLikes = null;
 
-  if (this.infiniteScroll) {
-    this.infiniteScroll.disabled = false;
-    this.infiniteScroll.complete();
-  }
-
-  let postsObservable: Observable<Post[]>;
-  if (this.userIdToDisplayPosts) {
-    postsObservable = this.postService.getUserPosts(this.userIdToDisplayPosts, this.postsLimit, this.lastPostTimestamp);
-  } else {
-    postsObservable = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp);
-  }
-
-  this.postsSubscription = postsObservable.pipe(
-    switchMap(postsData => {
-      if (!postsData || postsData.length === 0) {
-        return of([]);
-      }
-
-      const postObservables = postsData.map(post => {
-        const likedUserIds = (post.likes || []).slice(0, 3);
-
-        // --- Recupero utenti che hanno messo like ---
-        const userPromises = likedUserIds.map(userId => {
-          return from(this.userDataService.getUserDataByUid(userId)).pipe(
-            map(userData => {
-              if (userData) {
-                const cachedUser = this.usersCache.get(userId);
-                if (
-                  !cachedUser ||
-                  cachedUser.photo !== userData.photo ||
-                  cachedUser.profilePictureUrl !== userData.profilePictureUrl ||
-                  cachedUser.nickname !== userData.nickname
-                ) {
-                  this.usersCache.set(userId, userData);
-                }
-              }
-              return userData;
-            }),
-            catchError(err => {
-              console.error(`Errore nel caricamento dati utente ${userId}:`, err);
-              return of(null);
-            }),
-            take(1)
-          );
-        });
-
-        // --- Recupero autore del post ---
-        const postCreatorPromise = from(this.userDataService.getUserDataByUid(post.userId)).pipe(
-          map(userData => {
-            if (userData) {
-              const cachedUser = this.usersCache.get(post.userId);
-              if (
-                !cachedUser ||
-                cachedUser.photo !== userData.photo ||
-                cachedUser.profilePictureUrl !== userData.profilePictureUrl ||
-                cachedUser.nickname !== userData.nickname
-              ) {
-                this.usersCache.set(post.userId, userData);
-              }
-            }
-            return userData;
-          }),
-          catchError(err => {
-            console.error(`Errore nel caricamento dati del creatore del post ${post.userId}:`, err);
-            return of(null);
-          }),
-          take(1)
-        );
-
-        return combineLatest(userPromises.length > 0 ? [...userPromises, postCreatorPromise] : [postCreatorPromise]).pipe(
-          map(results => {
-            const creatorData = results.pop();
-            const likedUsersProfiles = results as UserDashboardCounts[];
-            const likedUsersMap = new Map<string, UserDashboardCounts>();
-            likedUsersProfiles.forEach(profile => {
-              if (profile) {
-                likedUsersMap.set(profile.uid, profile);
-              }
-            });
-            return { ...post, likesUsersMap: likedUsersMap, creatorData: creatorData } as PostWithUserDetails;
-          })
-        );
-      });
-
-      return combineLatest(postObservables);
-    }),
-    map(postsWithDetails => {
-      return postsWithDetails.map(post => ({
-        ...post,
-        formattedText: this.formatPostContent(post.text)
-      }));
-    })
-  ).subscribe({
-    next: (postsWithDetails) => {
-      this.posts = postsWithDetails;
-      this.isLoadingPosts = false;
-      if (this.posts.length > 0) {
-        this.lastPostTimestamp = this.posts[this.posts.length - 1].timestamp;
-      }
-      if (postsWithDetails.length < this.postsLimit) {
-        this.canLoadMore = false;
-        if (this.infiniteScroll) {
-          this.infiniteScroll.disabled = true;
-        }
-      }
-      this.cdr.detectChanges();
-    },
-    error: (error) => {
-      console.error('Errore nel caricamento iniziale dei post:', error);
-      this.isLoadingPosts = false;
-      this.presentAppAlert('Errore di caricamento', 'Impossibile caricare i post. Verifica la tua connessione.');
-      this.canLoadMore = false;
-      if (this.infiniteScroll) {
-        this.infiniteScroll.disabled = true;
-      }
-      this.cdr.detectChanges();
+    if (this.infiniteScroll) {
+      this.infiniteScroll.disabled = false;
+      this.infiniteScroll.complete();
     }
-  });
-}
 
-async loadMorePosts(event: Event) {
-  const infiniteScrollTarget = event.target as unknown as IonInfiniteScroll;
-  if (!this.canLoadMore) {
-    infiniteScrollTarget.complete();
-    return;
-  }
-
-  try {
     let postsObservable: Observable<Post[]>;
     if (this.userIdToDisplayPosts) {
       postsObservable = this.postService.getUserPosts(this.userIdToDisplayPosts, this.postsLimit, this.lastPostTimestamp);
@@ -315,14 +192,15 @@ async loadMorePosts(event: Event) {
     }
 
     this.postsSubscription = postsObservable.pipe(
-      switchMap(newPostsData => {
-        if (!newPostsData || newPostsData.length === 0) {
+      switchMap(postsData => {
+        if (!postsData || postsData.length === 0) {
           return of([]);
         }
 
-        const newPostObservables = newPostsData.map(post => {
+        const postObservables = postsData.map(post => {
           const likedUserIds = (post.likes || []).slice(0, 3);
 
+          // --- Recupero utenti che hanno messo like ---
           const userPromises = likedUserIds.map(userId => {
             return from(this.userDataService.getUserDataByUid(userId)).pipe(
               map(userData => {
@@ -347,6 +225,7 @@ async loadMorePosts(event: Event) {
             );
           });
 
+          // --- Recupero autore del post ---
           const postCreatorPromise = from(this.userDataService.getUserDataByUid(post.userId)).pipe(
             map(userData => {
               if (userData) {
@@ -384,50 +263,171 @@ async loadMorePosts(event: Event) {
           );
         });
 
-        return combineLatest(newPostObservables);
+        return combineLatest(postObservables);
       }),
-      map(newPostsWithDetails => {
-        return newPostsWithDetails.map(post => ({
+      map(postsWithDetails => {
+        return postsWithDetails.map(post => ({
           ...post,
           formattedText: this.formatPostContent(post.text)
         }));
       })
     ).subscribe({
-      next: (newPostsWithDetails) => {
-        this.posts = [...this.posts, ...newPostsWithDetails];
-        if (newPostsWithDetails.length > 0) {
+      next: (postsWithDetails) => {
+        this.posts = postsWithDetails;
+        this.isLoadingPosts = false;
+        if (this.posts.length > 0) {
           this.lastPostTimestamp = this.posts[this.posts.length - 1].timestamp;
         }
-
-        if (newPostsWithDetails.length < this.postsLimit) {
+        if (postsWithDetails.length < this.postsLimit) {
           this.canLoadMore = false;
           if (this.infiniteScroll) {
             this.infiniteScroll.disabled = true;
           }
         }
         this.cdr.detectChanges();
-        infiniteScrollTarget.complete();
       },
       error: (error) => {
-        console.error('Errore nel caricamento di altri post:', error);
-        this.presentAppAlert('Errore di caricamento', 'Impossibile caricare altri post. Riprova.');
+        console.error('Errore nel caricamento iniziale dei post:', error);
+        this.isLoadingPosts = false;
+        this.presentAppAlert('Errore di caricamento', 'Impossibile caricare i post. Verifica la tua connessione.');
         this.canLoadMore = false;
         if (this.infiniteScroll) {
           this.infiniteScroll.disabled = true;
         }
         this.cdr.detectChanges();
-        infiniteScrollTarget.complete();
       }
     });
-  } catch (error) {
-    console.error('Errore generico in loadMorePosts:', error);
-    this.canLoadMore = false;
-    if (this.infiniteScroll) {
-      this.infiniteScroll.disabled = true;
-    }
-    infiniteScrollTarget.complete();
   }
-}
+
+  async loadMorePosts(event: Event) {
+    const infiniteScrollTarget = event.target as unknown as IonInfiniteScroll;
+    if (!this.canLoadMore) {
+      infiniteScrollTarget.complete();
+      return;
+    }
+
+    try {
+      let postsObservable: Observable<Post[]>;
+      if (this.userIdToDisplayPosts) {
+        postsObservable = this.postService.getUserPosts(this.userIdToDisplayPosts, this.postsLimit, this.lastPostTimestamp);
+      } else {
+        postsObservable = this.postService.getPosts(this.postsLimit, this.lastPostTimestamp);
+      }
+
+      this.postsSubscription = postsObservable.pipe(
+        switchMap(newPostsData => {
+          if (!newPostsData || newPostsData.length === 0) {
+            return of([]);
+          }
+
+          const newPostObservables = newPostsData.map(post => {
+            const likedUserIds = (post.likes || []).slice(0, 3);
+
+            const userPromises = likedUserIds.map(userId => {
+              return from(this.userDataService.getUserDataByUid(userId)).pipe(
+                map(userData => {
+                  if (userData) {
+                    const cachedUser = this.usersCache.get(userId);
+                    if (
+                      !cachedUser ||
+                      cachedUser.photo !== userData.photo ||
+                      cachedUser.profilePictureUrl !== userData.profilePictureUrl ||
+                      cachedUser.nickname !== userData.nickname
+                    ) {
+                      this.usersCache.set(userId, userData);
+                    }
+                  }
+                  return userData;
+                }),
+                catchError(err => {
+                  console.error(`Errore nel caricamento dati utente ${userId}:`, err);
+                  return of(null);
+                }),
+                take(1)
+              );
+            });
+
+            const postCreatorPromise = from(this.userDataService.getUserDataByUid(post.userId)).pipe(
+              map(userData => {
+                if (userData) {
+                  const cachedUser = this.usersCache.get(post.userId);
+                  if (
+                    !cachedUser ||
+                    cachedUser.photo !== userData.photo ||
+                    cachedUser.profilePictureUrl !== userData.profilePictureUrl ||
+                    cachedUser.nickname !== userData.nickname
+                  ) {
+                    this.usersCache.set(post.userId, userData);
+                  }
+                }
+                return userData;
+              }),
+              catchError(err => {
+                console.error(`Errore nel caricamento dati del creatore del post ${post.userId}:`, err);
+                return of(null);
+              }),
+              take(1)
+            );
+
+            return combineLatest(userPromises.length > 0 ? [...userPromises, postCreatorPromise] : [postCreatorPromise]).pipe(
+              map(results => {
+                const creatorData = results.pop();
+                const likedUsersProfiles = results as UserDashboardCounts[];
+                const likedUsersMap = new Map<string, UserDashboardCounts>();
+                likedUsersProfiles.forEach(profile => {
+                  if (profile) {
+                    likedUsersMap.set(profile.uid, profile);
+                  }
+                });
+                return { ...post, likesUsersMap: likedUsersMap, creatorData: creatorData } as PostWithUserDetails;
+              })
+            );
+          });
+
+          return combineLatest(newPostObservables);
+        }),
+        map(newPostsWithDetails => {
+          return newPostsWithDetails.map(post => ({
+            ...post,
+            formattedText: this.formatPostContent(post.text)
+          }));
+        })
+      ).subscribe({
+        next: (newPostsWithDetails) => {
+          this.posts = [...this.posts, ...newPostsWithDetails];
+          if (newPostsWithDetails.length > 0) {
+            this.lastPostTimestamp = this.posts[this.posts.length - 1].timestamp;
+          }
+
+          if (newPostsWithDetails.length < this.postsLimit) {
+            this.canLoadMore = false;
+            if (this.infiniteScroll) {
+              this.infiniteScroll.disabled = true;
+            }
+          }
+          this.cdr.detectChanges();
+          infiniteScrollTarget.complete();
+        },
+        error: (error) => {
+          console.error('Errore nel caricamento di altri post:', error);
+          this.presentAppAlert('Errore di caricamento', 'Impossibile caricare altri post. Riprova.');
+          this.canLoadMore = false;
+          if (this.infiniteScroll) {
+            this.infiniteScroll.disabled = true;
+          }
+          this.cdr.detectChanges();
+          infiniteScrollTarget.complete();
+        }
+      });
+    } catch (error) {
+      console.error('Errore generico in loadMorePosts:', error);
+      this.canLoadMore = false;
+      if (this.infiniteScroll) {
+        this.infiniteScroll.disabled = true;
+      }
+      infiniteScrollTarget.complete();
+    }
+  }
 
 
 
