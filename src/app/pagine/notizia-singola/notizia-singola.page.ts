@@ -135,7 +135,7 @@ export class NotiziaSingolaPage implements OnInit, OnDestroy {
             ...postData,
             likesUsersMap: likedUsersMap,
             username: authorData?.nickname || 'Utente Sconosciuto',
-            userAvatarUrl: this.getUserPhoto(authorData?.profilePictureUrl || authorData?.photo),
+            userAvatarUrl: this.getUserPhoto(authorData?.photo),
             formattedText: this.formatPostContent(postData.text)
           } as PostWithUserDetails;
 
