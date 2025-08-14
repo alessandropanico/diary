@@ -208,7 +208,7 @@ export class NotiziePage implements OnInit, OnDestroy {
           return {
             ...post,
             username: postUserProfile?.nickname || 'Utente Sconosciuto',
-            userPhoto: this.getUserPhoto(postUserProfile?.profilePictureUrl || postUserProfile?.photo),
+            userPhoto: this.getUserPhoto(postUserProfile?.photo),
             likesUsersMap: likedUsersMap,
             formattedText: this.formatPostContent(post.text as string), // ⭐ MODIFICA: Chiama il metodo per formattare il testo
           } as PostWithUserDetails;
