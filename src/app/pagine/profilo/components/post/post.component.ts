@@ -805,7 +805,9 @@ async loadMorePosts(event: Event) {
       componentProps: {
         postId: post.id,
         postCreatorId: post.userId,
-        postText: post.text
+        postText: post.text,
+        postCreatorUsername: this.getUserNickname(post.userId),
+        postCreatorAvatar: this.getPostUserPhoto(post)
       },
       cssClass: 'my-custom-comments-modal',
       mode: 'ios',
