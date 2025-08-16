@@ -572,7 +572,8 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
         postId: post.id,
         postCreatorAvatar: this.getPostUserPhoto(post as PostWithUserDetails), // ⭐ MODIFICA: Utilizza il nuovo metodo
         postCreatorUsername: post.username,
-        postText: post.text
+        postText: post.text,
+        postCreatorId: post.userId // Questo è l'ID del creatore del post
       },
       cssClass: 'my-custom-comments-modal',
       mode: 'ios',
