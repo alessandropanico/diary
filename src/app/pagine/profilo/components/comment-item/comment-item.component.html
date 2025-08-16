@@ -1,4 +1,4 @@
-<div class="comment-card" [class.is-reply]="nestingLevel > 0"
+<div class="comment-card" [id]="'comment-' + comment.id" [class.is-reply]="nestingLevel > 0"
   [ngClass]="{'highlighted-comment': comment.id === commentIdToHighlight}">
   <div [class]="nestingLevel === 0 ? 'comment-header' : 'reply-header'">
     <ion-avatar (click)="onGoToProfile()" [class]="nestingLevel === 0 ? 'post-avatar' : 'reply-avatar'">

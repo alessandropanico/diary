@@ -9,7 +9,6 @@
     <div *ngIf="comments.length > 0; else noComments" class="comments-list-wrapper">
       <app-comment-item
         *ngFor="let comment of comments"
-        [id]="'comment-' + comment.id"
         [comment]="comment"
         [currentUserId]="currentUserId"
         [nestingLevel]="0"
