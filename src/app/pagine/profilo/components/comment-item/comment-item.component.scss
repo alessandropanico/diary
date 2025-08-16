@@ -21,6 +21,7 @@
   margin-bottom: 10px;
   width: 100%;
   background: rgba(20, 25, 50, 0.95);
+  transition: all 0.5s ease-in-out;
 
   &.is-reply {
     background: rgba(20, 25, 50, 0.7);
