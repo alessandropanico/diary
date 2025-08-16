@@ -23,6 +23,7 @@ import { Notifica, NotificheService } from 'src/app/services/notifiche.service';
 export interface CommentWithUserData extends Comment {
   username: string;
   userAvatarUrl: string;
+  replies?: CommentWithUserData[]; // Aggiunto per maggiore chiarezza nel tipo
 }
 
 // ⭐⭐ NOVITÀ: Creazione di un'interfaccia che rispecchia i dati da salvare
@@ -216,6 +217,9 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     try {
+      // ⚠️ ATTENZIONE: Il tuo `CommentService` deve restituire i commenti principali
+      // già con le risposte annidate. La funzione `getCommentsForPostOnce` deve
+      // essere modificata per fare questo.
       const result: CommentFetchResult = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
       this.comments = await this.populateUserData(result.comments);
       this.canLoadMoreComments = result.hasMore;
@@ -254,6 +258,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     this.cdr.detectChanges();
 
     try {
+      // ⚠️ ATTENZIONE: Anche questa chiamata deve restituire i commenti annidati.
       const result: CommentFetchResult = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
 
       if (result.comments.length > 0) {

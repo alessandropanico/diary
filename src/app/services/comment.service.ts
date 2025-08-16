@@ -1,3 +1,5 @@
+// src/app/services/comment.service.ts
+
 import { inject, Injectable } from '@angular/core';
 import {
   Firestore,
@@ -92,12 +94,10 @@ export class CommentService {
     const commentToSave = {
       ...commentData,
       id: newCommentRef.id,
-      timestamp: serverTimestamp(), // ⭐ MODIFICA QUI ⭐
+      timestamp: serverTimestamp(),
       likes: [],
-      replies: [],
       isRootComment: commentData.parentId === null
     };
-
 
     try {
       await setDoc(newCommentRef, commentToSave);
@@ -110,7 +110,6 @@ export class CommentService {
   }
 
   private convertTimestampToISOString(timestamp: any): string {
-
     if (timestamp && typeof timestamp === 'object' && 'toDate' in timestamp) {
       return timestamp.toDate().toISOString();
     }
@@ -192,7 +191,7 @@ export class CommentService {
             username: data['username'],
             userAvatarUrl: data['userAvatarUrl'],
             text: data['text'],
-            timestamp: this.convertTimestampToISOString(data['timestamp']), // La riga incriminata
+            timestamp: this.convertTimestampToISOString(data['timestamp']),
             likes: data['likes'] || [],
             parentId: data['parentId'] || null,
             isRootComment: false
@@ -203,6 +202,49 @@ export class CommentService {
     );
   }
 
+  /**
+   * ⭐⭐ NUOVA FUNZIONE: Fetch ricorsivo delle risposte.
+   * Questa funzione gestisce il recupero di tutte le risposte annidate.
+   */
+  private async _fetchAndNestReplies(postId: string, parentCommentId: string): Promise<Comment[]> {
+    const repliesCollectionRef = collection(this.firestore, `posts/${postId}/comments`);
+    const repliesQuery = query(
+      repliesCollectionRef,
+      where('parentId', '==', parentCommentId),
+      orderBy('timestamp', 'asc')
+    );
+
+    const querySnapshot = await getDocs(repliesQuery);
+    const replies: Comment[] = [];
+
+    for (const docSnap of querySnapshot.docs) {
+      const data = docSnap.data();
+      const reply = {
+        id: docSnap.id,
+        postId: postId,
+        userId: data['userId'],
+        username: data['username'],
+        userAvatarUrl: data['userAvatarUrl'],
+        text: data['text'],
+        timestamp: this.convertTimestampToISOString(data['timestamp']),
+        likes: data['likes'] || [],
+        parentId: data['parentId'] || null,
+        isRootComment: false,
+        replies: []
+      } as Comment;
+
+      // Chiamata ricorsiva per le risposte di questo commento
+      reply.replies = await this._fetchAndNestReplies(postId, reply.id);
+      replies.push(reply);
+    }
+
+    return replies;
+  }
+
+  /**
+   * ⭐⭐ MODIFICATA: La funzione principale che carica i commenti e le risposte.
+   * Ora usa la nuova funzione per annidare correttamente le risposte.
+   */
   async getCommentsForPostOnce(postId: string, commentsLimit: number = 10): Promise<CommentFetchResult> {
     const commentsCollectionRef = collection(this.firestore, `posts/${postId}/comments`);
 
@@ -227,9 +269,10 @@ export class CommentService {
       hasMore = true;
     }
 
-    querySnapshot.docs.slice(0, commentsLimit).forEach(docSnap => {
+    const docsToProcess = querySnapshot.docs.slice(0, commentsLimit);
+    for (const docSnap of docsToProcess) {
       const data = docSnap.data();
-      comments.push({
+      const comment = {
         id: docSnap.id,
         postId: postId,
         userId: data['userId'],
@@ -240,20 +283,17 @@ export class CommentService {
         likes: data['likes'] || [],
         parentId: data['parentId'] || null,
         replies: [],
-        isRootComment: data['parentId'] === null
-      } as Comment);
-    });
+        isRootComment: true
+      } as Comment;
 
-    const commentsWithReplies = await Promise.all(
-      comments.map(async (comment) => {
-        const replies = await lastValueFrom(this.getRepliesForCommentOnce(postId, comment.id));
-        comment.replies = replies ? replies.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) : [];
-        return comment;
-      })
-    );
+      // Anida le risposte in modo ricorsivo
+      comment.replies = await this._fetchAndNestReplies(postId, comment.id);
+      comments.push(comment);
+    }
 
-    return { comments: commentsWithReplies, hasMore: hasMore, lastVisible: this._lastVisibleCommentDoc };
+    return { comments: comments, hasMore: hasMore, lastVisible: this._lastVisibleCommentDoc };
   }
+
 
   async getCommentByIdOnce(postId: string, commentId: string): Promise<Comment | null> {
     const commentDocRef = doc(this.firestore, `posts/${postId}/comments`, commentId);

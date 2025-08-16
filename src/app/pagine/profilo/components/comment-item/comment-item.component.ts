@@ -98,4 +98,10 @@ export class CommentItemComponent implements OnInit, OnChanges {
   propagateViewLikes(comment: Comment) {
     this.viewLikes.emit(comment);
   }
+
+  // ⭐ NUOVA FUNZIONE per propagare l'evento di risposta
+  propagateSetReply(comment: Comment) {
+    this.setReply.emit(comment);
+  }
+
 }

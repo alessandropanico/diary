@@ -1,23 +1,21 @@
-<div class="comment-card"
-     [class.is-reply]="nestingLevel > 0"
-     [ngClass]="{'highlighted-comment': comment.id === commentIdToHighlight}">
+<div class="comment-card" [class.is-reply]="nestingLevel > 0"
+  [ngClass]="{'highlighted-comment': comment.id === commentIdToHighlight}">
   <div [class]="nestingLevel === 0 ? 'comment-header' : 'reply-header'">
     <ion-avatar (click)="onGoToProfile()" [class]="nestingLevel === 0 ? 'post-avatar' : 'reply-avatar'">
       <img [src]="comment.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
     </ion-avatar>
     <div [class]="nestingLevel === 0 ? 'post-info' : 'reply-info'">
-      <span [class]="nestingLevel === 0 ? 'post-username' : 'reply-username'" (click)="onGoToProfile()">{{ comment.username }}</span>
+      <span [class]="nestingLevel === 0 ? 'post-username' : 'reply-username'" (click)="onGoToProfile()">{{
+        comment.username }}</span>
       <span [class]="nestingLevel === 0 ? 'post-time' : 'reply-time'">{{ formatCommentTime(comment.timestamp) }}</span>
     </div>
     <div [class]="nestingLevel === 0 ? 'comment-card-actions' : 'reply-card-actions'">
-      <ion-button fill="clear" size="small"
-        [class.liked]="currentUserId && comment.likes.includes(currentUserId)"
+      <ion-button fill="clear" size="small" [class.liked]="currentUserId && comment.likes.includes(currentUserId)"
         (click)="onToggleLike()">
-        <ion-icon [name]="currentUserId && comment.likes.includes(currentUserId) ? 'heart' : 'heart-outline'"></ion-icon>
+        <ion-icon
+          [name]="currentUserId && comment.likes.includes(currentUserId) ? 'heart' : 'heart-outline'"></ion-icon>
       </ion-button>
-      <span *ngIf="comment.likes.length > 0"
-            class="likes-count-display"
-            (click)="onViewLikes()">
+      <span *ngIf="comment.likes.length > 0" class="likes-count-display" (click)="onViewLikes()">
         {{ comment.likes.length }} {{ comment.likes.length === 1 ? 'Mi piace' : 'Mi piace' }}
       </span>
       <ion-button fill="clear" size="small" (click)="onSetReply()">
@@ -25,30 +23,23 @@
         <ng-container *ngIf="nestingLevel === 0"></ng-container>
       </ion-button>
 
-      <ion-button *ngIf="comment.userId === currentUserId" fill="clear" size="small"
-        color="danger" (click)="onDeleteComment()">
+      <ion-button *ngIf="comment.userId === currentUserId" fill="clear" size="small" color="danger"
+        (click)="onDeleteComment()">
         <ion-icon name="trash-outline"></ion-icon>
       </ion-button>
     </div>
   </div>
   <div [class]="nestingLevel === 0 ? 'comment-content' : 'reply-content'">
-    <p [class]="nestingLevel === 0 ? 'post-text' : 'reply-text'"
-      [innerHTML]="formattedCommentText"
+    <p [class]="nestingLevel === 0 ? 'post-text' : 'reply-text'" [innerHTML]="formattedCommentText"
       (click)="onCommentTextClick($event)"></p>
   </div>
 
   <div *ngIf="comment.replies && comment.replies.length > 0" class="replies-section">
-    <app-comment-item
-      *ngFor="let reply of comment.replies"
-      [comment]="reply"
-      [currentUserId]="currentUserId"
-      [nestingLevel]="nestingLevel + 1"
-      [formatCommentTime]="formatCommentTime"
-      [commentIdToHighlight]="commentIdToHighlight"
-      (toggleLike)="propagateToggleLike($event)"
-      (setReply)="onSetReply()"
-      (deleteComment)="propagateDeleteComment($event)"
-      (goToProfile)="propagateGoToProfile($event)"
+        <app-comment-item       *ngFor="let reply of comment.replies"       [comment]="reply"      
+      [currentUserId]="currentUserId"       [nestingLevel]="nestingLevel + 1"      
+      [formatCommentTime]="formatCommentTime"       [commentIdToHighlight]="commentIdToHighlight"      
+      (toggleLike)="propagateToggleLike($event)"       (setReply)="propagateSetReply($event)"      
+      (deleteComment)="propagateDeleteComment($event)"       (goToProfile)="propagateGoToProfile($event)"      
       (viewLikes)="propagateViewLikes($event)"> </app-comment-item>
-  </div>
+      </div>
 </div>
