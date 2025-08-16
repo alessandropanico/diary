@@ -195,6 +195,44 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     }
   }
 
+  formatNotificationTime(timestamp: any): string {
+    if (!timestamp) {
+      return 'Data non disponibile';
+    }
+
+    let date: Date;
+    // Controlla se l'oggetto timestamp è di tipo Firebase Timestamp
+    if (timestamp.toDate) {
+      date = timestamp.toDate();
+    } else {
+      // Altrimenti, assumi che sia una data o un numero
+      date = new Date(timestamp);
+    }
+
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) {
+      return 'Adesso';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} ${minutes === 1 ? 'minuto' : 'minuti'} fa`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} ${hours === 1 ? 'ora' : 'ore'} fa`;
+    } else if (diffInSeconds < 2592000) { // Circa 30 giorni
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} ${days === 1 ? 'giorno' : 'giorni'} fa`;
+    } else {
+      // Se la differenza è maggiore, mostra la data completa
+      return date.toLocaleDateString('it-IT', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+  }
+
   private async presentAppAlert(header: string, message: string) {
     const alert = await this.alertCtrl.create({
       cssClass: 'app-alert',

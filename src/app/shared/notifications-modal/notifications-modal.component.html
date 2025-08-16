@@ -26,7 +26,7 @@
             {{ notifica.messaggio }}
           </p>
           <p class="timestamp">
-            {{ notifica.dataCreazione?.toDate() | date:'dd/MM/yyyy HH:mm' }}
+            {{ formatNotificationTime(notifica.timestamp) }}
           </p>
         </ion-label>
       </ion-item>
