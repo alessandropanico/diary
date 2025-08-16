@@ -40,7 +40,7 @@
   <ion-list lines="none" *ngIf="taggingUsers.length > 0; else noTaggingResults">
     <ion-item *ngFor="let user of taggingUsers" (click)="selectUserForTagging(user)">
       <ion-avatar slot="start">
-        <img [src]="user.photo || user.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
+        <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="User Avatar">
       </ion-avatar>
       <ion-label>
         <h2>{{ user.nickname }}</h2>
