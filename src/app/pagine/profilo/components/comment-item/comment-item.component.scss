@@ -22,12 +22,6 @@
   width: 100%;
   background: rgba(20, 25, 50, 0.95);
 
-  &.highlighted-comment {
-    border: 2px solid var(--ion-color-primary);
-    background-color: var(--ion-color-primary-tint);
-    transition: all 0.5s ease-in-out;
-  }
-
   &.is-reply {
     background: rgba(20, 25, 50, 0.7);
     border: 1px solid rgba(0, 255, 238, 0.1);
@@ -39,6 +33,13 @@
     &:first-of-type {
       margin-top: 5px;
     }
+  }
+
+  // ⭐⭐ SPOSTA QUESTO BLOCCO QUI SOTTO, DOPO &.is-reply ⭐⭐
+  &.highlighted-comment {
+    border: 2px solid var(--ion-color-primary);
+    background-color: var(--ion-color-primary-tint);
+    transition: all 0.5s ease-in-out;
   }
 }
 
