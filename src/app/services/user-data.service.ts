@@ -187,7 +187,7 @@ export class UserDataService {
           nickname: userData['nickname'],
           // NOVITÀ: Creiamo fullName combinando name e surname
           fullName: userData['name'] ? `${userData['name']} ${userData['surname'] || ''}`.trim() : null,
-          // NOVITÀ: Preferiamo 'profilePictureUrl', altrimenti usiamo 'photo'
+          // NOVITÀ: Preferiamo 'photo', altrimenti usiamo 'default-avatar'
           photo: userData['photo'] || 'assets/immaginiGenerali/default-avatar.jpg',
         });
         addedUids.add(doc.id);
@@ -214,7 +214,7 @@ export class UserDataService {
           // NOVITÀ: Creiamo fullName combinando name e surname
           fullName: userData['name'] ? `${userData['name']} ${userData['surname'] || ''}`.trim() : null,
           // NOVITÀ: Preferiamo 'profilePictureUrl', altrimenti usiamo 'photo'
-          profilePictureUrl: userData['profilePictureUrl'] || userData['photo'] || 'assets/immaginiGenerali/default-avatar.jpg',
+          profilePictureUrl: userData['photo'] || 'assets/immaginiGenerali/default-avatar.jpg',
         });
         addedUids.add(doc.id);
       }
