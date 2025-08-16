@@ -599,7 +599,7 @@ export class UserDataService {
           nickname: userData['nickname'] as string ?? 'N/A',
           name: userData['name'] as string ?? '',
           surname: userData['surname'] as string ?? '',
-          photo: (userData['profilePictureUrl'] as string) || (userData['photo'] as string) || 'assets/immaginiGenerali/default-avatar.jpg', // ⭐ AGGIORNAMENTO: Preferisci profilePictureUrl, poi photo
+          photo: (userData['photo'] as string) || 'assets/immaginiGenerali/default-avatar.jpg', // ⭐ AGGIORNAMENTO: Preferisci profilePictureUrl, poi photo
           totalXP: userData['totalXP'] as number ?? 0,
           activeAlarmsCount: userData['activeAlarmsCount'] as number ?? 0,
           totalAlarmsCount: userData['totalAlarmsCount'] as number ?? 0,
