@@ -167,3 +167,9 @@
   --border-color: var(--primary-glow);
   --border-width: 1px;
 }
+
+.highlighted-comment {
+  border: 2px solid var(--ion-color-primary);
+  background-color: var(--ion-color-primary-tint);
+  transition: all 0.5s ease-in-out;
+}
