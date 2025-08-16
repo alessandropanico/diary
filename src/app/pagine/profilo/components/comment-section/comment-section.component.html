@@ -7,16 +7,10 @@
 
   <div *ngIf="!isLoadingComments" class="comments-scroll-container">
     <div *ngIf="comments.length > 0; else noComments" class="comments-list-wrapper">
-      <app-comment-item
-        *ngFor="let comment of comments"
-        [comment]="comment"
-        [currentUserId]="currentUserId"
-        [nestingLevel]="0"
-        [formatCommentTime]="formatCommentTime"
-        (toggleLike)="toggleLikeComment($event)"
-        (setReply)="setReplyTarget($event)"
-        (deleteComment)="handleDeleteComment($event)"
-        (goToProfile)="handleGoToProfile($event)"
+      <app-comment-item *ngFor="let comment of comments" [comment]="comment" [currentUserId]="currentUserId"
+        [nestingLevel]="0" [formatCommentTime]="formatCommentTime" [commentIdToHighlight]="commentIdToHighlight"
+        (toggleLike)="toggleLikeComment($event)" (setReply)="setReplyTarget($event)"
+        (deleteComment)="handleDeleteComment($event)" (goToProfile)="handleGoToProfile($event)"
         (viewLikes)="openCommentLikesModal($event)"> </app-comment-item>
 
       <ion-infinite-scroll (ionInfiniteScroll)="loadMoreComments($event)" [disabled]="!canLoadMoreComments"
@@ -56,16 +50,13 @@
 </div>
 <div class="comment-input-footer panel-glow-border">
   <div class="comment-input-area">
-    <ion-avatar (click)="handleGoToProfile(currentUserId!)" class="post-avatar"> <img [src]="currentUserAvatar" alt="User Avatar">
+    <ion-avatar (click)="handleGoToProfile(currentUserId!)" class="post-avatar"> <img [src]="currentUserAvatar"
+        alt="User Avatar">
     </ion-avatar>
-    <ion-textarea
-      class="app-textarea comment-textarea"
+    <ion-textarea class="app-textarea comment-textarea"
       [placeholder]="replyingToComment ? 'Rispondi a ' + replyingToComment.username + '...' : 'Aggiungi un commento...'"
-      rows="1"
-      max-rows="5"
-      autoGrow="true"
-      [(ngModel)]="newCommentText"
-      (ionInput)="adjustTextareaHeight($event)" ></ion-textarea>
+      rows="1" max-rows="5" autoGrow="true" [(ngModel)]="newCommentText"
+      (ionInput)="adjustTextareaHeight($event)"></ion-textarea>
     <ion-button fill="clear" (click)="addCommentOrReply()" [disabled]="!newCommentText.trim() || !currentUserId">
       <ion-icon name="send"></ion-icon>
     </ion-button>
