@@ -22,7 +22,7 @@
     <div *ngFor="let user of likedUsers" class="user-card panel-glow-border">
       <div class="user-card-content">
         <div class="user-avatar-container" (click)="goToUserProfile(user.profile.uid)">
-          <img [src]="getUserPhoto(user.profile.profilePictureUrl || user.profile.photo)" alt="User Avatar" class="user-avatar-img">
+          <img [src]="getUserPhoto(user.profile.photo)" alt="User Avatar" class="user-avatar-img">
         </div>
         <div class="user-info-container" (click)="goToUserProfile(user.profile.uid)">
           <span class="user-nickname">{{ user.profile.nickname }}</span>
