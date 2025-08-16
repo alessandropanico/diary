@@ -19,6 +19,21 @@ import { CommentLikesModalComponent } from '../comment-likes-modal/comment-likes
 import { Output, EventEmitter } from '@angular/core';
 import { Notifica, NotificheService } from 'src/app/services/notifiche.service';
 
+// Nuova interfaccia per i commenti da visualizzare, che include i dati utente aggiornati
+export interface CommentWithUserData extends Comment {
+  username: string;
+  userAvatarUrl: string;
+}
+
+// ⭐⭐ NOVITÀ: Creazione di un'interfaccia che rispecchia i dati da salvare
+export interface CommentPayload {
+  postId: string;
+  userId: string;
+  text: string;
+  parentId: string | null;
+}
+// ⭐⭐ FINE NOVITÀ ⭐⭐
+
 export interface TagUser {
   uid: string;
   nickname: string;
@@ -47,7 +62,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   @Input() postCreatorId!: string;
   @Input() commentIdToHighlight: string | undefined;
 
-  comments: Comment[] = [];
+  comments: CommentWithUserData[] = [];
   newCommentText: string = '';
   currentUserId: string | null = null;
   currentUserUsername: string = 'Eroe Anonimo';
@@ -61,7 +76,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   private userDataSubscription: Subscription | undefined;
   private authStateUnsubscribe: (() => void) | undefined;
 
-  replyingToComment: Comment | null = null;
+  replyingToComment: CommentWithUserData | null = null;
 
   showTaggingSuggestions: boolean = false;
   taggingUsers: TagUser[] = [];
@@ -150,7 +165,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         this.cdr.detectChanges();
       }
     }
-    // ⭐⭐ NOVITÀ: Gestione del commento da evidenziare ⭐⭐
     if (changes['commentIdToHighlight'] && changes['commentIdToHighlight'].currentValue) {
       this.scrollToHighlightedComment();
     }
@@ -203,7 +217,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
 
     try {
       const result: CommentFetchResult = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
-      this.comments = result.comments;
+      this.comments = await this.populateUserData(result.comments);
       this.canLoadMoreComments = result.hasMore;
 
       if (!this.canLoadMoreComments) {
@@ -224,7 +238,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       if (this.infiniteScroll) {
         this.infiniteScroll.complete();
       }
-      // ⭐⭐ NOVITÀ: Chiama il metodo di scorrimento dopo che i commenti sono stati caricati ⭐⭐
       if (this.commentIdToHighlight) {
         this.scrollToHighlightedComment();
       }
@@ -244,8 +257,9 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       const result: CommentFetchResult = await this.commentService.getCommentsForPostOnce(this.postId, this.commentsLimit);
 
       if (result.comments.length > 0) {
-        const combinedCommentsMap = new Map<string, Comment>();
-        [...this.comments, ...result.comments].forEach(comment => {
+        const newCommentsWithUserData = await this.populateUserData(result.comments);
+        const combinedCommentsMap = new Map<string, CommentWithUserData>();
+        [...this.comments, ...newCommentsWithUserData].forEach(comment => {
           combinedCommentsMap.set(comment.id, comment);
         });
         this.comments = Array.from(combinedCommentsMap.values())
@@ -274,6 +288,26 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         event.target.complete();
       }
     }
+  }
+
+  private async populateUserData(comments: Comment[]): Promise<CommentWithUserData[]> {
+    if (comments.length === 0) {
+      return [];
+    }
+    const userIds = [...new Set(comments.map(c => c.userId))];
+
+    const userPromises = userIds.map(id => this.userDataService.getUserDataByUid(id));
+    const userResults = await Promise.all(userPromises);
+
+    const userMap = new Map<string, UserDashboardCounts | null>();
+    userIds.forEach((id, index) => userMap.set(id, userResults[index]));
+
+    return comments.map(comment => {
+      const userData = userMap.get(comment.userId);
+      const username = userData?.nickname || 'Utente Sconosciuto';
+      const userAvatarUrl = userData?.photo || userData?.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg';
+      return { ...comment, username, userAvatarUrl } as CommentWithUserData;
+    });
   }
 
   async handleDeleteComment(commentId: string) {
@@ -347,9 +381,9 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     await alert.present();
   }
 
-  setReplyTarget(comment: Comment) {
+  setReplyTarget(comment: CommentWithUserData) {
     this.replyingToComment = comment;
-    this.newCommentText = `@${comment.username} `;
+    this.newCommentText = `@${comment.username || 'Utente Sconosciuto'} `;
     this.cdr.detectChanges();
   }
 
@@ -371,34 +405,32 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     });
     await loading.present();
 
-    const commentToAdd: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'replies' | 'isRootComment'> = {
+    // ⭐⭐ MODIFICA CHIAVE: L'oggetto viene creato senza tipo esplicito
+    const commentToAdd = {
       postId: this.postId,
       userId: this.currentUserId,
-      username: this.currentUserUsername,
-      userAvatarUrl: this.currentUserAvatar as string,
       text: this.newCommentText.trim(),
       parentId: this.replyingToComment ? this.replyingToComment.id : null
     };
 
     try {
-      const addedCommentId = await this.commentService.addComment(commentToAdd);
+      // ⭐⭐ MODIFICA: La funzione addComment ora accetta l'oggetto appena creato
+      const addedCommentId = await this.commentService.addComment(commentToAdd as any);
       this.expService.addExperience(10, 'commentCreated');
 
-      // ⭐⭐ NOVITÀ: Gestione delle notifiche per l'autore del post e per le menzioni ⭐⭐
       if (this.currentUserId !== this.postCreatorId && this.postCreatorId) {
       const notificaPerAutore: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
-    userId: this.postCreatorId,
-    titolo: 'Nuovo commento',
-    messaggio: `${this.currentUserUsername} ha commentato il tuo post.`,
-    postId: this.postId,
-    commentId: addedCommentId,
-    letta: false,
-    tipo: 'commento'
-};
-await this.notificheService.aggiungiNotifica(notificaPerAutore);
+        userId: this.postCreatorId,
+        titolo: 'Nuovo commento',
+        messaggio: `${this.currentUserUsername} ha commentato il tuo post.`,
+        postId: this.postId,
+        commentId: addedCommentId,
+        letta: false,
+        tipo: 'commento'
+    };
+    await this.notificheService.aggiungiNotifica(notificaPerAutore);
       }
 
-      // Chiamata al nuovo metodo per gestire le menzioni
       await this.checkForMentionsAndNotify(addedCommentId);
 
       this.newCommentText = '';
@@ -413,9 +445,7 @@ await this.notificheService.aggiungiNotifica(notificaPerAutore);
     }
   }
 
-  // ⭐⭐ NUOVO METODO: Gestione delle menzioni nel commento ⭐⭐
   private async checkForMentionsAndNotify(commentId: string) {
-    // Regex per trovare @ più il nickname (almeno 1 carattere) fino al prossimo spazio
     const mentionRegex = /@(\w+)/g;
     const mentions = this.newCommentText.match(mentionRegex);
 
@@ -425,7 +455,6 @@ await this.notificheService.aggiungiNotifica(notificaPerAutore);
       for (const nickname of uniqueMentions) {
         try {
           const taggedUserId = await this.userDataService.getUidByNickname(nickname);
-          // Controlla che l'ID dell'utente taggato sia diverso dall'utente che ha commentato
           if (taggedUserId && taggedUserId !== this.currentUserId) {
             await this.notificheService.aggiungiNotificaMenzioneCommento(taggedUserId, this.currentUserUsername, this.postId, commentId);
           }
@@ -435,9 +464,8 @@ await this.notificheService.aggiungiNotifica(notificaPerAutore);
       }
     }
   }
-  // ⭐⭐ FINE NUOVO METODO ⭐⭐
 
-  async toggleLikeComment(commentToToggle: Comment) {
+  async toggleLikeComment(commentToToggle: CommentWithUserData) {
     if (!this.currentUserId) {
       this.presentAppAlert('Accedi Necessario', 'Devi essere loggato per mostrare il tuo apprezzamento!');
       return;
@@ -464,7 +492,7 @@ await this.notificheService.aggiungiNotifica(notificaPerAutore);
         });
       }
 
-      const updateLikesRecursively = (commentsArray: Comment[], targetCommentId: string, userId: string, liked: boolean): Comment[] => {
+      const updateLikesRecursively = (commentsArray: CommentWithUserData[], targetCommentId: string, userId: string, liked: boolean): CommentWithUserData[] => {
         return commentsArray.map(c => {
           if (c.id === targetCommentId) {
             const updatedLikes = liked ?
@@ -671,7 +699,7 @@ await this.notificheService.aggiungiNotifica(notificaPerAutore);
     }
   }
 
-  async openCommentLikesModal(comment: Comment) {
+  async openCommentLikesModal(comment: CommentWithUserData) {
     if (comment.likes.length === 0) {
       return;
     }
@@ -696,21 +724,18 @@ await this.notificheService.aggiungiNotifica(notificaPerAutore);
     }
   }
 
-  // ⭐⭐ NUOVO METODO: per scorrere fino al commento evidenziato ⭐⭐
   private scrollToHighlightedComment() {
     if (!this.commentIdToHighlight) {
       return;
     }
-    // Ritardo per assicurarsi che il DOM sia aggiornato
     setTimeout(() => {
       const element = document.getElementById(`comment-${this.commentIdToHighlight}`);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Puoi aggiungere una classe CSS per evidenziare temporaneamente
         element.classList.add('highlighted-comment');
         setTimeout(() => {
           element.classList.remove('highlighted-comment');
-        }, 5000); // Rimuovi l'evidenziazione dopo 5 secondi
+        }, 5000);
       }
     }, 100);
   }

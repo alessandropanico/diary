@@ -14,6 +14,6 @@ export interface Comment {
 
 export interface CommentFetchResult {
   comments: Comment[];
-  lastVisible: any; 
+  lastVisible: any;
   hasMore: boolean;
 }
