@@ -231,7 +231,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       this.canLoadMoreComments = false;
       if (this.infiniteScroll) {
         this.infiniteScroll.disabled = true;
-        }
+      }
     } finally {
       this.isLoadingComments = false;
       this.cdr.detectChanges();
@@ -291,23 +291,52 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   private async populateUserData(comments: Comment[]): Promise<CommentWithUserData[]> {
-    if (comments.length === 0) {
+    if (!comments || comments.length === 0) {
       return [];
     }
-    const userIds = [...new Set(comments.map(c => c.userId))];
 
-    const userPromises = userIds.map(id => this.userDataService.getUserDataByUid(id));
-    const userResults = await Promise.all(userPromises);
+    // 1. Raccoglie tutti gli ID utente da tutti i livelli di commento in un unico set.
+    const allUserIds = new Set<string>();
+    const collectUserIds = (comms: Comment[]) => {
+      comms.forEach(c => {
+        allUserIds.add(c.userId);
+        if (c.replies && c.replies.length > 0) {
+          collectUserIds(c.replies); // Chiamata ricorsiva per le risposte
+        }
+      });
+    };
 
-    const userMap = new Map<string, UserDashboardCounts | null>();
-    userIds.forEach((id, index) => userMap.set(id, userResults[index]));
+    collectUserIds(comments);
 
-    return comments.map(comment => {
-      const userData = userMap.get(comment.userId);
-      const username = userData?.nickname || 'Utente Sconosciuto';
-      const userAvatarUrl = userData?.photo || userData?.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg';
-      return { ...comment, username, userAvatarUrl } as CommentWithUserData;
-    });
+    // 2. Recupera i dati di tutti gli utenti in una singola operazione.
+    const userDataMap = new Map<string, any>();
+    if (allUserIds.size > 0) {
+      const userPromises = Array.from(allUserIds).map(uid => this.userDataService.getUserDataByUid(uid));
+      const userResults = await Promise.all(userPromises);
+      Array.from(allUserIds).forEach((uid, index) => {
+        userDataMap.set(uid, userResults[index]);
+      });
+    }
+
+    // 3. Popola i dati utente in modo ricorsivo.
+    const populateRecursive = (comms: Comment[]): CommentWithUserData[] => {
+      return comms.map(comment => {
+        const userData = userDataMap.get(comment.userId);
+        const updatedComment = {
+          ...comment,
+          username: userData?.nickname || 'Utente Sconosciuto',
+          userAvatarUrl: userData?.photo || userData?.profilePictureUrl || 'assets/immaginiGenerali/default-avatar.jpg'
+        } as CommentWithUserData;
+
+        // Se ci sono risposte, le processa anch'esse in modo ricorsivo
+        if (updatedComment.replies && updatedComment.replies.length > 0) {
+          updatedComment.replies = populateRecursive(updatedComment.replies);
+        }
+        return updatedComment;
+      });
+    };
+
+    return populateRecursive(comments);
   }
 
   async handleDeleteComment(commentId: string) {
@@ -449,18 +478,18 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     const mentions = this.newCommentText.match(mentionRegex);
 
     if (mentions && this.currentUserId) {
-        const uniqueMentions = [...new Set(mentions.map(m => m.substring(1)))];
+      const uniqueMentions = [...new Set(mentions.map(m => m.substring(1)))];
 
-        for (const nickname of uniqueMentions) {
-            try {
-                const taggedUserId = await this.userDataService.getUidByNickname(nickname);
-                if (taggedUserId && taggedUserId !== this.currentUserId) {
-                    await this.notificheService.aggiungiNotificaMenzioneCommento(taggedUserId, this.currentUserUsername, this.postId, commentId, this.currentUserId);
-                }
-            } catch (error) {
-                console.warn(`Impossibile trovare l'utente con nickname @${nickname}. Nessuna notifica inviata.`, error);
-            }
+      for (const nickname of uniqueMentions) {
+        try {
+          const taggedUserId = await this.userDataService.getUidByNickname(nickname);
+          if (taggedUserId && taggedUserId !== this.currentUserId) {
+            await this.notificheService.aggiungiNotificaMenzioneCommento(taggedUserId, this.currentUserUsername, this.postId, commentId, this.currentUserId);
+          }
+        } catch (error) {
+          console.warn(`Impossibile trovare l'utente con nickname @${nickname}. Nessuna notifica inviata.`, error);
         }
+      }
     }
   }
 
@@ -481,13 +510,13 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         const likerUsername = likerUserData?.nickname || 'Un utente';
 
         if (this.currentUserId) {
-            await this.notificheService.aggiungiNotificaMiPiaceCommento(
-                commentToToggle.userId,
-                likerUsername,
-                this.postId,
-                commentToToggle.id,
-                this.currentUserId
-            );
+          await this.notificheService.aggiungiNotificaMiPiaceCommento(
+            commentToToggle.userId,
+            likerUsername,
+            this.postId,
+            commentToToggle.id,
+            this.currentUserId
+          );
         }
       }
 
