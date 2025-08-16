@@ -22,6 +22,11 @@
   width: 100%;
   background: rgba(20, 25, 50, 0.95);
 
+  &.highlighted-comment {
+    border: 2px solid var(--ion-color-primary);
+    background-color: var(--ion-color-primary-tint);
+    transition: all 0.5s ease-in-out;
+  }
 
   &.is-reply {
     background: rgba(20, 25, 50, 0.7);
