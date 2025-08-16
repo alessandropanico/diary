@@ -29,6 +29,9 @@ export class ProgettoFormComponent implements OnInit {
   searchResults: UserDashboardCounts[] = [];
   selectedUsers: UserDashboardCounts[] = [];
   private currentUserNickname: string = '';
+  // ⭐ NOVITÀ: Aggiunto currentUserId
+  private currentUserId: string | null = null;
+
 
   constructor(
     private formBuilder: FormBuilder,
@@ -60,13 +63,14 @@ export class ProgettoFormComponent implements OnInit {
         }
       }
     }
-    await this.loadCurrentUserName();
+    await this.loadCurrentUserNameAndId();
   }
-
-  private async loadCurrentUserName() {
+  // ⭐ AGGIORNATO: Metodo per caricare sia il nickname che l'ID utente
+  private async loadCurrentUserNameAndId() {
     const auth = getAuth();
     if (auth.currentUser) {
-      const userProfile = await this.userDataService.getUserDataByUid(auth.currentUser.uid);
+      this.currentUserId = auth.currentUser.uid;
+      const userProfile = await this.userDataService.getUserDataByUid(this.currentUserId);
       if (userProfile) {
         this.currentUserNickname = userProfile.nickname || userProfile.name || 'Utente Sconosciuto';
       }
@@ -112,6 +116,12 @@ export class ProgettoFormComponent implements OnInit {
       return;
     }
 
+    // ⭐ AGGIORNATO: Controlla che l'ID utente e il nickname siano disponibili
+    if (!this.currentUserId || !this.currentUserNickname) {
+      console.error('Impossibile salvare il progetto: ID utente o nickname non disponibili.');
+      return;
+    }
+
     const projectData: Partial<Project> = {
       ...this.projectForm.value,
       dueDate: this.projectForm.value.dueDate ? new Date(this.projectForm.value.dueDate) : undefined,
@@ -135,12 +145,12 @@ export class ProgettoFormComponent implements OnInit {
             memberId,
             this.currentUserNickname,
             projectId,
-            projectName
+            projectName,
+            this.currentUserId
           );
         }
       }
     } else {
-      // ⭐ FIX: Assegna direttamente l'ID del progetto
       const newProjectId = await this.progettiService.addProject(projectData);
       projectId = newProjectId;
 
@@ -153,7 +163,8 @@ export class ProgettoFormComponent implements OnInit {
             memberId,
             this.currentUserNickname,
             projectId,
-            newProjectName
+            newProjectName,
+            this.currentUserId
           );
         }
       }

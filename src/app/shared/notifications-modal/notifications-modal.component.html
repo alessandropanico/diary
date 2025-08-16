@@ -18,14 +18,17 @@
     <ion-list lines="full">
       <ion-item *ngFor="let notifica of notifiche" [class.notifica-letta]="notifica.letta"
         [class.notifica-non-letta]="!notifica.letta" (click)="handleNotificationClick(notifica)">
-        <ion-icon slot="start" name="notifications-outline"></ion-icon>
+        <ion-avatar slot="start" *ngIf="notifica.creatorAvatarUrl">
+          <img [src]="notifica.creatorAvatarUrl" [alt]="'Avatar di ' + notifica.creatorUsername" />
+        </ion-avatar>
         <ion-label>
-          <h2>{{ notifica.titolo }}</h2>
-          <p>{{ notifica.messaggio }}</p>
+          <p class="ion-text-wrap">
+            <span *ngIf="notifica.creatorUsername">{{ notifica.creatorUsername }}</span>
+            {{ notifica.messaggio }}
+          </p>
           <p class="timestamp">
             {{ notifica.dataCreazione?.toDate() | date:'dd/MM/yyyy HH:mm' }}
           </p>
-
         </ion-label>
       </ion-item>
     </ion-list>

@@ -18,6 +18,7 @@ export interface Notifica {
   commentId?: string;
   projectId?: string;
   followerId?: string;
+  creatorId?: string; // ⭐ NOVITÀ: Aggiunto il campo per l'ID dell'utente che ha creato l'evento di notifica
   tipo: 'nuovo_post' | 'mi_piace' | 'commento' | 'menzione_commento' | 'mi_piace_commento' | 'menzione_post' | 'invito_progetto' | 'nuovo_follower';
 }
 
@@ -34,7 +35,6 @@ export class NotificheService implements OnDestroy {
   public unreadCount$: Observable<number> = this._unreadCount.asObservable();
   private notificationSound = new Audio('assets/sound/notification.mp3');
 
-  // ⭐ Definisci la durata di vita delle notifiche (6 settimane in millisecondi)
   private readonly NOTIFICATION_LIFESPAN_MS = 6 * 7 * 24 * 60 * 60 * 1000;
 
   constructor() {
@@ -141,7 +141,8 @@ export class NotificheService implements OnDestroy {
     }
   }
 
-  async aggiungiNotificaMenzionePost(taggedUserId: string, taggingUsername: string, postId: string) {
+  // ⭐ AGGIORNATO: Aggiunto creatorId
+  async aggiungiNotificaMenzionePost(taggedUserId: string, taggingUsername: string, postId: string, creatorId: string) {
     const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
       userId: taggedUserId,
       titolo: 'Sei stato menzionato in un post!',
@@ -150,11 +151,13 @@ export class NotificheService implements OnDestroy {
       postId: postId,
       link: `/post/${postId}`,
       tipo: 'menzione_post',
+      creatorId: creatorId
     };
     await this.aggiungiNotifica(notifica);
   }
 
-  async aggiungiNotificaMenzioneCommento(taggedUserId: string, taggingUsername: string, postId: string, commentId: string) {
+  // ⭐ AGGIORNATO: Aggiunto creatorId
+  async aggiungiNotificaMenzioneCommento(taggedUserId: string, taggingUsername: string, postId: string, commentId: string, creatorId: string) {
     const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
       userId: taggedUserId,
       titolo: 'Sei stato menzionato in un commento!',
@@ -164,11 +167,13 @@ export class NotificheService implements OnDestroy {
       commentId: commentId,
       link: `/post/${postId}?commentId=${commentId}`,
       tipo: 'menzione_commento',
+      creatorId: creatorId
     };
     await this.aggiungiNotifica(notifica);
   }
 
-  async aggiungiNotificaProgetto(invitedUserId: string, invitingUsername: string, projectId: string, projectName: string) {
+  // ⭐ AGGIORNATO: Aggiunto creatorId
+  async aggiungiNotificaProgetto(invitedUserId: string, invitingUsername: string, projectId: string, projectName: string, creatorId: string) {
     const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
       userId: invitedUserId,
       titolo: 'Sei stato aggiunto a un progetto!',
@@ -177,6 +182,50 @@ export class NotificheService implements OnDestroy {
       projectId: projectId,
       link: `/progetti/${projectId}`,
       tipo: 'invito_progetto',
+      creatorId: creatorId
+    };
+    await this.aggiungiNotifica(notifica);
+  }
+
+  // ⭐ AGGIORNATO: Aggiunto creatorId
+  async aggiungiNotificaMiPiace(notifiedUserId: string, likerUsername: string, postId: string, creatorId: string) {
+    const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
+      userId: notifiedUserId,
+      titolo: 'Nuovo "Mi piace"!',
+      messaggio: `${likerUsername} ha messo mi piace al tuo post.`,
+      letta: false,
+      postId: postId,
+      tipo: 'mi_piace',
+      creatorId: creatorId,
+    };
+    await this.aggiungiNotifica(notifica);
+  }
+
+  // ⭐ AGGIORNATO: Aggiunto creatorId
+  async aggiungiNotificaMiPiaceCommento(notifiedUserId: string, likerUsername: string, postId: string, commentId: string, creatorId: string) {
+    const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
+      userId: notifiedUserId,
+      titolo: 'Nuovo "Mi piace"!',
+      messaggio: `${likerUsername} ha messo mi piace al tuo commento.`,
+      letta: false,
+      postId: postId,
+      commentId: commentId,
+      tipo: 'mi_piace_commento',
+      creatorId: creatorId,
+    };
+    await this.aggiungiNotifica(notifica);
+  }
+
+  // ⭐⭐ AGGIUNTA QUESTA FUNZIONE ⭐⭐
+  async aggiungiNotificaNuovoPost(followedUserId: string, postCreatorUsername: string, postId: string, creatorId: string) {
+    const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
+      userId: followedUserId,
+      titolo: 'Nuovo post!',
+      messaggio: `${postCreatorUsername} ha pubblicato un nuovo post.`,
+      letta: false,
+      postId: postId,
+      tipo: 'nuovo_post',
+      creatorId: creatorId
     };
     await this.aggiungiNotifica(notifica);
   }
@@ -230,11 +279,11 @@ export class NotificheService implements OnDestroy {
       letta: false,
       followerId: followerId,
       tipo: 'nuovo_follower',
+      creatorId: followerId
     };
     await this.aggiungiNotifica(notifica);
   }
 
-  // ⭐⭐ Metodo per pulire le notifiche scadute (più vecchie di 6 settimane) ⭐⭐
   async cleanExpiredNotifications() {
     try {
       const sixWeeksAgo = new Date(Date.now() - this.NOTIFICATION_LIFESPAN_MS);

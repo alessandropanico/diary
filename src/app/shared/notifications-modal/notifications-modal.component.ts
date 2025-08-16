@@ -4,6 +4,13 @@ import { NotificheService, Notifica } from 'src/app/services/notifiche.service';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { getAuth } from 'firebase/auth';
+import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
+import { ChangeDetectorRef } from '@angular/core';
+
+export interface NotificaWithCreatorData extends Notifica {
+  creatorUsername?: string;
+  creatorAvatarUrl?: string;
+}
 
 @Component({
   selector: 'app-notifications-modal',
@@ -12,14 +19,12 @@ import { getAuth } from 'firebase/auth';
   standalone: false,
 })
 export class NotificationsModalComponent implements OnInit, OnDestroy {
-  // ⭐ NOVITÀ: Ottieni un riferimento al componente ion-infinite-scroll nel DOM
   @ViewChild(IonInfiniteScroll) infiniteScroll!: IonInfiniteScroll;
 
-  notifiche: Notifica[] = [];
+  notifiche: NotificaWithCreatorData[] = [];
   private notificheSubscription!: Subscription;
   private currentUserId: string | null = null;
 
-  // ⭐ NOVITÀ: Variabili per la paginazione e lo stato di caricamento
   private notificheLimit: number = 10;
   private lastTimestamp: any | null = null;
   canLoadMore: boolean = true;
@@ -29,12 +34,13 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     private modalController: ModalController,
     private notificheService: NotificheService,
     private router: Router,
-    private alertCtrl: AlertController // ⭐ NOVITÀ: Iniettiamo AlertController
+    private alertCtrl: AlertController,
+    private userDataService: UserDataService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
     this.currentUserId = getAuth().currentUser?.uid || null;
-    // ⭐ NOVITÀ: Chiamiamo il metodo per caricare il primo blocco di notifiche
     this.loadInitialNotifications();
   }
 
@@ -44,7 +50,6 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ⭐ NOVITÀ: Metodo per caricare il primo blocco di 10 notifiche
   async loadInitialNotifications() {
     if (!this.currentUserId) {
       console.error('ID utente corrente non disponibile.');
@@ -57,32 +62,32 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     this.lastTimestamp = null;
     this.canLoadMore = true;
 
-    // Resetta lo stato di ion-infinite-scroll
     if (this.infiniteScroll) {
       this.infiniteScroll.disabled = false;
     }
 
     this.notificheSubscription = this.notificheService.getNotifichePaginated(this.currentUserId, this.notificheLimit).subscribe({
-      next: (notifiche) => {
-        this.notifiche = notifiche;
+      next: async (notifiche) => {
+        this.notifiche = await this.populateCreatorData(notifiche);
         this.isLoading = false;
-        if (notifiche.length > 0) {
-          this.lastTimestamp = notifiche[notifiche.length - 1].timestamp;
+        if (this.notifiche.length > 0) {
+          this.lastTimestamp = this.notifiche[this.notifiche.length - 1].timestamp;
         }
         if (notifiche.length < this.notificheLimit) {
           this.canLoadMore = false;
         }
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Errore nel caricamento iniziale delle notifiche:', err);
         this.isLoading = false;
         this.canLoadMore = false;
         this.presentAppAlert('Errore', 'Impossibile caricare le notifiche.');
+        this.cdr.detectChanges();
       }
     });
   }
 
-  // ⭐ NOVITÀ: Metodo per caricare il blocco successivo di notifiche
   async loadMoreNotifications(event: any) {
     if (!this.canLoadMore || !this.currentUserId) {
       if (this.infiniteScroll) {
@@ -93,8 +98,10 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     }
 
     const subscription = this.notificheService.getNotifichePaginated(this.currentUserId, this.notificheLimit, this.lastTimestamp).subscribe({
-      next: (notifiche) => {
-        this.notifiche = [...this.notifiche, ...notifiche];
+      next: async (notifiche) => {
+        const newNotifiche = await this.populateCreatorData(notifiche);
+        this.notifiche = [...this.notifiche, ...newNotifiche];
+
         if (notifiche.length > 0) {
           this.lastTimestamp = notifiche[notifiche.length - 1].timestamp;
         }
@@ -103,6 +110,7 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
           this.infiniteScroll.disabled = true;
         }
         this.infiniteScroll.complete();
+        this.cdr.detectChanges();
         subscription.unsubscribe();
       },
       error: (err) => {
@@ -110,9 +118,45 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
         this.canLoadMore = false;
         this.infiniteScroll.disabled = true;
         this.infiniteScroll.complete();
-        subscription.unsubscribe();
         this.presentAppAlert('Errore', 'Impossibile caricare altre notifiche.');
+        this.cdr.detectChanges();
+        subscription.unsubscribe();
       }
+    });
+  }
+
+  /**
+   * ⭐ AGGIORNATO: Questo metodo ora usa solo il campo 'photo' per l'URL dell'avatar.
+   */
+  private async populateCreatorData(notifiche: Notifica[]): Promise<NotificaWithCreatorData[]> {
+    if (notifiche.length === 0) {
+      return [];
+    }
+
+    const creatorIds = [...new Set(notifiche.map(n => n.creatorId).filter(id => id != null) as string[])];
+    const userPromises = creatorIds.map(id => this.userDataService.getUserDataByUid(id));
+    const userResults = await Promise.all(userPromises);
+   console.log('Dati utente recuperati:', userResults); // ⭐ Aggiungi questo log
+
+    const userMap = new Map<string, UserDashboardCounts | null>();
+    creatorIds.forEach((id, index) => userMap.set(id, userResults[index]));
+
+    return notifiche.map(notifica => {
+      let creatorUsername = '';
+      let creatorAvatarUrl = 'assets/immaginiGenerali/default-avatar.jpg';
+
+      if (notifica.creatorId) {
+        const creatorData = userMap.get(notifica.creatorId);
+        if (creatorData) {
+          creatorUsername = creatorData.nickname || '';
+          // ⭐ Corretto: Controlla che il campo 'photo' non sia vuoto
+          if (creatorData.photo) {
+            creatorAvatarUrl = creatorData.photo;
+          }
+        }
+      }
+
+      return { ...notifica, creatorUsername, creatorAvatarUrl } as NotificaWithCreatorData;
     });
   }
 
@@ -121,9 +165,8 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     this.modalController.dismiss();
   }
 
-  async handleNotificationClick(notifica: Notifica) {
+  async handleNotificationClick(notifica: NotificaWithCreatorData) {
     if (notifica.id) {
-      // ⭐ AGGIORNATO: Passiamo anche lo userId al metodo del servizio
       this.notificheService.segnaComeLetta(notifica.id, notifica.userId);
     } else {
       console.warn("NotificationsModalComponent: L'ID della notifica non è definito. Impossibile segnare come letta.");

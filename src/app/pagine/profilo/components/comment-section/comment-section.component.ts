@@ -231,7 +231,7 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
       this.canLoadMoreComments = false;
       if (this.infiniteScroll) {
         this.infiniteScroll.disabled = true;
-      }
+        }
     } finally {
       this.isLoadingComments = false;
       this.cdr.detectChanges();
@@ -405,7 +405,6 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     });
     await loading.present();
 
-    // ⭐⭐ MODIFICA CHIAVE: L'oggetto viene creato senza tipo esplicito
     const commentToAdd = {
       postId: this.postId,
       userId: this.currentUserId,
@@ -414,21 +413,21 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     };
 
     try {
-      // ⭐⭐ MODIFICA: La funzione addComment ora accetta l'oggetto appena creato
       const addedCommentId = await this.commentService.addComment(commentToAdd as any);
       this.expService.addExperience(10, 'commentCreated');
 
-      if (this.currentUserId !== this.postCreatorId && this.postCreatorId) {
-      const notificaPerAutore: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
-        userId: this.postCreatorId,
-        titolo: 'Nuovo commento',
-        messaggio: `${this.currentUserUsername} ha commentato il tuo post.`,
-        postId: this.postId,
-        commentId: addedCommentId,
-        letta: false,
-        tipo: 'commento'
-    };
-    await this.notificheService.aggiungiNotifica(notificaPerAutore);
+      if (this.currentUserId !== this.postCreatorId && this.postCreatorId && this.currentUserId) {
+        const notificaPerAutore: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
+          userId: this.postCreatorId,
+          titolo: 'Nuovo commento',
+          messaggio: `${this.currentUserUsername} ha commentato il tuo post.`,
+          postId: this.postId,
+          commentId: addedCommentId,
+          letta: false,
+          tipo: 'commento',
+          creatorId: this.currentUserId
+        };
+        await this.notificheService.aggiungiNotifica(notificaPerAutore);
       }
 
       await this.checkForMentionsAndNotify(addedCommentId);
@@ -450,18 +449,18 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
     const mentions = this.newCommentText.match(mentionRegex);
 
     if (mentions && this.currentUserId) {
-      const uniqueMentions = [...new Set(mentions.map(m => m.substring(1)))];
+        const uniqueMentions = [...new Set(mentions.map(m => m.substring(1)))];
 
-      for (const nickname of uniqueMentions) {
-        try {
-          const taggedUserId = await this.userDataService.getUidByNickname(nickname);
-          if (taggedUserId && taggedUserId !== this.currentUserId) {
-            await this.notificheService.aggiungiNotificaMenzioneCommento(taggedUserId, this.currentUserUsername, this.postId, commentId);
-          }
-        } catch (error) {
-          console.warn(`Impossibile trovare l'utente con nickname @${nickname}. Nessuna notifica inviata.`, error);
+        for (const nickname of uniqueMentions) {
+            try {
+                const taggedUserId = await this.userDataService.getUidByNickname(nickname);
+                if (taggedUserId && taggedUserId !== this.currentUserId) {
+                    await this.notificheService.aggiungiNotificaMenzioneCommento(taggedUserId, this.currentUserUsername, this.postId, commentId, this.currentUserId);
+                }
+            } catch (error) {
+                console.warn(`Impossibile trovare l'utente con nickname @${nickname}. Nessuna notifica inviata.`, error);
+            }
         }
-      }
     }
   }
 
@@ -481,15 +480,15 @@ export class CommentSectionComponent implements OnInit, OnDestroy, OnChanges {
         const likerUserData = await this.userDataService.getUserDataByUid(this.currentUserId);
         const likerUsername = likerUserData?.nickname || 'Un utente';
 
-        await this.notificheService.aggiungiNotifica({
-          userId: commentToToggle.userId,
-          titolo: 'Nuovo "Mi piace"!',
-          messaggio: `${likerUsername} ha messo mi piace al tuo commento.`,
-          tipo: 'mi_piace_commento',
-          postId: this.postId,
-          commentId: commentToToggle.id,
-          letta: false,
-        });
+        if (this.currentUserId) {
+            await this.notificheService.aggiungiNotificaMiPiaceCommento(
+                commentToToggle.userId,
+                likerUsername,
+                this.postId,
+                commentToToggle.id,
+                this.currentUserId
+            );
+        }
       }
 
       const updateLikesRecursively = (commentsArray: CommentWithUserData[], targetCommentId: string, userId: string, liked: boolean): CommentWithUserData[] => {

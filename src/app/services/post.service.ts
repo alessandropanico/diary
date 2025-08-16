@@ -34,29 +34,28 @@ export class PostService {
       const postId = docRef.id;
 
       const currentUserId = getAuth().currentUser?.uid;
+      const currentUsername = post.username;
+
       if (currentUserId) {
         try {
-          // ⭐⭐ CORREZIONE QUI: Aggiunto '.pipe(take(1))' e gestito il caso di errore
           const followers = await lastValueFrom(this.followService.getFollowersIds(currentUserId).pipe(
             take(1),
             catchError(error => {
               console.error('Errore nel recupero dei follower:', error);
-              return of([]); // Restituisce un Observable di un array vuoto in caso di errore
+              return of([]);
             })
           ));
 
-          // ⭐⭐ CORREZIONE QUI: Aggiunto un controllo più robusto sul tipo
           if (Array.isArray(followers) && followers.length > 0) {
             for (const followerId of followers) {
               if (followerId !== currentUserId) {
-                await this.notificheService.aggiungiNotifica({
-                  userId: followerId,
-                  titolo: 'Nuovo post!',
-                  messaggio: `${post.username} ha pubblicato un nuovo post.`,
-                  tipo: 'nuovo_post',
-                  postId: postId,
-                  letta: false, // ⭐⭐ CORREZIONE: Aggiunto il campo 'letta'
-                });
+                // ⭐ CORRETTO: Chiamata al metodo aggiungiNotificaNuovoPost con creatorId
+                await this.notificheService.aggiungiNotificaNuovoPost(
+                  followerId,
+                  currentUsername,
+                  postId,
+                  currentUserId
+                );
               }
             }
           }
@@ -71,10 +70,6 @@ export class PostService {
     }
   }
 
-
-
-
-  // ⭐⭐⭐ NUOVO METODO AGGIUNTO QUI ⭐⭐⭐
   getPostById(postId: string): Observable<Post | null> {
     const postDocRef = doc(this.firestore, 'posts', postId);
     return from(getDoc(postDocRef)).pipe(
@@ -97,7 +92,6 @@ export class PostService {
       })
     );
   }
-  // ⭐⭐⭐ FINE NUOVO METODO ⭐⭐⭐
 
   getPosts(limitPosts: number = 10, startAfterTimestamp: string | null = null): Observable<Post[]> {
     return from(this.getPostsQuery(limitPosts, startAfterTimestamp)).pipe(
@@ -149,8 +143,6 @@ export class PostService {
     }
   }
 
-
-
   async toggleLike(postId: string, userId: string, like: boolean): Promise<void> {
     const postRef = doc(this.firestore, 'posts', postId);
     const postDoc = await getDoc(postRef);
@@ -189,14 +181,13 @@ export class PostService {
         const likerUserData = await this.userDataService.getUserDataByUid(userId);
         const likerUsername = likerUserData?.nickname || 'Un utente';
 
-        await this.notificheService.aggiungiNotifica({
-          userId: postData.userId,
-          titolo: 'Nuovo "Mi piace"!',
-          messaggio: `${likerUsername} ha messo mi piace al tuo post.`,
-          tipo: 'mi_piace',
-          postId: postId,
-          letta: false,
-        });
+        // ⭐ CORRETTO: Chiamata a aggiungiNotificaMiPiace con il creatorId
+        await this.notificheService.aggiungiNotificaMiPiace(
+          postData.userId,
+          likerUsername,
+          postId,
+          userId,
+        );
       }
 
     } catch (error) {
@@ -247,9 +238,7 @@ export class PostService {
     return getDocs(q);
   }
 
-  // ⭐⭐⭐ INIZIO NUOVO METODO PER IL FEED NOTIZIE ⭐⭐⭐
   getFollowingUsersPosts(followingIds: string[], limitPosts: number = 10, startAfterTimestamp: string | null = null): Observable<Post[]> {
-    // Se la lista di utenti seguiti è vuota, restituisci un Observable che emette un array vuoto
     if (!followingIds || followingIds.length === 0) {
       return of([]);
     }
@@ -276,10 +265,6 @@ export class PostService {
 
   private async getFollowingUsersPostsQuery(followingIds: string[], limitPosts: number, startAfterTimestamp: string | null) {
     let q;
-    // Firestore ha un limite di 10 per la clausola 'in', quindi è importante che followingIds non superi 10.
-    // Se segui più di 10 utenti, dovrai fare più query o ripensare la struttura dei dati.
-    // Per ora, presupponiamo che la lista sia gestibile.
-
     if (startAfterTimestamp) {
       q = query(
         this.postsCollection,

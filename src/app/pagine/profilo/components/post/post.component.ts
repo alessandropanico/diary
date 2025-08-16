@@ -495,14 +495,15 @@ export class PostComponent implements OnInit, OnDestroy {
           await this.notificheService.aggiungiNotificaMenzionePost(
             taggedUser.uid,
             this.currentUserUsername,
-            postId
+            postId,
+            this.currentUserId // ⭐ AGGIORNATO: Aggiunto l'ID del creatore della notifica
           );
         }
       } catch (error) {
         console.error(`Errore durante la notifica di menzione per l'utente ${username}:`, error);
       }
     }
-  }
+}
 
   async presentDeleteAlert(postId: string) {
     const alert = await this.alertCtrl.create({
