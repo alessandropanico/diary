@@ -18,6 +18,8 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CommentsModalComponent } from 'src/app/pagine/profilo/components/comments-modal/comments-modal.component';
 import { LikeModalComponent } from 'src/app/pagine/profilo/components/like-modal/like-modal.component';
 
+import { ChatService } from 'src/app/services/chat.service'; // ⭐ AGGIUNGI QUESTO IMPORT ⭐
+import { SearchModalComponent } from 'src/app/shared/search-modal/search-modal.component';
 
 interface PostWithUserDetails extends Post {
   likesUsersMap?: Map<string, UserDashboardCounts>;
@@ -66,7 +68,8 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
     private expService: ExpService,
     private commentService: CommentService,
     private modalController: ModalController,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private chatService: ChatService // ⭐ AGGIUNGI QUESTO SERVIZIO ⭐
   ) { }
 
   ngOnInit() {
@@ -414,30 +417,70 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  async sharePost(post: Post) {
-    const appLink = 'https://alessandropanico.github.io/Sito-Portfolio/';
-    const postSpecificLink = `${appLink}#/post/${post.id}`;
-    let shareText = `Ho condiviso un post dall'app "NexusPlan"! Vieni a vedere ${postSpecificLink}`;
+  /**
+   * Condivide un post tramite l'API di condivisione nativa o, in alternativa,
+   * apre un modale per la condivisione in chat.
+   * Ho rinominato la funzione da 'sharePost' a 'sharePostNatively' per
+   * separare le due logiche di condivisione.
+   */
+  async sharePost(post: PostWithUserDetails) { // NOTA: L'argomento è di tipo PostWithUserDetails
+    // ⭐⭐ NUOVA LOGICA: Se la condivisione nativa fallisce, usa il modale della chat ⭐⭐
+    // Apri il modale di ricerca per selezionare una chat
+    const modal = await this.modalController.create({
+      component: SearchModalComponent,
+      componentProps: {
+        postToShare: post
+      },
+      cssClass: 'my-custom-search-modal',
+      mode: 'ios',
+      breakpoints: [0, 0.5, 0.75, 1],
+      initialBreakpoint: 0.75,
+      backdropDismiss: true
+    });
 
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `Post di ${post.username} su NexusPlan`,
-          text: shareText,
-          url: postSpecificLink,
-        });
-      } else {
-        console.warn('Web Share API non disponibile, copia negli appunti come fallback.');
-        await navigator.clipboard.writeText(shareText);
-        this.presentAppAlert('Condivisione non supportata', 'La condivisione nativa non è disponibile su questo dispositivo. Il testo del post (con link) è stato copiato negli appunti.');
-      }
-    } catch (error) {
-      if ((error as any).name !== 'AbortError') {
-        console.error('Errore durante la condivisione del post:', error);
-        this.presentAppAlert('Errore Condivisione', 'Non è stato possibile condividere il post.');
-      }
-    }
-  }
+    await modal.present();
+
+    const { data, role } = await modal.onWillDismiss();
+
+    if (role === 'chatSelected' && data) {
+      const { otherParticipantId } = data;
+
+      const loading = await this.loadingCtrl.create({
+        message: 'Invio del post in chat...',
+        spinner: 'crescent'
+      });
+      await loading.present();
+
+      try {
+        const conversationId = await this.chatService.getOrCreateConversation(this.currentUserId!, otherParticipantId);
+
+        const postMessageText = `Ho condiviso un post: ${post.text.substring(0, 50)}...`;
+
+        // ⭐⭐ CORREZIONE CHIAVE: L'oggetto postData ora ha tutti i campi necessari ⭐⭐
+        await this.chatService.sendMessage(
+          conversationId,
+          this.currentUserId!,
+          postMessageText,
+          'post',
+          {
+            id: post.id,
+            text: post.text,
+            imageUrl: post.imageUrl,
+            username: post.username,
+            userAvatarUrl: post.userAvatarUrl,
+          }
+        );
+
+        this.presentAppAlert('Successo', 'Il post è stato condiviso in chat con successo!');
+        this.expService.addExperience(50, 'postShared');
+      } catch (error) {
+        console.error('Errore durante la condivisione in chat:', error);
+        this.presentAppAlert('Errore Condivisione', 'Non è stato possibile condividere il post in chat.');
+      } finally {
+        await loading.dismiss();
+      }
+    }
+  }
 
   formatPostTime(timestamp: string): string {
     if (!timestamp) return '';
