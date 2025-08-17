@@ -17,14 +17,31 @@
     class="ff7-searchbar"
   ></ion-searchbar>
 
-  <div *ngIf="selectedUsers.length > 0" class="selected-users-container">
+  <div *ngIf="isSharingPost && userGroups.length > 0">
+    <ion-list-header>
+      <ion-label>I tuoi gruppi</ion-label>
+    </ion-list-header>
+    <ion-list>
+      <ion-item *ngFor="let group of userGroups" class="ff7-search-result-item" (click)="toggleGroupSelection(group)">
+        <ion-avatar slot="start">
+          <img [src]="group.photoUrl || 'assets/immaginiGenerali/default-group-avatar.png'" alt="Foto Gruppo">
+        </ion-avatar>
+        <ion-label>
+          <h2>{{ group.name }}</h2>
+        </ion-label>
+        <ion-icon slot="end" [name]="isGroupSelected(group.groupId!) ? 'checkmark-circle' : 'add-circle-outline'"
+          [color]="isGroupSelected(group.groupId!) ? 'success' : 'medium'"></ion-icon>
+      </ion-item>
+    </ion-list>
+  </div>
+
+  <div *ngIf="selectedUsers.length > 0 || selectedGroups.length > 0" class="selected-users-container">
     <ion-list-header>
       <ion-label>
-        <ng-container *ngIf="!isSharingPost">Partecipanti selezionati</ng-container>
-        <ng-container *ngIf="isSharingPost">Condividi con:</ng-container>
-        ({{ selectedUsers.length }})
+        Selezionati ({{ selectedUsers.length + selectedGroups.length }})
       </ion-label>
     </ion-list-header>
+
     <ion-chip *ngFor="let user of selectedUsers" outline color="primary" class="selected-user-chip">
       <ion-avatar>
         <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'">
@@ -32,11 +49,20 @@
       <ion-label>{{ user.nickname }}</ion-label>
       <ion-icon name="close" (click)="removeSelectedUser(user.uid)"></ion-icon>
     </ion-chip>
+
+    <ion-chip *ngFor="let group of selectedGroups" outline color="tertiary" class="selected-user-chip">
+      <ion-avatar>
+        <img [src]="group.photoUrl || 'assets/immaginiGenerali/default-group-avatar.png'">
+      </ion-avatar>
+      <ion-label>{{ group.name }}</ion-label>
+      <ion-icon name="close" (click)="removeSelectedGroup(group.groupId!)"></ion-icon>
+    </ion-chip>
   </div>
 
-  <ion-button *ngIf="isSharingPost && selectedUsers.length > 0" expand="block" class="create-group-button" (click)="confirmSelection()">
+  <ion-button *ngIf="isSharingPost && (selectedUsers.length > 0 || selectedGroups.length > 0)" expand="block" class="create-group-button" (click)="confirmSelection()">
     Condividi Post
   </ion-button>
+
   <ion-button *ngIf="!isSharingPost && !isAddingToGroup && selectedUsers.length > 0" expand="block" class="create-group-button" (click)="createGroup()">
     Crea Gruppo
   </ion-button>
@@ -45,6 +71,9 @@
   </ion-button>
 
   <ion-list *ngIf="!isSearchingUsers && searchResults.length > 0">
+    <ion-list-header>
+      <ion-label>Risultati di ricerca</ion-label>
+    </ion-list-header>
     <ion-item *ngFor="let user of searchResults" class="ff7-search-result-item" (click)="toggleUserSelection(user)">
       <ion-avatar slot="start">
         <img [src]="user.photo || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Foto Profilo">

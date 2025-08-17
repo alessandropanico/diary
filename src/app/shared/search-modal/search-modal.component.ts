@@ -3,6 +3,7 @@
 import { Component, OnInit, OnDestroy, Input } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
+import { GroupChat, GroupChatService } from 'src/app/services/group-chat.service';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
@@ -22,9 +23,12 @@ export class SearchModalComponent implements OnInit, OnDestroy {
   searchPerformed: boolean = false;
   loggedInUserId: string | null = null;
   selectedUsers: UserDashboardCounts[] = [];
+  selectedGroups: GroupChat[] = [];
+  userGroups: GroupChat[] = [];
 
   private searchTerms = new Subject<string>();
   private searchSubscription: Subscription | undefined;
+  private groupsSubscription: Subscription | undefined;
 
   @Input() isAddingToGroup: boolean = false;
   @Input() isSharingPost: boolean = false;
@@ -33,11 +37,20 @@ export class SearchModalComponent implements OnInit, OnDestroy {
   constructor(
     private modalCtrl: ModalController,
     private userDataService: UserDataService,
+    private groupChatService: GroupChatService
   ) { }
 
   ngOnInit() {
     const auth = getAuth();
     this.loggedInUserId = auth.currentUser ? auth.currentUser.uid : null;
+
+    // Carica la lista dei gruppi dell'utente loggato
+    if (this.loggedInUserId && this.isSharingPost) {
+      this.groupsSubscription = this.groupChatService.getGroupsForUser(this.loggedInUserId).subscribe(groups => {
+        this.userGroups = groups;
+      });
+    }
+
     this.searchSubscription = this.searchTerms.pipe(
       debounceTime(500),
       distinctUntilChanged(),
@@ -70,9 +83,12 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     if (this.searchSubscription) {
       this.searchSubscription.unsubscribe();
     }
+    if (this.groupsSubscription) {
+      this.groupsSubscription.unsubscribe();
+    }
   }
 
-  dismissModal(data?: { selectedUserIds?: string[], groupId?: string, groupName?: string }) {
+  dismissModal(data?: { selectedUserIds?: string[], selectedGroupIds?: string[], groupId?: string, groupName?: string }) {
     this.modalCtrl.dismiss(data);
   }
 
@@ -81,7 +97,6 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     this.searchTerms.next(this.searchQuery);
   }
 
-  // ⭐⭐ LOGICA AGGIORNATA PER TOGGLE (molto più semplice) ⭐⭐
   toggleUserSelection(user: UserDashboardCounts) {
     const index = this.selectedUsers.findIndex(u => u.uid === user.uid);
     if (index > -1) {
@@ -91,19 +106,35 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ⭐⭐ NUOVO METODO: Chiusura modale dopo aver selezionato gli utenti ⭐⭐
+  toggleGroupSelection(group: GroupChat) {
+    const index = this.selectedGroups.findIndex(g => g.groupId === group.groupId);
+    if (index > -1) {
+      this.selectedGroups.splice(index, 1);
+    } else {
+      this.selectedGroups.push(group);
+    }
+  }
+
   async confirmSelection() {
     const selectedUserIds = this.selectedUsers.map(user => user.uid);
-    // Restituisci gli ID selezionati al componente che ha aperto il modale
-    await this.modalCtrl.dismiss({ selectedUserIds: selectedUserIds }, 'chatSelected');
+    const selectedGroupIds = this.selectedGroups.map(group => group.groupId);
+    await this.modalCtrl.dismiss({ selectedUserIds: selectedUserIds, selectedGroupIds: selectedGroupIds }, 'chatSelected');
   }
 
   removeSelectedUser(uid: string) {
     this.selectedUsers = this.selectedUsers.filter(user => user.uid !== uid);
   }
 
+  removeSelectedGroup(groupId: string) {
+    this.selectedGroups = this.selectedGroups.filter(group => group.groupId !== groupId);
+  }
+
   isSelected(uid: string): boolean {
     return this.selectedUsers.some(user => user.uid === uid);
+  }
+
+  isGroupSelected(groupId: string): boolean {
+    return this.selectedGroups.some(group => group.groupId === groupId);
   }
 
   async createGroup() {
