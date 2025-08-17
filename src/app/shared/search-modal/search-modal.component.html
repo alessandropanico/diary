@@ -5,7 +5,7 @@
         <ion-icon name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>{{ postToShare ? 'Condividi Post' : 'Cerca Utenti' }}</ion-title>
+    <ion-title>{{ isSharingPost ? 'Condividi Post' : 'Cerca Utenti' }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -17,9 +17,13 @@
     class="ff7-searchbar"
   ></ion-searchbar>
 
-  <div *ngIf="selectedUsers.length > 0 && !isSharingPost" class="selected-users-container">
+  <div *ngIf="selectedUsers.length > 0" class="selected-users-container">
     <ion-list-header>
-      <ion-label>Partecipanti selezionati ({{ selectedUsers.length }})</ion-label>
+      <ion-label>
+        <ng-container *ngIf="!isSharingPost">Partecipanti selezionati</ng-container>
+        <ng-container *ngIf="isSharingPost">Condividi con:</ng-container>
+        ({{ selectedUsers.length }})
+      </ion-label>
     </ion-list-header>
     <ion-chip *ngFor="let user of selectedUsers" outline color="primary" class="selected-user-chip">
       <ion-avatar>
@@ -28,14 +32,17 @@
       <ion-label>{{ user.nickname }}</ion-label>
       <ion-icon name="close" (click)="removeSelectedUser(user.uid)"></ion-icon>
     </ion-chip>
-
-    <ion-button *ngIf="!isAddingToGroup" expand="block" class="create-group-button" (click)="createGroup()">
-      Crea Gruppo
-    </ion-button>
-    <ion-button *ngIf="isAddingToGroup" expand="block" class="create-group-button" (click)="addMembersToExistingGroup()">
-      Aggiungi Membri
-    </ion-button>
   </div>
+
+  <ion-button *ngIf="isSharingPost && selectedUsers.length > 0" expand="block" class="create-group-button" (click)="confirmSelection()">
+    Condividi Post
+  </ion-button>
+  <ion-button *ngIf="!isSharingPost && !isAddingToGroup && selectedUsers.length > 0" expand="block" class="create-group-button" (click)="createGroup()">
+    Crea Gruppo
+  </ion-button>
+  <ion-button *ngIf="!isSharingPost && isAddingToGroup && selectedUsers.length > 0" expand="block" class="create-group-button" (click)="addMembersToExistingGroup()">
+    Aggiungi Membri
+  </ion-button>
 
   <ion-list *ngIf="!isSearchingUsers && searchResults.length > 0">
     <ion-item *ngFor="let user of searchResults" class="ff7-search-result-item" (click)="toggleUserSelection(user)">
@@ -51,4 +58,21 @@
     </ion-item>
   </ion-list>
 
-  </ion-content>
+  <div *ngIf="postToShare" class="post-preview-container">
+    <p>Anteprima del post:</p>
+    <div class="shared-post-content">
+      <div class="shared-post-header">
+        <ion-avatar>
+          <img [src]="postToShare.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Avatar">
+        </ion-avatar>
+        <span>{{ postToShare.username }}</span>
+      </div>
+      <div class="shared-post-text">
+        <p>{{ postToShare.text }}</p>
+      </div>
+      <div *ngIf="postToShare?.imageUrl" class="shared-post-image">
+        <img [src]="postToShare!.imageUrl" alt="Immagine del post">
+      </div>
+    </div>
+  </div>
+</ion-content>

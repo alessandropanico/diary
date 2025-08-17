@@ -1,10 +1,12 @@
+// src/app/modals/search-modal/search-modal.component.ts
+
 import { Component, OnInit, OnDestroy, Input } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
-import { Post } from 'src/app/interfaces/post'; // ⭐ AGGIUNGI QUESTO IMPORT ⭐
+import { Post } from 'src/app/interfaces/post';
 
 @Component({
   selector: 'app-search-modal',
@@ -26,7 +28,7 @@ export class SearchModalComponent implements OnInit, OnDestroy {
 
   @Input() isAddingToGroup: boolean = false;
   @Input() isSharingPost: boolean = false;
-  @Input() postToShare: Post | null = null; // ⭐ AGGIUNGI QUESTA RIGA ⭐
+  @Input() postToShare: Post | null = null;
 
   constructor(
     private modalCtrl: ModalController,
@@ -79,25 +81,23 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     this.searchTerms.next(this.searchQuery);
   }
 
-
-  async toggleUserSelection(user: UserDashboardCounts) {
-    if (this.postToShare) {
-      // Modalità di condivisione post: chiudi il modale e restituisci l'ID dell'utente.
-      await this.modalCtrl.dismiss({ otherParticipantId: user.uid }, 'chatSelected');
-      return;
-    }
-
-    // Modalità predefinita (creazione di gruppo, ecc.)
+  // ⭐⭐ LOGICA AGGIORNATA PER TOGGLE (molto più semplice) ⭐⭐
+  toggleUserSelection(user: UserDashboardCounts) {
     const index = this.selectedUsers.findIndex(u => u.uid === user.uid);
     if (index > -1) {
       this.selectedUsers.splice(index, 1);
     } else {
       this.selectedUsers.push(user);
-      this.searchQuery = '';
-      this.searchResults = [];
-      this.searchTerms.next('');
     }
   }
+
+  // ⭐⭐ NUOVO METODO: Chiusura modale dopo aver selezionato gli utenti ⭐⭐
+  async confirmSelection() {
+    const selectedUserIds = this.selectedUsers.map(user => user.uid);
+    // Restituisci gli ID selezionati al componente che ha aperto il modale
+    await this.modalCtrl.dismiss({ selectedUserIds: selectedUserIds }, 'chatSelected');
+  }
+
   removeSelectedUser(uid: string) {
     this.selectedUsers = this.selectedUsers.filter(user => user.uid !== uid);
   }
@@ -111,7 +111,6 @@ export class SearchModalComponent implements OnInit, OnDestroy {
       console.warn('Seleziona almeno un utente per creare un gruppo.');
       return;
     }
-
     const memberUids = this.selectedUsers.map(user => user.uid);
     if (this.loggedInUserId && !memberUids.includes(this.loggedInUserId)) {
       memberUids.push(this.loggedInUserId);
