@@ -26,6 +26,7 @@ import { Observable, from, map, switchMap, forkJoin, of } from 'rxjs';
 import { collectionData, docData } from 'rxfire/firestore';
 
 import { UserDataService, UserProfile } from './user-data.service';
+import { Post } from 'src/app/interfaces/post'; // ⭐ IMPORT NECESSARIO ⭐
 
 // --- Interfacce ---
 export interface GroupChat {
@@ -50,7 +51,7 @@ export interface GroupMessage {
   senderNickname: string;
   text: string;
   timestamp: Timestamp;
-  type: 'text' | 'image' | 'video' | 'system';
+  type: 'text' | 'image' | 'video' | 'system' | 'post';
   imageUrl?: string;
 }
 
@@ -125,69 +126,57 @@ export class GroupChatService {
   }
 
   /**
-   * Invia un messaggio a un gruppo.
-   * Aggiorna anche l'ultimo messaggio del documento del gruppo.
-   * @param groupId L'ID del gruppo.
-   * @param senderId L'ID dell'utente che invia il messaggio.
-   * @param text Il testo del messaggio.
-   * @param type Il tipo di messaggio ('text', 'image', 'video', 'system').
-   * @param imageUrl L'URL dell'immagine (se il tipo è 'image').
-   */
-  async sendMessage(groupId: string, senderId: string, text: string, type: 'text' | 'image' | 'video' | 'system' = 'text', imageUrl?: string): Promise<void> {
-    // Riferimenti ai documenti
-    const groupMessagesCollectionRef = collection(this.firestore, `groups/${groupId}/messages`);
-    const groupDocRef = doc(this.firestore, 'groups', groupId);
+ * Invia un messaggio a un gruppo.
+ * Aggiorna anche l'ultimo messaggio del documento del gruppo.
+ * @param groupId L'ID del gruppo.
+ * @param senderId L'ID dell'utente che invia il messaggio.
+ * @param text Il testo del messaggio.
+ * @param type Il tipo di messaggio ('text', 'image', 'video', 'system', 'post').
+ * @param data Un oggetto opzionale per dati aggiuntivi (es. { imageUrl: string } o { postData: Post }).
+ */
+async sendMessage(groupId: string, senderId: string, text: string, type: 'text' | 'image' | 'video' | 'system' | 'post' = 'text', data?: { imageUrl?: string; postData?: Post }): Promise<void> {
+  const groupMessagesCollectionRef = collection(this.firestore, `groups/${groupId}/messages`);
+  const groupDocRef = doc(this.firestore, 'groups', groupId);
 
-    if (imageUrl) {
-    }
-
-    let senderNickname = 'Sistema'; // Default per messaggi di sistema
-    if (senderId !== 'system') {
-      try {
-        const senderProfile: UserProfile | null = await this.userDataService.getUserDataById(senderId);
-        senderNickname = senderProfile?.nickname || senderProfile?.name || 'Utente Sconosciuto';
-      } catch (error) {
-        console.warn(`WARN: Impossibile recuperare il nickname per l'utente ${senderId}. Usando 'Utente Sconosciuto'. Errore:`, error);
-        senderNickname = 'Utente Sconosciuto';
-      }
-    } else {
-    }
-
-    const newMessage: GroupMessage = {
-      senderId: senderId,
-      senderNickname: senderNickname,
-      text,
-      timestamp: serverTimestamp() as Timestamp, // Firestore popolerà questo
-      type,
-      ...(imageUrl && { imageUrl })
-    };
-
+  let senderNickname = 'Sistema';
+  if (senderId !== 'system') {
     try {
-      const messageDocRef = await addDoc(groupMessagesCollectionRef, newMessage); // OPERAZIONE 1
-
-      // Preparo l'oggetto per l'ultimo messaggio da aggiornare nel documento del gruppo
-      const lastMessageData = {
-        senderId: newMessage.senderId,
-        text: newMessage.text,
-        timestamp: serverTimestamp() // Anche questo verrà popolato da Firestore
-      };
-
-      await updateDoc(groupDocRef, { // OPERAZIONE 2
-        lastMessage: lastMessageData
-      });
-
+      const senderProfile: UserProfile | null = await this.userDataService.getUserDataById(senderId);
+      senderNickname = senderProfile?.nickname || senderProfile?.name || 'Utente Sconosciuto';
     } catch (error) {
-      console.error('ERRORE CRITICO durante l\'invio o l\'aggiornamento del messaggio di gruppo:', error);
-      console.error('Causa probabile: Regole di sicurezza di Firestore.');
-      console.error(`Controlla le regole per:`);
-      console.error(`  - Scrittura (create) su 'groups/${groupId}/messages'`);
-      console.error(`    -> Deve permettere request.resource.data.senderId == request.auth.uid (o 'system')`);
-      console.error(`    -> Deve permettere get(/databases/.../groups/${groupId}).data.members.hasAny([request.auth.uid])`);
-      console.error(`  - Aggiornamento (update) su 'groups/${groupId}' (solo per il campo 'lastMessage')`);
-      console.error(`    -> Deve permettere request.resource.data.keys().hasOnly(['lastMessage'])`);
-      throw error; // Rilancia l'errore per essere gestito dal componente chiamante (e mostrare l'alert)
+      console.warn(`WARN: Impossibile recuperare il nickname per l'utente ${senderId}. Usando 'Utente Sconosciuto'. Errore:`, error);
+      senderNickname = 'Utente Sconosciuto';
     }
   }
+
+  const newMessage: GroupMessage = {
+    senderId: senderId,
+    senderNickname: senderNickname,
+    text,
+    timestamp: serverTimestamp() as Timestamp,
+    type,
+    // ⭐ AGGIUNGI LE CONDIZIONI PER I NUOVI CAMPI ⭐
+    ...(data?.imageUrl && { imageUrl: data.imageUrl }),
+    ...(data?.postData && { postData: data.postData })
+  };
+
+  try {
+    await addDoc(groupMessagesCollectionRef, newMessage);
+
+    const lastMessageData = {
+      senderId: newMessage.senderId,
+      text: newMessage.text,
+      timestamp: serverTimestamp()
+    };
+
+    await updateDoc(groupDocRef, {
+      lastMessage: lastMessageData
+    });
+  } catch (error) {
+    console.error('ERRORE CRITICO durante l\'invio o l\'aggiornamento del messaggio di gruppo:', error);
+    throw error;
+  }
+}
 
   /**
    * Ottiene i messaggi più recenti di un gruppo in tempo reale.

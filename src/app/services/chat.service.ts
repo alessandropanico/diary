@@ -34,6 +34,15 @@ export interface Message {
   senderId: string;
   text: string;
   timestamp: Date;
+   type: 'text' | 'post';
+  // ⭐ NUOVO: Aggiungi un campo opzionale per i dati del post condiviso ⭐
+  postData?: {
+    id: string;
+    text: string;
+    imageUrl?: string;
+     username: string;
+    userAvatarUrl: string;
+  };
 }
 
 export interface PagedMessages {
@@ -155,58 +164,70 @@ export class ChatService {
   }
 
 
-  async sendMessage(conversationId: string, senderId: string, text: string): Promise<void> {
-    const messagesCollectionRef = collection(this.afs, `conversations/${conversationId}/messages`);
-    const conversationDocRef = doc(this.afs, 'conversations', conversationId);
+ async sendMessage(
+  conversationId: string,
+  senderId: string,
+  text: string,
+  type: 'text' | 'post' = 'text',
+  postData?: { id: string; text: string; imageUrl?: string; username: string; userAvatarUrl: string }
+): Promise<void> {
+  const messagesCollectionRef = collection(this.afs, `conversations/${conversationId}/messages`);
+  const conversationDocRef = doc(this.afs, 'conversations', conversationId);
 
-    try {
-      await addDoc(messagesCollectionRef, {
-        senderId: senderId,
-        text: text,
-        timestamp: serverTimestamp()
-      });
+  try {
+    const messagePayload: any = {
+      senderId: senderId,
+      timestamp: serverTimestamp(),
+      type: type,
+    };
 
-      const conversationSnap = await getDoc(conversationDocRef);
-      if (!conversationSnap.exists()) {
-        console.error('Errore: Conversazione non trovata per l\'invio del messaggio.');
-        throw new Error('Conversazione non trovata.');
-      }
-      const conversationData = conversationSnap.data() as ConversationDocument;
+    if (type === 'text') {
+      messagePayload.text = text;
+    } else if (type === 'post' && postData) {
+      // Creiamo un oggetto per i dati del post in modo sicuro
+      const postPayload: any = {
+        id: postData.id,
+        text: postData.text,
+        username: postData.username,
+        userAvatarUrl: postData.userAvatarUrl,
+      };
 
-      // NON ABBIAMO PIÙ BISOGNO DI QUESTO BLOCCO QUI
-      // L' "undelete" viene gestito in getOrCreateConversation
-      /*
-      const undeletePromises: Promise<void>[] = [];
-      conversationData.participants.forEach(participantId => {
-        undeletePromises.push(updateDoc(conversationDocRef, {
-          deletedBy: arrayRemove(participantId)
-        }));
-      });
-      await Promise.all(undeletePromises);
-      */
-
-      // Assicurati che il campo deletedBy sia vuoto quando si invia un messaggio,
-      // per ridondanza e per catturare casi limite in cui getOrCreateConversation
-      // non sia stato chiamato immediatamente prima.
-      if (conversationData.deletedBy && conversationData.deletedBy.length > 0) {
-        await updateDoc(conversationDocRef, {
-          deletedBy: [] // Svuota il campo deletedBy
-        });
+      // ⭐⭐ CORREZIONE CHIAVE: Aggiungi imageUrl solo se ha un valore definito ⭐⭐
+      if (postData.imageUrl) {
+        postPayload.imageUrl = postData.imageUrl;
       }
 
-
-      await updateDoc(conversationDocRef, {
-        lastMessage: text,
-        lastMessageAt: serverTimestamp(),
-        lastMessageSenderId: senderId,
-        [`lastRead.${senderId}`]: serverTimestamp()
-      });
-
-    } catch (error) {
-      console.error('Errore durante l\'invio del messaggio:', error);
-      throw error;
+      messagePayload.postData = postPayload;
     }
+
+    await addDoc(messagesCollectionRef, messagePayload);
+
+    const conversationSnap = await getDoc(conversationDocRef);
+    if (!conversationSnap.exists()) {
+      console.error('Errore: Conversazione non trovata per l\'invio del messaggio.');
+      throw new Error('Conversazione non trovata.');
+    }
+    const conversationData = conversationSnap.data() as ConversationDocument;
+
+    if (conversationData.deletedBy && conversationData.deletedBy.length > 0) {
+      await updateDoc(conversationDocRef, {
+        deletedBy: []
+      });
+    }
+
+    await updateDoc(conversationDocRef, {
+      lastMessage: text,
+      lastMessageAt: serverTimestamp(),
+      lastMessageSenderId: senderId,
+      [`lastRead.${senderId}`]: serverTimestamp()
+    });
+
+  } catch (error) {
+    console.error('Errore durante l\'invio del messaggio:', error);
+    throw error;
   }
+}
+
 
   getMessages(conversationId: string, limitMessages: number = 20): Observable<PagedMessages> {
     const messagesRef = collection(this.afs, `conversations/${conversationId}/messages`);

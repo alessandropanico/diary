@@ -4,6 +4,7 @@ import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { getAuth } from 'firebase/auth';
+import { Post } from 'src/app/interfaces/post'; // ⭐ AGGIUNGI QUESTO IMPORT ⭐
 
 @Component({
   selector: 'app-search-modal',
@@ -22,7 +23,10 @@ export class SearchModalComponent implements OnInit, OnDestroy {
 
   private searchTerms = new Subject<string>();
   private searchSubscription: Subscription | undefined;
-  @Input() isAddingToGroup: boolean = false;
+
+  @Input() isAddingToGroup: boolean = false;
+  @Input() isSharingPost: boolean = false;
+  @Input() postToShare: Post | null = null; // ⭐ AGGIUNGI QUESTA RIGA ⭐
 
   constructor(
     private modalCtrl: ModalController,
@@ -75,21 +79,25 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     this.searchTerms.next(this.searchQuery);
   }
 
-  toggleUserSelection(user: UserDashboardCounts) {
+
+  async toggleUserSelection(user: UserDashboardCounts) {
+    if (this.postToShare) {
+      // Modalità di condivisione post: chiudi il modale e restituisci l'ID dell'utente.
+      await this.modalCtrl.dismiss({ otherParticipantId: user.uid }, 'chatSelected');
+      return;
+    }
+
+    // Modalità predefinita (creazione di gruppo, ecc.)
     const index = this.selectedUsers.findIndex(u => u.uid === user.uid);
     if (index > -1) {
       this.selectedUsers.splice(index, 1);
     } else {
       this.selectedUsers.push(user);
-      // ⭐ Queste righe sono corrette e dovrebbero svuotare il campo ⭐
       this.searchQuery = '';
       this.searchResults = [];
-      // ⭐ Importante: assicurati che il Subject sia notificato anche con una stringa vuota ⭐
-      // Questo farà sì che il switchMap emetta un array vuoto e pulisca i suggerimenti
       this.searchTerms.next('');
     }
   }
-
   removeSelectedUser(uid: string) {
     this.selectedUsers = this.selectedUsers.filter(user => user.uid !== uid);
   }
@@ -111,9 +119,8 @@ export class SearchModalComponent implements OnInit, OnDestroy {
     this.dismissModal({ selectedUserIds: memberUids });
   }
 
-  // NUOVO METODO
-  async addMembersToExistingGroup() {
-    const memberUids = this.selectedUsers.map(user => user.uid);
-    this.dismissModal({ selectedUserIds: memberUids });
-  }
+  async addMembersToExistingGroup() {
+    const memberUids = this.selectedUsers.map(user => user.uid);
+    this.dismissModal({ selectedUserIds: memberUids });
+  }
 }

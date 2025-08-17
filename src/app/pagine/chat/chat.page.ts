@@ -13,6 +13,9 @@ import isToday from 'dayjs/plugin/isToday';
 import isYesterday from 'dayjs/plugin/isYesterday';
 import updateLocale from 'dayjs/plugin/updateLocale';
 
+import { Post } from 'src/app/interfaces/post'; // ⭐ AGGIUNGI QUESTO IMPORT ⭐
+
+
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
 dayjs.extend(updateLocale);
@@ -423,5 +426,15 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewInit {
       console.warn('Impossibile navigare al profilo: UID dell\'altro utente non disponibile.');
       this.presentFF7Alert('Impossibile visualizzare il profilo di questo utente.');
     }
+  }
+
+  /**
+   * Naviga alla pagina del post completo.
+   * @param postId L'ID del post.
+   */
+  goToPost(postId: string) {
+    // ⭐⭐ CORREZIONE QUI ⭐⭐
+    // Utilizziamo il percorso della rotta corretto per la pagina del post singolo.
+    this.router.navigateByUrl(`/notizia-singola/${postId}`);
   }
 }

@@ -203,3 +203,82 @@ ion-fab-button {
   box-shadow: 0 0 15px var(--primary-glow);
   border-radius: 50%;
 }
+
+/* ⭐⭐⭐ STILI PER IL POST CONDIVISO ⭐⭐⭐ */
+.shared-post-container {
+  padding: 0; // Il padding è all'interno del contenuto
+
+  .shared-post-content {
+    background: transparent;
+    border-radius: 15px;
+    padding: 10px;
+  }
+
+  &.my-message {
+    border-bottom-right-radius: 0;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    border-bottom-left-radius: 15px;
+    margin-bottom: 8px;
+  }
+
+  &.other-message {
+    border-bottom-left-radius: 0;
+    border-top-right-radius: 15px;
+    border-top-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+    margin-bottom: 8px;
+  }
+
+  .shared-post-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    ion-avatar {
+      width: 30px;
+      height: 30px;
+      min-width: 30px;
+      min-height: 30px;
+    }
+
+    span {
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+  }
+
+  .shared-post-text {
+    p {
+      margin: 0;
+      font-size: 0.95rem;
+      color: inherit;
+    }
+  }
+
+  .shared-post-image {
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  .shared-post-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+
+    ion-button {
+      font-size: 0.75rem;
+      --padding-start: 10px;
+      --padding-end: 10px;
+      --border-radius: 15px;
+    }
+  }
+}

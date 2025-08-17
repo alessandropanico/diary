@@ -5,7 +5,7 @@
         <ion-icon name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>Cerca Utenti</ion-title>
+    <ion-title>{{ postToShare ? 'Condividi Post' : 'Cerca Utenti' }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -17,7 +17,7 @@
     class="ff7-searchbar"
   ></ion-searchbar>
 
-  <div *ngIf="selectedUsers.length > 0" class="selected-users-container">
+  <div *ngIf="selectedUsers.length > 0 && !isSharingPost" class="selected-users-container">
     <ion-list-header>
       <ion-label>Partecipanti selezionati ({{ selectedUsers.length }})</ion-label>
     </ion-list-header>
@@ -51,16 +51,4 @@
     </ion-item>
   </ion-list>
 
-  <div *ngIf="isSearchingUsers" class="ion-text-center ion-padding">
-    <ion-spinner name="crescent" color="primary"></ion-spinner>
-    <p class="search-status-text">Ricerca in corso...</p>
-  </div>
-
-  <div *ngIf="!isSearchingUsers && searchPerformed && searchResults.length === 0 && searchQuery.length > 0" class="ion-text-center ion-padding">
-    <p class="search-status-text">Nessun utente trovato per "{{ searchQuery }}".</p>
-  </div>
-
-  <div *ngIf="!searchPerformed && !isSearchingUsers" class="ion-text-center ion-padding">
-    <p class="search-status-text">Inizia a digitare per cercare utenti.</p>
-  </div>
-</ion-content>
+  </ion-content>

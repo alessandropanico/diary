@@ -11,4 +11,5 @@ export interface Post {
   likes: string[];
   commentsCount: number;
   likesUsersMap?: Map<string, UserDashboardCounts>;
+  
 }
