@@ -184,40 +184,30 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     if (!this.groupId) {
       // nothing to do
     } else {
+      // ⭐ MODIFICA: Chiamiamo il servizio qui per indicare che la chat è attiva
+      this.groupChatNotificationService.setCurrentActiveGroupChat(this.groupId);
+
       if (!this.groupDetailsSubscription || this.groupDetailsSubscription.closed) {
         this.resetChatState();
         this.initializeGroupChat();
       } else {
         this.isLoading = false;
         this.cdr.detectChanges();
-        if (this.currentUserId && this.groupId) {
-          try {
-            await this.updateLastReadTimestampInService();
-          } catch (error) {
-            console.error('Errore nel marcare i messaggi di gruppo come letti in ionViewWillEnter:', error);
-          }
-        }
       }
-    }
-
-    if (this.groupId) {
-      this.groupChatNotificationService.setCurrentActiveGroupChat(this.groupId);
     }
   }
 
   async ionViewWillLeave() {
+    // ⭐ MODIFICA: Chiamiamo il servizio per indicare che non siamo più in una chat
+    this.groupChatNotificationService.setCurrentActiveGroupChat(null);
+
     this.groupDetailsSubscription?.unsubscribe();
     this.newMessagesListener?.unsubscribe();
     this.routeParamSubscription?.unsubscribe();
+  }
 
-    if (this.currentUserId && this.groupId) {
-      try {
-        await this.updateLastReadTimestampInService();
-      } catch (error) {
-        console.error('Errore nel marcare i messaggi di gruppo come letti in ionViewWillLeave:', error);
-      }
-    }
-
+  // ⭐ NUOVO METODO: Per una robustezza extra, assicuriamo che lo stato sia resettato anche in questo hook.
+  async ionViewDidLeave() {
     this.groupChatNotificationService.setCurrentActiveGroupChat(null);
   }
 
