@@ -468,6 +468,7 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
                 if (itemToDelete.type === 'private') {
                   deletePromises.push(this.chatService.markConversationAsDeleted(convId, this.loggedInUserId!));
                 } else {
+                  deletePromises.push(this.groupChatService.markGroupMessagesAsRead(convId, this.loggedInUserId!));
                   deletePromises.push(this.groupChatService.leaveGroup(convId, this.loggedInUserId!));
                 }
                 this.chatNotificationService.clearUnread(convId);
