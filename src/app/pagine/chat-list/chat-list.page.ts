@@ -7,8 +7,8 @@ import {
 } from 'src/app/services/chat.service';
 import { UserDataService } from 'src/app/services/user-data.service';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { Subscription, forkJoin, of, from, combineLatest, firstValueFrom } from 'rxjs';
-import { map, switchMap, catchError } from 'rxjs/operators';
+import { Subscription, forkJoin, of, from, combineLatest, firstValueFrom, Observable } from 'rxjs';
+import { map, switchMap, catchError, distinctUntilChanged } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ChatNotificationService } from 'src/app/services/chat-notification.service';
 import { Timestamp } from 'firebase/firestore';
@@ -26,6 +26,7 @@ import isToday from 'dayjs/plugin/isToday';
 import isYesterday from 'dayjs/plugin/isYesterday';
 import updateLocale from 'dayjs/plugin/updateLocale';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { GroupChatNotificationService } from 'src/app/services/group-chat-notification.service';
 
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
@@ -104,7 +105,9 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
     private alertController: AlertController,
     private modalCtrl: ModalController,
     private groupChatService: GroupChatService,
-    private presenceService: PresenceService // <-- MODIFICA: Inietta il nuovo servizio
+    private presenceService: PresenceService,
+    private groupChatNotificationService: GroupChatNotificationService, // ⭐ Aggiungi questo
+    // <-- MODIFICA: Inietta il nuovo servizio
   ) { }
 
   ngOnInit() {
@@ -234,8 +237,14 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   private async processGroupChat(group: GroupChat): Promise<ChatListItem> {
-    const lastReadTimestamp = await firstValueFrom(this.groupChatService.getLastReadTimestamp(group.groupId!, this.loggedInUserId!)).catch(() => null);
-    const unreadCountForGroup = await this.groupChatService.countUnreadMessagesForGroup(group.groupId!, this.loggedInUserId!, lastReadTimestamp);
+    if (!this.loggedInUserId) {
+      return Promise.reject('Utente non autenticato');
+    }
+
+    // ⭐⭐ Corretto: Utilizza this.loggedInUserId ⭐⭐
+    const unreadCountForGroup = await firstValueFrom<number>(
+      this.groupChatNotificationService.getUnreadGroupCount(group.groupId!, this.loggedInUserId)
+    );
 
     return {
       id: group.groupId!,
@@ -250,6 +259,22 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
       unreadMessageCount: unreadCountForGroup,
       groupDescription: group.description || ''
     };
+  }
+
+  // Aggiungi questo metodo all'interno della classe GroupChatNotificationService
+  public getUnreadGroupCount(groupId: string, currentUserId: string): Observable<number> {
+    // Ora la variabile 'currentUserId' esiste perché è un parametro del metodo
+    return this.groupChatService.getLastReadTimestamp(groupId, currentUserId).pipe(
+      switchMap(lastReadTs => {
+        const queryTimestamp = lastReadTs || new Timestamp(0, 0);
+        return from(this.groupChatService.countUnreadMessagesForGroup(groupId, currentUserId, queryTimestamp));
+      }),
+      distinctUntilChanged(),
+      catchError(err => {
+        console.error(`Errore nel conteggio messaggi non letti per gruppo ${groupId}:`, err);
+        return of(0);
+      })
+    );
   }
 
   private startOnlineStatusCheck() {
