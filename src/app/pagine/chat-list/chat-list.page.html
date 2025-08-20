@@ -34,7 +34,7 @@
     <div *ngIf="chatListItems.length === 0" class="ion-text-center ion-padding">
       <ion-icon name="chatbubbles-outline" size="large" color="medium"></ion-icon>
       <p>Non hai ancora conversazioni attive.</p>
-      <ion-button (click)="openSearchUserModal()" shape="round">Inizia una nuova chat</ion-button>
+      <ion-button routerLink="/lista-utenti" shape="round">Inizia una nuova chat</ion-button>
     </div>
 
     <ion-item-sliding *ngFor="let item of chatListItems" class="ff7-list-item" #slidingItem>
