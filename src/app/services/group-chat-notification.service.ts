@@ -356,4 +356,29 @@ export class GroupChatNotificationService implements OnDestroy {
       console.error('GroupChatNotificationService: Errore nel marcare tutti i messaggi di gruppo come letti:', error);
     }
   }
+
+  /**
+   * Pulisce lo stato dei messaggi non letti per un gruppo specifico.
+   * Utile per quando un utente abbandona un gruppo o lo rimuove dalla lista.
+   * @param groupId L'ID del gruppo da cui rimuovere lo stato.
+   */
+  public clearUnreadForGroup(groupId: string): void {
+    console.log(`GroupChatNotificationService: Pulisco lo stato non letto per il gruppo ${groupId}.`);
+    // Rimuovi il gruppo dalle mappe che tracciano lo stato non letto
+    this.groupMessagesSubscriptions.forEach((sub, id) => {
+      if (id === groupId) {
+        sub.unsubscribe();
+        this.groupMessagesSubscriptions.delete(id);
+        this.lastNotifiedGroupMessageTimestamp.delete(id);
+        this.lastReadTimestampsForGroups.delete(id);
+        this.lastKnownGroups.delete(id);
+      }
+    });
+
+    // Salva lo stato nel localStorage
+    this.saveLastNotifiedTimestamps();
+
+    // Ricalcola il conteggio totale e aggiorna l'interfaccia utente
+    this.recalculateAndEmitUnreadCount();
+  }
 }

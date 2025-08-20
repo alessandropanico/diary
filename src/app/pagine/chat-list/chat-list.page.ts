@@ -395,14 +395,17 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
               if (item.type === 'private') {
                 await this.chatService.markConversationAsDeleted(item.id, this.loggedInUserId!);
               } else {
-                // ⭐ CORREZIONE: Richiama i due metodi in sequenza ⭐
-                await this.groupChatService.markGroupMessagesAsRead(item.id, this.loggedInUserId!);
-                await this.groupChatService.leaveGroup(item.id, this.loggedInUserId!);
+                await Promise.all([
+                  this.groupChatService.markGroupMessagesAsRead(item.id, this.loggedInUserId!),
+                  this.groupChatService.leaveGroup(item.id, this.loggedInUserId!)
+                ]);
               }
-              // Questo richiamo è qui per coerenza, anche se la logica precedente lo fa già
-              this.chatNotificationService.clearUnread(item.id);
+              // ✅ Chiamata corretta per il successo
+              this.groupChatNotificationService.clearUnreadForGroup(item.id);
             } catch (error) {
               console.error('Errore durante l\'eliminazione della chat:', error);
+              // ✅ Chiamata corretta anche in caso di errore
+              this.groupChatNotificationService.clearUnreadForGroup(item.id);
               const errorAlert = await this.alertController.create({
                 header: 'Errore',
                 message: 'Impossibile eliminare la chat. Riprova.',
@@ -416,6 +419,70 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
     });
     await alert.present();
   }
+
+
+  async deleteSelectedConversations() {
+    if (this.selectedConversations.size === 0) {
+      return;
+    }
+
+    const alert = await this.alertController.create({
+      header: 'Elimina Chat Selezionate',
+      message: `Sei sicuro di voler eliminare le ${this.selectedConversations.size} chat selezionate? Questa azione le rimuoverà dalla tua lista.`,
+      buttons: [
+        { text: 'Annulla', role: 'cancel' },
+        {
+          text: 'Elimina Tutto',
+          handler: async () => {
+            if (!this.loggedInUserId) {
+              console.error('Errore: Utente non autenticato per eliminare le chat.');
+              return;
+            }
+
+            const deletePromises: Promise<void>[] = [];
+            for (const convId of this.selectedConversations) {
+              const itemToDelete = this.chatListItems.find(item => item.id === convId);
+              if (itemToDelete) {
+                if (itemToDelete.type === 'private') {
+                  deletePromises.push(this.chatService.markConversationAsDeleted(convId, this.loggedInUserId!));
+                } else {
+                  deletePromises.push(this.groupChatService.markGroupMessagesAsRead(convId, this.loggedInUserId!));
+                  deletePromises.push(this.groupChatService.leaveGroup(convId, this.loggedInUserId!));
+                }
+              }
+            }
+
+            try {
+              await Promise.all(deletePromises);
+              this.selectedConversations.clear();
+              this.isSelectionMode = false;
+
+              // ✅ Chiamata corretta per il successo
+              for (const convId of this.selectedConversations) {
+                this.groupChatNotificationService.clearUnreadForGroup(convId);
+              }
+            } catch (error) {
+              console.error('Errore durante l\'eliminazione in blocco delle chat:', error);
+
+              // ✅ Chiamata corretta anche in caso di errore
+              for (const convId of this.selectedConversations) {
+                this.groupChatNotificationService.clearUnreadForGroup(convId);
+              }
+
+              const errorAlert = await this.alertController.create({
+                header: 'Errore',
+                message: 'Impossibile eliminare alcune chat. Riprova.',
+                buttons: ['OK'],
+              });
+              await errorAlert.present();
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
 
   toggleSelectionMode() {
     this.isSelectionMode = !this.isSelectionMode;
@@ -446,58 +513,7 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
     return this.selectedConversations.has(conversationId);
   }
 
-  async deleteSelectedConversations() {
-    if (this.selectedConversations.size === 0) {
-      return;
-    }
 
-    const alert = await this.alertController.create({
-      header: 'Elimina Chat Selezionate',
-      message: `Sei sicuro di voler eliminare le ${this.selectedConversations.size} chat selezionate? Questa azione le rimuoverà dalla tua lista.`,
-      buttons: [
-        { text: 'Annulla', role: 'cancel' },
-        {
-          text: 'Elimina Tutto',
-          handler: async () => {
-            if (!this.loggedInUserId) {
-              console.error('Errore: Utente non autenticato per eliminare le chat.');
-              return;
-            }
-
-            const deletePromises: Promise<void>[] = [];
-            for (const convId of this.selectedConversations) {
-              const itemToDelete = this.chatListItems.find(item => item.id === convId);
-              if (itemToDelete) {
-                if (itemToDelete.type === 'private') {
-                  deletePromises.push(this.chatService.markConversationAsDeleted(convId, this.loggedInUserId!));
-                } else {
-                  deletePromises.push(this.groupChatService.markGroupMessagesAsRead(convId, this.loggedInUserId!));
-                  deletePromises.push(this.groupChatService.leaveGroup(convId, this.loggedInUserId!));
-                  deletePromises.push(this.groupChatService.markGroupMessagesAsRead(convId, this.loggedInUserId!));
-                }
-                this.chatNotificationService.clearUnread(convId);
-              }
-            }
-
-            try {
-              await Promise.all(deletePromises);
-              this.selectedConversations.clear();
-              this.isSelectionMode = false;
-            } catch (error) {
-              console.error('Errore durante l\'eliminazione in blocco delle chat:', error);
-              const errorAlert = await this.alertController.create({
-                header: 'Errore',
-                message: 'Impossibile eliminare alcune chat. Riprova.',
-                buttons: ['OK'],
-              });
-              await errorAlert.present();
-            }
-          },
-        },
-      ],
-    });
-    await alert.present();
-  }
 
   async openSearchUserModal() {
     const modal = await this.modalCtrl.create({
