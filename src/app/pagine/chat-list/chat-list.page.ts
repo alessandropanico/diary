@@ -395,8 +395,11 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
               if (item.type === 'private') {
                 await this.chatService.markConversationAsDeleted(item.id, this.loggedInUserId!);
               } else {
+                // ⭐ CORREZIONE: Richiama i due metodi in sequenza ⭐
+                await this.groupChatService.markGroupMessagesAsRead(item.id, this.loggedInUserId!);
                 await this.groupChatService.leaveGroup(item.id, this.loggedInUserId!);
               }
+              // Questo richiamo è qui per coerenza, anche se la logica precedente lo fa già
               this.chatNotificationService.clearUnread(item.id);
             } catch (error) {
               console.error('Errore durante l\'eliminazione della chat:', error);
@@ -470,6 +473,7 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
                 } else {
                   deletePromises.push(this.groupChatService.markGroupMessagesAsRead(convId, this.loggedInUserId!));
                   deletePromises.push(this.groupChatService.leaveGroup(convId, this.loggedInUserId!));
+                  deletePromises.push(this.groupChatService.markGroupMessagesAsRead(convId, this.loggedInUserId!));
                 }
                 this.chatNotificationService.clearUnread(convId);
               }
