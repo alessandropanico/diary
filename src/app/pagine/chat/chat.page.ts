@@ -73,6 +73,9 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewInit {
   isOtherUserBlocked: boolean = false;
   isBlockedByOtherUser: boolean = false;
 
+  isSelectionMode: boolean = false;
+  selectedMessages = new Set<string>();
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -436,5 +439,58 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewInit {
     // ⭐⭐ CORREZIONE QUI ⭐⭐
     // Utilizziamo il percorso della rotta corretto per la pagina del post singolo.
     this.router.navigateByUrl(`/notizia-singola/${postId}`);
+  }
+
+  // Aggiungi questi nuovi metodi alla classe ChatPage
+  toggleSelectionMode() {
+    this.isSelectionMode = !this.isSelectionMode;
+    this.selectedMessages.clear();
+  }
+
+  selectMessage(message: Message) {
+    if (this.isSelectionMode) {
+      if (this.selectedMessages.has(message.id)) {
+        this.selectedMessages.delete(message.id);
+      } else {
+        this.selectedMessages.add(message.id);
+      }
+      // Esci dalla modalità di selezione se non ci sono messaggi selezionati
+      if (this.selectedMessages.size === 0) {
+        this.isSelectionMode = false;
+      }
+    }
+  }
+
+  async deleteSelectedMessages() {
+    if (this.selectedMessages.size === 0) {
+      return;
+    }
+
+    const alert = await this.alertCtrl.create({
+      header: 'Elimina Messaggi',
+      message: `Sei sicuro di voler eliminare i ${this.selectedMessages.size} messaggi selezionati?`,
+      buttons: [
+        { text: 'Annulla', role: 'cancel' },
+        {
+          text: 'Elimina',
+          handler: async () => {
+            try {
+              const messageIdsToDelete = Array.from(this.selectedMessages);
+              await this.chatService.deleteMessages(this.conversationId!, messageIdsToDelete);
+
+              // Pulisci lo stato dopo l'eliminazione
+              this.selectedMessages.clear();
+              this.isSelectionMode = false;
+
+              await this.presentFF7Alert('Messaggio/i eliminato/i con successo!');
+            } catch (error) {
+              console.error('Errore durante l\'eliminazione dei messaggi:', error);
+              await this.presentFF7Alert('Impossibile eliminare i messaggi. Riprova.');
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
   }
 }

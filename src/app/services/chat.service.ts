@@ -20,6 +20,7 @@ import {
   QueryDocumentSnapshot,
   Timestamp,
   arrayUnion,
+  deleteDoc,
   arrayRemove
 } from '@angular/fire/firestore';
 
@@ -34,13 +35,13 @@ export interface Message {
   senderId: string;
   text: string;
   timestamp: Date;
-   type: 'text' | 'post';
+  type: 'text' | 'post';
   // ⭐ NUOVO: Aggiungi un campo opzionale per i dati del post condiviso ⭐
   postData?: {
     id: string;
     text: string;
     imageUrl?: string;
-     username: string;
+    username: string;
     userAvatarUrl: string;
   };
 }
@@ -164,69 +165,69 @@ export class ChatService {
   }
 
 
- async sendMessage(
-  conversationId: string,
-  senderId: string,
-  text: string,
-  type: 'text' | 'post' = 'text',
-  postData?: { id: string; text: string; imageUrl?: string; username: string; userAvatarUrl: string }
-): Promise<void> {
-  const messagesCollectionRef = collection(this.afs, `conversations/${conversationId}/messages`);
-  const conversationDocRef = doc(this.afs, 'conversations', conversationId);
+  async sendMessage(
+    conversationId: string,
+    senderId: string,
+    text: string,
+    type: 'text' | 'post' = 'text',
+    postData?: { id: string; text: string; imageUrl?: string; username: string; userAvatarUrl: string }
+  ): Promise<void> {
+    const messagesCollectionRef = collection(this.afs, `conversations/${conversationId}/messages`);
+    const conversationDocRef = doc(this.afs, 'conversations', conversationId);
 
-  try {
-    const messagePayload: any = {
-      senderId: senderId,
-      timestamp: serverTimestamp(),
-      type: type,
-    };
-
-    if (type === 'text') {
-      messagePayload.text = text;
-    } else if (type === 'post' && postData) {
-      // Creiamo un oggetto per i dati del post in modo sicuro
-      const postPayload: any = {
-        id: postData.id,
-        text: postData.text,
-        username: postData.username,
-        userAvatarUrl: postData.userAvatarUrl,
+    try {
+      const messagePayload: any = {
+        senderId: senderId,
+        timestamp: serverTimestamp(),
+        type: type,
       };
 
-      // ⭐⭐ CORREZIONE CHIAVE: Aggiungi imageUrl solo se ha un valore definito ⭐⭐
-      if (postData.imageUrl) {
-        postPayload.imageUrl = postData.imageUrl;
+      if (type === 'text') {
+        messagePayload.text = text;
+      } else if (type === 'post' && postData) {
+        // Creiamo un oggetto per i dati del post in modo sicuro
+        const postPayload: any = {
+          id: postData.id,
+          text: postData.text,
+          username: postData.username,
+          userAvatarUrl: postData.userAvatarUrl,
+        };
+
+        // ⭐⭐ CORREZIONE CHIAVE: Aggiungi imageUrl solo se ha un valore definito ⭐⭐
+        if (postData.imageUrl) {
+          postPayload.imageUrl = postData.imageUrl;
+        }
+
+        messagePayload.postData = postPayload;
       }
 
-      messagePayload.postData = postPayload;
-    }
+      await addDoc(messagesCollectionRef, messagePayload);
 
-    await addDoc(messagesCollectionRef, messagePayload);
+      const conversationSnap = await getDoc(conversationDocRef);
+      if (!conversationSnap.exists()) {
+        console.error('Errore: Conversazione non trovata per l\'invio del messaggio.');
+        throw new Error('Conversazione non trovata.');
+      }
+      const conversationData = conversationSnap.data() as ConversationDocument;
 
-    const conversationSnap = await getDoc(conversationDocRef);
-    if (!conversationSnap.exists()) {
-      console.error('Errore: Conversazione non trovata per l\'invio del messaggio.');
-      throw new Error('Conversazione non trovata.');
-    }
-    const conversationData = conversationSnap.data() as ConversationDocument;
+      if (conversationData.deletedBy && conversationData.deletedBy.length > 0) {
+        await updateDoc(conversationDocRef, {
+          deletedBy: []
+        });
+      }
 
-    if (conversationData.deletedBy && conversationData.deletedBy.length > 0) {
       await updateDoc(conversationDocRef, {
-        deletedBy: []
+        lastMessage: text,
+        lastMessageAt: serverTimestamp(),
+        lastMessageSenderId: senderId,
+        [`lastRead.${senderId}`]: serverTimestamp()
       });
+
+    } catch (error) {
+      console.error('Errore durante l\'invio del messaggio:', error);
+      throw error;
     }
-
-    await updateDoc(conversationDocRef, {
-      lastMessage: text,
-      lastMessageAt: serverTimestamp(),
-      lastMessageSenderId: senderId,
-      [`lastRead.${senderId}`]: serverTimestamp()
-    });
-
-  } catch (error) {
-    console.error('Errore durante l\'invio del messaggio:', error);
-    throw error;
   }
-}
 
 
   getMessages(conversationId: string, limitMessages: number = 20): Observable<PagedMessages> {
@@ -457,6 +458,30 @@ export class ChatService {
       });
     } catch (error) {
       console.error(`Errore nel marcare la conversazione ${conversationId} come eliminata:`, error);
+      throw error;
+    }
+  }
+
+  // Aggiungi questo metodo alla classe ChatService
+  async deleteMessages(conversationId: string, messageIds: string[]): Promise<void> {
+    if (!conversationId || messageIds.length === 0) {
+      console.error('Errore: ID conversazione o ID messaggi mancanti.');
+      throw new Error('ID conversazione o ID messaggi mancanti.');
+    }
+
+    try {
+      const deletePromises = messageIds.map(messageId => {
+        const messageDocRef = doc(this.afs, `conversations/${conversationId}/messages`, messageId);
+        return deleteDoc(messageDocRef);
+      });
+
+      await Promise.all(deletePromises);
+
+      // Potenziale logica aggiuntiva: se l'ultimo messaggio viene eliminato, aggiornare il lastMessage
+      // Per ora non lo facciamo per semplicità, ma è un'ottimizzazione possibile.
+
+    } catch (error) {
+      console.error(`Errore nell'eliminazione dei messaggi per la conversazione ${conversationId}:`, error);
       throw error;
     }
   }

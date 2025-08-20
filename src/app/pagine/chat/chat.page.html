@@ -1,5 +1,19 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar *ngIf="isSelectionMode">
+    <ion-buttons slot="start">
+      <ion-button (click)="toggleSelectionMode()">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ selectedMessages.size }} selezionato{{ selectedMessages.size === 1 ? '' : 'i' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="deleteSelectedMessages()" [disabled]="selectedMessages.size === 0">
+        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <ion-toolbar *ngIf="!isSelectionMode">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/chat-list"></ion-back-button>
     </ion-buttons>
@@ -12,6 +26,12 @@
     </div>
 
     <ion-title *ngIf="isLoading || !otherUser" class="chat-title-placeholder"></ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="toggleSelectionMode()">
+        <ion-icon slot="icon-only" name="ellipsis-vertical-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
 
   </ion-toolbar>
 </ion-header>
@@ -29,41 +49,21 @@
         loadingText="Caricando messaggi precedenti..."></ion-infinite-scroll-content>
     </ion-infinite-scroll>
 
-<ng-container *ngFor="let message of messages; let i = index">
-  <div *ngIf="message.type === 'post'" class="shared-post-container"
-    [class.my-message]="isMyMessage(message.senderId)"
-    [class.other-message]="!isMyMessage(message.senderId)">
-    <div class="shared-post-content">
-      <div class="shared-post-header">
-        <ion-avatar>
-          <img [src]="message.postData?.userAvatarUrl || 'assets/immaginiGenerali/default-avatar.jpg'" alt="Avatar">
-        </ion-avatar>
-        <span>{{ message.postData?.username }}</span>
+    <ng-container *ngFor="let message of messages; let i = index">
+      <div *ngIf="message.type === 'post'" class="shared-post-container"
+        [class.my-message]="isMyMessage(message.senderId)" [class.other-message]="!isMyMessage(message.senderId)"
+        (click)="isMyMessage(message.senderId) && isSelectionMode ? selectMessage(message) : null"
+        [class.selected-message]="isSelectionMode && selectedMessages.has(message.id)">
       </div>
-      <div class="shared-post-text">
-        <p>{{ message.postData?.text }}</p>
-      </div>
-      <div *ngIf="message.postData?.imageUrl" class="shared-post-image">
-        <img [src]="message.postData!.imageUrl" alt="Immagine del post">
-      </div>
-      <div class="shared-post-footer">
-        <ion-button size="small" fill="outline" (click)="goToPost(message.postData!.id)">
-          Vai al Post
-        </ion-button>
-      </div>
-    </div>
-  </div>
 
-  <div
-    *ngIf="message.type === 'text'"
-    [class.my-message]="isMyMessage(message.senderId)"
-    [class.other-message]="!isMyMessage(message.senderId)"
-    class="chat-bubble"
-  >
-    <p class="message-text">{{ message.text }}</p>
-    <span class="message-timestamp">{{ message.timestamp | date:'shortTime' }}</span>
-  </div>
-</ng-container>
+      <div *ngIf="message.type === 'text'" [class.my-message]="isMyMessage(message.senderId)"
+        [class.other-message]="!isMyMessage(message.senderId)" class="chat-bubble"
+        (click)="isMyMessage(message.senderId) ? selectMessage(message) : null"
+        [class.selected-message]="isSelectionMode && selectedMessages.has(message.id)">
+        <p class="message-text">{{ message.text }}</p>
+        <span class="message-timestamp">{{ message.timestamp | date:'shortTime' }}</span>
+      </div>
+    </ng-container>
 
 
   </div>

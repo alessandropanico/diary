@@ -282,3 +282,31 @@ ion-fab-button {
     }
   }
 }
+
+/* --- Stili per la modalità di selezione dei messaggi --- */
+.chat-bubble.selected-message,
+.shared-post-container.selected-message {
+  border: 2px solid var(--primary-glow);
+  box-shadow: 0 0 10px var(--primary-glow), inset 0 0 5px var(--primary-glow);
+  transform: scale(1.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+// Opzionale: Aggiungi un effetto al passaggio del mouse per la modalità selezione
+@media (hover: hover) {
+  .my-message.selected-message:hover {
+    cursor: pointer;
+    transform: scale(1.04);
+  }
+}
+
+// Stile per l'input in modalità di selezione
+.chat-page-content {
+  .chat-bubble,
+  .shared-post-container {
+    // Rimuovi il pointer-events per i messaggi non tuoi in modalità selezione
+    &:not(.my-message) {
+      pointer-events: none;
+    }
+  }
+}
