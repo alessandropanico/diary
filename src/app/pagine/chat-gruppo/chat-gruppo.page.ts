@@ -275,7 +275,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
         try {
           const userData = await this.userDataService.getUserDataById(memberId);
           if (userData) {
-            const photoUrl = userData['profilePictureUrl'] || userData['photo'] || 'assets/immaginiGenerali/default-avatar.jpg';
+            const photoUrl = userData['photo'] || 'assets/immaginiGenerali/default-avatar.jpg';
             this.groupMembers.push({
               uid: memberId,
               nickname: userData['nickname'] || 'Utente Sconosciuto',
