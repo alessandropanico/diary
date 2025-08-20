@@ -411,7 +411,7 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
                 message: 'Impossibile eliminare la chat. Riprova.',
                 buttons: ['OK'],
               });
-              await errorAlert.present();
+              // await errorAlert.present();
             }
           },
         },
@@ -474,7 +474,7 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
                 message: 'Impossibile eliminare alcune chat. Riprova.',
                 buttons: ['OK'],
               });
-              await errorAlert.present();
+              // await errorAlert.present();
             }
           },
         },
