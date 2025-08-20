@@ -120,6 +120,28 @@ ion-content {
   border-bottom-left-radius: 0;
 }
 
+.system-message {
+  align-self: center;
+  background: linear-gradient(135deg, #272734, #29293c);
+  color: white;
+  border-bottom-right-radius: 0;
+}
+
+.chat-bubble.system-message {
+  align-self: center;
+  background-color: transparent;
+
+  .sender-name {
+    display: none;
+  }
+
+  .message-timestamp {
+    display: none;
+  }
+}
+
+
+
 /* Stili per il footer fisso */
 ion-footer {
   position: fixed;

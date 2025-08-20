@@ -817,4 +817,8 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
       await this.presentFF7Alert('Errore nel salvare i dettagli. Riprova.');
     }
   }
+
+  isSystemMessage(senderId: string): boolean {
+    return senderId === 'system';
+  }
 }

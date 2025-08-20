@@ -56,14 +56,14 @@
         <span>{{ formatDateHeader(message.timestamp) }}</span>
       </div>
 
-      <div
-        [class.my-message]="isMyMessage(message.senderId)"
-        [class.other-message]="!isMyMessage(message.senderId)"
-        class="chat-bubble"
+      <div [class.my-message]="isMyMessage(message.senderId)"
+        [class.other-message]="!isMyMessage(message.senderId) && !isSystemMessage(message.senderId)"
+        [class.system-message]="isSystemMessage(message.senderId)" class="chat-bubble"
         (click)="isMyMessage(message.senderId) && isSelectionMode ? selectMessage(message) : null"
         [class.selected-message]="isSelectionMode && selectedMessages.has(message.messageId!)">
 
-        <div *ngIf="!isMyMessage(message.senderId) && getMemberDisplay(message.senderId) !== 'Sistema'" class="sender-name">
+        <div *ngIf="!isMyMessage(message.senderId) && getMemberDisplay(message.senderId) !== 'Sistema'"
+          class="sender-name">
           {{ getMemberDisplay(message.senderId) }}
         </div>
         <p class="message-text">{{ message.text }}</p>
