@@ -1,11 +1,14 @@
 <ion-header>
+  <!-- Toolbar in modalità selezione -->
   <ion-toolbar *ngIf="isSelectionMode">
     <ion-buttons slot="start">
       <ion-button (click)="toggleSelectionMode()">
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>{{ selectedMessages.size }} selezionato{{ selectedMessages.size === 1 ? '' : 'i' }}</ion-title>
+    <ion-title>
+      {{ selectedMessages.size }} selezionato{{ selectedMessages.size === 1 ? '' : 'i' }}
+    </ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="deleteSelectedMessages()" [disabled]="selectedMessages.size === 0">
         <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
@@ -13,6 +16,7 @@
     </ion-buttons>
   </ion-toolbar>
 
+  <!-- Toolbar normale -->
   <ion-toolbar *ngIf="!isSelectionMode">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/chat-list"></ion-back-button>
@@ -27,16 +31,31 @@
 
     <ion-title *ngIf="isLoading || !groupDetails" class="chat-title-placeholder"></ion-title>
 
-    <ion-buttons slot="end">
-      <ion-button (click)="presentGroupInfoModal()" *ngIf="groupDetails">
+    <ion-buttons slot="end" *ngIf="groupDetails">
+      <!-- Trigger per il menu -->
+      <ion-button id="group-menu-trigger">
         <ion-icon name="ellipsis-vertical-outline"></ion-icon>
       </ion-button>
-      <ion-button (click)="toggleSelectionMode()" *ngIf="groupDetails">
-        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-      </ion-button>
+
+      <!-- Menu a tendina -->
+      <ion-popover trigger="group-menu-trigger" side="bottom" alignment="end">
+        <ng-template>
+          <ion-list>
+            <ion-item button (click)="presentGroupInfoModal(); dismissPopover($event)">
+              <ion-icon name="information-circle-outline" slot="start"></ion-icon>
+              <ion-label>Info gruppo</ion-label>
+            </ion-item>
+            <ion-item button (click)="toggleSelectionMode(); dismissPopover($event)">
+              <ion-icon name="trash-outline" slot="start"></ion-icon>
+              <ion-label>Elimina messaggi</ion-label>
+            </ion-item>
+          </ion-list>
+        </ng-template>
+      </ion-popover>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
+
 
 <ion-content #content class="chat-page-content" [scrollEvents]="true">
   <div *ngIf="isLoading" class="loading-overlay">

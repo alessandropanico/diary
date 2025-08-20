@@ -821,4 +821,15 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
   isSystemMessage(senderId: string): boolean {
     return senderId === 'system';
   }
+
+  dismissPopover(ev: Event) {
+    const popover = document.querySelector('ion-popover') as HTMLIonPopoverElement;
+    if (popover) {
+      popover.dismiss();
+    }
+    ev.stopPropagation(); // Evita click extra sul background
+  }
+
+
+
 }
