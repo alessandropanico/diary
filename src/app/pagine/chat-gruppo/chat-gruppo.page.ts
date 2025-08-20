@@ -4,7 +4,7 @@ import { IonContent, InfiniteScrollCustomEvent, NavController, AlertController, 
 import { getAuth } from 'firebase/auth';
 import { Subscription } from 'rxjs';
 import { GroupChatService, GroupChat, GroupMessage } from '../../services/group-chat.service';
-import { UserDataService } from '../../services/user-data.service'; // Rimosso UserData
+import { UserDataService } from '../../services/user-data.service';
 import * as dayjs from 'dayjs';
 import { QueryDocumentSnapshot, Timestamp } from '@angular/fire/firestore';
 
@@ -35,7 +35,6 @@ dayjs.updateLocale('it', {
   ]
 });
 
-// ⭐⭐ NOVITÀ: Nuova interfaccia per i dettagli del membro nel componente ⭐⭐
 interface GroupMemberDisplay {
   uid: string;
   nickname: string;
@@ -77,12 +76,15 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
   private isSendingMessage: boolean = false;
   isModalOpen: boolean = false;
 
+  // Variabili per la modalità di selezione/eliminazione
+  isSelectionMode: boolean = false;
+  selectedMessages = new Set<string>();
+
   editableName: string = '';
   editableDescription: string = '';
   newPhotoFile: File | null = null;
   private previewPhotoUrl: string | null = null;
 
-  // ⭐⭐ AGGIORNAMENTO: Utilizza la nuova interfaccia ⭐⭐
   groupMembers: GroupMemberDisplay[] = [];
 
   constructor(
@@ -184,9 +186,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     if (!this.groupId) {
       // nothing to do
     } else {
-      // ⭐ MODIFICA: Chiamiamo il servizio qui per indicare che la chat è attiva
       this.groupChatNotificationService.setCurrentActiveGroupChat(this.groupId);
-
       if (!this.groupDetailsSubscription || this.groupDetailsSubscription.closed) {
         this.resetChatState();
         this.initializeGroupChat();
@@ -198,15 +198,12 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async ionViewWillLeave() {
-    // ⭐ MODIFICA: Chiamiamo il servizio per indicare che non siamo più in una chat
     this.groupChatNotificationService.setCurrentActiveGroupChat(null);
-
     this.groupDetailsSubscription?.unsubscribe();
     this.newMessagesListener?.unsubscribe();
     this.routeParamSubscription?.unsubscribe();
   }
 
-  // ⭐ NUOVO METODO: Per una robustezza extra, assicuriamo che lo stato sia resettato anche in questo hook.
   async ionViewDidLeave() {
     this.groupChatNotificationService.setCurrentActiveGroupChat(null);
   }
@@ -238,6 +235,8 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.newPhotoFile = null;
     this.previewPhotoUrl = null;
     this.groupMembers = [];
+    this.isSelectionMode = false;
+    this.selectedMessages.clear();
   }
 
   private async loadMemberNicknames() {
@@ -265,7 +264,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.cdr.detectChanges();
   }
 
-  // ⭐⭐ AGGIORNAMENTO: Metodo per caricare i dettagli completi dei membri ⭐⭐
   async loadGroupMembersDetails() {
     this.groupMembers = [];
     if (!this.groupDetails || !this.groupDetails.members) {
@@ -277,7 +275,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
         try {
           const userData = await this.userDataService.getUserDataById(memberId);
           if (userData) {
-            // Mappa i dati del servizio nella nuova interfaccia
             const photoUrl = userData['profilePictureUrl'] || userData['photo'] || 'assets/immaginiGenerali/default-avatar.jpg';
             this.groupMembers.push({
               uid: memberId,
@@ -566,11 +563,101 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
       this.editableDescription = this.groupDetails.description || '';
       this.previewPhotoUrl = this.groupDetails.photoUrl || '';
       this.newPhotoFile = null;
-      // ⭐⭐ AGGIORNAMENTO: Carica i dettagli dei membri prima di aprire il modale ⭐⭐
       await this.loadGroupMembersDetails();
       this.isModalOpen = true;
       this.cdr.detectChanges();
     }
+  }
+
+  // Metodi per la modalità di selezione dei messaggi
+  toggleSelectionMode() {
+    this.isSelectionMode = !this.isSelectionMode;
+    this.selectedMessages.clear();
+    this.cdr.detectChanges();
+  }
+
+  selectMessage(message: GroupMessage) {
+    if (this.isSelectionMode) {
+      if (this.selectedMessages.has(message.messageId!)) {
+        this.selectedMessages.delete(message.messageId!);
+      } else {
+        this.selectedMessages.add(message.messageId!);
+      }
+      this.cdr.detectChanges();
+    }
+  }
+
+  async deleteSelectedMessages() {
+    if (this.selectedMessages.size === 0) {
+      await this.presentFF7Alert('Nessun messaggio selezionato.');
+      return;
+    }
+
+    // Filtro solo i messaggi dell'utente corrente prima di avviare il processo
+    const messageIdsToDelete = this.messages
+      .filter(message =>
+        this.selectedMessages.has(message.messageId!) &&
+        message.senderId === this.currentUserId &&
+        message.senderId && message.senderId !== "system"
+      )
+      .map(message => message.messageId!);
+
+    // Nessun messaggio valido selezionato dopo il filtro
+    if (messageIdsToDelete.length === 0) {
+      await this.presentFF7Alert("Puoi eliminare solo i tuoi messaggi.");
+      this.toggleSelectionMode();
+      return;
+    }
+
+    const alert = await this.alertController.create({
+      cssClass: 'ff7-alert',
+      header: 'Conferma Eliminazione',
+      message: `Sei sicuro di voler eliminare i ${messageIdsToDelete.length} messaggi selezionati?`,
+      buttons: [
+        {
+          text: 'Annulla',
+          role: 'cancel',
+          cssClass: 'ff7-alert-button',
+          handler: () => {
+            this.toggleSelectionMode();
+          }
+        },
+        {
+          text: 'Elimina',
+          cssClass: 'ff7-alert-button',
+          handler: async () => {
+            const loadingAlert = await this.alertController.create({
+              cssClass: 'ff7-alert',
+              header: 'Eliminazione...',
+              message: 'I messaggi verranno rimossi.',
+              backdropDismiss: false
+            });
+            await loadingAlert.present();
+
+            try {
+              // Chiamata al service per eliminare i messaggi dal database
+              await this.groupChatService.deleteGroupMessages(this.groupId!, messageIdsToDelete);
+
+              // AGGIORNAMENTO: filtra i messaggi eliminati dall'array locale
+              this.messages = this.messages.filter(msg => !this.selectedMessages.has(msg.messageId!));
+
+              // Aggiorna UI e stato
+              this.selectedMessages.clear();
+              this.isSelectionMode = false;
+              await this.presentFF7Alert('Messaggi eliminati con successo.');
+            } catch (error) {
+              console.error("Errore durante l'eliminazione dei messaggi:", error);
+              await this.presentFF7Alert("Si è verificato un errore durante l'eliminazione. Riprova.");
+            } finally {
+              await loadingAlert.dismiss();
+              this.cdr.detectChanges(); // Forza il rilevamento dei cambiamenti
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
   }
 
   async changeGroupPhoto() {
@@ -702,10 +789,10 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
 
     const loadingAlert = await this.alertController.create({
-        cssClass: 'ff7-alert',
-        header: 'Salvataggio in corso...',
-        message: 'Attendere prego.',
-        backdropDismiss: false,
+      cssClass: 'ff7-alert',
+      header: 'Salvataggio in corso...',
+      message: 'Attendere prego.',
+      backdropDismiss: false,
     });
     await loadingAlert.present();
 

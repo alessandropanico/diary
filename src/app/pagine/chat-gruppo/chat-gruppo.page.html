@@ -1,5 +1,19 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar *ngIf="isSelectionMode">
+    <ion-buttons slot="start">
+      <ion-button (click)="toggleSelectionMode()">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ selectedMessages.size }} selezionato{{ selectedMessages.size === 1 ? '' : 'i' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="deleteSelectedMessages()" [disabled]="selectedMessages.size === 0">
+        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <ion-toolbar *ngIf="!isSelectionMode">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/chat-list"></ion-back-button>
     </ion-buttons>
@@ -16,6 +30,9 @@
     <ion-buttons slot="end">
       <ion-button (click)="presentGroupInfoModal()" *ngIf="groupDetails">
         <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="toggleSelectionMode()" *ngIf="groupDetails">
+        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -39,10 +56,15 @@
         <span>{{ formatDateHeader(message.timestamp) }}</span>
       </div>
 
-      <div [class.my-message]="isMyMessage(message.senderId)" [class.other-message]="!isMyMessage(message.senderId)"
-        class="chat-bubble">
-        <div *ngIf="!isMyMessage(message.senderId) && message.senderNickname !== 'Sistema'" class="sender-name">
-          {{ message.senderNickname }}
+      <div
+        [class.my-message]="isMyMessage(message.senderId)"
+        [class.other-message]="!isMyMessage(message.senderId)"
+        class="chat-bubble"
+        (click)="isMyMessage(message.senderId) && isSelectionMode ? selectMessage(message) : null"
+        [class.selected-message]="isSelectionMode && selectedMessages.has(message.messageId!)">
+
+        <div *ngIf="!isMyMessage(message.senderId) && getMemberDisplay(message.senderId) !== 'Sistema'" class="sender-name">
+          {{ getMemberDisplay(message.senderId) }}
         </div>
         <p class="message-text">{{ message.text }}</p>
         <span class="message-timestamp">{{ message.timestamp.toDate() | date:'shortTime' }}</span>
@@ -51,7 +73,7 @@
   </div>
 
   <ion-footer class="ion-no-border">
-    <ion-toolbar>
+    <ion-toolbar *ngIf="!isSelectionMode">
       <ion-item class="message-input-item">
         <ion-input placeholder="Scrivi un messaggio..." [(ngModel)]="newMessageText" (keyup.enter)="sendMessage()"
           class="ff7-input"></ion-input>

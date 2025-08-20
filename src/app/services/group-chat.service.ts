@@ -19,7 +19,8 @@ import {
   deleteDoc,
   Timestamp,
   startAfter,
-  QueryDocumentSnapshot
+  QueryDocumentSnapshot,
+  writeBatch
 } from '@angular/fire/firestore';
 import { getAuth, User } from 'firebase/auth';
 import { Observable, from, map, switchMap, forkJoin, of } from 'rxjs';
@@ -628,5 +629,40 @@ async sendMessage(groupId: string, senderId: string, text: string, type: 'text' 
       throw error;
     }
   }
+
+ /**
+ * Elimina un array di messaggi specifici da una chat di gruppo.
+ * Ogni eliminazione viene eseguita singolarmente: in caso di errore su un messaggio,
+ * gli altri vengono comunque rimossi.
+ * @param groupId L'ID del gruppo.
+ * @param messageIds L'array di ID dei messaggi da eliminare.
+ * @returns Una Promise che si risolve al completamento dell'operazione.
+ */
+async deleteGroupMessages(groupId: string, messageIds: string[]): Promise<void> {
+  if (messageIds.length === 0) {
+    console.warn("Nessun messaggio da eliminare.");
+    return;
+  }
+
+  const messagesCollection = collection(this.firestore, `groups/${groupId}/messages`);
+  const errors: string[] = [];
+
+  for (const messageId of messageIds) {
+    try {
+      const messageDocRef = doc(messagesCollection, messageId);
+      await deleteDoc(messageDocRef); // 🔹 eliminazione singola
+      console.log(`Messaggio ${messageId} eliminato con successo.`);
+    } catch (err) {
+      console.error(`Errore nell'eliminazione del messaggio ${messageId}:`, err);
+      errors.push(messageId);
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Impossibile eliminare ${errors.length} messaggi: ${errors.join(", ")}`);
+  }
+
+  console.log(`Eliminati ${messageIds.length - errors.length} messaggi dal gruppo ${groupId}.`);
+}
 
 }
