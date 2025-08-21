@@ -49,7 +49,11 @@
         loadingText="Caricando messaggi precedenti..."></ion-infinite-scroll-content>
     </ion-infinite-scroll>
 
-    <ng-container *ngFor="let message of messages; let i = index">
+    <ng-container *ngFor="let message of visibleMessages; let i = index">
+      <div *ngIf="shouldShowDate(message, i)" class="date-divider">
+        <p>{{ formatDateHeader(message.timestamp) }}</p>
+      </div>
+
       <div *ngIf="message.type === 'post'" class="shared-post-container"
         [class.my-message]="isMyMessage(message.senderId)" [class.other-message]="!isMyMessage(message.senderId)"
         (click)="isMyMessage(message.senderId) && isSelectionMode ? selectMessage(message) : null"
@@ -86,8 +90,4 @@
       <ion-icon name="arrow-down-outline"></ion-icon>
     </ion-fab-button>
   </ion-fab>
-
-
-
-
 </ion-content>

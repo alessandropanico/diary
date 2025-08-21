@@ -5,7 +5,7 @@ import { getAuth } from 'firebase/auth';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { IonContent, AlertController } from '@ionic/angular';
 import { UserDataService } from 'src/app/services/user-data.service';
-import { QueryDocumentSnapshot } from 'firebase/firestore';
+import { QueryDocumentSnapshot, Timestamp } from 'firebase/firestore'; // ⭐ Aggiunto Timestamp
 import * as dayjs from 'dayjs';
 
 import 'dayjs/locale/it';
@@ -13,7 +13,7 @@ import isToday from 'dayjs/plugin/isToday';
 import isYesterday from 'dayjs/plugin/isYesterday';
 import updateLocale from 'dayjs/plugin/updateLocale';
 
-import { Post } from 'src/app/interfaces/post'; // ⭐ AGGIUNGI QUESTO IMPORT ⭐
+import { Post } from 'src/app/interfaces/post';
 
 
 dayjs.extend(isToday);
@@ -355,28 +355,37 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewInit {
     return senderId === this.loggedInUserId;
   }
 
-  /**
-   * Decide se mostrare il divisore della data sopra un messaggio.
-   * Il divisore viene mostrato per il primo messaggio o quando il giorno cambia.
-   * @param message Il messaggio corrente.
-   * @param index L'indice del messaggio nell'array.
-   * @returns Vero se la data deve essere mostrata, falso altrimenti.
-   */
-  shouldShowDate(message: Message, index: number): boolean {
-    if (!message || !message.timestamp) {
-      return false;
-    }
-    if (index === 0) {
-      return true;
-    }
-    const currentMessageDate = dayjs(message.timestamp).startOf('day');
-    const previousMessage = this.messages[index - 1];
-    if (!previousMessage || !previousMessage.timestamp) {
-      return true;
-    }
-    const previousMessageDate = dayjs(previousMessage.timestamp).startOf('day');
-    return !currentMessageDate.isSame(previousMessageDate, 'day');
+/**
+ * Decide se mostrare il divisore della data sopra un messaggio.
+ * Il divisore viene mostrato per il primo messaggio o quando il giorno cambia.
+ * @param message Il messaggio corrente.
+ * @param index L'indice del messaggio nell'array VISIBILE.
+ * @returns Vero se la data deve essere mostrata, falso altrimenti.
+ */
+shouldShowDate(message: Message, index: number): boolean {
+  if (!message || !message.timestamp) {
+    return false;
   }
+  // Se è il primo messaggio visibile, mostra sempre la data.
+  if (index === 0) {
+    return true;
+  }
+
+  // Il timestamp di Firestore deve essere convertito in un oggetto Date
+  const currentMessageDate = dayjs(message.timestamp).startOf('day');
+  // ⭐⭐ MODIFICA CHIAVE: USA L'ARRAY VISIBILE PER IL CONFRONTO ⭐⭐
+  const previousMessage = this.visibleMessages[index - 1];
+
+  // Se il messaggio precedente non esiste o non ha un timestamp, mostra la data
+  if (!previousMessage || !previousMessage.timestamp) {
+    return true;
+  }
+
+  const previousMessageDate = dayjs(previousMessage.timestamp).startOf('day');
+
+  // Confronta se la data del messaggio corrente è diversa da quella del messaggio precedente
+  return !currentMessageDate.isSame(previousMessageDate, 'day');
+}
 
   /**
    * Formatta il timestamp di un messaggio per la visualizzazione come intestazione della data.
@@ -493,4 +502,14 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewInit {
     });
     await alert.present();
   }
+
+  /**
+   * Restituisce solo i messaggi che hanno un tipo da visualizzare nel template.
+   * @returns Array di messaggi filtrato.
+   */
+  get visibleMessages(): Message[] {
+    return this.messages.filter(msg => msg.type === 'text' || msg.type === 'post');
+  }
+
+
 }
