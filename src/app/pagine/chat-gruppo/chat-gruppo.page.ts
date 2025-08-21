@@ -16,6 +16,12 @@ import updateLocale from 'dayjs/plugin/updateLocale';
 import { GroupChatNotificationService } from '../../services/group-chat-notification.service';
 import { SearchModalComponent } from 'src/app/shared/search-modal/search-modal.component';
 
+// Dopo le importazioni esistenti...
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { NotificheService } from 'src/app/services/notifiche.service';
+
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
 dayjs.extend(updateLocale);
@@ -87,6 +93,15 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
   groupMembers: GroupMemberDisplay[] = [];
 
+  // ...dopo le proprietà esistenti...
+  // ⭐ VARIABILI PER IL TAGGING ⭐
+  public showTaggingSuggestions: boolean = false;
+  public taggingUsers: GroupMemberDisplay[] = [];
+  private searchUserTerm = new Subject<string>();
+  private searchUserSubscription: Subscription | undefined;
+  public currentSearchText: string = '';
+  public taggedUsersInMessage = new Map<string, string>(); // Mappa: UID -> Nickname
+
   // ⭐ NUOVO GETTER: Controlla se l'utente corrente è il creatore del gruppo ⭐
   get isGroupCreator(): boolean {
     if (!this.groupDetails || !this.currentUserId) {
@@ -104,7 +119,10 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     private alertController: AlertController,
     private modalController: ModalController,
     private cdr: ChangeDetectorRef,
-    private groupChatNotificationService: GroupChatNotificationService
+    private groupChatNotificationService: GroupChatNotificationService,
+    private sanitizer: DomSanitizer,
+      private notificheService: NotificheService
+
   ) { }
 
   ngOnInit() {
@@ -136,6 +154,19 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
           this.isLoading = false;
           this.cdr.detectChanges();
         }
+      }
+    });
+
+    // ⭐ INIZIALIZZA LA SOTTOSCRIZIONE PER LA RICERCA DEI TAG ⭐
+    this.searchUserSubscription = this.searchUserTerm.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(searchTerm => {
+      if (searchTerm) {
+        this.searchUsersForTagging(searchTerm);
+      } else {
+        this.taggingUsers = [];
+        this.cdr.detectChanges();
       }
     });
   }
@@ -224,6 +255,14 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.routeParamSubscription?.unsubscribe();
     this.groupDetailsSubscription?.unsubscribe();
     this.newMessagesListener?.unsubscribe();
+
+    this.groupDetailsSubscription?.unsubscribe();
+    this.newMessagesListener?.unsubscribe();
+
+    // ⭐ CANCELLA LA SOTTOSCRIZIONE DEI TAG ⭐
+    if (this.searchUserSubscription) {
+      this.searchUserSubscription.unsubscribe();
+    }
   }
 
   private resetChatState() {
@@ -479,31 +518,55 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  async sendMessage() {
-    if (!this.newMessageText.trim() || !this.groupId || !this.currentUserId || this.isSendingMessage) {
-      console.warn('sendMessage: Cannot send message: empty text, group ID, current user ID missing, or message already being sent.');
-      return;
-    }
-
-    this.isSendingMessage = true;
-    const messageToSend = this.newMessageText.trim();
-    this.newMessageText = '';
-    this.cdr.detectChanges();
-
-    try {
-      await this.groupChatService.sendMessage(this.groupId, this.currentUserId, messageToSend);
-      if (this.currentUserId && this.groupId) {
-        await this.updateLastReadTimestampInService();
-      }
-    } catch (error) {
-      console.error('Errore durante l\'invio del messaggio di gruppo:', error);
-      await this.presentFF7Alert('Impossibile inviare il messaggio di gruppo.');
-      this.newMessageText = messageToSend;
-    } finally {
-      this.isSendingMessage = false;
-      this.cdr.detectChanges();
-    }
+ async sendMessage() {
+  if (!this.newMessageText.trim() || !this.groupId || !this.currentUserId || this.isSendingMessage) {
+    console.warn('sendMessage: Cannot send message: empty text, group ID, current user ID missing, or message already being sent.');
+    return;
   }
+
+  this.isSendingMessage = true;
+  const messageToSend = this.newMessageText.trim();
+  const mentionedUserIds = Array.from(this.taggedUsersInMessage.keys());
+
+  this.newMessageText = '';
+  this.cdr.detectChanges();
+
+  try {
+    // Invia il messaggio al servizio GroupChatService, includendo i menzionati
+  await this.groupChatService.sendMessage(this.groupId!, this.currentUserId!, messageToSend, 'text', undefined, mentionedUserIds);
+
+    // Invia notifiche agli utenti menzionati
+    if (mentionedUserIds.length > 0 && this.currentUserId) {
+      const taggingUser = await this.userDataService.getUserDataById(this.currentUserId);
+      if (taggingUser) {
+        for (const taggedUserId of mentionedUserIds) {
+          // Utilizza il servizio NotificheService per aggiungere la notifica
+          await this.notificheService.aggiungiNotificaMenzioneChat(
+            taggedUserId,
+            taggingUser.nickname,
+            this.groupId!,
+            this.currentUserId
+          );
+        }
+      }
+    }
+
+    // Aggiorna il timestamp dell'ultima lettura se l'utente è alla fine della chat
+    if (this.currentUserId && this.groupId) {
+      await this.updateLastReadTimestampInService();
+    }
+
+  } catch (error) {
+    console.error('Errore durante l\'invio del messaggio di gruppo:', error);
+    await this.presentFF7Alert('Impossibile inviare il messaggio di gruppo.');
+    this.newMessageText = messageToSend; // Ripristina il messaggio in caso di errore
+  } finally {
+    // ⭐ CORREZIONE: Ho sostituito `isSendingMode` con `isSendingMessage`
+    this.isSendingMessage = false;
+    this.taggedUsersInMessage.clear();
+    this.cdr.detectChanges();
+  }
+}
 
   async scrollToBottom(duration: number = 300) {
     if (this.content) {
@@ -515,30 +578,30 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     return senderId === this.currentUserId;
   }
 
-/**
- * Decide se mostrare il divisore della data sopra un messaggio.
- * Il divisore viene mostrato per il primo messaggio o quando il giorno cambia.
- * @param message Il messaggio corrente.
- * @param index L'indice del messaggio nell'array VISIBILE.
- * @returns Vero se la data deve essere mostrata, falso altrimenti.
- */
-shouldShowDate(message: GroupMessage, index: number): boolean {
-  if (!message || !message.timestamp) {
-    return false;
-  }
-  if (index === 0) {
-    return true;
-  }
-  const currentMessageDate = dayjs(message.timestamp.toDate()).startOf('day');
-  // ⭐ Modificato qui: usiamo 'visibleMessages' per il confronto ⭐
-  const previousMessage = this.visibleMessages[index - 1];
+  /**
+   * Decide se mostrare il divisore della data sopra un messaggio.
+   * Il divisore viene mostrato per il primo messaggio o quando il giorno cambia.
+   * @param message Il messaggio corrente.
+   * @param index L'indice del messaggio nell'array VISIBILE.
+   * @returns Vero se la data deve essere mostrata, falso altrimenti.
+   */
+  shouldShowDate(message: GroupMessage, index: number): boolean {
+    if (!message || !message.timestamp) {
+      return false;
+    }
+    if (index === 0) {
+      return true;
+    }
+    const currentMessageDate = dayjs(message.timestamp.toDate()).startOf('day');
+    // ⭐ Modificato qui: usiamo 'visibleMessages' per il confronto ⭐
+    const previousMessage = this.visibleMessages[index - 1];
 
-  if (!previousMessage || !previousMessage.timestamp) {
-    return true;
+    if (!previousMessage || !previousMessage.timestamp) {
+      return true;
+    }
+    const previousMessageDate = dayjs(previousMessage.timestamp.toDate()).startOf('day');
+    return !currentMessageDate.isSame(previousMessageDate, 'day');
   }
-  const previousMessageDate = dayjs(previousMessage.timestamp.toDate()).startOf('day');
-  return !currentMessageDate.isSame(previousMessageDate, 'day');
-}
 
   formatDateHeader(timestamp: Timestamp): string {
     const d = dayjs(timestamp.toDate());
@@ -898,8 +961,94 @@ shouldShowDate(message: GroupMessage, index: number): boolean {
   }
 
   // ⭐ NUOVO GETTER: Restituisce solo i messaggi da visualizzare ⭐
-get visibleMessages(): GroupMessage[] {
-  return this.messages.filter(msg => msg.type === 'text' || msg.type === 'post');
-}
+  get visibleMessages(): GroupMessage[] {
+    return this.messages.filter(msg => msg.type === 'text' || msg.type === 'post');
+  }
+
+  // ⭐ NUOVI METODI PER LA GESTIONE DEI TAGS ⭐
+  onMessageInput(event: Event) {
+    const textarea = event.target as HTMLInputElement;
+    const text = textarea.value;
+    const atIndex = text.lastIndexOf('@');
+
+    if (atIndex !== -1) {
+      const textAfterAt = text.substring(atIndex + 1);
+      const spaceIndex = textAfterAt.indexOf(' ');
+
+      if (spaceIndex !== -1 || textAfterAt === '') {
+        this.showTaggingSuggestions = false;
+        this.taggingUsers = [];
+      } else {
+        this.showTaggingSuggestions = true;
+        this.currentSearchText = textAfterAt;
+        this.searchUserTerm.next(this.currentSearchText);
+      }
+    } else {
+      this.showTaggingSuggestions = false;
+      this.taggingUsers = [];
+      this.taggedUsersInMessage.clear();
+    }
+  }
+
+  async searchUsersForTagging(searchTerm: string) {
+    if (!this.groupDetails || !this.groupDetails.members || searchTerm.length < 2) {
+      this.taggingUsers = [];
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    const members = await Promise.all(
+      this.groupDetails.members.map(memberId => this.userDataService.getUserDataById(memberId))
+    );
+
+    this.taggingUsers = members
+      .filter(member => member && member.uid !== this.currentUserId && (member.nickname.toLowerCase().includes(lowerCaseSearchTerm) || (member.fullName && member.fullName.toLowerCase().includes(lowerCaseSearchTerm))))
+      .map(member => ({
+        uid: member.uid,
+        nickname: member.nickname,
+        photoUrl: member.photo
+      }));
+
+    this.cdr.detectChanges();
+  }
+
+  // Correzione: cambia il tipo da HTMLInputElement a HTMLIonInputElement
+  selectUserForTagging(user: GroupMemberDisplay) {
+    const text = this.newMessageText;
+    const atIndex = text.lastIndexOf('@');
+    const prefix = text.substring(0, atIndex);
+
+    this.newMessageText = `${prefix}@${user.nickname} `;
+
+    this.taggedUsersInMessage.set(user.uid, user.nickname);
+
+    this.showTaggingSuggestions = false;
+    this.taggingUsers = [];
+    this.cdr.detectChanges();
+
+    // ⭐ CORREZIONE QUI: usa il tipo corretto HTMLIonInputElement ⭐
+    const input = document.querySelector('ion-input') as HTMLIonInputElement;
+    if (input) {
+      input.setFocus();
+    }
+  }
+
+  formatMessageContent(text: string, mentions?: string[]): SafeHtml {
+    let formattedText = text;
+
+    if (mentions && this.groupMembers) {
+      mentions.forEach(uid => {
+        const member = this.groupMembers.find(m => m.uid === uid);
+        if (member) {
+          const regex = new RegExp(`@${member.nickname}(?=\\s|$)`, 'g');
+          const replacement = `<span class="chat-user-tag" data-uid="${uid}">@${member.nickname}</span>`;
+          formattedText = formattedText.replace(regex, replacement);
+        }
+      });
+    }
+
+    return this.sanitizer.bypassSecurityTrustHtml(formattedText);
+  }
 
 }

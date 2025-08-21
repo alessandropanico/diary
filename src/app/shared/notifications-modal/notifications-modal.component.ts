@@ -136,7 +136,7 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     const creatorIds = [...new Set(notifiche.map(n => n.creatorId).filter(id => id != null) as string[])];
     const userPromises = creatorIds.map(id => this.userDataService.getUserDataByUid(id));
     const userResults = await Promise.all(userPromises);
-   console.log('Dati utente recuperati:', userResults); // ⭐ Aggiungi questo log
+    console.log('Dati utente recuperati:', userResults); // ⭐ Aggiungi questo log
 
     const userMap = new Map<string, UserDashboardCounts | null>();
     creatorIds.forEach((id, index) => userMap.set(id, userResults[index]));
@@ -165,6 +165,7 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     this.modalController.dismiss();
   }
 
+  // All'interno della classe NotificationsModalComponent
   async handleNotificationClick(notifica: NotificaWithCreatorData) {
     if (notifica.id) {
       this.notificheService.segnaComeLetta(notifica.id, notifica.userId);
@@ -192,6 +193,10 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
       }
     } else if (projectId && tipoNotifica === 'invito_progetto') {
       this.router.navigateByUrl(`/progetti/${projectId}`);
+    }
+    // ⭐ NUOVO BLOCCO ELSE IF: GESTISCI LA NOTIFICA DI MENZIONE IN CHAT ⭐
+    else if (tipoNotifica === 'menzione_chat' && notifica.link) {
+      this.router.navigateByUrl(notifica.link);
     }
   }
 

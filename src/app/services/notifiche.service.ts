@@ -19,7 +19,7 @@ export interface Notifica {
   projectId?: string;
   followerId?: string;
   creatorId?: string; // ⭐ NOVITÀ: Aggiunto il campo per l'ID dell'utente che ha creato l'evento di notifica
-  tipo: 'nuovo_post' | 'mi_piace' | 'commento' | 'menzione_commento' | 'mi_piace_commento' | 'menzione_post' | 'invito_progetto' | 'nuovo_follower';
+  tipo: 'nuovo_post' | 'mi_piace' | 'commento' | 'menzione_commento' | 'mi_piace_commento' | 'menzione_post' | 'invito_progetto' | 'nuovo_follower' | 'menzione_chat';
 }
 
 @Injectable({
@@ -312,4 +312,18 @@ export class NotificheService implements OnDestroy {
       console.error("Errore durante la pulizia delle notifiche:", e);
     }
   }
+
+  // ⭐⭐ AGGIUNTA QUESTA NUOVA FUNZIONE ⭐⭐
+async aggiungiNotificaMenzioneChat(taggedUserId: string, taggingUsername: string, groupId: string, creatorId: string) {
+  const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
+    userId: taggedUserId,
+    titolo: 'Sei stato menzionato in una chat!',
+    messaggio: `${taggingUsername} ti ha menzionato in una chat di gruppo.`,
+    letta: false,
+    link: `/chat-gruppo/${groupId}`, // Assicurati che il link porti alla chat corretta
+    tipo: 'menzione_chat', // Nuovo tipo di notifica
+    creatorId: creatorId,
+  };
+  await this.aggiungiNotifica(notifica);
+}
 }
