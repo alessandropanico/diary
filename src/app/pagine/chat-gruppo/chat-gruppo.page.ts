@@ -515,21 +515,30 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     return senderId === this.currentUserId;
   }
 
-  shouldShowDate(message: GroupMessage, index: number): boolean {
-    if (!message || !message.timestamp) {
-      return false;
-    }
-    if (index === 0) {
-      return true;
-    }
-    const currentMessageDate = dayjs(message.timestamp.toDate()).startOf('day');
-    const previousMessage = this.messages[index - 1];
-    if (!previousMessage || !previousMessage.timestamp) {
-      return true;
-    }
-    const previousMessageDate = dayjs(previousMessage.timestamp.toDate()).startOf('day');
-    return !currentMessageDate.isSame(previousMessageDate, 'day');
+/**
+ * Decide se mostrare il divisore della data sopra un messaggio.
+ * Il divisore viene mostrato per il primo messaggio o quando il giorno cambia.
+ * @param message Il messaggio corrente.
+ * @param index L'indice del messaggio nell'array VISIBILE.
+ * @returns Vero se la data deve essere mostrata, falso altrimenti.
+ */
+shouldShowDate(message: GroupMessage, index: number): boolean {
+  if (!message || !message.timestamp) {
+    return false;
   }
+  if (index === 0) {
+    return true;
+  }
+  const currentMessageDate = dayjs(message.timestamp.toDate()).startOf('day');
+  // ⭐ Modificato qui: usiamo 'visibleMessages' per il confronto ⭐
+  const previousMessage = this.visibleMessages[index - 1];
+
+  if (!previousMessage || !previousMessage.timestamp) {
+    return true;
+  }
+  const previousMessageDate = dayjs(previousMessage.timestamp.toDate()).startOf('day');
+  return !currentMessageDate.isSame(previousMessageDate, 'day');
+}
 
   formatDateHeader(timestamp: Timestamp): string {
     const d = dayjs(timestamp.toDate());
@@ -887,4 +896,10 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
     ev.stopPropagation(); // Evita click extra sul background
   }
+
+  // ⭐ NUOVO GETTER: Restituisce solo i messaggi da visualizzare ⭐
+get visibleMessages(): GroupMessage[] {
+  return this.messages.filter(msg => msg.type === 'text' || msg.type === 'post');
+}
+
 }
