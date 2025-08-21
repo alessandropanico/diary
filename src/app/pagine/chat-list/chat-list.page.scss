@@ -31,7 +31,7 @@ ion-header {
 }
 
 ion-content {
-  --background: url('/assets/immaginiGenerali/background-final-fantasy.jpg') no-repeat center center / cover; // Sfondo dell'app
+  // --background: url('/assets/immaginiGenerali/background-final-fantasy.jpg') no-repeat center center / cover;
   // Se non vuoi un'immagine di sfondo, puoi usare --background: var(--ion-color-dark, #121212); o simili
 
   .loading-overlay {
