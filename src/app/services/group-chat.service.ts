@@ -94,6 +94,9 @@ export class GroupChatService {
       throw new Error('User not authenticated to create a group.');
     }
 
+    // ⭐️ RECUPERA IL PROFILO UTENTE PER IL NICKNAME ⭐️
+    const currentUserProfile = await this.userDataService.getUserDataById(currentUser.uid);
+    const userNickname = currentUserProfile?.nickname || currentUserProfile?.name || 'Un utente';
 
     // Assicurati che l'utente corrente sia sempre incluso e che non ci siano duplicati
     const initialMembers = Array.from(new Set([currentUser.uid, ...memberUids.filter(uid => uid !== currentUser.uid)]));
@@ -107,17 +110,18 @@ export class GroupChatService {
       members: initialMembers,
       lastMessage: {
         senderId: 'system',
-        text: `${currentUser.displayName || 'Un utente'} ha creato il gruppo.`,
+        text: `${userNickname} ha creato il gruppo.`, // ⭐️ USA IL NICKNAME QUI ⭐️
         timestamp: serverTimestamp() as Timestamp
       },
-      isPrivate: true // Impostazione predefinita per i gruppi creati
+      isPrivate: true
     };
 
     const groupCollectionRef = collection(this.firestore, 'groups');
     try {
       const docRef = await addDoc(groupCollectionRef, newGroup);
 
-      await this.sendMessage(docRef.id, 'system', `${currentUser.displayName || 'Un utente'} ha creato il gruppo.`, 'system');
+      // ⭐️ USA IL NICKNAME NEL MESSAGGIO DI SISTEMA ⭐️
+      await this.sendMessage(docRef.id, 'system', `${userNickname} ha creato il gruppo.`, 'system');
       return docRef.id;
     } catch (error) {
       console.error('ERRORE durante la creazione del gruppo:', error);
@@ -135,49 +139,49 @@ export class GroupChatService {
  * @param type Il tipo di messaggio ('text', 'image', 'video', 'system', 'post').
  * @param data Un oggetto opzionale per dati aggiuntivi (es. { imageUrl: string } o { postData: Post }).
  */
-async sendMessage(groupId: string, senderId: string, text: string, type: 'text' | 'image' | 'video' | 'system' | 'post' = 'text', data?: { imageUrl?: string; postData?: Post }): Promise<void> {
-  const groupMessagesCollectionRef = collection(this.firestore, `groups/${groupId}/messages`);
-  const groupDocRef = doc(this.firestore, 'groups', groupId);
+  async sendMessage(groupId: string, senderId: string, text: string, type: 'text' | 'image' | 'video' | 'system' | 'post' = 'text', data?: { imageUrl?: string; postData?: Post }): Promise<void> {
+    const groupMessagesCollectionRef = collection(this.firestore, `groups/${groupId}/messages`);
+    const groupDocRef = doc(this.firestore, 'groups', groupId);
 
-  let senderNickname = 'Sistema';
-  if (senderId !== 'system') {
-    try {
-      const senderProfile: UserProfile | null = await this.userDataService.getUserDataById(senderId);
-      senderNickname = senderProfile?.nickname || senderProfile?.name || 'Utente Sconosciuto';
-    } catch (error) {
-      console.warn(`WARN: Impossibile recuperare il nickname per l'utente ${senderId}. Usando 'Utente Sconosciuto'. Errore:`, error);
-      senderNickname = 'Utente Sconosciuto';
+    let senderNickname = 'Sistema';
+    if (senderId !== 'system') {
+      try {
+        const senderProfile: UserProfile | null = await this.userDataService.getUserDataById(senderId);
+        senderNickname = senderProfile?.nickname || senderProfile?.name || 'Utente Sconosciuto';
+      } catch (error) {
+        console.warn(`WARN: Impossibile recuperare il nickname per l'utente ${senderId}. Usando 'Utente Sconosciuto'. Errore:`, error);
+        senderNickname = 'Utente Sconosciuto';
+      }
     }
-  }
 
-  const newMessage: GroupMessage = {
-    senderId: senderId,
-    senderNickname: senderNickname,
-    text,
-    timestamp: serverTimestamp() as Timestamp,
-    type,
-    // ⭐ AGGIUNGI LE CONDIZIONI PER I NUOVI CAMPI ⭐
-    ...(data?.imageUrl && { imageUrl: data.imageUrl }),
-    ...(data?.postData && { postData: data.postData })
-  };
-
-  try {
-    await addDoc(groupMessagesCollectionRef, newMessage);
-
-    const lastMessageData = {
-      senderId: newMessage.senderId,
-      text: newMessage.text,
-      timestamp: serverTimestamp()
+    const newMessage: GroupMessage = {
+      senderId: senderId,
+      senderNickname: senderNickname,
+      text,
+      timestamp: serverTimestamp() as Timestamp,
+      type,
+      // ⭐ AGGIUNGI LE CONDIZIONI PER I NUOVI CAMPI ⭐
+      ...(data?.imageUrl && { imageUrl: data.imageUrl }),
+      ...(data?.postData && { postData: data.postData })
     };
 
-    await updateDoc(groupDocRef, {
-      lastMessage: lastMessageData
-    });
-  } catch (error) {
-    console.error('ERRORE CRITICO durante l\'invio o l\'aggiornamento del messaggio di gruppo:', error);
-    throw error;
+    try {
+      await addDoc(groupMessagesCollectionRef, newMessage);
+
+      const lastMessageData = {
+        senderId: newMessage.senderId,
+        text: newMessage.text,
+        timestamp: serverTimestamp()
+      };
+
+      await updateDoc(groupDocRef, {
+        lastMessage: lastMessageData
+      });
+    } catch (error) {
+      console.error('ERRORE CRITICO durante l\'invio o l\'aggiornamento del messaggio di gruppo:', error);
+      throw error;
+    }
   }
-}
 
   /**
    * Ottiene i messaggi più recenti di un gruppo in tempo reale.
@@ -349,23 +353,29 @@ async sendMessage(groupId: string, senderId: string, text: string, type: 'text' 
    */
   async addMemberToGroup(groupId: string, userIdToAdd: string): Promise<void> {
     const groupDocRef = doc(this.firestore, 'groups', groupId);
-    const userGroupDocRef = doc(this.firestore, `users/${userIdToAdd}/groups`, groupId);
+    const currentUser = this.auth.currentUser;
+
+    // ⭐ AGGIUNGI QUESTO CONTROLLO ⭐
+    if (!currentUser) {
+      console.error('GroupChatService: User not authenticated to add a member. Aborting.');
+      throw new Error('User not authenticated.');
+    }
 
     try {
       await updateDoc(groupDocRef, {
         members: arrayUnion(userIdToAdd)
       });
-      await setDoc(userGroupDocRef, { joinedAt: serverTimestamp() as Timestamp }, { merge: true });
+
       const addedUserProfile: UserProfile | null = await this.userDataService.getUserDataById(userIdToAdd);
-      const addedUserName = addedUserProfile?.nickname || addedUserProfile?.name || 'Un utente';
-      const currentUser = this.auth.currentUser;
-      const currentUserName = currentUser?.displayName || 'Qualcuno';
-      await this.sendMessage(groupId, 'system', `${currentUserName} ha aggiunto ${addedUserName} al gruppo.`, 'system');
+      const addedUserNickname = addedUserProfile?.nickname || addedUserProfile?.name || 'Un utente';
+
+      // Ora currentUser non è più "probabilmente null"
+      const currentUserProfile: UserProfile | null = await this.userDataService.getUserDataById(currentUser.uid);
+      const currentUserNickname = currentUserProfile?.nickname || currentUserProfile?.name || 'Qualcuno';
+
+      await this.sendMessage(groupId, 'system', `${currentUserNickname} ha aggiunto ${addedUserNickname} al gruppo.`, 'system');
     } catch (error) {
       console.error(`ERRORE nell'aggiungere il membro ${userIdToAdd} al gruppo ${groupId}:`, error);
-      console.error('Verifica le regole di sicurezza per:');
-      console.error(`- Aggiornamento (update) di 'groups/${groupId}' (per arrayUnion)`);
-      console.error(`- Scrittura (set/update) di 'users/${userIdToAdd}/groups/${groupId}' (per il documento di join)`);
       throw error;
     }
   }
@@ -379,25 +389,29 @@ async sendMessage(groupId: string, senderId: string, text: string, type: 'text' 
    */
   async removeMemberFromGroup(groupId: string, userIdToRemove: string): Promise<void> {
     const groupDocRef = doc(this.firestore, 'groups', groupId);
-    const userGroupDocRef = doc(this.firestore, `users/${userIdToRemove}/groups`, groupId);
+    const currentUser = this.auth.currentUser;
+
+    // ⭐ AGGIUNGI QUESTO CONTROLLO ⭐
+    if (!currentUser) {
+      console.error('GroupChatService: User not authenticated to remove a member. Aborting.');
+      throw new Error('User not authenticated.');
+    }
 
     try {
       await updateDoc(groupDocRef, {
         members: arrayRemove(userIdToRemove)
       });
 
-      await deleteDoc(userGroupDocRef);
-
       const removedUserProfile: UserProfile | null = await this.userDataService.getUserDataById(userIdToRemove);
-      const removedUserName = removedUserProfile?.nickname || removedUserProfile?.name || 'Un utente';
-      const currentUser = this.auth.currentUser;
-      const currentUserName = currentUser?.displayName || 'Qualcuno';
-      await this.sendMessage(groupId, 'system', `${currentUserName} ha rimosso ${removedUserName} dal gruppo.`, 'system');
+      const removedUserNickname = removedUserProfile?.nickname || removedUserProfile?.name || 'Un utente';
+
+      // Ora currentUser non è più "probabilmente null"
+      const currentUserProfile: UserProfile | null = await this.userDataService.getUserDataById(currentUser.uid);
+      const currentUserNickname = currentUserProfile?.nickname || currentUserProfile?.name || 'Qualcuno';
+
+      await this.sendMessage(groupId, 'system', `${currentUserNickname} ha rimosso ${removedUserNickname} dal gruppo.`, 'system');
     } catch (error) {
       console.error(`ERRORE nel rimuovere il membro ${userIdToRemove} dal gruppo ${groupId}:`, error);
-      console.error('Verifica le regole di sicurezza per:');
-      console.error(`- Aggiornamento (update) di 'groups/${groupId}' (per arrayRemove)`);
-      console.error(`- Eliminazione (delete) di 'users/${userIdToRemove}/groups/${groupId}'`);
       throw error;
     }
   }
@@ -563,38 +577,47 @@ async sendMessage(groupId: string, senderId: string, text: string, type: 'text' 
    * @param userIdsToAdd Un array di ID degli utenti da aggiungere.
    * @returns Una Promise che risolve nel numero di membri aggiunti.
    */
-  async addMembersToGroup(groupId: string, userIdsToAdd: string[]): Promise<number> {
-    if (userIdsToAdd.length === 0) {
-      console.warn('addMembersToGroup: Nessun membro da aggiungere.');
-      return 0;
-    }
-
-    const groupDocRef = doc(this.firestore, 'groups', groupId);
-    const currentUser = this.auth.currentUser;
-    const currentUserName = currentUser?.displayName || 'Qualcuno';
-
-    try {
-      await updateDoc(groupDocRef, {
-        members: arrayUnion(...userIdsToAdd)
-      });
-
-      const newMemberNicknames = await Promise.all(
-        userIdsToAdd.map(async uid => {
-          const userProfile = await this.userDataService.getUserDataById(uid);
-          return userProfile?.nickname || userProfile?.name || 'Un utente';
-        })
-      );
-      const newMemberNicknamesString = newMemberNicknames.join(', ');
-
-      const systemMessage = `${currentUserName} ha aggiunto ${newMemberNicknamesString} al gruppo.`;
-      await this.sendMessage(groupId, 'system', systemMessage, 'system');
-
-      return userIdsToAdd.length;
-    } catch (error) {
-      console.error(`ERRORE nell'aggiungere membri al gruppo ${groupId}:`, error);
-      throw error;
-    }
+ async addMembersToGroup(groupId: string, userIdsToAdd: string[]): Promise<number> {
+  if (userIdsToAdd.length === 0) {
+    console.warn('addMembersToGroup: Nessun membro da aggiungere.');
+    return 0;
   }
+
+  const groupDocRef = doc(this.firestore, 'groups', groupId);
+  const currentUser = this.auth.currentUser;
+
+  if (!currentUser) {
+    console.error('GroupChatService: User not authenticated to add members. Aborting.');
+    throw new Error('User not authenticated.');
+  }
+
+  try {
+    await updateDoc(groupDocRef, {
+      members: arrayUnion(...userIdsToAdd)
+    });
+
+    const addedMemberNicknames = await Promise.all(
+      userIdsToAdd.map(async uid => {
+        const userProfile = await this.userDataService.getUserDataById(uid);
+        return userProfile?.nickname || userProfile?.name || 'Un utente';
+      })
+    );
+
+    // ⭐ RECUPERA IL NICKNAME DELL'UTENTE CORRENTE IN MODO CORRETTO ⭐
+    const currentUserProfile: UserProfile | null = await this.userDataService.getUserDataById(currentUser.uid);
+    const currentUserNickname = currentUserProfile?.nickname || currentUserProfile?.name || 'Qualcuno';
+
+    const newMemberNicknamesString = addedMemberNicknames.join(', ');
+
+    const systemMessage = `${currentUserNickname} ha aggiunto ${newMemberNicknamesString} al gruppo.`;
+    await this.sendMessage(groupId, 'system', systemMessage, 'system');
+
+    return userIdsToAdd.length;
+  } catch (error) {
+    console.error(`ERRORE nell'aggiungere membri al gruppo ${groupId}:`, error);
+    throw error;
+  }
+}
 
   /**
    * Converte un file immagine in una stringa Base64.
@@ -630,39 +653,39 @@ async sendMessage(groupId: string, senderId: string, text: string, type: 'text' 
     }
   }
 
- /**
- * Elimina un array di messaggi specifici da una chat di gruppo.
- * Ogni eliminazione viene eseguita singolarmente: in caso di errore su un messaggio,
- * gli altri vengono comunque rimossi.
- * @param groupId L'ID del gruppo.
- * @param messageIds L'array di ID dei messaggi da eliminare.
- * @returns Una Promise che si risolve al completamento dell'operazione.
- */
-async deleteGroupMessages(groupId: string, messageIds: string[]): Promise<void> {
-  if (messageIds.length === 0) {
-    console.warn("Nessun messaggio da eliminare.");
-    return;
-  }
-
-  const messagesCollection = collection(this.firestore, `groups/${groupId}/messages`);
-  const errors: string[] = [];
-
-  for (const messageId of messageIds) {
-    try {
-      const messageDocRef = doc(messagesCollection, messageId);
-      await deleteDoc(messageDocRef); // 🔹 eliminazione singola
-      console.log(`Messaggio ${messageId} eliminato con successo.`);
-    } catch (err) {
-      console.error(`Errore nell'eliminazione del messaggio ${messageId}:`, err);
-      errors.push(messageId);
+  /**
+  * Elimina un array di messaggi specifici da una chat di gruppo.
+  * Ogni eliminazione viene eseguita singolarmente: in caso di errore su un messaggio,
+  * gli altri vengono comunque rimossi.
+  * @param groupId L'ID del gruppo.
+  * @param messageIds L'array di ID dei messaggi da eliminare.
+  * @returns Una Promise che si risolve al completamento dell'operazione.
+  */
+  async deleteGroupMessages(groupId: string, messageIds: string[]): Promise<void> {
+    if (messageIds.length === 0) {
+      console.warn("Nessun messaggio da eliminare.");
+      return;
     }
-  }
 
-  if (errors.length > 0) {
-    throw new Error(`Impossibile eliminare ${errors.length} messaggi: ${errors.join(", ")}`);
-  }
+    const messagesCollection = collection(this.firestore, `groups/${groupId}/messages`);
+    const errors: string[] = [];
 
-  console.log(`Eliminati ${messageIds.length - errors.length} messaggi dal gruppo ${groupId}.`);
-}
+    for (const messageId of messageIds) {
+      try {
+        const messageDocRef = doc(messagesCollection, messageId);
+        await deleteDoc(messageDocRef); // 🔹 eliminazione singola
+        console.log(`Messaggio ${messageId} eliminato con successo.`);
+      } catch (err) {
+        console.error(`Errore nell'eliminazione del messaggio ${messageId}:`, err);
+        errors.push(messageId);
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new Error(`Impossibile eliminare ${errors.length} messaggi: ${errors.join(", ")}`);
+    }
+
+    console.log(`Eliminati ${messageIds.length - errors.length} messaggi dal gruppo ${groupId}.`);
+  }
 
 }
