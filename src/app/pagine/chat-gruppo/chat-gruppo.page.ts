@@ -87,6 +87,14 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
   groupMembers: GroupMemberDisplay[] = [];
 
+  // ⭐ NUOVO GETTER: Controlla se l'utente corrente è il creatore del gruppo ⭐
+  get isGroupCreator(): boolean {
+    if (!this.groupDetails || !this.currentUserId) {
+      return false;
+    }
+    return this.groupDetails.createdBy === this.currentUserId;
+  }
+
   constructor(
     private route: ActivatedRoute,
     private groupChatService: GroupChatService,
@@ -597,7 +605,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     const messageIdsToDelete = this.messages
       .filter(message =>
         this.selectedMessages.has(message.messageId!) &&
-        message.senderId === this.currentUserId &&
+        this.isMyMessage(message.senderId) &&
         message.senderId && message.senderId !== "system"
       )
       .map(message => message.messageId!);
@@ -720,6 +728,56 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     await alert.present();
   }
 
+  // ⭐ NUOVO METODO: Conferma ed elimina il gruppo ⭐
+  async confirmDeleteGroup() {
+    if (!this.groupDetails || !this.isGroupCreator || !this.groupId) {
+      await this.presentFF7Alert('Non hai i permessi per eliminare questo gruppo.');
+      return;
+    }
+
+    if (this.groupInfoModal) {
+      await this.groupInfoModal.dismiss();
+    }
+
+    const alert = await this.alertController.create({
+      cssClass: 'ff7-alert',
+      header: 'ATTENZIONE',
+      message: `Sei sicuro di voler eliminare il gruppo "${this.groupDetails.name}"? L'azione è irreversibile e tutti i messaggi verranno persi.`,
+      buttons: [
+        {
+          text: 'Annulla',
+          role: 'cancel',
+          cssClass: 'ff7-alert-button'
+        },
+        {
+          text: 'Elimina',
+          cssClass: 'ff7-alert-button-danger',
+          handler: async () => {
+            const loadingAlert = await this.alertController.create({
+              cssClass: 'ff7-alert',
+              header: 'Eliminazione in corso...',
+              message: 'Attendere prego. Il gruppo e tutti i suoi messaggi verranno rimossi.',
+              backdropDismiss: false
+            });
+            await loadingAlert.present();
+
+            try {
+              await this.groupChatService.deleteGroup(this.groupId!);
+              await loadingAlert.dismiss();
+              await this.presentFF7Alert('Gruppo eliminato con successo!');
+              this.router.navigateByUrl('/chat-list');
+            } catch (error: any) {
+              await loadingAlert.dismiss();
+              console.error('Errore durante l\'eliminazione del gruppo:', error);
+              await this.presentFF7Alert(`Errore: ${error.message}.`);
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
   private async updateLastReadTimestampInService() {
     if (!this.groupId || !this.currentUserId) {
       console.warn('updateLastReadTimestampInService: Group ID or current user ID missing.');
@@ -829,7 +887,4 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
     ev.stopPropagation(); // Evita click extra sul background
   }
-
-
-
 }

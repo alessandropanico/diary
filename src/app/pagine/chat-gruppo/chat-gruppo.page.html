@@ -1,5 +1,4 @@
 <ion-header>
-  <!-- Toolbar in modalità selezione -->
   <ion-toolbar *ngIf="isSelectionMode">
     <ion-buttons slot="start">
       <ion-button (click)="toggleSelectionMode()">
@@ -16,7 +15,6 @@
     </ion-buttons>
   </ion-toolbar>
 
-  <!-- Toolbar normale -->
   <ion-toolbar *ngIf="!isSelectionMode">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/chat-list"></ion-back-button>
@@ -32,12 +30,10 @@
     <ion-title *ngIf="isLoading || !groupDetails" class="chat-title-placeholder"></ion-title>
 
     <ion-buttons slot="end" *ngIf="groupDetails">
-      <!-- Trigger per il menu -->
       <ion-button id="group-menu-trigger">
         <ion-icon name="ellipsis-vertical-outline"></ion-icon>
       </ion-button>
 
-      <!-- Menu a tendina -->
       <ion-popover trigger="group-menu-trigger" side="bottom" alignment="end">
         <ng-template>
           <ion-list>
@@ -48,6 +44,10 @@
             <ion-item button (click)="toggleSelectionMode(); dismissPopover($event)">
               <ion-icon name="trash-outline" slot="start"></ion-icon>
               <ion-label>Elimina messaggi</ion-label>
+            </ion-item>
+            <ion-item button (click)="confirmDeleteGroup(); dismissPopover($event)" *ngIf="isGroupCreator">
+              <ion-icon name="alert-circle-outline" slot="start" color="danger"></ion-icon>
+              <ion-label color="danger">Elimina Gruppo</ion-label>
             </ion-item>
           </ion-list>
         </ng-template>
@@ -162,7 +162,12 @@
           Aggiungi Membri
         </ion-button>
 
-        <ion-button expand="block" color="danger" class="ion-margin-top ff7-button" (click)="confirmLeaveGroup()">
+        <ion-button expand="block" color="danger" class="ion-margin-top ff7-button" (click)="confirmDeleteGroup()" *ngIf="isGroupCreator">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
+          Elimina Gruppo
+        </ion-button>
+
+        <ion-button expand="block" color="danger" class="ion-margin-top ff7-button" (click)="confirmLeaveGroup()" *ngIf="!isGroupCreator">
           <ion-icon slot="start" name="log-out-outline"></ion-icon>
           Abbandona Gruppo
         </ion-button>

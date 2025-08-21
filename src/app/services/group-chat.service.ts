@@ -704,4 +704,56 @@ export class GroupChatService {
     }
   }
 
+  // ⭐️ NUOVO METODO: ELIMINA UN INTERO GRUPPO ⭐️
+  /**
+   * Elimina un gruppo in modo permanente.
+   * Verrà eliminato l'intero documento del gruppo e la sua sottocollezione di messaggi.
+   * Solo il creatore del gruppo può eseguire questa azione.
+   * @param groupId L'ID del gruppo da eliminare.
+   */
+  async deleteGroup(groupId: string): Promise<void> {
+    const currentUser = this.auth.currentUser;
+    if (!currentUser) {
+      console.error('GroupChatService: User not authenticated to delete a group. Aborting.');
+      throw new Error('User not authenticated.');
+    }
+
+    const groupDocRef = doc(this.firestore, 'groups', groupId);
+    const messagesCollectionRef = collection(this.firestore, `groups/${groupId}/messages`);
+
+    try {
+      // 1. Recupera i dati del gruppo per la verifica dell'admin
+      const groupDocSnapshot = await getDoc(groupDocRef);
+      const groupData = groupDocSnapshot.data() as GroupChat;
+
+      // 2. Verifica che l'utente corrente sia il creatore del gruppo
+      if (!groupData || groupData.createdBy !== currentUser.uid) {
+        throw new Error('Unauthorized: Only the group creator can delete the group.');
+      }
+
+      // 3. Esegui la cancellazione dei messaggi e del gruppo in un batch
+      const batch = writeBatch(this.firestore);
+
+      // Cerca e aggiungi tutti i messaggi del gruppo al batch di cancellazione
+      const messagesQuerySnapshot = await getDocs(messagesCollectionRef);
+      messagesQuerySnapshot.docs.forEach(messageDoc => {
+        batch.delete(messageDoc.ref);
+      });
+
+      // Aggiungi il documento del gruppo al batch di cancellazione
+      batch.delete(groupDocRef);
+
+      // 4. Esegui il batch
+      await batch.commit();
+
+      console.log(`Gruppo e tutti i suoi messaggi eliminati con successo: ${groupId}`);
+
+    } catch (error) {
+      console.error(`ERRORE CRITICO nell'eliminare il gruppo ${groupId}:`, error);
+      console.error('Assicurati che le regole di sicurezza di Firestore permettano le operazioni di lettura e cancellazione per questo utente.');
+      throw error;
+    }
+  }
+
+
 }
