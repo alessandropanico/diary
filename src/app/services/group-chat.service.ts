@@ -139,7 +139,15 @@ export class GroupChatService {
  * @param type Il tipo di messaggio ('text', 'image', 'video', 'system', 'post').
  * @param data Un oggetto opzionale per dati aggiuntivi (es. { imageUrl: string } o { postData: Post }).
  */
-  async sendMessage(groupId: string, senderId: string, text: string, type: 'text' | 'image' | 'video' | 'system' | 'post' = 'text', data?: { imageUrl?: string; postData?: Post }): Promise<void> {
+  // Invia un messaggio a un gruppo.
+  async sendMessage(
+    groupId: string,
+    senderId: string,
+    text: string,
+    type: 'text' | 'image' | 'video' | 'system' | 'post' = 'text',
+    data?: { imageUrl?: string; postData?: Post },
+    systemSenderNickname?: string // ⭐ NUOVO PARAMETRO ⭐
+  ): Promise<void> {
     const groupMessagesCollectionRef = collection(this.firestore, `groups/${groupId}/messages`);
     const groupDocRef = doc(this.firestore, 'groups', groupId);
 
@@ -152,6 +160,13 @@ export class GroupChatService {
         console.warn(`WARN: Impossibile recuperare il nickname per l'utente ${senderId}. Usando 'Utente Sconosciuto'. Errore:`, error);
         senderNickname = 'Utente Sconosciuto';
       }
+    } else {
+      // ⭐ USA IL NICKNAME FORNITO PER I MESSAGGI DI SISTEMA ⭐
+      if (systemSenderNickname) {
+        senderNickname = systemSenderNickname;
+      } else {
+        senderNickname = 'Sistema'; // Fallback
+      }
     }
 
     const newMessage: GroupMessage = {
@@ -160,20 +175,17 @@ export class GroupChatService {
       text,
       timestamp: serverTimestamp() as Timestamp,
       type,
-      // ⭐ AGGIUNGI LE CONDIZIONI PER I NUOVI CAMPI ⭐
       ...(data?.imageUrl && { imageUrl: data.imageUrl }),
       ...(data?.postData && { postData: data.postData })
     };
 
     try {
       await addDoc(groupMessagesCollectionRef, newMessage);
-
       const lastMessageData = {
         senderId: newMessage.senderId,
         text: newMessage.text,
         timestamp: serverTimestamp()
       };
-
       await updateDoc(groupDocRef, {
         lastMessage: lastMessageData
       });
@@ -423,28 +435,35 @@ export class GroupChatService {
    * @param groupId L'ID del gruppo da cui l'utente abbandona.
    * @param userId L'ID dell'utente che abbandona.
    */
-  async leaveGroup(groupId: string, userId: string): Promise<void> {
-    const groupDocRef = doc(this.firestore, 'groups', groupId);
-    const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
+ async leaveGroup(groupId: string, userId: string): Promise<void> {
+    const groupDocRef = doc(this.firestore, 'groups', groupId);
+    const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
 
-    try {
-      await updateDoc(groupDocRef, {
-        members: arrayRemove(userId)
-      });
+    try {
+      // 1. Recupera il nickname dell'utente
+      const leavingUserProfile: UserProfile | null = await this.userDataService.getUserDataById(userId);
+      const leavingUserName = leavingUserProfile?.nickname || leavingUserProfile?.name || 'Un utente';
 
-      await deleteDoc(userGroupDocRef);
+      // 2. INVIA IL MESSAGGIO DI SISTEMA PRIMA DI RIMOVERE L'UTENTE
+      // ⭐ PASSA undefined PER IL PARAMETRO 'data' ⭐
+      await this.sendMessage(groupId, 'system', `${leavingUserName} ha abbandonato il gruppo.`, 'system', undefined, leavingUserName);
 
-      const leavingUserProfile: UserProfile | null = await this.userDataService.getUserDataById(userId);
-      const leavingUserName = leavingUserProfile?.nickname || leavingUserProfile?.name || 'Un utente';
-      await this.sendMessage(groupId, 'system', `${leavingUserName} ha abbandonato il gruppo.`, 'system');
-    } catch (error) {
-      console.error(`ERRORE nell'abbandonare il gruppo ${groupId} per l'utente ${userId}:`, error);
-      console.error('Verifica le regole di sicurezza per:');
-      console.error(`- Aggiornamento (update) di 'groups/${groupId}' (per arrayRemove)`);
-      console.error(`- Eliminazione (delete) di 'users/${userId}/groups/${groupId}'`);
-      throw error;
-    }
-  }
+      // 3. Rimuovi l'utente dal documento del gruppo
+      await updateDoc(groupDocRef, {
+        members: arrayRemove(userId)
+      });
+
+      // 4. Elimina la sottocollezione del gruppo dall'utente
+      await deleteDoc(userGroupDocRef);
+
+    } catch (error) {
+      console.error(`ERRORE nell'abbandonare il gruppo ${groupId} per l'utente ${userId}:`, error);
+      console.error('Verifica le regole di sicurezza per:');
+      console.error(`- Aggiornamento (update) di 'groups/${groupId}' (per arrayRemove)`);
+      console.error(`- Eliminazione (delete) di 'users/${userId}/groups/${groupId}'`);
+      throw error;
+    }
+  }
 
   /**
    * Ottiene i dati dei profili dei membri di un gruppo.
@@ -577,47 +596,47 @@ export class GroupChatService {
    * @param userIdsToAdd Un array di ID degli utenti da aggiungere.
    * @returns Una Promise che risolve nel numero di membri aggiunti.
    */
- async addMembersToGroup(groupId: string, userIdsToAdd: string[]): Promise<number> {
-  if (userIdsToAdd.length === 0) {
-    console.warn('addMembersToGroup: Nessun membro da aggiungere.');
-    return 0;
+  async addMembersToGroup(groupId: string, userIdsToAdd: string[]): Promise<number> {
+    if (userIdsToAdd.length === 0) {
+      console.warn('addMembersToGroup: Nessun membro da aggiungere.');
+      return 0;
+    }
+
+    const groupDocRef = doc(this.firestore, 'groups', groupId);
+    const currentUser = this.auth.currentUser;
+
+    if (!currentUser) {
+      console.error('GroupChatService: User not authenticated to add members. Aborting.');
+      throw new Error('User not authenticated.');
+    }
+
+    try {
+      await updateDoc(groupDocRef, {
+        members: arrayUnion(...userIdsToAdd)
+      });
+
+      const addedMemberNicknames = await Promise.all(
+        userIdsToAdd.map(async uid => {
+          const userProfile = await this.userDataService.getUserDataById(uid);
+          return userProfile?.nickname || userProfile?.name || 'Un utente';
+        })
+      );
+
+      // ⭐ RECUPERA IL NICKNAME DELL'UTENTE CORRENTE IN MODO CORRETTO ⭐
+      const currentUserProfile: UserProfile | null = await this.userDataService.getUserDataById(currentUser.uid);
+      const currentUserNickname = currentUserProfile?.nickname || currentUserProfile?.name || 'Qualcuno';
+
+      const newMemberNicknamesString = addedMemberNicknames.join(', ');
+
+      const systemMessage = `${currentUserNickname} ha aggiunto ${newMemberNicknamesString} al gruppo.`;
+      await this.sendMessage(groupId, 'system', systemMessage, 'system');
+
+      return userIdsToAdd.length;
+    } catch (error) {
+      console.error(`ERRORE nell'aggiungere membri al gruppo ${groupId}:`, error);
+      throw error;
+    }
   }
-
-  const groupDocRef = doc(this.firestore, 'groups', groupId);
-  const currentUser = this.auth.currentUser;
-
-  if (!currentUser) {
-    console.error('GroupChatService: User not authenticated to add members. Aborting.');
-    throw new Error('User not authenticated.');
-  }
-
-  try {
-    await updateDoc(groupDocRef, {
-      members: arrayUnion(...userIdsToAdd)
-    });
-
-    const addedMemberNicknames = await Promise.all(
-      userIdsToAdd.map(async uid => {
-        const userProfile = await this.userDataService.getUserDataById(uid);
-        return userProfile?.nickname || userProfile?.name || 'Un utente';
-      })
-    );
-
-    // ⭐ RECUPERA IL NICKNAME DELL'UTENTE CORRENTE IN MODO CORRETTO ⭐
-    const currentUserProfile: UserProfile | null = await this.userDataService.getUserDataById(currentUser.uid);
-    const currentUserNickname = currentUserProfile?.nickname || currentUserProfile?.name || 'Qualcuno';
-
-    const newMemberNicknamesString = addedMemberNicknames.join(', ');
-
-    const systemMessage = `${currentUserNickname} ha aggiunto ${newMemberNicknamesString} al gruppo.`;
-    await this.sendMessage(groupId, 'system', systemMessage, 'system');
-
-    return userIdsToAdd.length;
-  } catch (error) {
-    console.error(`ERRORE nell'aggiungere membri al gruppo ${groupId}:`, error);
-    throw error;
-  }
-}
 
   /**
    * Converte un file immagine in una stringa Base64.
