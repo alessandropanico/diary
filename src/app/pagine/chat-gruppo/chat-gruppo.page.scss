@@ -338,15 +338,13 @@ ion-header {
   margin: 15px 0;
 
   /* Margine per separare meglio il divisore */
-  span {
-    background: rgba(0, 0, 0, 0.6);
-    /* Sfondo scuro per il testo della data */
-    padding: 5px 10px;
-    border-radius: 10px;
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.8);
-    /* Colore del testo della data */
-  }
+  // span {
+  //   background: rgba(0, 0, 0, 0.6);
+  //   padding: 5px 10px;
+  //   border-radius: 10px;
+  //   font-size: 0.8rem;
+  //   color: rgba(255, 255, 255, 0.8);
+  // }
 }
 
 ion-fab-button {

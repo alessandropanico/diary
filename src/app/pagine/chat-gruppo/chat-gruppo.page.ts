@@ -587,23 +587,27 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
    * @param index L'indice del messaggio nell'array VISIBILE.
    * @returns Vero se la data deve essere mostrata, falso altrimenti.
    */
-  shouldShowDate(message: GroupMessage, index: number): boolean {
-    if (!message || !message.timestamp) {
-      return false;
-    }
-    if (index === 0) {
-      return true;
-    }
-    const currentMessageDate = dayjs(message.timestamp.toDate()).startOf('day');
-    // ⭐ Modificato qui: usiamo 'visibleMessages' per il confronto ⭐
-    const previousMessage = this.visibleMessages[index - 1];
-
-    if (!previousMessage || !previousMessage.timestamp) {
-      return true;
-    }
-    const previousMessageDate = dayjs(previousMessage.timestamp.toDate()).startOf('day');
-    return !currentMessageDate.isSame(previousMessageDate, 'day');
+shouldShowDate(message: GroupMessage, index: number): boolean {
+  if (!message || !message.timestamp) {
+    return false;
   }
+  // Mostra la data solo per il primo messaggio VISIBILE, se la data cambia, o se il messaggio precedente non esiste
+  if (index === 0) {
+    return true;
+  }
+  const currentMessageDate = dayjs(message.timestamp.toDate()).startOf('day');
+  const previousMessage = this.messages[index - 1];
+
+  // Se non c'è un messaggio precedente, mostriamo la data
+  if (!previousMessage || !previousMessage.timestamp) {
+    return true;
+  }
+
+  const previousMessageDate = dayjs(previousMessage.timestamp.toDate()).startOf('day');
+
+  // Confronta se il giorno del messaggio corrente è diverso da quello del messaggio precedente
+  return !currentMessageDate.isSame(previousMessageDate, 'day');
+}
 
   formatDateHeader(timestamp: Timestamp): string {
     const d = dayjs(timestamp.toDate());
