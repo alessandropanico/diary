@@ -45,7 +45,7 @@ interface GroupMemberDisplay {
   uid: string;
   nickname: string;
   photoUrl: string;
-  name:string;
+  name: string;
 }
 
 @Component({
@@ -122,7 +122,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     private cdr: ChangeDetectorRef,
     private groupChatNotificationService: GroupChatNotificationService,
     private sanitizer: DomSanitizer,
-      private notificheService: NotificheService
+    private notificheService: NotificheService
 
   ) { }
 
@@ -520,55 +520,55 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
- async sendMessage() {
-  if (!this.newMessageText.trim() || !this.groupId || !this.currentUserId || this.isSendingMessage) {
-    console.warn('sendMessage: Cannot send message: empty text, group ID, current user ID missing, or message already being sent.');
-    return;
-  }
+  async sendMessage() {
+    if (!this.newMessageText.trim() || !this.groupId || !this.currentUserId || this.isSendingMessage) {
+      console.warn('sendMessage: Cannot send message: empty text, group ID, current user ID missing, or message already being sent.');
+      return;
+    }
 
-  this.isSendingMessage = true;
-  const messageToSend = this.newMessageText.trim();
-  const mentionedUserIds = Array.from(this.taggedUsersInMessage.keys());
+    this.isSendingMessage = true;
+    const messageToSend = this.newMessageText.trim();
+    const mentionedUserIds = Array.from(this.taggedUsersInMessage.keys());
 
-  this.newMessageText = '';
-  this.cdr.detectChanges();
+    this.newMessageText = '';
+    this.cdr.detectChanges();
 
-  try {
-    // Invia il messaggio al servizio GroupChatService, includendo i menzionati
-  await this.groupChatService.sendMessage(this.groupId!, this.currentUserId!, messageToSend, 'text', undefined, mentionedUserIds);
+    try {
+      // Invia il messaggio al servizio GroupChatService, includendo i menzionati
+      await this.groupChatService.sendMessage(this.groupId!, this.currentUserId!, messageToSend, 'text', undefined, mentionedUserIds);
 
-    // Invia notifiche agli utenti menzionati
-    if (mentionedUserIds.length > 0 && this.currentUserId) {
-      const taggingUser = await this.userDataService.getUserDataById(this.currentUserId);
-      if (taggingUser) {
-        for (const taggedUserId of mentionedUserIds) {
-          // Utilizza il servizio NotificheService per aggiungere la notifica
-          await this.notificheService.aggiungiNotificaMenzioneChat(
-            taggedUserId,
-            taggingUser.nickname,
-            this.groupId!,
-            this.currentUserId
-          );
+      // Invia notifiche agli utenti menzionati
+      if (mentionedUserIds.length > 0 && this.currentUserId) {
+        const taggingUser = await this.userDataService.getUserDataById(this.currentUserId);
+        if (taggingUser) {
+          for (const taggedUserId of mentionedUserIds) {
+            // Utilizza il servizio NotificheService per aggiungere la notifica
+            await this.notificheService.aggiungiNotificaMenzioneChat(
+              taggedUserId,
+              taggingUser.nickname,
+              this.groupId!,
+              this.currentUserId
+            );
+          }
         }
       }
-    }
 
-    // Aggiorna il timestamp dell'ultima lettura se l'utente è alla fine della chat
-    if (this.currentUserId && this.groupId) {
-      await this.updateLastReadTimestampInService();
-    }
+      // Aggiorna il timestamp dell'ultima lettura se l'utente è alla fine della chat
+      if (this.currentUserId && this.groupId) {
+        await this.updateLastReadTimestampInService();
+      }
 
-  } catch (error) {
-    console.error('Errore durante l\'invio del messaggio di gruppo:', error);
-    await this.presentFF7Alert('Impossibile inviare il messaggio di gruppo.');
-    this.newMessageText = messageToSend; // Ripristina il messaggio in caso di errore
-  } finally {
-    // ⭐ CORREZIONE: Ho sostituito `isSendingMode` con `isSendingMessage`
-    this.isSendingMessage = false;
-    this.taggedUsersInMessage.clear();
-    this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Errore durante l\'invio del messaggio di gruppo:', error);
+      await this.presentFF7Alert('Impossibile inviare il messaggio di gruppo.');
+      this.newMessageText = messageToSend; // Ripristina il messaggio in caso di errore
+    } finally {
+      // ⭐ CORREZIONE: Ho sostituito `isSendingMode` con `isSendingMessage`
+      this.isSendingMessage = false;
+      this.taggedUsersInMessage.clear();
+      this.cdr.detectChanges();
+    }
   }
-}
 
   async scrollToBottom(duration: number = 300) {
     if (this.content) {
@@ -587,27 +587,27 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
    * @param index L'indice del messaggio nell'array VISIBILE.
    * @returns Vero se la data deve essere mostrata, falso altrimenti.
    */
-shouldShowDate(message: GroupMessage, index: number): boolean {
-  if (!message || !message.timestamp) {
-    return false;
-  }
-  // Mostra la data solo per il primo messaggio VISIBILE, se la data cambia, o se il messaggio precedente non esiste
-  if (index === 0) {
-    return true;
-  }
-  const currentMessageDate = dayjs(message.timestamp.toDate()).startOf('day');
-  const previousMessage = this.messages[index - 1];
+  shouldShowDate(message: GroupMessage, index: number): boolean {
+    if (!message || !message.timestamp) {
+      return false;
+    }
+    // Mostra la data solo per il primo messaggio VISIBILE, se la data cambia, o se il messaggio precedente non esiste
+    if (index === 0) {
+      return true;
+    }
+    const currentMessageDate = dayjs(message.timestamp.toDate()).startOf('day');
+    const previousMessage = this.messages[index - 1];
 
-  // Se non c'è un messaggio precedente, mostriamo la data
-  if (!previousMessage || !previousMessage.timestamp) {
-    return true;
+    // Se non c'è un messaggio precedente, mostriamo la data
+    if (!previousMessage || !previousMessage.timestamp) {
+      return true;
+    }
+
+    const previousMessageDate = dayjs(previousMessage.timestamp.toDate()).startOf('day');
+
+    // Confronta se il giorno del messaggio corrente è diverso da quello del messaggio precedente
+    return !currentMessageDate.isSame(previousMessageDate, 'day');
   }
-
-  const previousMessageDate = dayjs(previousMessage.timestamp.toDate()).startOf('day');
-
-  // Confronta se il giorno del messaggio corrente è diverso da quello del messaggio precedente
-  return !currentMessageDate.isSame(previousMessageDate, 'day');
-}
 
   formatDateHeader(timestamp: Timestamp): string {
     const d = dayjs(timestamp.toDate());
@@ -1059,22 +1059,22 @@ shouldShowDate(message: GroupMessage, index: number): boolean {
   }
 
   formatMessageText(text: string): SafeHtml {
-  // Regex per trovare @nomi utente
-  const taggedUsersRegex = /@(\w+)\s/g;
-  let formattedText = text;
+    // Regex per trovare @nomi utente
+    const taggedUsersRegex = /@(\w+)\s/g;
+    let formattedText = text;
 
-  // Sostituisce ogni menzione con uno <span> stilizzato
-  formattedText = formattedText.replace(taggedUsersRegex, (match, username) => {
-    // Cerchiamo l'ID utente corrispondente al nickname
-    const user = this.groupMembers.find(member => member.nickname === username);
-    if (user) {
-      // Creiamo l'HTML con un link al profilo, usando l'ID dell'utente
-      return `<span class="tagged-user" data-uid="${user.uid}">@${username}</span>`;
-    }
-    return match; // Se il nickname non corrisponde, non modificare
-  });
+    // Sostituisce ogni menzione con uno <span> stilizzato
+    formattedText = formattedText.replace(taggedUsersRegex, (match, username) => {
+      // Cerchiamo l'ID utente corrispondente al nickname
+      const user = this.groupMembers.find(member => member.nickname === username);
+      if (user) {
+        // Creiamo l'HTML con un link al profilo, usando l'ID dell'utente
+        return `<span class="tagged-user" data-uid="${user.uid}">@${username}</span>`;
+      }
+      return match; // Se il nickname non corrisponde, non modificare
+    });
 
-  return this.sanitizer.bypassSecurityTrustHtml(formattedText);
-}
+    return this.sanitizer.bypassSecurityTrustHtml(formattedText);
+  }
 
 }
