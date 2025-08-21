@@ -1,6 +1,6 @@
 // src/app/services/group-chat-notification.service.ts
 
-import { Injectable, OnDestroy, NgZone } from '@angular/core';
+import { Injectable, OnDestroy, NgZone, forwardRef, Inject  } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, Subscription, from, of, forkJoin, combineLatest } from 'rxjs';
 import { switchMap, tap, map, catchError, distinctUntilChanged, filter, take } from 'rxjs/operators';
@@ -43,11 +43,11 @@ export class GroupChatNotificationService implements OnDestroy {
   private lastKnownGroups = new Map<string, GroupChat>();
 
   constructor(
-    private groupChatService: GroupChatService,
-    private router: Router,
-    private ngZone: NgZone,
-    private userDataService: UserDataService,
-    private firestore: Firestore
+  @Inject(forwardRef(() => GroupChatService)) private groupChatService: GroupChatService,
+  private router: Router,
+  private ngZone: NgZone,
+  private userDataService: UserDataService,
+  private firestore: Firestore
   ) {
     this.audio = new Audio('assets/sound/notification.mp3');
     this.loadLastNotifiedTimestamps();
