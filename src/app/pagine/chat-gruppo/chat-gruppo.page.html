@@ -85,7 +85,20 @@
           class="sender-name">
           {{ getMemberDisplay(message.senderId) }}
         </div>
-        <p class="message-text" [innerHTML]="formatMessageText(message.text)"></p>
+
+        <p class="message-text">
+          <ng-container *ngFor="let part of getMessageParts(message.text)">
+            <ng-container *ngIf="part.isMention; else textPart">
+              <a [routerLink]="['/profilo-altri-utenti', part.uid]" class="tagged-user">
+                {{ part.part }}
+              </a>
+            </ng-container>
+            <ng-template #textPart>
+              {{ part.part }}
+            </ng-template>
+          </ng-container>
+        </p>
+
         <span class="message-timestamp">{{ message.timestamp.toDate() | date:'shortTime' }}</span>
       </div>
     </ng-container>

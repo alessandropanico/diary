@@ -209,8 +209,11 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
           return;
         }
 
-        await this.loadMemberNicknames();
+        // ⭐ CORREZIONE: CHIAMA LA FUNZIONE CORRETTA CHE POPOLA 'groupMembers' ⭐
+        await this.loadGroupMembersDetails();
+        await this.loadMemberNicknames(); // <-- DEVE ESSERE CHIAMATA ANCHE QUESTA
         await this.loadInitialMessages();
+        
       },
       async (error) => {
         console.error('groupDetailsSubscription: Error loading group details:', error);
@@ -1041,40 +1044,58 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  formatMessageContent(text: string, mentions?: string[]): SafeHtml {
-    let formattedText = text;
 
-    if (mentions && this.groupMembers) {
-      mentions.forEach(uid => {
-        const member = this.groupMembers.find(m => m.uid === uid);
-        if (member) {
-          const regex = new RegExp(`@${member.nickname}(?=\\s|$)`, 'g');
-          const replacement = `<span class="chat-user-tag" data-uid="${uid}">@${member.nickname}</span>`;
-          formattedText = formattedText.replace(regex, replacement);
-        }
-      });
-    }
 
-    return this.sanitizer.bypassSecurityTrustHtml(formattedText);
-  }
-
-  formatMessageText(text: string): SafeHtml {
+  public formatMessageText(text: string): SafeHtml {
     // Regex per trovare @nomi utente
-    const taggedUsersRegex = /@(\w+)\s/g;
+    const taggedUsersRegex = /@(\w+)/g;
     let formattedText = text;
 
-    // Sostituisce ogni menzione con uno <span> stilizzato
+    // Sostituisce ogni menzione con un link HTML
     formattedText = formattedText.replace(taggedUsersRegex, (match, username) => {
-      // Cerchiamo l'ID utente corrispondente al nickname
-      const user = this.groupMembers.find(member => member.nickname === username);
-      if (user) {
-        // Creiamo l'HTML con un link al profilo, usando l'ID dell'utente
-        return `<span class="tagged-user" data-uid="${user.uid}">@${username}</span>`;
+      // Cerchiamo l'utente corrispondente dal tuo array groupMembers
+      const taggedUser = this.groupMembers.find(member => member.nickname === username);
+      if (taggedUser) {
+        // Crea il link con l'ID utente per il routing
+        return `<a href="/tabs/profilo-altri-utenti/${taggedUser.uid}">@${username}</a>`;
       }
       return match; // Se il nickname non corrisponde, non modificare
     });
 
     return this.sanitizer.bypassSecurityTrustHtml(formattedText);
+  }
+
+  public getMessageParts(text: string): { part: string, isMention: boolean, uid?: string }[] {
+    const taggedUsersRegex = /@(\S+)/g;
+    const parts = [];
+    let lastIndex = 0;
+
+    text.replace(taggedUsersRegex, (match, username, index) => {
+      // Aggiungi la parte di testo prima della menzione
+      if (index > lastIndex) {
+        parts.push({ part: text.substring(lastIndex, index), isMention: false });
+      }
+
+      // Trova l'utente menzionato
+      const taggedUser = this.groupMembers.find(member => member.nickname === username);
+
+      // Aggiungi la parte menzionata
+      if (taggedUser) {
+        parts.push({ part: match, isMention: true, uid: taggedUser.uid });
+      } else {
+        // Se l'utente non è trovato, trattalo come testo normale
+        parts.push({ part: match, isMention: false });
+      }
+      lastIndex = index + match.length;
+      return match;
+    });
+
+    // Aggiungi la parte di testo finale
+    if (lastIndex < text.length) {
+      parts.push({ part: text.substring(lastIndex), isMention: false });
+    }
+
+    return parts;
   }
 
 }
