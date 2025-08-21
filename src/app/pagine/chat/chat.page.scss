@@ -150,11 +150,12 @@ ion-header {
   --placeholder-color: var(--label-color);
   --padding-start: 12px;
   --padding-end: 12px;
-  border-radius: 20px;
   border: 1px solid var(--primary-glow);
   box-shadow: 0 0 8px rgba(0, 255, 238, 0.3);
   height: 48px;
+  width: 99%;
 }
+
 
 .ff7-button.send-button {
   --background: var(--primary-glow);
