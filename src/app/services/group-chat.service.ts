@@ -435,35 +435,35 @@ export class GroupChatService {
    * @param groupId L'ID del gruppo da cui l'utente abbandona.
    * @param userId L'ID dell'utente che abbandona.
    */
- async leaveGroup(groupId: string, userId: string): Promise<void> {
-    const groupDocRef = doc(this.firestore, 'groups', groupId);
-    const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
+  async leaveGroup(groupId: string, userId: string): Promise<void> {
+    const groupDocRef = doc(this.firestore, 'groups', groupId);
+    const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
 
-    try {
-      // 1. Recupera il nickname dell'utente
-      const leavingUserProfile: UserProfile | null = await this.userDataService.getUserDataById(userId);
-      const leavingUserName = leavingUserProfile?.nickname || leavingUserProfile?.name || 'Un utente';
+    try {
+      // 1. Recupera il nickname dell'utente
+      const leavingUserProfile: UserProfile | null = await this.userDataService.getUserDataById(userId);
+      const leavingUserName = leavingUserProfile?.nickname || leavingUserProfile?.name || 'Un utente';
 
-      // 2. INVIA IL MESSAGGIO DI SISTEMA PRIMA DI RIMOVERE L'UTENTE
-      // ⭐ PASSA undefined PER IL PARAMETRO 'data' ⭐
-      await this.sendMessage(groupId, 'system', `${leavingUserName} ha abbandonato il gruppo.`, 'system', undefined, leavingUserName);
+      // 2. INVIA IL MESSAGGIO DI SISTEMA PRIMA DI RIMOVERE L'UTENTE
+      // ⭐ PASSA undefined PER IL PARAMETRO 'data' ⭐
+      await this.sendMessage(groupId, 'system', `${leavingUserName} ha abbandonato il gruppo.`, 'system', undefined, leavingUserName);
 
-      // 3. Rimuovi l'utente dal documento del gruppo
-      await updateDoc(groupDocRef, {
-        members: arrayRemove(userId)
-      });
+      // 3. Rimuovi l'utente dal documento del gruppo
+      await updateDoc(groupDocRef, {
+        members: arrayRemove(userId)
+      });
 
-      // 4. Elimina la sottocollezione del gruppo dall'utente
-      await deleteDoc(userGroupDocRef);
+      // 4. Elimina la sottocollezione del gruppo dall'utente
+      await deleteDoc(userGroupDocRef);
 
-    } catch (error) {
-      console.error(`ERRORE nell'abbandonare il gruppo ${groupId} per l'utente ${userId}:`, error);
-      console.error('Verifica le regole di sicurezza per:');
-      console.error(`- Aggiornamento (update) di 'groups/${groupId}' (per arrayRemove)`);
-      console.error(`- Eliminazione (delete) di 'users/${userId}/groups/${groupId}'`);
-      throw error;
-    }
-  }
+    } catch (error) {
+      console.error(`ERRORE nell'abbandonare il gruppo ${groupId} per l'utente ${userId}:`, error);
+      console.error('Verifica le regole di sicurezza per:');
+      console.error(`- Aggiornamento (update) di 'groups/${groupId}' (per arrayRemove)`);
+      console.error(`- Eliminazione (delete) di 'users/${userId}/groups/${groupId}'`);
+      throw error;
+    }
+  }
 
   /**
    * Ottiene i dati dei profili dei membri di un gruppo.
@@ -693,7 +693,6 @@ export class GroupChatService {
       try {
         const messageDocRef = doc(messagesCollection, messageId);
         await deleteDoc(messageDocRef); // 🔹 eliminazione singola
-        console.log(`Messaggio ${messageId} eliminato con successo.`);
       } catch (err) {
         console.error(`Errore nell'eliminazione del messaggio ${messageId}:`, err);
         errors.push(messageId);
@@ -703,8 +702,6 @@ export class GroupChatService {
     if (errors.length > 0) {
       throw new Error(`Impossibile eliminare ${errors.length} messaggi: ${errors.join(", ")}`);
     }
-
-    console.log(`Eliminati ${messageIds.length - errors.length} messaggi dal gruppo ${groupId}.`);
   }
 
 }
