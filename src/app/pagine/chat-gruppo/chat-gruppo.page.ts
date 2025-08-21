@@ -94,7 +94,6 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
   groupMembers: GroupMemberDisplay[] = [];
 
-  // ...dopo le proprietà esistenti...
   // ⭐ VARIABILI PER IL TAGGING ⭐
   public showTaggingSuggestions: boolean = false;
   public taggingUsers: GroupMemberDisplay[] = [];
@@ -102,6 +101,20 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
   private searchUserSubscription: Subscription | undefined;
   public currentSearchText: string = '';
   public taggedUsersInMessage = new Map<string, string>(); // Mappa: UID -> Nickname
+
+  public memberColors: { [uid: string]: string } = {};
+  public colors = [
+    '#FF5733', // Rosso vivace
+    '#33FF57', // Verde brillante
+    '#3357FF', // Blu elettrico
+    '#FF33A1', // Rosa caldo
+    '#FFC733', // Giallo sole
+    '#33FFF5', // Turchese
+    '#A133FF', // Viola
+    '#FF8333', // Arancione
+    '#33B5FF', // Azzurro
+    '#83FF33', // Verde lime
+  ];
 
   // ⭐ NUOVO GETTER: Controlla se l'utente corrente è il creatore del gruppo ⭐
   get isGroupCreator(): boolean {
@@ -213,7 +226,7 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
         await this.loadGroupMembersDetails();
         await this.loadMemberNicknames(); // <-- DEVE ESSERE CHIAMATA ANCHE QUESTA
         await this.loadInitialMessages();
-        
+
       },
       async (error) => {
         console.error('groupDetailsSubscription: Error loading group details:', error);
@@ -315,14 +328,21 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     this.cdr.detectChanges();
   }
 
+  // nel tuo file chat-gruppo.page.ts
   async loadGroupMembersDetails() {
     this.groupMembers = [];
+    this.memberColors = {}; // Azzera la mappa dei colori all'inizio
+
     if (!this.groupDetails || !this.groupDetails.members) {
       return;
     }
 
-    const memberPromises = this.groupDetails.members.map(async (memberId) => {
+    const memberPromises = this.groupDetails.members.map(async (memberId, index) => {
       if (memberId) {
+        // Assegna un colore ciclicamente dall'array
+        const assignedColor = this.colors[index % this.colors.length];
+        this.memberColors[memberId] = assignedColor;
+
         try {
           const userData = await this.userDataService.getUserDataById(memberId);
           if (userData) {

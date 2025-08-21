@@ -82,7 +82,7 @@
         [class.selected-message]="isSelectionMode && selectedMessages.has(message.messageId!)">
 
         <div *ngIf="!isMyMessage(message.senderId) && getMemberDisplay(message.senderId) !== 'Sistema'"
-          class="sender-name">
+          class="sender-name" [style.color]="memberColors[message.senderId]">
           {{ getMemberDisplay(message.senderId) }}
         </div>
 
