@@ -85,45 +85,39 @@
           class="sender-name">
           {{ getMemberDisplay(message.senderId) }}
         </div>
-        <p class="message-text">{{ message.text }}</p>
+        <p class="message-text" [innerHTML]="formatMessageText(message.text)"></p>
         <span class="message-timestamp">{{ message.timestamp.toDate() | date:'shortTime' }}</span>
       </div>
     </ng-container>
   </div>
 
-<ion-footer class="ion-no-border">
-  <ion-toolbar *ngIf="!isSelectionMode">
-    <div *ngIf="showTaggingSuggestions" class="tagging-suggestions-container">
-      <ion-list class="tagging-suggestions-list">
-        <ion-item
-          *ngFor="let user of taggingUsers"
-          (click)="selectUserForTagging(user)">
-          <ion-avatar slot="start">
-            <img [src]="user.photoUrl || 'assets/immaginiGenerali/user-default-avatar.png'" alt="Immagine utente">
-          </ion-avatar>
-          <ion-label>
-            <h2>{{ user.nickname }}</h2>
-            <p>{{ user.nickname }}</p>
-          </ion-label>
-        </ion-item>
-      </ion-list>
-    </div>
+  <ion-footer class="ion-no-border">
+    <ion-toolbar *ngIf="!isSelectionMode">
+      <div *ngIf="showTaggingSuggestions" class="tagging-suggestions-container">
+        <ion-list class="tagging-suggestions-list">
+          <ion-item *ngFor="let user of taggingUsers" (click)="selectUserForTagging(user)">
+            <ion-avatar slot="start">
+              <img [src]="user.photoUrl || 'assets/immaginiGenerali/user-default-avatar.png'" alt="Immagine utente">
+            </ion-avatar>
+            <ion-label>
+              <h2>{{ user.nickname }}</h2>
+              <p>{{ user.name }}</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
 
-    <ion-item class="message-input-item">
-      <ion-input
-        #messageInput
-        placeholder="Scrivi un messaggio..."
-        [(ngModel)]="newMessageText"
-        (keyup)="onMessageInput($event)"
-        (keyup.enter)="sendMessage()"
-        class="ff7-input">
-      </ion-input>
-      <ion-button slot="end" (click)="sendMessage()" [disabled]="!newMessageText.trim()" class="ff7-button send-button">
-        <ion-icon name="send-outline"></ion-icon>
-      </ion-button>
-    </ion-item>
-  </ion-toolbar>
-</ion-footer>
+      <ion-item class="message-input-item">
+        <ion-input #messageInput placeholder="Scrivi un messaggio..." [(ngModel)]="newMessageText"
+          (keyup)="onMessageInput($event)" (keyup.enter)="sendMessage()" class="ff7-input">
+        </ion-input>
+        <ion-button slot="end" (click)="sendMessage()" [disabled]="!newMessageText.trim()"
+          class="ff7-button send-button">
+          <ion-icon name="send-outline"></ion-icon>
+        </ion-button>
+      </ion-item>
+    </ion-toolbar>
+  </ion-footer>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="showScrollToBottom">
     <ion-fab-button (click)="scrollToBottom()">
@@ -183,12 +177,14 @@
           Aggiungi Membri
         </ion-button>
 
-        <ion-button expand="block" color="danger" class="ion-margin-top ff7-button" (click)="confirmDeleteGroup()" *ngIf="isGroupCreator">
+        <ion-button expand="block" color="danger" class="ion-margin-top ff7-button" (click)="confirmDeleteGroup()"
+          *ngIf="isGroupCreator">
           <ion-icon slot="start" name="trash-outline"></ion-icon>
           Elimina Gruppo
         </ion-button>
 
-        <ion-button expand="block" color="danger" class="ion-margin-top ff7-button" (click)="confirmLeaveGroup()" *ngIf="!isGroupCreator">
+        <ion-button expand="block" color="danger" class="ion-margin-top ff7-button" (click)="confirmLeaveGroup()"
+          *ngIf="!isGroupCreator">
           <ion-icon slot="start" name="log-out-outline"></ion-icon>
           Abbandona Gruppo
         </ion-button>

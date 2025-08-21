@@ -45,6 +45,7 @@ interface GroupMemberDisplay {
   uid: string;
   nickname: string;
   photoUrl: string;
+  name:string;
 }
 
 @Component({
@@ -326,7 +327,8 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
             this.groupMembers.push({
               uid: memberId,
               nickname: userData['nickname'] || 'Utente Sconosciuto',
-              photoUrl: photoUrl
+              photoUrl: photoUrl,
+              name: userData['name'],
             });
           }
         } catch (e) {
@@ -1007,7 +1009,8 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
       .map(member => ({
         uid: member.uid,
         nickname: member.nickname,
-        photoUrl: member.photo
+        photoUrl: member.photo,
+        name: member.name
       }));
 
     this.cdr.detectChanges();
@@ -1050,5 +1053,24 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
 
     return this.sanitizer.bypassSecurityTrustHtml(formattedText);
   }
+
+  formatMessageText(text: string): SafeHtml {
+  // Regex per trovare @nomi utente
+  const taggedUsersRegex = /@(\w+)\s/g;
+  let formattedText = text;
+
+  // Sostituisce ogni menzione con uno <span> stilizzato
+  formattedText = formattedText.replace(taggedUsersRegex, (match, username) => {
+    // Cerchiamo l'ID utente corrispondente al nickname
+    const user = this.groupMembers.find(member => member.nickname === username);
+    if (user) {
+      // Creiamo l'HTML con un link al profilo, usando l'ID dell'utente
+      return `<span class="tagged-user" data-uid="${user.uid}">@${username}</span>`;
+    }
+    return match; // Se il nickname non corrisponde, non modificare
+  });
+
+  return this.sanitizer.bypassSecurityTrustHtml(formattedText);
+}
 
 }
