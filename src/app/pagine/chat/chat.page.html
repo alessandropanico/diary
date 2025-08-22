@@ -49,25 +49,40 @@
         loadingText="Caricando messaggi precedenti..."></ion-infinite-scroll-content>
     </ion-infinite-scroll>
 
-    <ng-container *ngFor="let message of visibleMessages; let i = index">
-      <div *ngIf="shouldShowDate(message, i)" class="date-divider">
-        <p>{{ formatDateHeader(message.timestamp) }}</p>
-      </div>
+  <ng-container *ngFor="let message of visibleMessages; let i = index">
+  <div *ngIf="shouldShowDate(message, i)" class="date-divider">
+    <p>{{ formatDateHeader(message.timestamp) }}</p>
+  </div>
 
-      <div *ngIf="message.type === 'post'" class="shared-post-container"
-        [class.my-message]="isMyMessage(message.senderId)" [class.other-message]="!isMyMessage(message.senderId)"
-        (click)="isMyMessage(message.senderId) && isSelectionMode ? selectMessage(message) : null"
-        [class.selected-message]="isSelectionMode && selectedMessages.has(message.id)">
+  <div *ngIf="message.type === 'post' && message.postData" class="shared-post-container"
+    [class.my-message]="isMyMessage(message.senderId)" [class.other-message]="!isMyMessage(message.senderId)"
+    (click)="isSelectionMode ? selectMessage(message) : goToPost(message.postData.id)"
+    [class.selected-message]="isSelectionMode && selectedMessages.has(message.id)">
+    <div class="shared-post-content">
+      <div class="shared-post-header">
+        <ion-avatar>
+          <img [src]="message.postData.userAvatarUrl" alt="Avatar Post">
+        </ion-avatar>
+        <span>{{ message.postData.username }}</span>
       </div>
+      <div class="shared-post-text">
+        <p>{{ message.postData.text }}</p>
+      </div>
+      <div class="shared-post-image">
+        <img *ngIf="message.postData.imageUrl" [src]="message.postData.imageUrl" alt="Immagine del Post">
+      </div>
+      <span class="message-timestamp">{{ message.timestamp | date:'shortTime' }}</span>
+    </div>
+  </div>
 
-      <div *ngIf="message.type === 'text'" [class.my-message]="isMyMessage(message.senderId)"
-        [class.other-message]="!isMyMessage(message.senderId)" class="chat-bubble"
-        (click)="isMyMessage(message.senderId) ? selectMessage(message) : null"
-        [class.selected-message]="isSelectionMode && selectedMessages.has(message.id)">
-        <p class="message-text">{{ message.text }}</p>
-        <span class="message-timestamp">{{ message.timestamp | date:'shortTime' }}</span>
-      </div>
-    </ng-container>
+  <div *ngIf="message.type === 'text'" [class.my-message]="isMyMessage(message.senderId)"
+    [class.other-message]="!isMyMessage(message.senderId)" class="chat-bubble"
+    (click)="isMyMessage(message.senderId) && isSelectionMode ? selectMessage(message) : null"
+    [class.selected-message]="isSelectionMode && selectedMessages.has(message.id)">
+    <p class="message-text">{{ message.text }}</p>
+    <span class="message-timestamp">{{ message.timestamp | date:'shortTime' }}</span>
+  </div>
+</ng-container>
 
 
   </div>
