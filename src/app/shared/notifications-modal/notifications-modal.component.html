@@ -18,13 +18,45 @@
     <ion-list lines="full">
       <ion-item *ngFor="let notifica of notifiche" [class.notifica-letta]="notifica.letta"
         [class.notifica-non-letta]="!notifica.letta" (click)="handleNotificationClick(notifica)">
-        <ion-avatar slot="start" *ngIf="notifica.creatorAvatarUrl">
-          <img [src]="notifica.creatorAvatarUrl" [alt]="'Avatar di ' + notifica.creatorUsername" />
+        <ion-avatar slot="start">
+          <img [src]="notifica.creatorAvatarUrl || 'assets/immaginiGenerali/user-default-avatar.png'"
+            [alt]="'Avatar di ' + notifica.creatorUsername" />
         </ion-avatar>
+
         <ion-label>
-          <p class="ion-text-wrap">
-            {{ notifica.messaggio }}
-          </p>
+          <ng-container [ngSwitch]="notifica.tipo">
+            <p *ngSwitchCase="'mi_piace'">
+              <strong>{{ notifica.creatorUsername }}</strong> ha messo mi piace al tuo post.
+            </p>
+            <p *ngSwitchCase="'nuovo_post'">
+              <strong>{{ notifica.creatorUsername }}</strong> ha creato un nuovo post.
+            </p>
+            <p *ngSwitchCase="'menzione_post'">
+              <strong>{{ notifica.creatorUsername }}</strong> ti ha menzionato in un post.
+            </p>
+            <p *ngSwitchCase="'commento'">
+              <strong>{{ notifica.creatorUsername }}</strong> ha commentato il tuo post.
+            </p>
+            <p *ngSwitchCase="'mi_piace_commento'">
+              <strong>{{ notifica.creatorUsername }}</strong> ha messo mi piace al tuo commento.
+            </p>
+            <p *ngSwitchCase="'menzione_commento'">
+              <strong>{{ notifica.creatorUsername }}</strong> ti ha menzionato in un commento.
+            </p>
+            <p *ngSwitchCase="'nuovo_follower'">
+              <strong>{{ notifica.creatorUsername }}</strong> ha iniziato a seguirti.
+            </p>
+            <p *ngSwitchCase="'invito_progetto'">
+              <strong>{{ notifica.creatorUsername }}</strong> ti ha invitato a un progetto.
+            </p>
+            <p *ngSwitchCase="'menzione_chat'">
+              <strong>{{ notifica.creatorUsername }}</strong> ti ha menzionato nel gruppo {{ notifica.groupName }}.
+            </p>
+            <p *ngSwitchDefault>
+              {{ notifica.messaggio }}
+            </p>
+          </ng-container>
+
           <p class="timestamp">
             {{ formatNotificationTime(notifica.timestamp) }}
           </p>

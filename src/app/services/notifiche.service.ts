@@ -313,17 +313,16 @@ export class NotificheService implements OnDestroy {
     }
   }
 
-  // ⭐⭐ AGGIUNTA QUESTA NUOVA FUNZIONE ⭐⭐
-async aggiungiNotificaMenzioneChat(taggedUserId: string, taggingUsername: string, groupId: string, creatorId: string) {
-  const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
-    userId: taggedUserId,
-    titolo: 'Sei stato menzionato in una chat!',
-    messaggio: `${taggingUsername} ti ha menzionato in una chat di gruppo.`,
-    letta: false,
-    link: `/chat-gruppo/${groupId}`, // Assicurati che il link porti alla chat corretta
-    tipo: 'menzione_chat', // Nuovo tipo di notifica
-    creatorId: creatorId,
-  };
-  await this.aggiungiNotifica(notifica);
-}
+  async aggiungiNotificaMenzioneChat(taggedUserId: string, taggingUsername: string, groupId: string, creatorId: string) {
+    const notifica: Omit<Notifica, 'id' | 'dataCreazione' | 'timestamp'> = {
+      userId: taggedUserId,
+      titolo: 'Sei stato menzionato in una chat!',
+      messaggio: `${taggingUsername} ti ha menzionato in una chat di gruppo.`,
+      letta: false,
+      link: `/chat-gruppo/${groupId}`, // Assicurati che il link porti alla chat corretta
+      tipo: 'menzione_chat', // Nuovo tipo di notifica
+      creatorId: creatorId,
+    };
+    await this.aggiungiNotifica(notifica);
+  }
 }

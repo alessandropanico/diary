@@ -6,10 +6,13 @@ import { Router } from '@angular/router';
 import { getAuth } from 'firebase/auth';
 import { UserDataService, UserDashboardCounts } from 'src/app/services/user-data.service';
 import { ChangeDetectorRef } from '@angular/core';
+import { GroupChatService } from 'src/app/services/group-chat.service'; // ⭐ ASSICURATI DI AVERLO
+import { firstValueFrom } from 'rxjs'; // ⭐⭐ AGGIUNGI QUESTA IMPORTAZIONE ⭐⭐
 
 export interface NotificaWithCreatorData extends Notifica {
   creatorUsername?: string;
   creatorAvatarUrl?: string;
+  groupName?: string; // ⭐ AGGIUNTO
 }
 
 @Component({
@@ -36,7 +39,8 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     private router: Router,
     private alertCtrl: AlertController,
     private userDataService: UserDataService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private groupChatService: GroupChatService // ⭐ AGGIUNTO
   ) { }
 
   ngOnInit() {
@@ -125,9 +129,7 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * ⭐ AGGIORNATO: Questo metodo ora usa solo il campo 'photo' per l'URL dell'avatar.
-   */
+
   private async populateCreatorData(notifiche: Notifica[]): Promise<NotificaWithCreatorData[]> {
     if (notifiche.length === 0) {
       return [];
@@ -136,27 +138,53 @@ export class NotificationsModalComponent implements OnInit, OnDestroy {
     const creatorIds = [...new Set(notifiche.map(n => n.creatorId).filter(id => id != null) as string[])];
     const userPromises = creatorIds.map(id => this.userDataService.getUserDataByUid(id));
     const userResults = await Promise.all(userPromises);
-    console.log('Dati utente recuperati:', userResults); // ⭐ Aggiungi questo log
 
-    const userMap = new Map<string, UserDashboardCounts | null>();
+    const userMap = new Map<string, any | null>();
     creatorIds.forEach((id, index) => userMap.set(id, userResults[index]));
 
+    const groupIds = [...new Set(notifiche.filter(n => n.tipo === 'menzione_chat' && n.link)
+      .map(n => n.link!.split('/').pop()!))];
+
+    // ⭐⭐⭐ CORREZIONE CHIAVE: Converte l'Observable in una Promise ⭐⭐⭐
+    const groupDetailsPromises = groupIds.map(async id => {
+      try {
+        // Usa firstValueFrom per aspettare il primo valore dell'Observable
+        const details = await firstValueFrom(this.groupChatService.getGroupDetails(id));
+        return { id, details };
+      } catch (e) {
+        console.error(`Errore nel recupero dei dettagli del gruppo ${id}:`, e);
+        return { id, details: null };
+      }
+    });
+
+    const groupDetailsResults = await Promise.all(groupDetailsPromises);
+    const groupMap = new Map<string, any | null>();
+    groupDetailsResults.forEach(result => groupMap.set(result.id, result.details));
+
     return notifiche.map(notifica => {
-      let creatorUsername = '';
-      let creatorAvatarUrl = 'assets/immaginiGenerali/default-avatar.jpg';
+      const notificaPopolata: NotificaWithCreatorData = { ...notifica };
 
       if (notifica.creatorId) {
         const creatorData = userMap.get(notifica.creatorId);
         if (creatorData) {
-          creatorUsername = creatorData.nickname || '';
-          // ⭐ Corretto: Controlla che il campo 'photo' non sia vuoto
-          if (creatorData.photo) {
-            creatorAvatarUrl = creatorData.photo;
+          notificaPopolata.creatorUsername = creatorData.nickname || '';
+          notificaPopolata.creatorAvatarUrl = creatorData.photo || 'assets/immaginiGenerali/user-default-avatar.png';
+        }
+      }
+
+      if (notifica.tipo === 'menzione_chat' && notifica.link) {
+        const groupId = notifica.link.split('/').pop();
+        if (groupId) {
+          const groupDetails = groupMap.get(groupId);
+          if (groupDetails && groupDetails.name) {
+            notificaPopolata.groupName = groupDetails.name;
+          } else {
+            notificaPopolata.groupName = 'Gruppo Sconosciuto';
           }
         }
       }
 
-      return { ...notifica, creatorUsername, creatorAvatarUrl } as NotificaWithCreatorData;
+      return notificaPopolata;
     });
   }
 
