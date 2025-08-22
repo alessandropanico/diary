@@ -420,121 +420,121 @@ export class UserPostsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
 
-async sharePost(post: PostWithUserDetails) {
-  const modal = await this.modalController.create({
-    component: SearchModalComponent,
-    componentProps: {
-      postToShare: post,
-      isSharingPost: true
-    },
-    cssClass: 'my-custom-search-modal',
-    mode: 'ios',
-    breakpoints: [0, 0.5, 0.75, 1],
-    initialBreakpoint: 0.75,
-    backdropDismiss: true
-  });
-
-  await modal.present();
-
-  const { data, role } = await modal.onWillDismiss();
-  console.log('Dati restituiti dal modal:', data);
-  console.log('Ruolo del dismiss:', role);
-
-  if (role === 'chatSelected' && data) {
-    const selectedUserIds = data.selectedUserIds || [];
-    const selectedGroupIds = data.selectedGroupIds || [];
-    const totalSelected = selectedUserIds.length + selectedGroupIds.length;
-
-    if (totalSelected === 0) {
-      console.log('Nessun utente o gruppo selezionato. Uscita dalla funzione.');
-      return;
-    }
-
-    const loading = await this.loadingCtrl.create({
-      message: `Invio del post a ${totalSelected} chat...`,
-      spinner: 'crescent'
+  async sharePost(post: PostWithUserDetails) {
+    const modal = await this.modalController.create({
+      component: SearchModalComponent,
+      componentProps: {
+        postToShare: post,
+        isSharingPost: true
+      },
+      cssClass: 'my-custom-search-modal',
+      mode: 'ios',
+      breakpoints: [0, 0.5, 0.75, 1],
+      initialBreakpoint: 0.75,
+      backdropDismiss: true
     });
-    await loading.present();
 
-    let successCount = 0;
-    let errorCount = 0;
+    await modal.present();
 
-    // --- Condivisione nelle chat private ---
-    for (const id of selectedUserIds) {
-      console.log(`Tentativo di condividere il post con l'utente: ${id}`);
-      try {
-        const conversationId = await this.chatService.getOrCreateConversation(this.currentUserId!, id);
-        const postMessageText = `Ho condiviso un post: ${post.text.substring(0, 50)}...`;
+    const { data, role } = await modal.onWillDismiss();
+    console.log('Dati restituiti dal modal:', data);
+    console.log('Ruolo del dismiss:', role);
 
-        // ⭐⭐ CORREZIONE QUI ⭐⭐
-        const sharedPostData = {
-          id: post.id,
-          text: post.text,
-          username: post.username,
-          userAvatarUrl: post.userAvatarUrl,
-          imageUrl: post.imageUrl || undefined // Gestisce il caso in cui imageUrl sia undefined o null
-        };
-        // Rimuovi la proprietà se è undefined
-        if (sharedPostData.imageUrl === undefined) {
-          delete sharedPostData.imageUrl;
-        }
+    if (role === 'chatSelected' && data) {
+      const selectedUserIds = data.selectedUserIds || [];
+      const selectedGroupIds = data.selectedGroupIds || [];
+      const totalSelected = selectedUserIds.length + selectedGroupIds.length;
 
-        await this.chatService.sendMessage(
-          conversationId,
-          this.currentUserId!,
-          postMessageText,
-          'post',
-          sharedPostData
-        );
-        successCount++;
-        console.log(`Successo: Post inviato all'utente ${id}`);
-      } catch (error) {
-        console.error(`Errore durante la condivisione con l'utente ${id}:`, error);
-        errorCount++;
+      if (totalSelected === 0) {
+        console.log('Nessun utente o gruppo selezionato. Uscita dalla funzione.');
+        return;
       }
-    }
 
-    // --- Condivisione nelle chat di gruppo ---
-    for (const id of selectedGroupIds) {
-      console.log(`Tentativo di condividere il post con il gruppo: ${id}`);
-      try {
-        // ⭐⭐ CORREZIONE QUI ⭐⭐
-        const sharedPostData = {
-          id: post.id,
-          text: post.text,
-          username: post.username,
-          userAvatarUrl: post.userAvatarUrl,
-          imageUrl: post.imageUrl || undefined
-        };
-        if (sharedPostData.imageUrl === undefined) {
-          delete sharedPostData.imageUrl;
+      const loading = await this.loadingCtrl.create({
+        message: `Invio del post a ${totalSelected} chat...`,
+        spinner: 'crescent'
+      });
+      await loading.present();
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // --- Condivisione nelle chat private ---
+      for (const id of selectedUserIds) {
+        console.log(`Tentativo di condividere il post con l'utente: ${id}`);
+        try {
+          const conversationId = await this.chatService.getOrCreateConversation(this.currentUserId!, id);
+          const postMessageText = `Ho condiviso un post: ${post.text.substring(0, 50)}...`;
+
+          // ⭐⭐ CORREZIONE QUI ⭐⭐
+          const sharedPostData = {
+            id: post.id,
+            text: post.text,
+            username: post.username,
+            userAvatarUrl: post.userAvatarUrl,
+            imageUrl: post.imageUrl || undefined // Gestisce il caso in cui imageUrl sia undefined o null
+          };
+          // Rimuovi la proprietà se è undefined
+          if (sharedPostData.imageUrl === undefined) {
+            delete sharedPostData.imageUrl;
+          }
+
+          await this.chatService.sendMessage(
+            conversationId,
+            this.currentUserId!,
+            postMessageText,
+            'post',
+            sharedPostData
+          );
+          successCount++;
+          console.log(`Successo: Post inviato all'utente ${id}`);
+        } catch (error) {
+          console.error(`Errore durante la condivisione con l'utente ${id}:`, error);
+          errorCount++;
         }
-
-        await this.groupChatService.sendMessage(
-          id,
-          this.currentUserId!,
-          '',
-          'post',
-          { postData: sharedPostData }
-        );
-        successCount++;
-        console.log(`Successo: Post inviato al gruppo ${id}`);
-      } catch (error) {
-        console.error(`Errore durante la condivisione nel gruppo ${id}:`, error);
-        errorCount++;
       }
-    }
 
-    await loading.dismiss();
+      // --- Condivisione nelle chat di gruppo ---
+      for (const id of selectedGroupIds) {
+        console.log(`Tentativo di condividere il post con il gruppo: ${id}`);
+        try {
+          // ⭐⭐ CORREZIONE QUI ⭐⭐
+          const sharedPostData = {
+            id: post.id,
+            text: post.text,
+            username: post.username,
+            userAvatarUrl: post.userAvatarUrl,
+            imageUrl: post.imageUrl || undefined
+          };
+          if (sharedPostData.imageUrl === undefined) {
+            delete sharedPostData.imageUrl;
+          }
 
-    if (errorCount === 0) {
-      this.presentAppAlert('Successo', `Il post è stato condiviso in chat con successo con ${successCount} contatti.`);
-      this.expService.addExperience(50, 'postShared');
-    } else {
-      this.presentAppAlert('Condivisione Parziale', `Il post è stato condiviso con ${successCount} contatti, ma ci sono stati errori con ${errorCount} condivisioni.`);
+          await this.groupChatService.sendMessage(
+            id,
+            this.currentUserId!,
+            '',
+            'post',
+            { postData: sharedPostData }
+          );
+          successCount++;
+          console.log(`Successo: Post inviato al gruppo ${id}`);
+        } catch (error) {
+          console.error(`Errore durante la condivisione nel gruppo ${id}:`, error);
+          errorCount++;
+        }
+      }
+
+      await loading.dismiss();
+
+      if (errorCount === 0) {
+        this.presentAppAlert('Successo', `Il post è stato condiviso in chat con successo con ${successCount} contatti.`);
+        this.expService.addExperience(50, 'postShared');
+      } else {
+        this.presentAppAlert('Condivisione Parziale', `Il post è stato condiviso con ${successCount} contatti, ma ci sono stati errori con ${errorCount} condivisioni.`);
+      }
     }
   }
-}
 
 
   formatPostTime(timestamp: string): string {

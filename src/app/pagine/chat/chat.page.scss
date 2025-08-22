@@ -307,7 +307,7 @@ ion-fab-button {
   .shared-post-container {
     // Rimuovi il pointer-events per i messaggi non tuoi in modalità selezione
     &:not(.my-message) {
-      pointer-events: none;
+      // pointer-events: none;
     }
   }
 }

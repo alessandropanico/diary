@@ -379,8 +379,10 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     await this.groupInfoModal.dismiss();
   }
 
-  async goToPost(postId: string) {
-    this.router.navigateByUrl(`/notizia-singola/${postId}`);
+  goToPost(postId: string) {
+    if (postId) {
+      this.router.navigateByUrl(`/notizia-singola/${postId}`);
+    }
   }
 
 
