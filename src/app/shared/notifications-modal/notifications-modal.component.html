@@ -50,7 +50,7 @@
               <strong>{{ notifica.creatorUsername }}</strong> ti ha invitato a un progetto.
             </p>
             <p *ngSwitchCase="'menzione_chat'">
-              <strong>{{ notifica.creatorUsername }}</strong> ti ha menzionato nel gruppo {{ notifica.groupName }}.
+              <strong>{{ notifica.creatorUsername }}</strong> ti ha menzionato nel gruppo "{{ notifica.groupName }}".
             </p>
             <p *ngSwitchDefault>
               {{ notifica.messaggio }}
