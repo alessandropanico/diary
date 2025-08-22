@@ -54,7 +54,17 @@ export interface GroupMessage {
   timestamp: Timestamp;
   type: 'text' | 'image' | 'video' | 'system' | 'post';
   imageUrl?: string;
+  postData?: SharedPostData; // Aggiunto per i messaggi di tipo 'post'
 }
+
+export interface SharedPostData {
+  id: string; // ID del post condiviso
+  username: string; // Nickname dell'utente che ha creato il post
+  userAvatarUrl: string; // URL dell'avatar dell'utente
+  text: string; // Testo del post
+  imageUrl?: string; // URL dell'immagine del post (opzionale)
+}
+
 
 export interface PagedGroupMessages {
   messages: GroupMessage[];
@@ -131,23 +141,23 @@ export class GroupChatService {
   }
 
 /**
-* Invia un messaggio a un gruppo.
-* Aggiorna anche l'ultimo messaggio del documento del gruppo.
-* @param groupId L'ID del gruppo.
-* @param senderId L'ID dell'utente che invia il messaggio.
-* @param text Il testo del messaggio.
-* @param type Il tipo di messaggio ('text', 'image', 'video', 'system', 'post').
-* @param data Un oggetto opzionale per dati aggiuntivi (es. { imageUrl: string } o { postData: Post }).
-* @param mentions Un array opzionale di ID utente menzionati. ⭐ NOVITÀ ⭐
-* @param systemSenderNickname Un nickname opzionale per i messaggi di sistema.
-*/
+ * Invia un messaggio a un gruppo.
+ * Aggiorna anche l'ultimo messaggio del documento del gruppo.
+ * @param groupId L'ID del gruppo.
+ * @param senderId L'ID dell'utente che invia il messaggio.
+ * @param text Il testo del messaggio.
+ * @param type Il tipo di messaggio ('text', 'image', 'video', 'system', 'post').
+ * @param data Un oggetto opzionale per dati aggiuntivi (es. { imageUrl?: string; postData?: SharedPostData }).
+ * @param mentions Un array opzionale di ID utente menzionati.
+ * @param systemSenderNickname Un nickname opzionale per i messaggi di sistema.
+ */
 async sendMessage(
   groupId: string,
   senderId: string,
   text: string,
   type: 'text' | 'image' | 'video' | 'system' | 'post' = 'text',
-  data?: { imageUrl?: string; postData?: Post },
-  mentions?: string[], // ⭐ NOVITÀ: Aggiunto il parametro per le menzioni
+  data?: { imageUrl?: string; postData?: any },
+  mentions?: string[],
   systemSenderNickname?: string
 ): Promise<void> {
   const groupMessagesCollectionRef = collection(this.firestore, `groups/${groupId}/messages`);
@@ -170,6 +180,17 @@ async sendMessage(
     }
   }
 
+  // ⭐⭐ LOGICA CORRETTA PER IL TESTO DELL'ANTEPRIMA ⭐⭐
+  let lastMessageText: string = text;
+  if (type === 'post' && data?.postData) {
+    const postTextPreview = data.postData.text ? data.postData.text.substring(0, 50) + '...' : 'Nessuna descrizione';
+    lastMessageText = `Post condiviso: "${postTextPreview}"`;
+  } else if (type === 'image') {
+    lastMessageText = 'Immagine';
+  } else if (type === 'video') {
+    lastMessageText = 'Video';
+  }
+
   const newMessage: GroupMessage = {
     senderId: senderId,
     senderNickname: senderNickname,
@@ -178,14 +199,14 @@ async sendMessage(
     type,
     ...(data?.imageUrl && { imageUrl: data.imageUrl }),
     ...(data?.postData && { postData: data.postData }),
-    ...(mentions && mentions.length > 0 && { mentions: mentions }) // ⭐ NOVITÀ: Inserisce le menzioni se esistono
+    ...(mentions && mentions.length > 0 && { mentions: mentions })
   };
 
   try {
     await addDoc(groupMessagesCollectionRef, newMessage);
     const lastMessageData = {
       senderId: newMessage.senderId,
-      text: newMessage.text,
+      text: lastMessageText, // ⭐⭐ Usa il testo di anteprima corretto ⭐⭐
       timestamp: serverTimestamp()
     };
     await updateDoc(groupDocRef, {
@@ -196,6 +217,7 @@ async sendMessage(
     throw error;
   }
 }
+
   /**
    * Ottiene i messaggi più recenti di un gruppo in tempo reale.
    * Utilizzato principalmente per l'ascolto dei nuovi messaggi dopo il caricamento iniziale.

@@ -70,38 +70,66 @@
         loadingText="Caricando messaggi precedenti..."></ion-infinite-scroll-content>
     </ion-infinite-scroll>
 
-    <ng-container *ngFor="let message of messages; let i = index">
-      <div *ngIf="shouldShowDate(message, i)" class="date-divider">
-        <span>{{ formatDateHeader(message.timestamp) }}</span>
+<ng-container *ngFor="let message of messages; let i = index">
+  <div *ngIf="shouldShowDate(message, i)" class="date-divider">
+    <span>{{ formatDateHeader(message.timestamp) }}</span>
+  </div>
+
+  <div *ngIf="message.type === 'post' && message.postData" class="shared-post-container"
+    [class.my-message]="isMyMessage(message.senderId)"
+    [class.other-message]="!isMyMessage(message.senderId) && !isSystemMessage(message.senderId)"
+    [class.selected-message]="isSelectionMode && selectedMessages.has(message.messageId!)"
+    (click)="isSelectionMode ? selectMessage(message) : goToPost(message.postData.id)">
+    <div class="shared-post-content">
+      <div *ngIf="!isMyMessage(message.senderId) && getMemberDisplay(message.senderId) !== 'Sistema'"
+        class="sender-name" [style.color]="memberColors[message.senderId]">
+        {{ getMemberDisplay(message.senderId) }}
       </div>
-
-      <div [class.my-message]="isMyMessage(message.senderId)"
-        [class.other-message]="!isMyMessage(message.senderId) && !isSystemMessage(message.senderId)"
-        [class.system-message]="isSystemMessage(message.senderId)" class="chat-bubble"
-        (click)="isMyMessage(message.senderId) && isSelectionMode ? selectMessage(message) : null"
-        [class.selected-message]="isSelectionMode && selectedMessages.has(message.messageId!)">
-
-        <div *ngIf="!isMyMessage(message.senderId) && getMemberDisplay(message.senderId) !== 'Sistema'"
-          class="sender-name" [style.color]="memberColors[message.senderId]">
-          {{ getMemberDisplay(message.senderId) }}
-        </div>
-
-        <p class="message-text">
-          <ng-container *ngFor="let part of getMessageParts(message.text)">
-            <ng-container *ngIf="part.isMention; else textPart">
-              <a [routerLink]="['/profilo-altri-utenti', part.uid]" class="tagged-user">
-                {{ part.part }}
-              </a>
-            </ng-container>
-            <ng-template #textPart>
-              {{ part.part }}
-            </ng-template>
-          </ng-container>
-        </p>
-
-        <span class="message-timestamp">{{ message.timestamp.toDate() | date:'shortTime' }}</span>
+      <div class="shared-post-header">
+        <ion-avatar>
+          <img [src]="message.postData.userAvatarUrl" alt="Avatar Post">
+        </ion-avatar>
+        <span>{{ message.postData.username }}</span>
       </div>
-    </ng-container>
+      <div class="shared-post-text">
+        <p>{{ message.postData.text }}</p>
+      </div>
+      <div class="shared-post-image">
+        <img *ngIf="message.postData.imageUrl" [src]="message.postData.imageUrl" alt="Immagine del Post">
+      </div>
+      <span class="message-timestamp">{{ message.timestamp.toDate() | date:'shortTime' }}</span>
+    </div>
+  </div>
+
+  <div *ngIf="message.type === 'text'"
+    [class.my-message]="isMyMessage(message.senderId)"
+    [class.other-message]="!isMyMessage(message.senderId) && !isSystemMessage(message.senderId)"
+    [class.system-message]="isSystemMessage(message.senderId)"
+    class="chat-bubble"
+    (click)="isMyMessage(message.senderId) && isSelectionMode ? selectMessage(message) : null"
+    [class.selected-message]="isSelectionMode && selectedMessages.has(message.messageId!)">
+
+    <div *ngIf="!isMyMessage(message.senderId) && getMemberDisplay(message.senderId) !== 'Sistema'"
+      class="sender-name" [style.color]="memberColors[message.senderId]">
+      {{ getMemberDisplay(message.senderId) }}
+    </div>
+
+    <p class="message-text">
+      <ng-container *ngFor="let part of getMessageParts(message.text)">
+        <ng-container *ngIf="part.isMention; else textPart">
+          <a [routerLink]="['/profilo-altri-utenti', part.uid]" class="tagged-user">
+            {{ part.part }}
+          </a>
+        </ng-container>
+        <ng-template #textPart>
+          {{ part.part }}
+        </ng-template>
+      </ng-container>
+    </p>
+
+    <span class="message-timestamp">{{ message.timestamp.toDate() | date:'shortTime' }}</span>
+  </div>
+</ng-container>
   </div>
 
   <ion-footer class="ion-no-border">

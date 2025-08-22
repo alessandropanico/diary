@@ -379,6 +379,11 @@ export class ChatGruppoPage implements OnInit, OnDestroy, AfterViewInit {
     await this.groupInfoModal.dismiss();
   }
 
+  async goToPost(postId: string) {
+    this.router.navigateByUrl(`/notizia-singola/${postId}`);
+  }
+
+
   private async loadInitialMessages() {
     if (!this.groupId) {
       console.warn('loadInitialMessages: Group ID not available, cannot load messages.');
