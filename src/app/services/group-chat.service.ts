@@ -140,83 +140,83 @@ export class GroupChatService {
     }
   }
 
-/**
- * Invia un messaggio a un gruppo.
- * Aggiorna anche l'ultimo messaggio del documento del gruppo.
- * @param groupId L'ID del gruppo.
- * @param senderId L'ID dell'utente che invia il messaggio.
- * @param text Il testo del messaggio.
- * @param type Il tipo di messaggio ('text', 'image', 'video', 'system', 'post').
- * @param data Un oggetto opzionale per dati aggiuntivi (es. { imageUrl?: string; postData?: SharedPostData }).
- * @param mentions Un array opzionale di ID utente menzionati.
- * @param systemSenderNickname Un nickname opzionale per i messaggi di sistema.
- */
-async sendMessage(
-  groupId: string,
-  senderId: string,
-  text: string,
-  type: 'text' | 'image' | 'video' | 'system' | 'post' = 'text',
-  data?: { imageUrl?: string; postData?: any },
-  mentions?: string[],
-  systemSenderNickname?: string
-): Promise<void> {
-  const groupMessagesCollectionRef = collection(this.firestore, `groups/${groupId}/messages`);
-  const groupDocRef = doc(this.firestore, 'groups', groupId);
+  /**
+   * Invia un messaggio a un gruppo.
+   * Aggiorna anche l'ultimo messaggio del documento del gruppo.
+   * @param groupId L'ID del gruppo.
+   * @param senderId L'ID dell'utente che invia il messaggio.
+   * @param text Il testo del messaggio.
+   * @param type Il tipo di messaggio ('text', 'image', 'video', 'system', 'post').
+   * @param data Un oggetto opzionale per dati aggiuntivi (es. { imageUrl?: string; postData?: SharedPostData }).
+   * @param mentions Un array opzionale di ID utente menzionati.
+   * @param systemSenderNickname Un nickname opzionale per i messaggi di sistema.
+   */
+  async sendMessage(
+    groupId: string,
+    senderId: string,
+    text: string,
+    type: 'text' | 'image' | 'video' | 'system' | 'post' = 'text',
+    data?: { imageUrl?: string; postData?: any },
+    mentions?: string[],
+    systemSenderNickname?: string
+  ): Promise<void> {
+    const groupMessagesCollectionRef = collection(this.firestore, `groups/${groupId}/messages`);
+    const groupDocRef = doc(this.firestore, 'groups', groupId);
 
-  let senderNickname = 'Sistema';
-  if (senderId !== 'system') {
-    try {
-      const senderProfile: UserProfile | null = await this.userDataService.getUserDataById(senderId);
-      senderNickname = senderProfile?.nickname || senderProfile?.name || 'Utente Sconosciuto';
-    } catch (error) {
-      console.warn(`WARN: Impossibile recuperare il nickname per l'utente ${senderId}. Usando 'Utente Sconosciuto'. Errore:`, error);
-      senderNickname = 'Utente Sconosciuto';
-    }
-  } else {
-    if (systemSenderNickname) {
-      senderNickname = systemSenderNickname;
+    let senderNickname = 'Sistema';
+    if (senderId !== 'system') {
+      try {
+        const senderProfile: UserProfile | null = await this.userDataService.getUserDataById(senderId);
+        senderNickname = senderProfile?.nickname || senderProfile?.name || 'Utente Sconosciuto';
+      } catch (error) {
+        console.warn(`WARN: Impossibile recuperare il nickname per l'utente ${senderId}. Usando 'Utente Sconosciuto'. Errore:`, error);
+        senderNickname = 'Utente Sconosciuto';
+      }
     } else {
-      senderNickname = 'Sistema';
+      if (systemSenderNickname) {
+        senderNickname = systemSenderNickname;
+      } else {
+        senderNickname = 'Sistema';
+      }
+    }
+
+    // ⭐⭐ LOGICA CORRETTA PER IL TESTO DELL'ANTEPRIMA ⭐⭐
+    let lastMessageText: string = text;
+    if (type === 'post' && data?.postData) {
+      const postTextPreview = data.postData.text ? data.postData.text.substring(0, 50) + '...' : 'Nessuna descrizione';
+      lastMessageText = `Post condiviso: "${postTextPreview}"`;
+    } else if (type === 'image') {
+      lastMessageText = 'Immagine';
+    } else if (type === 'video') {
+      lastMessageText = 'Video';
+    }
+
+    const newMessage: GroupMessage = {
+      senderId: senderId,
+      senderNickname: senderNickname,
+      text,
+      timestamp: serverTimestamp() as Timestamp,
+      type,
+      ...(data?.imageUrl && { imageUrl: data.imageUrl }),
+      ...(data?.postData && { postData: data.postData }),
+      ...(mentions && mentions.length > 0 && { mentions: mentions })
+    };
+
+    try {
+      await addDoc(groupMessagesCollectionRef, newMessage);
+      const lastMessageData = {
+        senderId: newMessage.senderId,
+        text: lastMessageText, // ⭐⭐ Usa il testo di anteprima corretto ⭐⭐
+        timestamp: serverTimestamp()
+      };
+      await updateDoc(groupDocRef, {
+        lastMessage: lastMessageData
+      });
+    } catch (error) {
+      console.error('ERRORE CRITICO durante l\'invio o l\'aggiornamento del messaggio di gruppo:', error);
+      throw error;
     }
   }
-
-  // ⭐⭐ LOGICA CORRETTA PER IL TESTO DELL'ANTEPRIMA ⭐⭐
-  let lastMessageText: string = text;
-  if (type === 'post' && data?.postData) {
-    const postTextPreview = data.postData.text ? data.postData.text.substring(0, 50) + '...' : 'Nessuna descrizione';
-    lastMessageText = `Post condiviso: "${postTextPreview}"`;
-  } else if (type === 'image') {
-    lastMessageText = 'Immagine';
-  } else if (type === 'video') {
-    lastMessageText = 'Video';
-  }
-
-  const newMessage: GroupMessage = {
-    senderId: senderId,
-    senderNickname: senderNickname,
-    text,
-    timestamp: serverTimestamp() as Timestamp,
-    type,
-    ...(data?.imageUrl && { imageUrl: data.imageUrl }),
-    ...(data?.postData && { postData: data.postData }),
-    ...(mentions && mentions.length > 0 && { mentions: mentions })
-  };
-
-  try {
-    await addDoc(groupMessagesCollectionRef, newMessage);
-    const lastMessageData = {
-      senderId: newMessage.senderId,
-      text: lastMessageText, // ⭐⭐ Usa il testo di anteprima corretto ⭐⭐
-      timestamp: serverTimestamp()
-    };
-    await updateDoc(groupDocRef, {
-      lastMessage: lastMessageData
-    });
-  } catch (error) {
-    console.error('ERRORE CRITICO durante l\'invio o l\'aggiornamento del messaggio di gruppo:', error);
-    throw error;
-  }
-}
 
   /**
    * Ottiene i messaggi più recenti di un gruppo in tempo reale.
@@ -451,50 +451,50 @@ async sendMessage(
     }
   }
 
-/**
- * Permette a un utente di abbandonare un gruppo.
- * Rimuove l'utente dall'array 'members' del gruppo e cancella il riferimento nella sua sottocollezione 'groups'.
- * Invia un messaggio di sistema nel gruppo.
- * @param groupId L'ID del gruppo da cui l'utente abbandona.
- * @param userId L'ID dell'utente che abbandona.
- */
-async leaveGroup(groupId: string, userId: string): Promise<void> {
-  const groupDocRef = doc(this.firestore, 'groups', groupId);
-  const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
+  /**
+   * Permette a un utente di abbandonare un gruppo.
+   * Rimuove l'utente dall'array 'members' del gruppo e cancella il riferimento nella sua sottocollezione 'groups'.
+   * Invia un messaggio di sistema nel gruppo.
+   * @param groupId L'ID del gruppo da cui l'utente abbandona.
+   * @param userId L'ID dell'utente che abbandona.
+   */
+  async leaveGroup(groupId: string, userId: string): Promise<void> {
+    const groupDocRef = doc(this.firestore, 'groups', groupId);
+    const userGroupDocRef = doc(this.firestore, `users/${userId}/groups`, groupId);
 
-  try {
-    // 1. Recupera il nickname dell'utente
-    const leavingUserProfile: UserProfile | null = await this.userDataService.getUserDataById(userId);
-    const leavingUserName = leavingUserProfile?.nickname || leavingUserProfile?.name || 'Un utente';
+    try {
+      // 1. Recupera il nickname dell'utente
+      const leavingUserProfile: UserProfile | null = await this.userDataService.getUserDataById(userId);
+      const leavingUserName = leavingUserProfile?.nickname || leavingUserProfile?.name || 'Un utente';
 
-    // 2. INVIA IL MESSAGGIO DI SISTEMA PRIMA DI RIMOVERE L'UTENTE
-    // ⭐ CORREZIONE: PASSA L'ID DELL'UTENTE ABBANDONATO IN UN ARRAY PER IL PARAMETRO 'mentions' ⭐
-    await this.sendMessage(
-      groupId,
-      'system',
-      `${leavingUserName} ha abbandonato il gruppo.`,
-      'system',
-      undefined,
-      [userId], // ⭐ LA CORREZIONE È QUI: PASSiamo [userId] come array ⭐
-      leavingUserName
-    );
+      // 2. INVIA IL MESSAGGIO DI SISTEMA PRIMA DI RIMOVERE L'UTENTE
+      // ⭐ CORREZIONE: PASSA L'ID DELL'UTENTE ABBANDONATO IN UN ARRAY PER IL PARAMETRO 'mentions' ⭐
+      await this.sendMessage(
+        groupId,
+        'system',
+        `${leavingUserName} ha abbandonato il gruppo.`,
+        'system',
+        undefined,
+        [userId], // ⭐ LA CORREZIONE È QUI: PASSiamo [userId] come array ⭐
+        leavingUserName
+      );
 
-    // 3. Rimuovi l'utente dal documento del gruppo
-    await updateDoc(groupDocRef, {
-      members: arrayRemove(userId)
-    });
+      // 3. Rimuovi l'utente dal documento del gruppo
+      await updateDoc(groupDocRef, {
+        members: arrayRemove(userId)
+      });
 
-    // 4. Elimina la sottocollezione del gruppo dall'utente
-    await deleteDoc(userGroupDocRef);
+      // 4. Elimina la sottocollezione del gruppo dall'utente
+      await deleteDoc(userGroupDocRef);
 
-  } catch (error) {
-    console.error(`ERRORE nell'abbandonare il gruppo ${groupId} per l'utente ${userId}:`, error);
-    console.error('Verifica le regole di sicurezza per:');
-    console.error(`- Aggiornamento (update) di 'groups/${groupId}' (per arrayRemove)`);
-    console.error(`- Eliminazione (delete) di 'users/${userId}/groups/${groupId}'`);
-    throw error;
+    } catch (error) {
+      console.error(`ERRORE nell'abbandonare il gruppo ${groupId} per l'utente ${userId}:`, error);
+      console.error('Verifica le regole di sicurezza per:');
+      console.error(`- Aggiornamento (update) di 'groups/${groupId}' (per arrayRemove)`);
+      console.error(`- Eliminazione (delete) di 'users/${userId}/groups/${groupId}'`);
+      throw error;
+    }
   }
-}
 
   /**
    * Ottiene i dati dei profili dei membri di un gruppo.
