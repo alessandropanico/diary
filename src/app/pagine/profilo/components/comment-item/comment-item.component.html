@@ -34,12 +34,21 @@
       (click)="onCommentTextClick($event)"></p>
   </div>
 
-  <div *ngIf="comment.replies && comment.replies.length > 0" class="replies-section">
-        <app-comment-item       *ngFor="let reply of comment.replies"       [comment]="reply"      
-      [currentUserId]="currentUserId"       [nestingLevel]="nestingLevel + 1"      
-      [formatCommentTime]="formatCommentTime"       [commentIdToHighlight]="commentIdToHighlight"      
-      (toggleLike)="propagateToggleLike($event)"       (setReply)="propagateSetReply($event)"      
-      (deleteComment)="propagateDeleteComment($event)"       (goToProfile)="propagateGoToProfile($event)"      
-      (viewLikes)="propagateViewLikes($event)"> </app-comment-item>
+    <div *ngIf="comment.replies && comment.replies.length > 0" class="replies-toggle" (click)="onToggleReplies()">
+        <span class="toggle-text">
+            {{ showReplies ? 'Nascondi risposte' : 'Visualizza risposte' }}
+          </span>
       </div>
+
+  <div *ngIf="showReplies">
+    <div *ngIf="comment.replies && comment.replies.length > 0" class="replies-section">
+          <app-comment-item       *ngFor="let reply of comment.replies"       [comment]="reply"      
+        [currentUserId]="currentUserId"       [nestingLevel]="nestingLevel + 1"      
+        [formatCommentTime]="formatCommentTime"       [commentIdToHighlight]="commentIdToHighlight"      
+        (toggleLike)="propagateToggleLike($event)"       (setReply)="propagateSetReply($event)"      
+        (deleteComment)="propagateDeleteComment($event)"       (goToProfile)="propagateGoToProfile($event)"      
+        (viewLikes)="propagateViewLikes($event)"> </app-comment-item>
+        </div>
+  </div>
+
 </div>

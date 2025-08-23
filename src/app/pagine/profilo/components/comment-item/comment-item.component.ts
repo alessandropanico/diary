@@ -8,100 +8,105 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
-  selector: 'app-comment-item',
-  templateUrl: './comment-item.component.html',
-  styleUrls: ['./comment-item.component.scss'],
-  standalone: true,
-  imports: [CommonModule, IonicModule, FormsModule],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-comment-item',
+  templateUrl: './comment-item.component.html',
+  styleUrls: ['./comment-item.component.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CommentItemComponent implements OnInit, OnChanges {
 
-  @Input() comment!: Comment;
-  @Input() currentUserId: string | null = null;
-  @Input() nestingLevel: number = 0;
-  @Input() formatCommentTime!: (timestamp: string) => string;
-  @Input() commentIdToHighlight: string | undefined; // ⭐ NOVITÀ: Aggiunto l'input per l'ID da evidenziare
+  @Input() comment!: Comment;
+  @Input() currentUserId: string | null = null;
+  @Input() nestingLevel: number = 0;
+  @Input() formatCommentTime!: (timestamp: string) => string;
+  @Input() commentIdToHighlight: string | undefined;
 
-  @Output() toggleLike = new EventEmitter<Comment>();
-  @Output() setReply = new EventEmitter<Comment>();
-  @Output() deleteComment = new EventEmitter<string>();
-  @Output() goToProfile = new EventEmitter<string>();
-  @Output() viewLikes = new EventEmitter<Comment>();
+  @Output() toggleLike = new EventEmitter<Comment>();
+  @Output() setReply = new EventEmitter<Comment>();
+  @Output() deleteComment = new EventEmitter<string>();
+  @Output() goToProfile = new EventEmitter<string>();
+  @Output() viewLikes = new EventEmitter<Comment>();
 
-  formattedCommentText: SafeHtml | undefined;
+  formattedCommentText: SafeHtml | undefined;
+  showReplies: boolean = false; // Variabile di stato per mostrare/nascondere le risposte
 
-  constructor(private cdr: ChangeDetectorRef, private sanitizer: DomSanitizer) { }
+  constructor(private cdr: ChangeDetectorRef, private sanitizer: DomSanitizer) { }
 
-  ngOnInit(): void {
-  }
+  ngOnInit(): void {
+    this.formattedCommentText = this.formatTextWithUserTags(this.comment.text);
+  }
 
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['comment'] || changes['currentUserId'] || changes['nestingLevel']) {
-      this.formattedCommentText = this.formatTextWithUserTags(this.comment.text);
-      this.cdr.detectChanges();
-    }
-  }
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['comment']) {
+      this.formattedCommentText = this.formatTextWithUserTags(this.comment.text);
+      this.cdr.detectChanges();
+    }
+  }
 
-  private formatTextWithUserTags(text: string): SafeHtml {
-    const tagRegex = /@([a-zA-Z0-9_.-]+)/g;
-    const replacedText = text.replace(tagRegex, (match, nickname) => {
-      return `<a class="user-tag" data-identifier="${nickname}">${match}</a>`;
-    });
-    return this.sanitizer.bypassSecurityTrustHtml(replacedText);
-  }
+  private formatTextWithUserTags(text: string): SafeHtml {
+    const tagRegex = /@([a-zA-Z0-9_.-]+)/g;
+    const replacedText = text.replace(tagRegex, (match, nickname) => {
+      return `<a class="user-tag" data-identifier="${nickname}">${match}</a>`;
+    });
+    return this.sanitizer.bypassSecurityTrustHtml(replacedText);
+  }
 
-  onCommentTextClick(event: Event) {
-    const target = event.target as HTMLElement;
-    if (target.classList.contains('user-tag')) {
-      event.preventDefault();
-      event.stopPropagation();
-      const identifier = target.dataset['identifier'];
-      if (identifier) {
-        this.goToProfile.emit(identifier);
-      }
-    }
-  }
+  onCommentTextClick(event: Event) {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('user-tag')) {
+      event.preventDefault();
+      event.stopPropagation();
+      const identifier = target.dataset['identifier'];
+      if (identifier) {
+        this.goToProfile.emit(identifier);
+      }
+    }
+  }
 
-  onToggleLike() {
-    this.toggleLike.emit(this.comment);
-  }
+  onToggleLike() {
+    this.toggleLike.emit(this.comment);
+  }
 
-  onSetReply() {
-    this.setReply.emit(this.comment);
-  }
+  onSetReply() {
+    this.setReply.emit(this.comment);
+  }
 
-  onDeleteComment() {
-    this.deleteComment.emit(this.comment.id);
-  }
+  onDeleteComment() {
+    this.deleteComment.emit(this.comment.id);
+  }
 
-  propagateDeleteComment(commentId: string) {
-    this.deleteComment.emit(commentId);
-  }
+  propagateDeleteComment(commentId: string) {
+    this.deleteComment.emit(commentId);
+  }
 
-  onGoToProfile() {
-    this.goToProfile.emit(this.comment.userId);
-  }
+  onGoToProfile() {
+    this.goToProfile.emit(this.comment.userId);
+  }
 
-  propagateToggleLike(commentToToggle: Comment) {
-    this.toggleLike.emit(commentToToggle);
-  }
+  propagateToggleLike(commentToToggle: Comment) {
+    this.toggleLike.emit(commentToToggle);
+  }
 
-  propagateGoToProfile(identifier: string) {
-    this.goToProfile.emit(identifier);
-  }
+  propagateGoToProfile(identifier: string) {
+    this.goToProfile.emit(identifier);
+  }
 
-  onViewLikes() {
-    this.viewLikes.emit(this.comment);
-  }
+  onViewLikes() {
+    this.viewLikes.emit(this.comment);
+  }
 
-  propagateViewLikes(comment: Comment) {
-    this.viewLikes.emit(comment);
-  }
+  propagateViewLikes(comment: Comment) {
+    this.viewLikes.emit(comment);
+  }
 
-  // ⭐ NUOVA FUNZIONE per propagare l'evento di risposta
-  propagateSetReply(comment: Comment) {
-    this.setReply.emit(comment);
-  }
+  propagateSetReply(comment: Comment) {
+    this.setReply.emit(comment);
+  }
 
+  onToggleReplies() {
+    this.showReplies = !this.showReplies;
+    this.cdr.detectChanges();
+  }
 }
