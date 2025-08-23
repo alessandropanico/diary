@@ -80,6 +80,9 @@
     [class.other-message]="!isMyMessage(message.senderId) && !isSystemMessage(message.senderId)"
     [class.selected-message]="isSelectionMode && selectedMessages.has(message.messageId!)"
     (click)="isSelectionMode ? selectMessage(message) : goToPost(message.postData.id)">
+
+    <div class="post-type-indicator">POST CONDIVISO</div>
+
     <div class="shared-post-content">
       <div *ngIf="!isMyMessage(message.senderId) && getMemberDisplay(message.senderId) !== 'Sistema'"
         class="sender-name" [style.color]="memberColors[message.senderId]">

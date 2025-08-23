@@ -218,7 +218,8 @@ ion-header {
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: calc(100vw - 150px);
-        color: var(--text-light);
+        color: white;
+        text-shadow: none;
         /* Colore del nome utente/gruppo */
       }
     }
@@ -559,4 +560,15 @@ ion-label {
 .message-text .tagged-user {
   color: #00ffee;
   font-weight: 500;
+}
+
+.post-type-indicator {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: var(--label-color);
+  /* O un colore a tua scelta */
+  text-align: center;
+  margin-top: 10px;
+  opacity: 0.8;
+  letter-spacing: 0.5px;
 }

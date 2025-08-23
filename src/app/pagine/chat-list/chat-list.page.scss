@@ -18,8 +18,9 @@ ion-header {
       font-weight: bold;
       font-size: 1.2em;
       font-family: 'Orbitron', sans-serif; // Assicurati che il titolo usi Orbitron
-      color: var(--primary-glow); // Colore del testo
+      color: white; // Colore del testo
       // text-shadow: 0 0 8px var(--primary-glow);
+      text-shadow: none;
     }
 
     ion-buttons ion-button ion-icon {
