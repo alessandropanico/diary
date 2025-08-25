@@ -19,7 +19,6 @@ import { PresenceService } from 'src/app/services/presence.service'; // <-- MODI
 import { SearchModalComponent } from 'src/app/shared/search-modal/search-modal.component';
 import { GroupChatService, GroupChat } from 'src/app/services/group-chat.service';
 
-
 import * as dayjs from 'dayjs';
 import 'dayjs/locale/it';
 import isToday from 'dayjs/plugin/isToday';
@@ -66,8 +65,8 @@ export interface ChatListItem {
   otherParticipantIsOnline?: boolean;
   otherParticipantLastOnline?: string;
   otherParticipantRawLastOnline?: string;
-
   groupDescription?: string;
+  mutedBy?: string[]; // La sorgente di verità
 }
 
 @Component({
@@ -81,19 +80,21 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
   conversations: ExtendedConversation[] = [];
   groupChats: ExtendedGroupChat[] = [];
   chatListItems: ChatListItem[] = [];
-
   loggedInUserId: string | null = null;
   isLoading: boolean = true;
-
   isSelectionMode: boolean = false;
   selectedConversations: Set<string> = new Set<string>();
-
   auth = getAuth();
 
   private authStateUnsubscribe: (() => void) | undefined;
   private conversationsSubscription: Subscription | undefined;
   private groupChatsSubscription: Subscription | undefined;
   private onlineStatusInterval: any;
+
+  private muteStatusSubscription: Subscription | undefined; // ⭐ AGGIUNTO: Subscription per lo stato di silenziamento
+
+  // ⭐ AGGIUNTO: cache locale per lo stato di silenziamento
+  private _tempMuteStatus: { [chatId: string]: boolean } = {};
 
   @ViewChildren(IonItemSliding) slidingItems!: QueryList<IonItemSliding>;
 
@@ -106,8 +107,7 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
     private modalCtrl: ModalController,
     private groupChatService: GroupChatService,
     private presenceService: PresenceService,
-    private groupChatNotificationService: GroupChatNotificationService, // ⭐ Aggiungi questo
-    // <-- MODIFICA: Inietta il nuovo servizio
+    private groupChatNotificationService: GroupChatNotificationService,
   ) { }
 
   ngOnInit() {
@@ -144,6 +144,9 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
     if (this.groupChatsSubscription) {
       this.groupChatsSubscription.unsubscribe();
     }
+    if (this.muteStatusSubscription) {
+      this.muteStatusSubscription.unsubscribe();
+    }
   }
 
   loadAllChats() {
@@ -151,6 +154,10 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
       this.isLoading = false;
       return;
     }
+
+    // Pulisci la cache solo se c'è un motivo valido,
+    // altrimenti la sincronizzazione con il database la renderà obsoleto.
+    this._tempMuteStatus = {};
 
     try {
       if (this.conversationsSubscription) {
@@ -162,6 +169,13 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
         this.groupChatService.getGroupsForUser(this.loggedInUserId)
       ]).pipe(
         switchMap(([rawConvs, rawGroups]) => {
+          // ⭐ NUOVO: Popola la cache temporanea con lo stato di silenziamento di ogni chat.
+          rawConvs.forEach(conv => {
+            if (conv.mutedBy && this.loggedInUserId) {
+              this._tempMuteStatus[conv.id] = conv.mutedBy.includes(this.loggedInUserId);
+            }
+          });
+
           const filteredConvs = rawConvs.filter(conv =>
             !(conv.deletedBy && conv.deletedBy.includes(this.loggedInUserId!))
           );
@@ -219,6 +233,7 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
       this.chatNotificationService.clearUnread(conv.id);
     }
 
+    // ⭐ Rimuovi la proprietà 'isMuted' dal modello, l'HTML farà il controllo direttamente sull'array
     return {
       id: conv.id,
       type: 'private',
@@ -232,7 +247,8 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
       unreadMessageCount: unreadCountForChat,
       otherParticipantIsOnline: isOnline,
       otherParticipantLastOnline: lastOnlineDisplay,
-      otherParticipantRawLastOnline: otherUserData?.lastOnline
+      otherParticipantRawLastOnline: otherUserData?.lastOnline,
+      mutedBy: conv.mutedBy, // ⭐ Mantieni l'array per il controllo diretto
     };
   }
 
@@ -433,7 +449,7 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
         { text: 'Annulla', role: 'cancel' },
         {
           text: 'Elimina Tutto',
-          handler: async () => {
+          handler: async (alertData) => {
             if (!this.loggedInUserId) {
               console.error('Errore: Utente non autenticato per eliminare le chat.');
               return;
@@ -616,4 +632,56 @@ export class ChatListPage implements OnInit, OnDestroy, ViewWillEnter {
       event.target.complete();
     }, 100);
   }
+
+
+  /**
+ * Controlla se una chat è silenziata per l'utente corrente.
+ * @param chat L'oggetto chat da controllare.
+ * @returns `true` se la chat è silenziata, `false` altrimenti.
+ */
+  isMuted(chat: ChatListItem): boolean {
+    if (chat.type !== 'private' || !this.loggedInUserId) {
+      return false;
+    }
+    // Usa direttamente il servizio come fonte di verità
+    return this.chatNotificationService.isChatMuted(chat.id);
+  }
+
+  /**
+   * Silenzia o riattiva una chat per l'utente corrente.
+   * @param chatItem L'elemento della lista chat da silenziare.
+   */
+  async toggleMuteChat(chatItem: ChatListItem) {
+    if (chatItem.type === 'private' && this.loggedInUserId) {
+      const isCurrentlyMuted = this.isMuted(chatItem);
+      const newMuteStatus = !isCurrentlyMuted;
+
+      try {
+        // Aggiorna lo stato di silenziamento nel database e nel servizio
+        await this.chatService.toggleMuteStatus(chatItem.id, this.loggedInUserId, newMuteStatus);
+        this.chatNotificationService.setChatMuteStatus(chatItem.id, newMuteStatus);
+
+        console.log(`Stato di silenziamento aggiornato per la chat ${chatItem.id}. Nuovo stato: ${newMuteStatus}`);
+      } catch (error) {
+        console.error('Errore nell\'aggiornamento dello stato di silenziamento:', error);
+        const errorAlert = await this.alertController.create({
+          header: 'Errore',
+          message: 'Impossibile aggiornare lo stato di silenziamento. Riprova.',
+          buttons: ['OK'],
+        });
+        await errorAlert.present();
+      }
+    }
+  }
+
+  /**
+  * Restituisce il nome dell'icona da mostrare per lo stato di silenziamento.
+  * @param chatItem L'elemento della lista chat.
+  * @returns Il nome dell'icona Ionicon ('volume-mute-outline' se silenziata, 'notifications-off-outline' altrimenti).
+  */
+  getMuteIcon(chatItem: ChatListItem): string {
+    // Ho invertito le icone per rispettare la tua richiesta (megafono per riattivare)
+    return this.isMuted(chatItem) ? 'volume-mute-outline' : 'notifications-off-outline';
+  }
+
 }

@@ -38,7 +38,11 @@ export class ChatNotificationService implements OnDestroy {
   private fcmToken: string | null = null;
   private pushNotificationsInitialized = false;
 
-  private hasInitialConversationsLoaded = false; // <<< NUOVA VARIABILE DI STATO
+  private hasInitialConversationsLoaded = false;
+
+  // ⭐⭐ NUOVO: Mappa per tracciare lo stato di silenziamento localmente ⭐⭐
+  private mutedStatus = new BehaviorSubject<Map<string, boolean>>(new Map<string, boolean>());
+
 
   constructor(
     private chatService: ChatService,
@@ -75,106 +79,110 @@ export class ChatNotificationService implements OnDestroy {
     }
   }
 
+  public setChatMuteStatus(chatId: string, isMuted: boolean) {
+    const currentStatus = this.mutedStatus.getValue();
+    currentStatus.set(chatId, isMuted);
+    this.mutedStatus.next(currentStatus);
+    console.log(`[ChatNotification] Stato locale aggiornato per chat ${chatId}: ${isMuted}`);
+  }
 
+  private init() {
+    const auth = getAuth();
 
-private init() {
-  const auth = getAuth();
+    this.authSubscription = new Observable<FirebaseUser | null>(observer => {
+      const unsubscribe = auth.onAuthStateChanged(user => {
+        observer.next(user);
+      });
+      return unsubscribe;
+    }).pipe(
+      switchMap((user: FirebaseUser | null) => {
+        this.currentUserId = user ? user.uid : null;
 
-  this.authSubscription = new Observable<FirebaseUser | null>(observer => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      observer.next(user);
-    });
-    return unsubscribe;
-  }).pipe(
-    switchMap((user: FirebaseUser | null) => {
-      this.currentUserId = user ? user.uid : null;
-
-      if (this.currentUserId) {
-        return this.chatService.getUserConversations(this.currentUserId).pipe(
-          // ⭐ NUOVO: Filtra le conversazioni eliminate prima di procedere
-          map((conversations: ConversationDocument[]) =>
-            conversations.filter(conv => {
-              // Rimuoviamo le conversazioni che l'utente corrente ha marcato come eliminate
-              const isDeleted = conv.deletedBy?.includes(this.currentUserId!);
-              return !isDeleted;
-            })
-          ),
-          // ... (il resto della pipeline rimane invariato)
-          tap((conversations: ConversationDocument[]) => {
-            if (!this.hasInitialConversationsLoaded) {
+        if (this.currentUserId) {
+          return this.chatService.getUserConversations(this.currentUserId).pipe(
+            // ⭐ AGGIORNATO: Prima di filtrare, popoliamo lo stato di silenziamento nel servizio.
+            tap((conversations: ConversationDocument[]) => {
               conversations.forEach(conv => {
-                this.lastKnownConversations.set(conv.id, conv);
+                if (conv.mutedBy && this.currentUserId) {
+                  this.setChatMuteStatus(conv.id, conv.mutedBy.includes(this.currentUserId));
+                }
               });
-              this.saveLastNotifiedTimestamps();
-              this.hasInitialConversationsLoaded = true;
-            }
-          }),
-          tap((conversations: ConversationDocument[]) => this.checkForNewMessagesAndPlaySound(conversations)),
-          switchMap((conversations: ConversationDocument[]) => {
-            if (conversations.length === 0) {
-              return of(0);
-            }
+            }),
+            map((conversations: ConversationDocument[]) =>
+              conversations.filter(conv => {
+                const isDeleted = conv.deletedBy?.includes(this.currentUserId!);
+                return !isDeleted;
+              })
+            ),
+            tap((conversations: ConversationDocument[]) => {
+              if (!this.hasInitialConversationsLoaded) {
+                conversations.forEach(conv => {
+                  this.lastKnownConversations.set(conv.id, conv);
+                });
+                this.saveLastNotifiedTimestamps();
+                this.hasInitialConversationsLoaded = true;
+              }
+            }),
+            tap((conversations: ConversationDocument[]) => this.checkForNewMessagesAndPlaySound(conversations)),
+            switchMap((conversations: ConversationDocument[]) => {
+              if (conversations.length === 0) {
+                return of(0);
+              }
 
-            const unreadCountsObservables: Observable<number>[] = conversations.map(conv => {
-              const lastReadByMe = conv.lastRead?.[this.currentUserId!] ?? null;
-              return from(this.chatService.countUnreadMessages(conv.id, this.currentUserId!, lastReadByMe)).pipe(
+              const unreadCountsObservables: Observable<number>[] = conversations.map(conv => {
+                const lastReadByMe = conv.lastRead?.[this.currentUserId!] ?? null;
+                return from(this.chatService.countUnreadMessages(conv.id, this.currentUserId!, lastReadByMe)).pipe(
+                  catchError(err => {
+                    console.error(`Errore nel conteggio messaggi non letti per chat ${conv.id}:`, err);
+                    return of(0);
+                  })
+                );
+              });
+
+              return forkJoin(unreadCountsObservables).pipe(
+                map(counts => counts.reduce((sum, current) => sum + current, 0)),
+                distinctUntilChanged(),
+                tap(total => console.log('ChatNotificationService: Totale messaggi non letti calcolato:', total)),
                 catchError(err => {
-                  console.error(`Errore nel conteggio messaggi non letti per chat ${conv.id}:`, err);
+                  console.error('ChatNotificationService: Errore durante la somma dei messaggi non letti:', err);
                   return of(0);
                 })
               );
-            });
-
-            return forkJoin(unreadCountsObservables).pipe(
-              map(counts => counts.reduce((sum, current) => sum + current, 0)),
-              distinctUntilChanged(),
-              tap(total => console.log('ChatNotificationService: Totale messaggi non letti calcolato:', total)),
-              catchError(err => {
-                console.error('ChatNotificationService: Errore durante la somma dei messaggi non letti:', err);
-                return of(0);
-              })
-            );
-          }),
-          catchError(err => {
-            console.error('ChatNotificationService: Errore nel recupero delle conversazioni:', err);
-            return of(0);
-          })
-        );
-      } else {
-        // ... (logica di logout rimane invariata)
-        this.unreadMessages = {};
+            }),
+            catchError(err => {
+              console.error('ChatNotificationService: Errore nel recupero delle conversazioni:', err);
+              return of(0);
+            })
+          );
+        } else {
+          this.unreadMessages = {};
+          this.unreadCount$.next(0);
+          this.lastKnownConversations.clear();
+          this.lastNotifiedTimestamp.clear();
+          this.saveLastNotifiedTimestamps();
+          this.hasInitialConversationsLoaded = false;
+          return of(0);
+        }
+      })
+    ).subscribe({
+      next: (totalUnread: number) => {
+        this.unreadCount$.next(totalUnread);
+      },
+      error: (err) => {
+        console.error('ChatNotificationService: Errore nella pipeline principale (authSubscription):', err);
         this.unreadCount$.next(0);
-        this.lastKnownConversations.clear();
-        this.lastNotifiedTimestamp.clear();
-        this.saveLastNotifiedTimestamps();
-        this.hasInitialConversationsLoaded = false;
-        return of(0);
       }
-    })
-  ).subscribe({
-    next: (totalUnread: number) => {
-      this.unreadCount$.next(totalUnread);
-    },
-    error: (err) => {
-      console.error('ChatNotificationService: Errore nella pipeline principale (authSubscription):', err);
-      this.unreadCount$.next(0);
-    }
-  });
-}
+    });
+  }
+
 
   private async checkForNewMessagesAndPlaySound(currentConversations: ConversationDocument[]) {
-    // Se non abbiamo ancora caricato le conversazioni iniziali, non facciamo suonare nulla
-    // Questo è un fallback, il tap in init() dovrebbe già gestirlo.
     if (!this.hasInitialConversationsLoaded || !this.currentUserId) {
-        // Se non ci sono conversazioni iniziali caricate, inizializza le mappe
-        // in modo che il prossimo aggiornamento le veda come "conosciute"
-        currentConversations.forEach(conv => {
-            this.lastKnownConversations.set(conv.id, conv);
-            const currentLastMessageTime = (conv.lastMessageAt instanceof Timestamp) ? conv.lastMessageAt.toMillis() : 0;
-            this.lastNotifiedTimestamp.set(conv.id, currentLastMessageTime);
-        });
-        this.saveLastNotifiedTimestamps();
-        return;
+      currentConversations.forEach(conv => {
+        this.lastKnownConversations.set(conv.id, conv);
+      });
+      this.hasInitialConversationsLoaded = true;
+      return;
     }
 
     let shouldPlaySoundForAnyChat = false;
@@ -186,25 +194,31 @@ private init() {
 
       const currentLastMessageTime = (conv.lastMessageAt instanceof Timestamp) ? conv.lastMessageAt.toMillis() : 0;
       const lastKnownMessageTime = (lastKnownConv?.lastMessageAt instanceof Timestamp) ? lastKnownConv.lastMessageAt.toMillis() : 0;
-      const lastNotifiedTime = this.lastNotifiedTimestamp.get(conv.id) || 0;
 
-      // Logica per determinare se è un nuovo messaggio da notificare:
-      // 1. C'è un orario di ultimo messaggio valido
-      // 2. Il mittente non sono io
-      // 3. NON sono nella chat attiva
-      // 4. L'orario dell'ultimo messaggio è più recente dell'ultima volta che lo conoscevo
-      // 5. L'orario dell'ultimo messaggio è più recente dell'ultima volta che l'ho notificato
-      // 6. Il messaggio non è vuoto o solo spazi bianchi
+      // ⭐⭐ AGGIORNATO: Usa il metodo isChatMuted() del servizio per il controllo ⭐⭐
+      const isMuted = this.isChatMuted(conv.id);
+
+      // Log di debug
+      console.log(`[ChatNotification] Chat ID: ${conv.id}, Muted Status: ${isMuted}`);
+      console.log(`[ChatNotification] Last Message Time (Current): ${currentLastMessageTime}, Last Message Time (Last Known): ${lastKnownMessageTime}`);
+
+      // La logica per rilevare un nuovo messaggio:
       if (
         currentLastMessageTime > 0 &&
         conv.lastMessageSenderId !== this.currentUserId &&
         !isCurrentActiveChat &&
-        currentLastMessageTime > lastKnownMessageTime && // <<< Cruciale per evitare notifiche su vecchi messaggi
-        currentLastMessageTime > lastNotifiedTime &&     // <<< Cruciale per evitare notifiche duplicate
+        currentLastMessageTime > lastKnownMessageTime &&
         conv.lastMessage && conv.lastMessage.trim() !== ''
       ) {
-        shouldPlaySoundForAnyChat = true;
-        this.lastNotifiedTimestamp.set(conv.id, currentLastMessageTime);
+        console.log(`[ChatNotification] Nuovo messaggio rilevato in chat ${conv.id}`);
+
+        // ⭐⭐ AGGIORNATO: Suona SOLO se la chat NON è muta, in base al controllo del servizio. ⭐⭐
+        if (!isMuted) {
+          console.log(`[ChatNotification] Condizioni di suono soddisfatte per chat ${conv.id}.`);
+          shouldPlaySoundForAnyChat = true;
+        } else {
+          console.log(`[ChatNotification] Chat ${conv.id} silenziata, suono bloccato.`);
+        }
       }
       newKnownConversations.set(conv.id, conv);
     }
@@ -215,9 +229,7 @@ private init() {
       this.lastSoundPlayedTimestamp = currentTime;
     }
 
-    // Aggiorna lastKnownConversations solo DOPO aver controllato per i suoni
     this.lastKnownConversations = newKnownConversations;
-    this.saveLastNotifiedTimestamps(); // Salva i timestamp aggiornati dopo il ciclo
   }
 
   private playNotificationSound() {
@@ -305,8 +317,8 @@ private init() {
           // Logica per visualizzare una notifica in-app se l'app è in foreground
           // Ad esempio, potresti usare un toast o un alert
           // if (isPlatform('web') || !isPlatform('capacitor')) {
-          //   // Solo per web, dato che su mobile le notifiche sono gestite dal sistema
-          //   alert(`Nuovo messaggio da ${notification.title}: ${notification.body}`);
+          //   // Solo per web, dato che su mobile le notifiche sono gestite dal sistema
+          //   alert(`Nuovo messaggio da ${notification.title}: ${notification.body}`);
           // }
         }
       });
@@ -321,13 +333,13 @@ private init() {
       });
     });
     App.addListener('appStateChange', ({ isActive }) => {
-        // Se l'app torna in foreground e abbiamo un utente loggato, possiamo ricaricare le conversazioni
-        // per assicurarci che lo stato delle notifiche sia aggiornato.
-        if (isActive && this.currentUserId) {
-            // Il pipe in init() dovrebbe già reagire all'attività dell'observable
-            // this.init(); // NON CHIAMARE INIT QUI, potrebbe creare sottoscrizioni duplicate.
-            // L'Observer in init() si occuperà di reagire al cambiamento di stato di auth.
-        }
+      // Se l'app torna in foreground e abbiamo un utente loggato, possiamo ricaricare le conversazioni
+      // per assicurarci che lo stato delle notifiche sia aggiornato.
+      if (isActive && this.currentUserId) {
+        // Il pipe in init() dovrebbe già reagire all'attività dell'observable
+        // this.init(); // NON CHIAMARE INIT QUI, potrebbe creare sottoscrizioni duplicate.
+        // L'Observer in init() si occuperà di reagire al cambiamento di stato di auth.
+      }
     });
   }
 
@@ -347,5 +359,9 @@ private init() {
     } catch (error) {
       console.error(`ChatNotificationService: Errore nel salvare il token FCM per utente ${userId}:`, error);
     }
+  }
+
+  public isChatMuted(chatId: string): boolean {
+    return this.mutedStatus.getValue().get(chatId) || false;
   }
 }

@@ -73,6 +73,7 @@ export interface ConversationDocument {
   lastMessageSenderId?: string;
   lastRead?: { [userId: string]: Timestamp };
   deletedBy?: string[];
+  mutedBy?: string[]; // ⭐ Aggiungi questa riga per risolvere l'errore
 }
 
 export interface ExtendedConversation {
@@ -93,6 +94,7 @@ export interface ExtendedConversation {
   deletedBy?: string[];
   otherParticipantIsOnline?: boolean;
   otherParticipantLastOnline?: string;
+  mutedBy?: string[]; // ⭐ Aggiungi questa proprietà
 }
 
 // --- Fine Interfacce ---
@@ -482,6 +484,35 @@ export class ChatService {
 
     } catch (error) {
       console.error(`Errore nell'eliminazione dei messaggi per la conversazione ${conversationId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+ * Silenzia o riattiva una conversazione per l'utente corrente.
+ * @param chatId L'ID della conversazione.
+ * @param userId L'ID dell'utente che sta eseguendo l'azione.
+ * @param isCurrentlyMuted Lo stato corrente di silenziamento della chat.
+ */
+  async toggleMuteStatus(chatId: string, userId: string, isCurrentlyMuted: boolean): Promise<void> {
+    const chatDocRef = doc(this.afs, 'conversations', chatId);
+
+    try {
+      if (isCurrentlyMuted) {
+        // Se la chat è muta, la riattiviamo rimuovendo l'utente dall'array
+        await updateDoc(chatDocRef, {
+          mutedBy: arrayRemove(userId)
+        });
+        console.log(`Chat ${chatId} riattivata con successo per utente ${userId}`);
+      } else {
+        // Se la chat non è muta, la silenziamo aggiungendo l'utente all'array
+        await updateDoc(chatDocRef, {
+          mutedBy: arrayUnion(userId)
+        });
+        console.log(`Chat ${chatId} silenziata con successo per utente ${userId}`);
+      }
+    } catch (error) {
+      console.error('Errore durante l\'aggiornamento dello stato di silenziamento:', error);
       throw error;
     }
   }

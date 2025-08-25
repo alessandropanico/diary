@@ -38,61 +38,54 @@
     </div>
 
     <ion-item-sliding *ngFor="let item of chatListItems" class="ff7-list-item" #slidingItem>
-      <ion-item
-        (click)="isSelectionMode ? toggleConversationSelection(item.id) : openChat(item)"
-        [class.selected-item]="isConversationSelected(item.id)"
-      >
-        <ion-checkbox
-          slot="start"
-          [checked]="isConversationSelected(item.id)"
-          *ngIf="isSelectionMode"
-          (ionChange)="toggleConversationSelection(item.id); $event.stopPropagation()"
-        ></ion-checkbox>
+      <ion-item (click)="isSelectionMode ? toggleConversationSelection(item.id) : openChat(item)"
+        [class.selected-item]="isConversationSelected(item.id)">
+        <ion-checkbox slot="start" [checked]="isConversationSelected(item.id)" *ngIf="isSelectionMode"
+          (ionChange)="toggleConversationSelection(item.id); $event.stopPropagation()"></ion-checkbox>
 
         <div class="avatar-wrapper" slot="start" *ngIf="!isSelectionMode">
           <ion-avatar>
             <img [src]="item.displayPhoto" alt="Foto Chat">
           </ion-avatar>
-          <div
-            *ngIf="item.type === 'private'"
-            class="online-status-indicator"
-            [class.online]="item.otherParticipantIsOnline"
-            [class.offline]="!item.otherParticipantIsOnline"
-          ></div>
+          <div *ngIf="item.type === 'private'" class="online-status-indicator"
+            [class.online]="item.otherParticipantIsOnline" [class.offline]="!item.otherParticipantIsOnline"></div>
         </div>
 
         <ion-label>
           <div class="name-and-status">
             <h2>{{ item.displayName }}</h2>
-            <span
-              *ngIf="item.type === 'private'"
-              class="online-status-text"
-              [class.online-text]="item.otherParticipantIsOnline"
-              [class.offline-text]="!item.otherParticipantIsOnline">
+            <span *ngIf="item.type === 'private'" class="online-status-text"
+              [class.online-text]="item.otherParticipantIsOnline" [class.offline-text]="!item.otherParticipantIsOnline">
               {{ item.otherParticipantIsOnline ? 'Online' : item.otherParticipantLastOnline }}
             </span>
-            <!-- <span *ngIf="item.type === 'group' && item.groupDescription" class="group-description-text">
-              {{ item.groupDescription }}
-            </span> -->
           </div>
           <p>
-            {{ getDisplayLastMessage(item) | slice:0:40 }}{{ item.lastMessage && item.lastMessage.length > 40 ? '...' : '' }}
+            {{ getDisplayLastMessage(item) | slice:0:40 }}{{ item.lastMessage && item.lastMessage.length > 40 ? '...' :
+            '' }}
           </p>
         </ion-label>
         <ion-note slot="end">
           {{ item.displayLastMessageAt }}
-          <ion-badge color="danger" class="unread-count-badge" *ngIf="item.hasUnreadMessages && item.unreadMessageCount && item.unreadMessageCount > 0">
+          <ion-badge color="danger" class="unread-count-badge"
+            *ngIf="item.hasUnreadMessages && item.unreadMessageCount && item.unreadMessageCount > 0">
             {{ item.unreadMessageCount > 99 ? '99+' : item.unreadMessageCount }}
           </ion-badge>
         </ion-note>
       </ion-item>
 
       <ion-item-options side="end" *ngIf="!isSelectionMode">
+        <ion-item-option (click)="toggleMuteChat(item); slidingItem.close()"
+          [color]="isMuted(item) ? 'success' : 'medium'" *ngIf="item.type === 'private'">
+          <ion-icon slot="icon-only" [name]="getMuteIcon(item)"></ion-icon>
+          <ion-label>{{ isMuted(item) ? 'Riattiva' : 'Silenzia' }}</ion-label>
+        </ion-item-option>
+
         <ion-item-option color="danger" (click)="deleteConversation(item); slidingItem.close()">
           <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-          Elimina
         </ion-item-option>
       </ion-item-options>
+
+
     </ion-item-sliding>
   </ion-list>
 
